@@ -1,0 +1,65 @@
+#
+# generate dependencies for idl file :
+#
+
+# source path
+top_srcdir=@top_srcdir@
+top_builddir=..
+srcdir=@srcdir@
+VPATH=.:${KERNEL_ROOT_DIR}/idl/salome:${GEOM_ROOT_DIR}/idl/salome :${SMESH_ROOT_DIR}/idl/salome 
+#:${MED_ROOT_DIR}/idl/salome
+
+@COMMENCE@
+
+IDL_FILES = NETGENPlugin_Algorithm.idl
+
+
+# copy all idl file in $(top_builddir)/idl
+inc: $(top_builddir)/idl/salome $(IDL_FILES:%=$(top_builddir)/idl/salome/%)
+
+$(top_builddir)/idl/salome:
+	$(INSTALL) -d $@
+
+$(IDL_FILES:%=$(top_builddir)/idl/salome/%):$(IDL_FILES:%=$(top_srcdir)/idl/%)
+	cp -f $^ $(top_builddir)/idl/salome
+
+
+# python wrap
+lib: pyidl
+
+PYTHON_BUILD_SITE=$(top_builddir)/lib/python$(PYTHON_VERSION)/site-packages/@PACKAGE@
+
+pyidl: $(PYTHON_BUILD_SITE) $(IDL_FILES:%.idl=$(PYTHON_BUILD_SITE)/%_idl.py)
+
+$(PYTHON_BUILD_SITE):
+	$(INSTALL) -d  $@
+
+$(PYTHON_BUILD_SITE)/%_idl.py: $(top_builddir)/idl/salome/%.idl
+	$(OMNIORB_IDL) $(OMNIORB_IDLPYFLAGS) -C$(PYTHON_BUILD_SITE) $<
+
+
+# install python client (generated from idl file)
+install: $(IDL_FILES:%=$(top_builddir)/idl/salome/%)
+	$(INSTALL) -d  $(idldir) $(PYTHON_SITE_INSTALL)
+	$(INSTALL_DATA) $^ $(idldir)
+	@for file in $^ dummy; do \
+	  if [ $$file != "dummy" ]; then \
+	    $(OMNIORB_IDL) $(OMNIORB_IDLPYFLAGS) -C$(PYTHON_SITE_INSTALL) $$file ; \
+	  fi ; \
+	done ;
+
+uninstall:
+	-$(RM) $(IDL_FILES:%=$(idldir)/%)
+	-$(RM) $(IDL_FILES:%.idl=$(PYTHON_SITE_INSTALL)/%_idl.py)
+
+# clean
+cleandep:
+	-$(RM) .dep*
+
+clean: cleandep
+	-$(RM) $(top_builddir)/idl/salome/*.idl
+	-$(RM) $(PYTHON_BUILD_SITE)/*.py
+
+distclean: clean
+	-$(RM) Makefile
+

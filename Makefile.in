@@ -1,0 +1,59 @@
+# -* Makefile *- 
+#
+# Author : Patrick GOLDBRONN (CEA)
+# Date : 28/06/2001
+# $Header$
+#
+
+# source path
+top_srcdir=@top_srcdir@
+top_builddir=.
+srcdir=@srcdir@
+VPATH=.:@srcdir@:@top_srcdir@/resources
+
+
+@COMMENCE@
+
+SUBDIRS = idl src
+
+RESOURCES_FILES = NETGENPlugin.xml
+
+# copy header files in common directory ------------
+
+ifeq ($(HAVE_SSTREAM),yes)
+  include_list=include/salome/SALOMEconfig.h
+else
+  include_list=include/salome/SALOMEconfig.h include/salome/sstream
+endif
+
+inc: idl $(include_list)
+
+include/salome/SALOMEconfig.h: salome_adm/unix/SALOMEconfig.ref
+	-$(RM) $@
+	$(LN_S) ../../$< $@
+
+# test if SALOMEconfig.h has changed (contents)
+salome_adm/unix/SALOMEconfig.ref: salome_adm/unix/SALOMEconfig.h
+	@if ! [ -a $@ ]; then \
+	  cp -p -f $< $@;        \
+	fi;		      \
+	if ! cmp $< $@; then  \
+	  cp -p -f $< $@;        \
+	fi;		      \
+
+include/salome/sstream: salome_adm/unix/sstream
+	-$(RM) $@
+	$(LN_S) ../../$< $@
+
+# CLEAN --------------------
+
+distclean: distclean-other
+
+distclean-other:
+	-$(RM) salome_adm/unix/*~ salome_adm/unix/*% salome_adm/unix/*.bak salome_adm/unix/*.new salome_adm/unix/*.old
+	-$(RM) salome_adm/unix/make_* 
+	-$(RM) salome_adm/unix/depend salome_adm/unix/SALOMEconfig.h 
+	-$(RM) config.cache config.log config.status 
+
+@MODULE@
+
