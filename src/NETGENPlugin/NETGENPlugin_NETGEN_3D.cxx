@@ -12,6 +12,7 @@ using namespace std;
 #include "NETGENPlugin_NETGEN_3D.hxx"
 #include "SMESH_Gen.hxx"
 #include "SMESH_Mesh.hxx"
+#include "SMESH_subMesh.hxx"
 
 #include "SMDS_MeshElement.hxx"
 #include "SMDS_MeshNode.hxx"
@@ -99,8 +100,8 @@ bool NETGENPlugin_NETGEN_3D::CheckHypothesis
   theHyp = (*itl); // use only the first hypothesis
 
   string hypName = theHyp->GetName();
-  int hypId = theHyp->GetID();
-  SCRUTE(hypName);
+//   int hypId = theHyp->GetID();
+//   SCRUTE(hypName);
 
   bool isOk = false;
 
@@ -760,7 +761,12 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh& aMesh,
 
       Ng_Result status;
 
-      status = Ng_GenerateVolumeMesh(Netgen_mesh, &Netgen_param);
+      try {
+        status = Ng_GenerateVolumeMesh(Netgen_mesh, &Netgen_param);
+      } catch (...) {
+        MESSAGE("An exception has been caught during the Volume Mesh Generation ...");
+        status = NG_VOLUME_FAILURE;
+      }
 
       SCRUTE(status);
 
