@@ -125,19 +125,14 @@ bool NETGENPlugin_NETGEN_3D::CheckHypothesis
  */
 //=============================================================================
 
-bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh& aMesh,
-			     const TopoDS_Shape& aShape)
+bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
+                                     const TopoDS_Shape& aShape)
 {
   MESSAGE("NETGENPlugin_NETGEN_3D::Compute with maxElmentsize = " << _maxElementVolume);
 
-  bool isOk = false;
   SMESHDS_Mesh* meshDS = aMesh.GetMeshDS();
-  SMESH_subMesh* theSubMesh = aMesh.GetSubMesh(aShape);
-  //const Handle(SMESHDS_SubMesh)& subMeshDS = theSubMesh->GetSubMeshDS();
 
   map<int, const SMDS_MeshNode*> netgenToDS;
-
-  MESSAGE("NETGENPlugin_NETGEN_3D::Compute Checking the mesh Faces");
 
   // check if all faces were meshed by a triangle mesher (here MESFISTO_2D)
 
@@ -167,12 +162,6 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh& aMesh,
     }
 
   int numberOfFaces = meshFaces.size();
-  int numberOfShapeFaces = shapeFaces.size();
-
-  SCRUTE(numberOfFaces);
-  SCRUTE(numberOfShapeFaces);
-
-  MESSAGE("---");
 
   int NbTotOfTria = 0;
   int NbTotOfNodesFaces = 0;
@@ -183,18 +172,13 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh& aMesh,
       TopoDS_Shape aFace = shapeFaces[i];
       SMESH_Algo* algoFace = _gen->GetAlgo(aMesh, aShapeFace);
       string algoFaceName = algoFace->GetName();
-      SCRUTE(algoFaceName);
       if (algoFaceName != "MEFISTO_2D")
 	{
-	  SCRUTE(algoFaceName);
-	  ASSERT(0);
+	  INFOS(algoFaceName);
 	  return false;
 	}
 
-      bool orientationMeshFace = (aFace.Orientation() == aShapeFace.Orientation());
-
       const SMESHDS_SubMesh* aSubMeshDSFace = meshFaces[i]->GetSubMeshDS();
-      SCRUTE(aSubMeshDSFace);
 
       int nbNodes = aSubMeshDSFace->NbNodes();
       NbTotOfNodesFaces += nbNodes;
@@ -202,45 +186,14 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh& aMesh,
       NbTotOfTria += nbTria;
       int index = 0;
 
-      MESSAGE("NETGENPlugin_NETGEN_3D::Compute The mesh Face " << (i+1) << " has " << nbNodes << " face internal Nodes, " << nbTria << " triangles");
-
-      SCRUTE(orientationMeshFace);
-
-      if (orientationMeshFace)
-	{
-	  MESSAGE("The mesh and face have the same orientation");
-	}
-      else
-	{
-	  MESSAGE("The mesh and face have different orientations");
-	}
-
-      SMDS_NodeIteratorPtr iteratorNodes = aSubMeshDSFace->GetNodes();
-      SCRUTE(nbNodes);
-      index = 0;
-      while(iteratorNodes->more())
-	{
-	  index++;
-	  const SMDS_MeshNode * node = iteratorNodes->next();
-// 	  int nodeId = node->GetID();
-// 	  double nodeX = node->X();
-// 	  double nodeY = node->Y();
-// 	  double nodeZ = node->Z();
-// 	  MESSAGE("NODE -> ID = " << nodeId << " X = " << nodeX << " Y = " << nodeY << " Z = " << nodeZ);
-	}
-
-      SCRUTE(index);
-
       SMDS_ElemIteratorPtr iteratorTriangle = aSubMeshDSFace->GetElements();
 
-      SCRUTE(nbTria);
       index = 0;
       int numberOfDegeneratedTriangle = 0;
       while(iteratorTriangle->more())
 	{
 	  index++;
 	  const SMDS_MeshElement * triangle = iteratorTriangle->next();
-	  int triangleId = triangle->GetID();
 
 	  SMDS_ElemIteratorPtr triangleNodesIt = triangle->nodesIterator();
 
@@ -259,10 +212,6 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh& aMesh,
 	  double node3Y = node3->Y();
 	  double node3Z = node3->Z();
 
-	  int triangleNode1 = node1->GetID();
-	  int triangleNode2 = node2->GetID();
-	  int triangleNode3 = node3->GetID();
-
 	  // Compute the triangle surface
 
 	  double vect1 = ((node2Y - node1Y)*(node3Z - node1Z) - (node2Z - node1Z)*(node3Y - node1Y));
@@ -274,30 +223,14 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh& aMesh,
 
 	  if (triangleIsDegenerated)
 	    {
-// 	      MESSAGE("TRIANGLE -> ID = " << triangleId << " N1 = " << triangleNode1 << " N2 = " << triangleNode2 << " N3 = " << triangleNode3 << " is degenerated");
-// 	      MESSAGE("NODE -> ID = " << triangleNode1 << " X = " << node1X << " Y = " << node1Y << " Z = " << node1Z);
-// 	      MESSAGE("NODE -> ID = " << triangleNode2 << " X = " << node2X << " Y = " << node2Y << " Z = " << node2Z);
-// 	      MESSAGE("NODE -> ID = " << triangleNode3 << " X = " << node3X << " Y = " << node3Y << " Z = " << node3Z);
 	      numberOfDegeneratedTriangle++;
-	    }
-	  else
-	    {
-// 	      MESSAGE("TRIANGLE -> ID = " << triangleId << " N1 = " << triangleNode1 << " N2 = " << triangleNode2 << " N3 = " << triangleNode3 << " is normal");
 	    }
 	}
 
       if (numberOfDegeneratedTriangle > 0)
 	MESSAGE("WARNING THERE IS(ARE) " << numberOfDegeneratedTriangle << " degenerated triangle on this face");
 
-      SCRUTE(index);
     }
-
-
-
-  SCRUTE(NbTotOfTria);
-  SCRUTE(NbTotOfNodesFaces);
-
-  MESSAGE("NETGENPlugin_NETGEN_3D::Compute Checking the mesh Edges");
 
   // check if all edges were meshed by a edge mesher (here Regular_1D)
 
@@ -316,9 +249,6 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh& aMesh,
     }
 
   int numberOfEdges = meshEdges.size();
-  SCRUTE(numberOfEdges);
-
-  MESSAGE("---");
 
   int NbTotOfNodesEdges = 0;
   int NbTotOfSegs = 0;
@@ -328,45 +258,20 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh& aMesh,
       TopoDS_Shape aShapeEdge = meshEdges[i]->GetSubShape();
       SMESH_Algo* algoEdge = _gen->GetAlgo(aMesh, aShapeEdge);
       string algoEdgeName = algoEdge->GetName();
-      SCRUTE(algoEdgeName);
       if (algoEdgeName != "Regular_1D")
 	{
-	  SCRUTE(algoEdgeName);
+	  INFOS(algoEdgeName);
 	  ASSERT(0);
 	  return false;
 	}
 
       const SMESHDS_SubMesh* aSubMeshDSEdge = meshEdges[i]->GetSubMeshDS();
-      SCRUTE(aSubMeshDSEdge);
 
       int nbNodes = aSubMeshDSEdge->NbNodes();
       NbTotOfNodesEdges += nbNodes;
       int nbSegs = aSubMeshDSEdge->NbElements();
       NbTotOfSegs += nbSegs;
-
-      MESSAGE("NETGENPlugin_NETGEN_3D::Compute The mesh Edge " << (i+1) << " has " << nbNodes << " edge internal Nodes, " << nbSegs << " segments");
-
-      SMDS_NodeIteratorPtr iteratorNodes = aSubMeshDSEdge->GetNodes();
-      SCRUTE(nbNodes);
-      int index = 0;
-      while(iteratorNodes->more())
-	{
-	  index++;
- 	  const SMDS_MeshNode * node = iteratorNodes->next();
-// 	  int nodeId = node->GetID();
-// 	  double nodeX = node->X();
-// 	  double nodeY = node->Y();
-// 	  double nodeZ = node->Z();
-// 	  MESSAGE("NODE -> ID = " << nodeId << " X = " << nodeX << " Y = " << nodeY << " Z = " << nodeZ);
-	}
-
-      SCRUTE(index);
     }
-
-  SCRUTE(NbTotOfNodesEdges);
-  SCRUTE(NbTotOfSegs);
-
-  MESSAGE("NETGENPlugin_NETGEN_3D::Compute Checking the mesh Vertices");
 
   vector<SMESH_subMesh*> meshVertices;
   for (TopExp_Explorer exp(aShape,TopAbs_VERTEX);exp.More();exp.Next())
@@ -383,9 +288,6 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh& aMesh,
     }
 
   int numberOfVertices = meshVertices.size();
-  SCRUTE(numberOfVertices);
-
-  MESSAGE("---");
 
   int NbTotOfNodesVertices = 0;
 
@@ -394,33 +296,10 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh& aMesh,
       TopoDS_Shape aShapeVertex = meshVertices[i]->GetSubShape();
 
       const SMESHDS_SubMesh * aSubMeshDSVertex = meshVertices[i]->GetSubMeshDS();
-      SCRUTE(aSubMeshDSVertex);
 
       int nbNodes = aSubMeshDSVertex->NbNodes();
       NbTotOfNodesVertices += nbNodes;
-
-      MESSAGE("NETGENPlugin_NETGEN_3D::Compute The mesh Vertex " << (i+1) << " has " << nbNodes << " Nodes");
-
-      SMDS_NodeIteratorPtr iteratorNodes = aSubMeshDSVertex->GetNodes();
-      SCRUTE(nbNodes);
-      int index = 0;
-      while(iteratorNodes->more())
-	{
-	  index++;
- 	  const SMDS_MeshNode * node = iteratorNodes->next();
-// 	  int nodeId = node->GetID();
-// 	  double nodeX = node->X();
-// 	  double nodeY = node->Y();
-// 	  double nodeZ = node->Z();
-// 	  MESSAGE("NODE -> ID = " << nodeId << " X = " << nodeX << " Y = " << nodeY << " Z = " << nodeZ);
-	}
-
-      SCRUTE(index);
     }
-
-  SCRUTE(NbTotOfNodesVertices);
-
-  MESSAGE("NETGENPlugin_NETGEN_3D::Compute --> Analysis of all shell mesh");
 
   vector<SMESH_subMesh*> meshShells;
   TopoDS_Shell aShell;
@@ -429,24 +308,17 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh& aMesh,
     {
       SMESH_subMesh* aSubMesh = aMesh.GetSubMesh(exp.Current());
       ASSERT(aSubMesh);
-      SCRUTE(aSubMesh);
       aShell = TopoDS::Shell(exp.Current());
       meshShells.push_back(aSubMesh);
     }
 
   int numberOfShells = meshShells.size();
-  SCRUTE(numberOfShells);
 
-  if (numberOfShells == 1)
+  if (numberOfShells > 0)
     {
-      MESSAGE("NETGENPlugin_NETGEN_3D::Compute Only one shell --> generation of the mesh using directly Netgen");
-
       /*
 	Prepare the Netgen surface mesh from the SMESHDS
       */
-
-      MESSAGE("NETGENPlugin_NETGEN_3D::Compute Prepare the Netgen surface mesh from the SMESHDS");
-
       int spaceDimension = 3;
       int nbNodesByTri = 3;
       int nbNodesByTetra = 4;
@@ -458,9 +330,6 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh& aMesh,
       int Netgen_param2ndOrder = 0;
       double Netgen_paramFine = 1.;
       double Netgen_paramSize = _maxElementVolume;
-
-      SCRUTE(Netgen_NbOfNodes);
-      SCRUTE(Netgen_NbOfTria);
 
       double * Netgen_Coordinates = new double [spaceDimension*
 						Netgen_NbOfNodes];
@@ -500,7 +369,6 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh& aMesh,
 	      double nodeX = node->X();
 	      double nodeY = node->Y();
 	      double nodeZ = node->Z();
-// 	      MESSAGE("NODE -> ID = " << nodeId << " X = " << nodeX << " Y = " << nodeY << " Z = " << nodeZ);
 	      listNodeCoresNetgenSmesh[indexNodes] = nodeId;
 	      int index = indexNodes*spaceDimension;
 	      Netgen_Coordinates[index] = nodeX;
@@ -521,11 +389,6 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh& aMesh,
 	  while(iteratorNodes->more())
 	    {
 	      const SMDS_MeshNode * node = iteratorNodes->next();
-	      int nodeId = node->GetID();
-	      double nodeX = node->X();
-	      double nodeY = node->Y();
-	      double nodeZ = node->Z();
-// 	      MESSAGE("NODE -> ID = " << nodeId << " X = " << nodeX << " Y = " << nodeY << " Z = " << nodeZ);
 	      listNodeCoresNetgenSmesh[indexNodes] = node->GetID();
 	      int index = indexNodes*spaceDimension;
 	      Netgen_Coordinates[index] = node->X();
@@ -561,8 +424,6 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh& aMesh,
 	    }
 	}
 
-      SCRUTE(indexNodes);
-
       for (int i=0; i<Netgen_NbOfNodes; i++)
 	{
 	  ASSERT(listNodeCoresNetgenSmesh[i] != 0);
@@ -588,24 +449,17 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh& aMesh,
 
 	  bool orientationMeshFace = (aFace.Orientation() == aShapeFace.Orientation());
 
-	  SCRUTE(orientationMeshFace);
-
 	  if (orientationMeshFace)
 	    {
-	      MESSAGE("The mesh and face have the same orientation");
-
 	      while(iteratorTriangle->more())
 		{
 		  const SMDS_MeshElement * triangle = iteratorTriangle->next();
-		  int triangleId = triangle->GetID();
 
 		  SMDS_ElemIteratorPtr triangleNodesIt = triangle->nodesIterator();
 
 		  int triangleNode1 = (triangleNodesIt->next())->GetID();
 		  int triangleNode2 = (triangleNodesIt->next())->GetID();
 		  int triangleNode3 = (triangleNodesIt->next())->GetID();
-
-// 		  MESSAGE("TRIANGLE -> ID = " << triangleId << " N1 = " << triangleNode1 << " N2 = " << triangleNode2 << " N3 = " << triangleNode3);
 
 		  int N1New = 0;
 		  int N2New = 0;
@@ -637,20 +491,15 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh& aMesh,
 	    }
 	  else
 	    {
-	      MESSAGE("The mesh and face have different orientations");
-
 	      while(iteratorTriangle->more())
 		{
 		  const SMDS_MeshElement * triangle = iteratorTriangle->next();
-		  int triangleId = triangle->GetID();
 
 		  SMDS_ElemIteratorPtr triangleNodesIt = triangle->nodesIterator();
 
 		  int triangleNode1 = (triangleNodesIt->next())->GetID();
 		  int triangleNode3 = (triangleNodesIt->next())->GetID();
 		  int triangleNode2 = (triangleNodesIt->next())->GetID();
-
-// 		  MESSAGE("TRIANGLE -> ID = " << triangleId << " N1 = " << triangleNode1 << " N2 = " << triangleNode2 << " N3 = " << triangleNode3);
 
 		  int N1New = 0;
 		  int N2New = 0;
@@ -682,8 +531,6 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh& aMesh,
 	    }
 	}
 
-      SCRUTE(indexTrias);
-
       int * nodesUsed = new int[Netgen_NbOfNodes];
 
       for (int i=0; i<Netgen_NbOfNodes; i++) nodesUsed[i] = 0;
@@ -709,9 +556,6 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh& aMesh,
       /*
 	Feed the Netgen surface mesh
       */
-
-      MESSAGE("NETGENPlugin_NETGEN_3D::Compute Feed the Netgen surface mesh");
-
       Ng_Mesh * Netgen_mesh;
 
       Ng_Init();
@@ -736,8 +580,6 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh& aMesh,
 	  Ng_AddSurfaceElement(Netgen_mesh, NG_TRIG, Netgen_triangle);
 	}
 
-      SCRUTE(Netgen_paramSize);
-
       Netgen_param.secondorder = Netgen_param2ndOrder;
       Netgen_param.fineness = Netgen_paramFine;
       Netgen_param.maxh = Netgen_paramSize;
@@ -745,15 +587,6 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh& aMesh,
       /*
 	Generate the volume mesh
       */
-
-      MESSAGE("NETGENPlugin_NETGEN_3D::Compute Generate the volume mesh");
-
-      SCRUTE(Netgen_NbOfNodes);
-      SCRUTE(Netgen_NbOfTria);
-
-      SCRUTE(Ng_GetNP(Netgen_mesh));
-      SCRUTE(Ng_GetNE(Netgen_mesh));
-      SCRUTE(Ng_GetNSE(Netgen_mesh));
 
       ASSERT(Netgen_NbOfNodes == Ng_GetNP(Netgen_mesh));
       ASSERT(Ng_GetNE(Netgen_mesh) == 0);
@@ -768,28 +601,20 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh& aMesh,
         status = NG_VOLUME_FAILURE;
       }
 
-      SCRUTE(status);
-
       int Netgen_NbOfNodesNew = Ng_GetNP(Netgen_mesh);
 
       int Netgen_NbOfTetra = Ng_GetNE(Netgen_mesh);
 
-      SCRUTE(Netgen_NbOfNodesNew);
-
-      SCRUTE(Netgen_NbOfTetra);
+      MESSAGE("End of Volume Mesh Generation. status=" << status <<
+              ", nb new nodes: " << Netgen_NbOfNodesNew - Netgen_NbOfNodes <<
+              ", nb tetra: " << Netgen_NbOfTetra);
 
       if ((status != NG_OK) ||
-	  (Netgen_NbOfNodesNew <= Netgen_NbOfNodes) ||
 	  (Netgen_NbOfTetra <= 0))
 	{
-	  MESSAGE("NETGENPlugin_NETGEN_3D::Compute The Volume Mesh Generation has failed ...");
-	  SCRUTE(status);
-
 	  /*
 	    Free the memory needed by to generate the Netgen Mesh
 	  */
-
-	  MESSAGE("NETGENPlugin_NETGEN_3D::Compute Free the memory needed by to generate the Netgen Mesh");
 
 	  delete [] Netgen_Coordinates;
 	  delete [] Netgen_Connectivity;
@@ -805,8 +630,6 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh& aMesh,
 	  return false;
 	}
 
-      MESSAGE("NETGENPlugin_NETGEN_3D::Compute End of Volume Mesh Generation");
-      SCRUTE(status);
 
       double * Netgen_CoordinatesNew = new double [spaceDimension*Netgen_NbOfNodesNew];
       int * Netgen_ConnectivityNew = new int [nbNodesByTetra*Netgen_NbOfTetra];
@@ -835,18 +658,12 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh& aMesh,
 	Feed back the SMESHDS with the generated Nodes and Volume Elements
       */
 
-      MESSAGE("NETGENPlugin_NETGEN_3D::Compute Feed back the SMESHDS with the generated Nodes and Volume Elements");
-
       int NbTotOfNodesShell = Netgen_NbOfNodesNew - Netgen_NbOfNodes;
-
-      SCRUTE(NbTotOfNodesShell);
 
       int * listNodeShellCoresNetgenSmesh = new int [NbTotOfNodesShell];
 
       for (int i=0; i<NbTotOfNodesShell; i++)
 	listNodeShellCoresNetgenSmesh[i] = 0;
-
-      MESSAGE("NETGENPlugin_NETGEN_3D::Compute --> Adding the New Nodes to SMESHDS");
 
       for (int i=0; i<NbTotOfNodesShell; i++)
 	{
@@ -865,10 +682,6 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh& aMesh,
 	  listNodeShellCoresNetgenSmesh[i] = node->GetID();
 	}
 
-      SCRUTE(Netgen_NbOfNodesNew);
-      
-      SCRUTE(netgenToDS.size());
-
       for (int i=0; i<NbTotOfNodesShell; i++)
 	{
 	  ASSERT(listNodeShellCoresNetgenSmesh[i] != 0);
@@ -876,8 +689,6 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh& aMesh,
 	  for (int j=0; j<NbTotOfNodesShell && j!=i; j++)
 	    ASSERT(listNodeShellCoresNetgenSmesh[i] != listNodeShellCoresNetgenSmesh[j]);
 	}
-
-      MESSAGE("NETGENPlugin_NETGEN_3D::Compute --> Adding the New elements (Tetrahedrons) to the SMESHDS");
 
       for (int i=0; i<Netgen_NbOfTetra; i++)
 	{
@@ -926,8 +737,6 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh& aMesh,
 	Free the memory needed by to generate the Netgen Mesh
       */
 
-      MESSAGE("NETGENPlugin_NETGEN_3D::Compute Free the memory needed by to generate the Netgen Mesh");
-
       delete [] Netgen_Coordinates;
       delete [] Netgen_Connectivity;
       delete [] Netgen_CoordinatesNew;
@@ -942,86 +751,10 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh& aMesh,
       Ng_DeleteMesh(Netgen_mesh);
       Ng_Exit();
 
-      /*
-	Verification
-      */
-
-      {
-	MESSAGE("NETGENPlugin_NETGEN_3D::Compute Verification of the Shell mesh");
-
-	TopoDS_Shape aShapeShell = meshShells[0]->GetSubShape();
-	SMESH_Algo* algoShell = _gen->GetAlgo(aMesh, aShapeShell);
-	string algoShellName = algoShell->GetName();
-	SCRUTE(algoShellName);
-	if (algoShellName != "NETGEN_3D")
-	  {
-	    SCRUTE(algoShellName);
-	    ASSERT(0);
-	    return false;
-	  }
-
-	const SMESHDS_SubMesh * aSubMeshDSShell = meshShells[0]->GetSubMeshDS();
-	SCRUTE(&aSubMeshDSShell);
-
-	int nbNodes = aSubMeshDSShell->NbNodes();
-	int nbTetra = aSubMeshDSShell->NbElements();
-
-	MESSAGE("NETGENPlugin_NETGEN_3D::Compute The mesh Shell has " << nbNodes << " shell internal Nodes, " << nbTetra << " tetrahedrons");
-
-	SMDS_NodeIteratorPtr iteratorNodes = aSubMeshDSShell->GetNodes();
-
-	SCRUTE(nbNodes);
-
-	int index;
-
-	index = 0;
-
-	while(iteratorNodes->more())
-	  {
-	    index++;
-	    const SMDS_MeshNode * node = iteratorNodes->next();
-	    int nodeId = node->GetID();
-	    double nodeX = node->X();
-	    double nodeY = node->Y();
-	    double nodeZ = node->Z();
-// 	    MESSAGE("NODE -> ID = " << nodeId << " X = " << nodeX << " Y = " << nodeY << " Z = " << nodeZ);
-	  }
-
-	SCRUTE(index);
-
-	SMDS_ElemIteratorPtr iteratorTetra = aSubMeshDSShell->GetElements();
-
-	SCRUTE(nbTetra);
-
-	index = 0;
-	while(iteratorTetra->more())
-	  {
-	    index++;
-	    const SMDS_MeshElement * tetra = iteratorTetra->next();
-	    int tetraId = tetra->GetID();
-
-	    SMDS_ElemIteratorPtr tetraNodesIt = tetra->nodesIterator();
-
-	    int tetraNode1 = (tetraNodesIt->next())->GetID();
-	    int tetraNode2 = (tetraNodesIt->next())->GetID();
-	    int tetraNode3 = (tetraNodesIt->next())->GetID();
-	    int tetraNode4 = (tetraNodesIt->next())->GetID();
-
-// 	    MESSAGE("TETRAHEDRON -> ID = " << tetraId << " N1 = " << tetraNode1 << " N2 = " << tetraNode2 << " N3 = " << tetraNode3 << " N4 = " << tetraNode4);
-
-	  }
-
-	SCRUTE(index);
-      }
-    }
-  else
-    {
-      SCRUTE(numberOfShells);
-      MESSAGE("NETGENPlugin_NETGEN_3D::Compute ERROR More than one shell ????? ");
-      return false;
+      return true;
     }
 
-  return true;
+  return false;
 }
 
 
