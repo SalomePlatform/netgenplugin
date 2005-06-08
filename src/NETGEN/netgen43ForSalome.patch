@@ -1,25 +1,185 @@
-diff -N -r -u netgen43/libsrc/include/spline2d.hpp /tmp/netgen43/libsrc/include/spline2d.hpp
---- netgen43/libsrc/include/spline2d.hpp	1970-01-01 01:00:00.000000000 +0100
-+++ /tmp/netgen43/libsrc/include/spline2d.hpp	2003-12-10 16:28:12.000000000 +0100
+diff -N -r -u netgen43/libsrc/general/array.hpp netgen-4.3/libsrc/general/array.hpp
+--- netgen43/libsrc/general/array.hpp	2003-05-07 18:01:43.000000000 +0400
++++ netgen-4.3/libsrc/general/array.hpp	2005-05-31 16:43:28.000000000 +0400
+@@ -130,9 +130,9 @@
+   explicit ARRAY (const ARRAY<T> & a2)
+     : FlatArray<T> (a2.Size(), a2.Size() ? new T[a2.Size()] : 0)
+   {
+-    allocsize = size;
++    allocsize = this->size;
+     ownmem = 1;
+-    for (int i = 0; i < size; i++)
++    for (int i = 0; i < this->size; i++)
+       (*this)[i] = a2[i];
+   }
+ 
+@@ -142,7 +142,7 @@
+   ~ARRAY()
+   {
+     if (ownmem)
+-      delete [] data;
++      delete [] this->data;
+   }
+ 
+   /// Change logical size. If necessary, do reallocation. Keeps contents.
+@@ -150,7 +150,7 @@
+   {
+     if (nsize > allocsize) 
+       ReSize (nsize);
+-    size = nsize; 
++    this->size = nsize; 
+   }
+ 
+   /// Change physical size. Keeps logical size. Keeps contents.
+@@ -164,11 +164,11 @@
+   /// Add element at end of array. reallocation if necessary.
+   int Append (const T & el)
+   {
+-    if (size == allocsize) 
+-      ReSize (size+1);
+-    data[size] = el;
+-    size++;
+-    return size;
++    if (this->size == allocsize) 
++      ReSize (this->size+1);
++    this->data[this->size] = el;
++    this->size++;
++    return this->size;
+   }
+ 
+ 
+@@ -186,23 +186,23 @@
+     RangeCheck (i);
+ #endif
+ 
+-    data[i-1] = data[size-1];
+-    size--;
++    this->data[i-1] = this->data[this->size-1];
++    this->size--;
+   }
+ 
+   /// Delete last element. 
+   void DeleteLast ()
+   {
+-    size--;
++    this->size--;
+   }
+ 
+   /// Deallocate memory
+   void DeleteAll ()
+   {
+     if (ownmem)
+-      delete [] data;
+-    data = 0;
+-    size = allocsize = 0;
++      delete [] this->data;
++    this->data = 0;
++    this->size = allocsize = 0;
+   }
+ 
+   /// Fill array with val
+@@ -216,7 +216,7 @@
+   ARRAY & operator= (const ARRAY & a2)
+   {
+     SetSize (a2.Size());
+-    for (int i = 0; i < size; i++)
++    for (int i = 0; i < this->size; i++)
+       (*this)[i] = a2[i];
+     return *this;
+   }
+@@ -229,21 +229,21 @@
+     int nsize = 2 * allocsize;
+     if (nsize < minsize) nsize = minsize;
+ 
+-    if (data)
++    if (this->data)
+       {
+ 	T * p = new T[nsize];
+ 	
+-	int mins = (nsize < size) ? nsize : size; 
+-	memcpy (p, data, mins * sizeof(T));
++	int mins = (nsize < this->size) ? nsize : this->size; 
++	memcpy (p, this->data, mins * sizeof(T));
+ 
+ 	if (ownmem)
+-	  delete [] data;
++	  delete [] this->data;
+ 	ownmem = 1;
+-	data = p;
++	this->data = p;
+       }
+     else
+       {
+-	data = new T[nsize];
++	this->data = new T[nsize];
+ 	ownmem = 1;
+       }
+     
+@@ -262,7 +262,7 @@
+   explicit ArrayMem(int asize = 0)
+     : ARRAY<T> (S, mem)
+   {
+-    SetSize (asize);
++    this->SetSize (asize);
+   }
+ 
+   ArrayMem & operator= (const T & val)  
+diff -N -r -u netgen43/libsrc/gprim/geomobjects.hpp netgen-4.3/libsrc/gprim/geomobjects.hpp
+--- netgen43/libsrc/gprim/geomobjects.hpp	2003-05-07 18:01:43.000000000 +0400
++++ netgen-4.3/libsrc/gprim/geomobjects.hpp	2005-05-31 16:45:53.000000000 +0400
+@@ -296,11 +296,11 @@
+ 	if (nr & 1)
+ 	  {
+ 	    sbox.pmin(i) = c(i);
+-	    sbox.pmax(i) = pmax(i);
++	    sbox.pmax(i) = this->pmax(i);
+ 	  }
+ 	else
+ 	  {
+-	    sbox.pmin(i) = pmin(i);
++	    sbox.pmin(i) = this->pmin(i);
+ 	    sbox.pmax(i) = c(i);
+ 	  }
+ 	sbox.c(i) = 0.5 * (sbox.pmin(i) + sbox.pmax(i));
+@@ -315,12 +315,12 @@
+   void CalcDiamCenter ()
+   {
+     c = Box<D>::Center ();
+-    diam = Dist (pmin, pmax);
++    diam = Dist (this->pmin, this->pmax);
+ 
+-    inner = pmax(0) - pmin(0);
++    inner = this->pmax(0) - this->pmin(0);
+     for (int i = 1; i < D; i++)
+-      if (pmax(i) - pmin(i) < inner)
+-	inner = pmax(i) - pmin(i);
++      if (this->pmax(i) - this->pmin(i) < inner)
++	inner = this->pmax(i) - this->pmin(i);
+   }
+ 
+ };
+diff -N -r -u netgen43/libsrc/include/spline2d.hpp netgen-4.3/libsrc/include/spline2d.hpp
+--- netgen43/libsrc/include/spline2d.hpp	1970-01-01 03:00:00.000000000 +0300
++++ netgen-4.3/libsrc/include/spline2d.hpp	2004-03-30 16:02:24.000000000 +0400
 @@ -0,0 +1 @@
 +#include "../geom2d/spline2d.hpp"
-diff -N -r -u netgen43/libsrc/include/splinegeometry2.hpp /tmp/netgen43/libsrc/include/splinegeometry2.hpp
---- netgen43/libsrc/include/splinegeometry2.hpp	1970-01-01 01:00:00.000000000 +0100
-+++ /tmp/netgen43/libsrc/include/splinegeometry2.hpp	2003-12-10 16:28:23.000000000 +0100
+diff -N -r -u netgen43/libsrc/include/splinegeometry2.hpp netgen-4.3/libsrc/include/splinegeometry2.hpp
+--- netgen43/libsrc/include/splinegeometry2.hpp	1970-01-01 03:00:00.000000000 +0300
++++ netgen-4.3/libsrc/include/splinegeometry2.hpp	2004-03-30 16:02:24.000000000 +0400
 @@ -0,0 +1 @@
 +#include "../geom2d/splinegeometry2.hpp"
-diff -N -r -u netgen43/libsrc/interface/Makefile /tmp/netgen43/libsrc/interface/Makefile
---- netgen43/libsrc/interface/Makefile	2003-05-07 16:01:43.000000000 +0200
-+++ /tmp/netgen43/libsrc/interface/Makefile	2003-12-10 15:59:47.000000000 +0100
+diff -N -r -u netgen43/libsrc/interface/Makefile netgen-4.3/libsrc/interface/Makefile
+--- netgen43/libsrc/interface/Makefile	2003-05-07 18:01:43.000000000 +0400
++++ netgen-4.3/libsrc/interface/Makefile	2004-03-30 16:02:24.000000000 +0400
 @@ -1,4 +1,4 @@
 -src = nginterface.cpp writeuser.cpp writediffpack.cpp writeabaqus.cpp writefluent.cpp writepermas.cpp writetochnog.cpp writetecplot.cpp wuchemnitz.cpp writetochnog.cpp writefeap.cpp readuser.cpp importsolution.cpp
 +src = writeuser.cpp writediffpack.cpp writeabaqus.cpp writefluent.cpp writepermas.cpp writetochnog.cpp writetecplot.cpp wuchemnitz.cpp writetochnog.cpp writefeap.cpp readuser.cpp importsolution.cpp nglib.cpp ngnewdelete.cpp
  #
  lib = nginterface
  libpath = libsrc/interface
-diff -N -r -u netgen43/libsrc/interface/nglib.cpp /tmp/netgen43/libsrc/interface/nglib.cpp
---- netgen43/libsrc/interface/nglib.cpp	2003-05-07 16:01:43.000000000 +0200
-+++ /tmp/netgen43/libsrc/interface/nglib.cpp	2003-12-10 16:32:54.000000000 +0100
+diff -N -r -u netgen43/libsrc/interface/nglib.cpp netgen-4.3/libsrc/interface/nglib.cpp
+--- netgen43/libsrc/interface/nglib.cpp	2003-05-07 18:01:43.000000000 +0400
++++ netgen-4.3/libsrc/interface/nglib.cpp	2004-03-30 16:02:24.000000000 +0400
 @@ -23,6 +23,20 @@
  
  #include "nglib.h"
@@ -127,9 +287,9 @@ diff -N -r -u netgen43/libsrc/interface/nglib.cpp /tmp/netgen43/libsrc/interface
 +{
 +  MeshFromSpline2D (geometry, mesh,  mp);
 +}
-diff -N -r -u netgen43/libsrc/makefile.mach.LINUX /tmp/netgen43/libsrc/makefile.mach.LINUX
---- netgen43/libsrc/makefile.mach.LINUX	2003-05-07 16:01:43.000000000 +0200
-+++ /tmp/netgen43/libsrc/makefile.mach.LINUX	2003-12-10 15:12:18.000000000 +0100
+diff -N -r -u netgen43/libsrc/makefile.mach.LINUX netgen-4.3/libsrc/makefile.mach.LINUX
+--- netgen43/libsrc/makefile.mach.LINUX	2003-05-07 18:01:43.000000000 +0400
++++ netgen-4.3/libsrc/makefile.mach.LINUX	2004-03-30 16:02:24.000000000 +0400
 @@ -14,7 +14,8 @@
  #
  CFLAGS2 =
@@ -140,9 +300,9 @@ diff -N -r -u netgen43/libsrc/makefile.mach.LINUX /tmp/netgen43/libsrc/makefile.
  # -fomit-frame-pointer
  # -ffast-math
  #
-diff -N -r -u netgen43/libsrc/meshing/improve2.cpp /tmp/netgen43/libsrc/meshing/improve2.cpp
---- netgen43/libsrc/meshing/improve2.cpp	2003-05-07 16:01:43.000000000 +0200
-+++ /tmp/netgen43/libsrc/meshing/improve2.cpp	2003-12-10 15:42:00.000000000 +0100
+diff -N -r -u netgen43/libsrc/meshing/improve2.cpp netgen-4.3/libsrc/meshing/improve2.cpp
+--- netgen43/libsrc/meshing/improve2.cpp	2003-05-07 18:01:43.000000000 +0400
++++ netgen-4.3/libsrc/meshing/improve2.cpp	2004-03-30 16:02:24.000000000 +0400
 @@ -3,7 +3,7 @@
  #include "meshing.hpp"
  #include <opti.hpp>
@@ -152,9 +312,9 @@ diff -N -r -u netgen43/libsrc/meshing/improve2.cpp /tmp/netgen43/libsrc/meshing/
  
  
  namespace netgen
-diff -N -r -u netgen43/libsrc/meshing/meshing2.cpp /tmp/netgen43/libsrc/meshing/meshing2.cpp
---- netgen43/libsrc/meshing/meshing2.cpp	2003-05-07 16:01:43.000000000 +0200
-+++ /tmp/netgen43/libsrc/meshing/meshing2.cpp	2003-12-10 15:34:35.000000000 +0100
+diff -N -r -u netgen43/libsrc/meshing/meshing2.cpp netgen-4.3/libsrc/meshing/meshing2.cpp
+--- netgen43/libsrc/meshing/meshing2.cpp	2003-05-07 18:01:43.000000000 +0400
++++ netgen-4.3/libsrc/meshing/meshing2.cpp	2004-03-30 16:02:24.000000000 +0400
 @@ -1785,7 +1785,7 @@
  
  
@@ -164,9 +324,9 @@ diff -N -r -u netgen43/libsrc/meshing/meshing2.cpp /tmp/netgen43/libsrc/meshing/
  {
    ;
  } 
-diff -N -r -u netgen43/libsrc/visualization/stlmeshing.cpp /tmp/netgen43/libsrc/visualization/stlmeshing.cpp
---- netgen43/libsrc/visualization/stlmeshing.cpp	2003-05-07 16:01:43.000000000 +0200
-+++ /tmp/netgen43/libsrc/visualization/stlmeshing.cpp	2003-12-10 15:52:53.000000000 +0100
+diff -N -r -u netgen43/libsrc/visualization/stlmeshing.cpp netgen-4.3/libsrc/visualization/stlmeshing.cpp
+--- netgen43/libsrc/visualization/stlmeshing.cpp	2003-05-07 18:01:43.000000000 +0400
++++ netgen-4.3/libsrc/visualization/stlmeshing.cpp	2004-03-30 16:02:24.000000000 +0400
 @@ -5,7 +5,7 @@
  #include <stlgeom.hpp>
  
@@ -176,9 +336,9 @@ diff -N -r -u netgen43/libsrc/visualization/stlmeshing.cpp /tmp/netgen43/libsrc/
  
  namespace netgen
  {
-diff -N -r -u netgen43/Makefile /tmp/netgen43/Makefile
---- netgen43/Makefile	2003-05-07 16:01:43.000000000 +0200
-+++ /tmp/netgen43/Makefile	2003-12-10 15:11:41.000000000 +0100
+diff -N -r -u netgen43/Makefile netgen-4.3/Makefile
+--- netgen43/Makefile	2003-05-07 18:01:43.000000000 +0400
++++ netgen-4.3/Makefile	2004-03-30 16:02:24.000000000 +0400
 @@ -35,7 +35,8 @@
  .SUFFIXES: .cpp .o
  #
@@ -189,9 +349,9 @@ diff -N -r -u netgen43/Makefile /tmp/netgen43/Makefile
  LINKFLAGS1 =   -lGL -lGLU -lX11 -lXext -lXmu
  #
  CPLUSPLUSFLAGS = $(CPLUSPLUSFLAGS1) $(CPLUSPLUSFLAGS2) $(CPLUSPLUSFLAGS3)
-diff -N -r -u netgen43/makeForSalome.sh /tmp/netgen43/makeForSalome.sh
---- netgen43/makeForSalome.sh	1970-01-01 01:00:00.000000000 +0100
-+++ /tmp/netgen43/makeForSalome.sh	2004-01-05 12:33:59.000000000 +0100
+diff -N -r -u netgen43/makeForSalome.sh netgen-4.3/makeForSalome.sh
+--- netgen43/makeForSalome.sh	1970-01-01 03:00:00.000000000 +0300
++++ netgen-4.3/makeForSalome.sh	2004-03-11 16:52:17.000000000 +0300
 @@ -0,0 +1,26 @@
 +#! /bin/sh
 +cp ngtcltk/ngnewdelete.* libsrc/interface/
