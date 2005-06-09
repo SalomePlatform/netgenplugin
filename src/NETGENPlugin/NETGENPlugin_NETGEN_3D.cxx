@@ -19,6 +19,7 @@ using namespace std;
 #include "SMDS_MeshNode.hxx"
 
 #include <TopExp.hxx>
+#include <BRepTools.hxx>
 
 #include "utilities.h"
 
@@ -127,9 +128,14 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
 
   // get a shell from aShape
   TopoDS_Shell aShell;
-  TopExp_Explorer exp(aShape,TopAbs_SHELL);
-  if ( exp.More() )
-    aShell = TopoDS::Shell(exp.Current());
+  if ( aShape.ShapeType() == TopAbs_SOLID ) {
+    aShell = BRepTools::OuterShell( TopoDS::Solid( aShape ));
+  }
+  else {
+    TopExp_Explorer exp(aShape,TopAbs_SHELL);
+    if ( exp.More() )
+      aShell = TopoDS::Shell(exp.Current());
+  }
 
   if ( aShell.IsNull() || !aMesh.GetSubMesh( aShell )) {
     INFOS( "NETGENPlugin_NETGEN_3D::Compute(), bad shape");
