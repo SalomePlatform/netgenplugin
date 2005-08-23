@@ -12,7 +12,8 @@
   <algorithms>
     <algorithm type="NETGEN_3D"
                label-id="Tetrahedron (Netgen)"
-               icon-id="mesh_algo_tetra.png"/>
+               icon-id="mesh_algo_tetra.png"
+               dim="3"/>
   </algorithms>
 </meshers-group>
 
