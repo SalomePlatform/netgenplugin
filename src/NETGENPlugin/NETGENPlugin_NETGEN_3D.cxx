@@ -125,16 +125,6 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
 
   SMESHDS_Mesh* meshDS = aMesh.GetMeshDS();
 
-  // get a shell from aShape
-  TopoDS_Shell aShell;
-  TopExp_Explorer exp(aShape,TopAbs_SHELL);
-  if ( exp.More() )
-    aShell = TopoDS::Shell(exp.Current());
-
-  if ( aShell.IsNull() || !aMesh.GetSubMesh( aShell )) {
-    INFOS( "NETGENPlugin_NETGEN_3D::Compute(), bad shape");
-    return false;
-  }
   // -------------------------------------------------------------------
   // get triangles on aShell and make a map of nodes to Netgen node IDs
   // -------------------------------------------------------------------
@@ -271,13 +261,14 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
       nodeVec[ n_id->second ] = n_id->first;
     // create and insert new nodes into nodeVec
     int nodeIndex = Netgen_NbOfNodes;
+    int shapeID = meshDS->ShapeToIndex( aShape );
     for ( ; nodeIndex <= Netgen_NbOfNodesNew; ++nodeIndex )
     {
       Ng_GetPoint( Netgen_mesh, nodeIndex, Netgen_point );
       SMDS_MeshNode * node = meshDS->AddNode(Netgen_point[0],
                                              Netgen_point[1],
                                              Netgen_point[2]);
-      meshDS->SetNodeInVolume(node, aShell);
+      meshDS->SetNodeInVolume(node, shapeID);
       nodeVec[nodeIndex] = node;
     }
 
@@ -289,7 +280,7 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
                                                  nodeVec[ Netgen_tetrahedron[1] ],
                                                  nodeVec[ Netgen_tetrahedron[2] ],
                                                  nodeVec[ Netgen_tetrahedron[3] ]);
-      meshDS->SetMeshElementOnShape(elt, aShell);
+      meshDS->SetMeshElementOnShape(elt, shapeID );
     }
   }
 
