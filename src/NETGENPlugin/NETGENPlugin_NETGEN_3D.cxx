@@ -260,7 +260,7 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
     for ( n_id = nodeToNetgenID.begin(); n_id != nodeToNetgenID.end(); ++n_id )
       nodeVec[ n_id->second ] = n_id->first;
     // create and insert new nodes into nodeVec
-    int nodeIndex = Netgen_NbOfNodes;
+    int nodeIndex = Netgen_NbOfNodes + 1;
     int shapeID = meshDS->ShapeToIndex( aShape );
     for ( ; nodeIndex <= Netgen_NbOfNodesNew; ++nodeIndex )
     {
