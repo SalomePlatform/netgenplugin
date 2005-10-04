@@ -1,6 +1,5 @@
-This is the version 3.0.0 of NETGENPLUGIN
+This is the version 3.1.0a of NETGENPLUGIN
 Compatible with :
-	- KERNEL 3.0.0
-	- SALOMEGUI 3.0.0
-        - SMESH 3.0.0
-	
+	- KERNEL 3.1.0a
+	- SALOMEGUI 3.1.0a
+        - SMESH 3.1.0a
