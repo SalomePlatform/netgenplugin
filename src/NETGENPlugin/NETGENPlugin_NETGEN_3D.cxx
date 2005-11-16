@@ -13,12 +13,12 @@ using namespace std;
 
 #include "SMESH_Gen.hxx"
 #include "SMESH_Mesh.hxx"
-#include "SMESH_ControlsDef.hxx"
 #include "SMESHDS_Mesh.hxx"
 #include "SMDS_MeshElement.hxx"
 #include "SMDS_MeshNode.hxx"
 
 #include <TopExp.hxx>
+#include <BRep_Tool.hxx>
 
 #include "utilities.h"
 
@@ -44,9 +44,7 @@ NETGENPlugin_NETGEN_3D::NETGENPlugin_NETGEN_3D(int hypId, int studyId,
 {
   MESSAGE("NETGENPlugin_NETGEN_3D::NETGENPlugin_NETGEN_3D");
   _name = "NETGEN_3D";
-//   _shapeType = TopAbs_SOLID;
   _shapeType = (1 << TopAbs_SHELL) | (1 << TopAbs_SOLID);// 1 bit /shape type
-//   MESSAGE("_shapeType octal " << oct << _shapeType);
   _compatibleHypothesis.push_back("MaxElementVolume");
 
   _maxElementVolume = 0.;
@@ -127,6 +125,8 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
 
   SMESHDS_Mesh* meshDS = aMesh.GetMeshDS();
 
+  const int invalid_ID = -1;
+
   // -------------------------------------------------------------------
   // get triangles on aShell and make a map of nodes to Netgen node IDs
   // -------------------------------------------------------------------
@@ -136,8 +136,11 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
   list< const SMDS_MeshElement* > triangles;
   list< bool >                    isReversed; // orientation of triangles
 
-  SMESH::Controls::Area areaControl;
-  SMESH::Controls::TSequenceOfXYZ nodesCoords;
+  // for the degeneraged edge: ignore all but one node on it;
+  // map storing ids of degen edges and vertices and their netgen id:
+  map< int, int* > degenShapeIdToPtrNgId;
+  map< int, int* >::iterator shId_ngId;
+  list< int > degenNgIds;
 
   for (TopExp_Explorer exp(aShape,TopAbs_FACE);exp.More();exp.Next())
   {
@@ -165,16 +168,24 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
         while ( triangleNodesIt->more() ) {
 	  const SMDS_MeshNode * node =
             static_cast<const SMDS_MeshNode *>(triangleNodesIt->next());
-          nodeToNetgenID.insert( make_pair( node, 0 ));
+          nodeToNetgenID.insert( make_pair( node, invalid_ID ));
         }
-#ifdef _DEBUG_
-        // check if a trainge is degenerated
-        areaControl.GetPoints( elem, nodesCoords );
-        double area = areaControl.GetValue( nodesCoords );
-        if ( area <= DBL_MIN ) {
-          MESSAGE( "Warning: Degenerated " << elem );
+      }
+      // look for degeneraged edges and vetices
+      for (TopExp_Explorer expE(aShapeFace,TopAbs_EDGE);expE.More();expE.Next())
+      {
+        TopoDS_Edge aShapeEdge = TopoDS::Edge( expE.Current() );
+        if ( BRep_Tool::Degenerated( aShapeEdge ))
+        {
+          degenNgIds.push_back( invalid_ID );
+          int* ptrIdOnEdge = & degenNgIds.back();
+          // remember edge id
+          int edgeID = meshDS->ShapeToIndex( aShapeEdge );
+          degenShapeIdToPtrNgId.insert( make_pair( edgeID, ptrIdOnEdge ));
+          // remember vertex id
+          int vertexID = meshDS->ShapeToIndex( TopExp::FirstVertex( aShapeEdge ));
+          degenShapeIdToPtrNgId.insert( make_pair( vertexID, ptrIdOnEdge ));
         }
-#endif
       }
     }
   }
@@ -182,7 +193,7 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
   // Feed the Netgen with surface mesh
   // ---------------------------------
 
-  int Netgen_NbOfNodes = nodeToNetgenID.size();
+  int Netgen_NbOfNodes = 0;
   int Netgen_param2ndOrder = 0;
   double Netgen_paramFine = 1.;
   double Netgen_paramSize = _maxElementVolume;
@@ -196,15 +207,30 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
   Ng_Mesh * Netgen_mesh = Ng_NewMesh();
 
   // set nodes and remember thier netgen IDs
+  bool isDegen = false, hasDegen = !degenShapeIdToPtrNgId.empty();
   TNodeToIDMap::iterator n_id = nodeToNetgenID.begin();
-  for ( int id = 0; n_id != nodeToNetgenID.end(); ++n_id )
+  for ( ; n_id != nodeToNetgenID.end(); ++n_id )
   {
     const SMDS_MeshNode* node = n_id->first;
+
+    // ignore nodes on degenerated edge
+    if ( hasDegen ) {
+      int shapeId = node->GetPosition()->GetShapeId();
+      shId_ngId = degenShapeIdToPtrNgId.find( shapeId );
+      isDegen = ( shId_ngId != degenShapeIdToPtrNgId.end() );
+      if ( isDegen && *(shId_ngId->second) != invalid_ID ) {
+        n_id->second = *(shId_ngId->second);
+        continue;
+      }
+    }
     Netgen_point [ 0 ] = node->X();
     Netgen_point [ 1 ] = node->Y();
     Netgen_point [ 2 ] = node->Z();
-    n_id->second = ++id;
     Ng_AddPoint(Netgen_mesh, Netgen_point);
+    n_id->second = ++Netgen_NbOfNodes; // set netgen ID
+
+    if ( isDegen ) // all nodes on a degen edge get one netgen ID
+      *(shId_ngId->second) = n_id->second;
   }
   // set triangles
   list< const SMDS_MeshElement* >::iterator tria = triangles.begin();
@@ -219,7 +245,12 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
       Netgen_triangle[ *reverse ? 2 - i : i ] = nodeToNetgenID[ node ];
       ++i;
     }
-    Ng_AddSurfaceElement(Netgen_mesh, NG_TRIG, Netgen_triangle);
+    if ( !hasDegen ||
+         // ignore degenerated triangles, they have 2 or 3 same ids
+         (Netgen_triangle[0] != Netgen_triangle[1] &&
+          Netgen_triangle[0] != Netgen_triangle[2] &&
+          Netgen_triangle[2] != Netgen_triangle[1] ))
+      Ng_AddSurfaceElement(Netgen_mesh, NG_TRIG, Netgen_triangle);
   }
 
   // -------------------------
