@@ -19,6 +19,9 @@ using namespace std;
 #include "SMDS_MeshNode.hxx"
 
 #include <TopExp.hxx>
+#include <TopExp_Explorer.hxx>
+#include <TopoDS.hxx>
+#include <TopoDS_Shell.hxx>
 #include <BRepTools.hxx>
 
 #include "utilities.h"
@@ -155,13 +158,12 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
 
   for (TopExp_Explorer exp(aShape,TopAbs_FACE);exp.More();exp.Next())
   {
-    TopoDS_Shape aShapeFace = exp.Current();
-    int faceID = meshDS->ShapeToIndex( aShapeFace );
-    TopoDS_Shape aMeshedFace = meshDS->IndexToShape( faceID );
-    const SMESHDS_SubMesh * aSubMeshDSFace = meshDS->MeshElements( faceID );
+    const TopoDS_Shape& aShapeFace = exp.Current();
+    const SMESHDS_SubMesh * aSubMeshDSFace = meshDS->MeshElements( aShapeFace );
     if ( aSubMeshDSFace )
     {
-      bool isRev = ( aShapeFace.Orientation() != aMeshedFace.Orientation() );
+      bool isRev = SMESH_Algo::IsReversedSubMesh( TopoDS::Face(aShapeFace), meshDS );
+
       SMDS_ElemIteratorPtr iteratorElem = aSubMeshDSFace->GetElements();
       while ( iteratorElem->more() ) // loop on elements on a face
       {
