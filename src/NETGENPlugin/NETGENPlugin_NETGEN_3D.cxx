@@ -13,12 +13,15 @@ using namespace std;
 
 #include "SMESH_Gen.hxx"
 #include "SMESH_Mesh.hxx"
+#include "SMESH_ControlsDef.hxx"
 #include "SMESHDS_Mesh.hxx"
 #include "SMDS_MeshElement.hxx"
 #include "SMDS_MeshNode.hxx"
 
-#include <TopExp.hxx>
 #include <BRep_Tool.hxx>
+#include <TopExp.hxx>
+#include <TopExp_Explorer.hxx>
+#include <TopoDS.hxx>
 
 #include "utilities.h"
 
@@ -127,6 +130,9 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
 
   const int invalid_ID = -1;
 
+  SMESH::Controls::Area areaControl;
+  SMESH::Controls::TSequenceOfXYZ nodesCoords;
+
   // -------------------------------------------------------------------
   // get triangles on aShell and make a map of nodes to Netgen node IDs
   // -------------------------------------------------------------------
@@ -144,13 +150,12 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
 
   for (TopExp_Explorer exp(aShape,TopAbs_FACE);exp.More();exp.Next())
   {
-    TopoDS_Shape aShapeFace = exp.Current();
-    int faceID = meshDS->ShapeToIndex( aShapeFace );
-    TopoDS_Shape aMeshedFace = meshDS->IndexToShape( faceID );
-    const SMESHDS_SubMesh * aSubMeshDSFace = meshDS->MeshElements( faceID );
+    const TopoDS_Shape& aShapeFace = exp.Current();
+    const SMESHDS_SubMesh * aSubMeshDSFace = meshDS->MeshElements( aShapeFace );
     if ( aSubMeshDSFace )
     {
-      bool isRev = ( aShapeFace.Orientation() != aMeshedFace.Orientation() );
+      bool isRev = SMESH_Algo::IsReversedSubMesh( TopoDS::Face(aShapeFace), meshDS );
+
       SMDS_ElemIteratorPtr iteratorElem = aSubMeshDSFace->GetElements();
       while ( iteratorElem->more() ) // loop on elements on a face
       {
@@ -170,6 +175,14 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
             static_cast<const SMDS_MeshNode *>(triangleNodesIt->next());
           nodeToNetgenID.insert( make_pair( node, invalid_ID ));
         }
+#ifdef _DEBUG_
+        // check if a trainge is degenerated
+        areaControl.GetPoints( elem, nodesCoords );
+        double area = areaControl.GetValue( nodesCoords );
+        if ( area <= DBL_MIN ) {
+          MESSAGE( "Warning: Degenerated " << elem );
+        }
+#endif
       }
       // look for degeneraged edges and vetices
       for (TopExp_Explorer expE(aShapeFace,TopAbs_EDGE);expE.More();expE.Next())
@@ -291,7 +304,7 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
     vector< const SMDS_MeshNode* > nodeVec ( Netgen_NbOfNodesNew + 1 );
     // insert old nodes into nodeVec
     for ( n_id = nodeToNetgenID.begin(); n_id != nodeToNetgenID.end(); ++n_id )
-      nodeVec[ n_id->second ] = n_id->first;
+      nodeVec.at( n_id->second ) = n_id->first;
     // create and insert new nodes into nodeVec
     int nodeIndex = Netgen_NbOfNodes + 1;
     int shapeID = meshDS->ShapeToIndex( aShape );
@@ -302,17 +315,17 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
                                              Netgen_point[1],
                                              Netgen_point[2]);
       meshDS->SetNodeInVolume(node, shapeID);
-      nodeVec[nodeIndex] = node;
+      nodeVec.at(nodeIndex) = node;
     }
 
     // create tetrahedrons
     for ( int elemIndex = 1; elemIndex <= Netgen_NbOfTetra; ++elemIndex )
     {
       Ng_GetVolumeElement(Netgen_mesh, elemIndex, Netgen_tetrahedron);
-      SMDS_MeshVolume * elt = meshDS->AddVolume (nodeVec[ Netgen_tetrahedron[0] ],
-                                                 nodeVec[ Netgen_tetrahedron[1] ],
-                                                 nodeVec[ Netgen_tetrahedron[2] ],
-                                                 nodeVec[ Netgen_tetrahedron[3] ]);
+      SMDS_MeshVolume * elt = meshDS->AddVolume (nodeVec.at( Netgen_tetrahedron[0] ),
+                                                 nodeVec.at( Netgen_tetrahedron[1] ),
+                                                 nodeVec.at( Netgen_tetrahedron[2] ),
+                                                 nodeVec.at( Netgen_tetrahedron[3] ));
       meshDS->SetMeshElementOnShape(elt, shapeID );
     }
   }
