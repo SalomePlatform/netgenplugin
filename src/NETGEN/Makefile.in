@@ -56,6 +56,10 @@ LIB_OBJ_LO = $(LIB_OBJ_O:%.o=%.lo)
 $(LIB): $(LIB_OBJ_O) $(LIB_OBJ_LO)
 LIB_OBJ = $(LIB_OBJ_LO)
 
+ifeq ($(F77),gfortran)
+LDFLAGS += -lgfortran
+else
 LDFLAGS += -lg2c
+endif
 
 MOSTLYCLEAN += $(LIB_OBJ_O)
