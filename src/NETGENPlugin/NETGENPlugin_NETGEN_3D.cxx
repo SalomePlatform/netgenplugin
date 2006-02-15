@@ -83,6 +83,7 @@ bool NETGENPlugin_NETGEN_3D::CheckHypothesis
   MESSAGE("NETGENPlugin_NETGEN_3D::CheckHypothesis");
 
   _hypMaxElementVolume = NULL;
+  _maxElementVolume = DBL_MAX;
 
   list<const SMESHDS_Hypothesis*>::const_iterator itl;
   const SMESHDS_Hypothesis* theHyp;
@@ -91,8 +92,9 @@ bool NETGENPlugin_NETGEN_3D::CheckHypothesis
   int nbHyp = hyps.size();
   if (!nbHyp)
   {
-    aStatus = SMESH_Hypothesis::HYP_MISSING;
-    return false;  // can't work with no hypothesis
+    aStatus = SMESH_Hypothesis::HYP_OK;
+    //aStatus = SMESH_Hypothesis::HYP_MISSING;
+    return true;  // can work with no hypothesis
   }
 
   itl = hyps.begin();
