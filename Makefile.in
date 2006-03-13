@@ -14,7 +14,7 @@ VPATH=.:@srcdir@:@top_srcdir@/bin:@top_srcdir@/resources:./bin:@top_srcdir@/idl
 
 @COMMENCE@
 
-SUBDIRS = idl src
+SUBDIRS = idl src adm_local
 
 RESOURCES_FILES = NETGENPlugin.xml
 

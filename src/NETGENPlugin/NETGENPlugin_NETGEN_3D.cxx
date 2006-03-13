@@ -17,6 +17,7 @@ using namespace std;
 #include "SMESHDS_Mesh.hxx"
 #include "SMDS_MeshElement.hxx"
 #include "SMDS_MeshNode.hxx"
+#include "StdMeshers_Helper.hxx"
 
 #include <BRep_Tool.hxx>
 #include <TopExp.hxx>
@@ -137,6 +138,9 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
   // get triangles on aShell and make a map of nodes to Netgen node IDs
   // -------------------------------------------------------------------
 
+  StdMeshers_Helper* myTool = new StdMeshers_Helper(aMesh);
+  bool _quadraticMesh = myTool->IsQuadraticSubMesh(aShape);
+
   typedef map< const SMDS_MeshNode*, int> TNodeToIDMap;
   TNodeToIDMap nodeToNetgenID;
   list< const SMDS_MeshElement* > triangles;
@@ -161,8 +165,10 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
       {
         // check element
         const SMDS_MeshElement* elem = iteratorElem->next();
-        if ( !elem || elem->NbNodes() != 3 ) {
+        if ( !elem ||
+             !( elem->NbNodes()==3 || ( _quadraticMesh && elem->NbNodes()==6) ) ) {
           INFOS( "NETGENPlugin_NETGEN_3D::Compute(), bad mesh");
+          delete myTool; myTool = 0;
           return false;
         }
         // keep a triangle
@@ -173,6 +179,8 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
         while ( triangleNodesIt->more() ) {
 	  const SMDS_MeshNode * node =
             static_cast<const SMDS_MeshNode *>(triangleNodesIt->next());
+          if(myTool->IsMedium(node))
+            continue;
           nodeToNetgenID.insert( make_pair( node, invalid_ID ));
         }
 #ifdef _DEBUG_
@@ -245,6 +253,7 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
     if ( isDegen ) // all nodes on a degen edge get one netgen ID
       *(shId_ngId->second) = n_id->second;
   }
+
   // set triangles
   list< const SMDS_MeshElement* >::iterator tria = triangles.begin();
   list< bool >::iterator                 reverse = isReversed.begin();
@@ -255,6 +264,8 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
     while ( triangleNodesIt->more() ) {
       const SMDS_MeshNode * node =
         static_cast<const SMDS_MeshNode *>(triangleNodesIt->next());
+      if(myTool->IsMedium(node))
+        continue;
       Netgen_triangle[ *reverse ? 2 - i : i ] = nodeToNetgenID[ node ];
       ++i;
     }
@@ -280,7 +291,8 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
 
   try {
     status = Ng_GenerateVolumeMesh(Netgen_mesh, &Netgen_param);
-  } catch (...) {
+  }
+  catch (...) {
     MESSAGE("An exception has been caught during the Volume Mesh Generation ...");
     status = NG_VOLUME_FAILURE;
   }
@@ -303,8 +315,9 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
     // vector of nodes in which node index == netgen ID
     vector< const SMDS_MeshNode* > nodeVec ( Netgen_NbOfNodesNew + 1 );
     // insert old nodes into nodeVec
-    for ( n_id = nodeToNetgenID.begin(); n_id != nodeToNetgenID.end(); ++n_id )
+    for ( n_id = nodeToNetgenID.begin(); n_id != nodeToNetgenID.end(); ++n_id ) {
       nodeVec.at( n_id->second ) = n_id->first;
+    }
     // create and insert new nodes into nodeVec
     int nodeIndex = Netgen_NbOfNodes + 1;
     int shapeID = meshDS->ShapeToIndex( aShape );
@@ -322,7 +335,7 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
     for ( int elemIndex = 1; elemIndex <= Netgen_NbOfTetra; ++elemIndex )
     {
       Ng_GetVolumeElement(Netgen_mesh, elemIndex, Netgen_tetrahedron);
-      SMDS_MeshVolume * elt = meshDS->AddVolume (nodeVec.at( Netgen_tetrahedron[0] ),
+      SMDS_MeshVolume * elt = myTool->AddVolume (nodeVec.at( Netgen_tetrahedron[0] ),
                                                  nodeVec.at( Netgen_tetrahedron[1] ),
                                                  nodeVec.at( Netgen_tetrahedron[2] ),
                                                  nodeVec.at( Netgen_tetrahedron[3] ));
@@ -332,6 +345,8 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
 
   Ng_DeleteMesh(Netgen_mesh);
   Ng_Exit();
+
+  delete myTool; myTool = 0;
 
   return isOK;
 }
