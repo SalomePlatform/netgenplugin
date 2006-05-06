@@ -1,0 +1,202 @@
+diff -N -r -u netgen45_orig/libsrc/interface/Makefile netgen45_new/libsrc/interface/Makefile
+--- netgen45_orig/libsrc/interface/Makefile	2006-04-13 12:58:37.000000000 +0400
++++ netgen45_new/libsrc/interface/Makefile	2006-04-25 11:55:09.296578936 +0400
+@@ -1,4 +1,5 @@
+-src = nginterface.cpp writeuser.cpp writediffpack.cpp writeabaqus.cpp writefluent.cpp writepermas.cpp writetochnog.cpp writetecplot.cpp wuchemnitz.cpp writetochnog.cpp writefeap.cpp writeelmer.cpp  writegmsh.cpp writejcm.cpp readuser.cpp importsolution.cpp 
++#src = nginterface.cpp writeuser.cpp writediffpack.cpp writeabaqus.cpp writefluent.cpp writepermas.cpp writetochnog.cpp writetecplot.cpp wuchemnitz.cpp writetochnog.cpp writefeap.cpp writeelmer.cpp  writegmsh.cpp writejcm.cpp readuser.cpp importsolution.cpp
++src = writeuser.cpp writediffpack.cpp writeabaqus.cpp writefluent.cpp writepermas.cpp writetochnog.cpp writetecplot.cpp wuchemnitz.cpp writetochnog.cpp writefeap.cpp writeelmer.cpp  writegmsh.cpp writejcm.cpp readuser.cpp nglib.cpp ngnewdelete.cpp
+ #
+ lib = nginterface
+ libpath = libsrc/interface
+diff -N -r -u netgen45_orig/libsrc/interface/nglib.cpp netgen45_new/libsrc/interface/nglib.cpp
+--- netgen45_orig/libsrc/interface/nglib.cpp	2006-04-13 12:58:37.000000000 +0400
++++ netgen45_new/libsrc/interface/nglib.cpp	2006-04-25 11:55:09.297578764 +0400
+@@ -56,7 +56,8 @@
+ 
+ void Ng_Exit ()
+ {
+-  ;
++  delete testout;
++  testout = NULL;
+ }
+   
+ 
+diff -N -r -u netgen45_orig/libsrc/makefile.inc netgen45_new/libsrc/makefile.inc
+--- netgen45_orig/libsrc/makefile.inc	2006-04-13 12:58:37.000000000 +0400
++++ netgen45_new/libsrc/makefile.inc	2006-04-25 11:55:09.297578764 +0400
+@@ -8,17 +8,14 @@
+ LIBSRC_DIR=$(CPP_DIR)/libsrc
+ LIB_DIR=$(CPP_DIR)/lib/$(MACHINE)
+ 
+-#OCC_DIR=../../occ
+-#OCCINC_DIR=$(OCC_DIR)/inc
+-#OCCLIB_DIR=$(OCC_DIR)/lib
+-# OCC_DIR=/opt/OpenCASCADE5.2/ros
+-# OCC_DIR=/home/joachim/download/occ/Linux
+-# OCCINC_DIR=$(OCC_DIR)/inc  -I$(OCC_DIR)/ros/inc
+-# OCCLIB_DIR=$(OCC_DIR)/Linux/lib
++OCC_DIR=$(CASROOT)
++OCCINC_DIR=$(OCC_DIR)/inc
++OCCLIB_DIR=$(OCC_DIR)/Linux/lib
+ #
+ include $(LIBSRC_DIR)/makefile.mach.$(MACHINE)
+ #
+-CPLUSPLUSFLAGS1 = -c -I$(LIBSRC_DIR)/include -I$(OCCINC_DIR) 
++CPLUSPLUSFLAGS1 = -c -I$(LIBSRC_DIR)/include -I$(OCCINC_DIR) \
++	-DOCCGEOMETRY -DOCC52 -DHAVE_IOSTREAM -DHAVE_LIMITS
+ #
+ ARFLAGS = r
+ #
+diff -N -r -u netgen45_orig/libsrc/makefile.mach.LINUX netgen45_new/libsrc/makefile.mach.LINUX
+--- netgen45_orig/libsrc/makefile.mach.LINUX	2006-04-13 12:58:37.000000000 +0400
++++ netgen45_new/libsrc/makefile.mach.LINUX	2006-04-25 11:55:09.298578593 +0400
+@@ -16,7 +16,7 @@
+ #
+ CFLAGS2 =
+ 
+-CPLUSPLUSFLAGS2 = -O2 -I/usr/include/GL3.5 -DLINUX -DOPENGL \
++CPLUSPLUSFLAGS2 = -O2 -I/usr/include/GL3.5 -DLINUX \
+ 	-ftemplate-depth-99 -finline-limit=10000 \
+ 	-Wdisabled-optimization  -funroll-loops  -DnoNGSOLVE
+ 
+diff -N -r -u netgen45_orig/libsrc/meshing/improve2.cpp netgen45_new/libsrc/meshing/improve2.cpp
+--- netgen45_orig/libsrc/meshing/improve2.cpp	2006-03-29 15:09:49.000000000 +0400
++++ netgen45_new/libsrc/meshing/improve2.cpp	2006-04-25 11:56:02.693420537 +0400
+@@ -4,7 +4,7 @@
+ #include <opti.hpp>
+ 
+ #ifndef SMALLLIB
+-#include <visual.hpp>
++//#include <visual.hpp>
+ #endif
+ 
+ namespace netgen
+diff -N -r -u netgen45_orig/libsrc/occ/occconstruction.cpp netgen45_new/libsrc/occ/occconstruction.cpp
+--- netgen45_orig/libsrc/occ/occconstruction.cpp	2006-04-13 12:58:37.000000000 +0400
++++ netgen45_new/libsrc/occ/occconstruction.cpp	2006-04-25 11:55:09.298578593 +0400
+@@ -28,8 +28,8 @@
+ #include <BRepAlgoAPI_Common.hxx>
+ #include <BRepAlgoAPI_Fuse.hxx>
+ #include <BRepAlgoAPI_Section.hxx>
+-#include <BRepOffsetAPI_Sewing.hxx>
+-#include <BRepAlgo_Sewing.hxx>
++//#include <BRepOffsetAPI_Sewing.hxx>
++//#include <BRepAlgo_Sewing.hxx>
+ #include <BRepOffsetAPI_MakeOffsetShape.hxx>
+ #include <ShapeFix_Shape.hxx>
+ namespace netgen
+diff -N -r -u netgen45_orig/libsrc/occ/occgenmesh.cpp netgen45_new/libsrc/occ/occgenmesh.cpp
+--- netgen45_orig/libsrc/occ/occgenmesh.cpp	2006-04-13 12:58:37.000000000 +0400
++++ netgen45_new/libsrc/occ/occgenmesh.cpp	2006-04-25 11:55:09.300578250 +0400
+@@ -112,7 +112,7 @@
+ 
+   static void FindEdges (OCCGeometry & geom, Mesh & mesh)
+   {
+-    char * savetask = multithread.task;
++    const char * savetask = multithread.task;
+     multithread.task = "Edge meshing";
+ 
+     (*testout) << "edge meshing" << endl;
+@@ -394,7 +394,7 @@
+     int i, j, k;
+     int changed;
+ 
+-    char * savetask = multithread.task;
++    const char * savetask = multithread.task;
+     multithread.task = "Surface meshing";
+   
+     geom.facemeshstatus = 0;
+@@ -779,7 +779,7 @@
+       double nq = n*q;
+     
+       Point<3> p = p0 + 0.5*n;
+-      double lambda = (p-l.p0)*n / nq;
++      double lambda = (fabs(nq) > 1e-10 ? (p-l.p0)*n / nq : -1);
+ 
+       if (lambda >= 0 && lambda <= 1)
+ 	{
+@@ -970,7 +970,7 @@
+ 	if (mparam.uselocalh)
+ 	  {
+ 
+-	    char * savetask = multithread.task;
++	    const char * savetask = multithread.task;
+ 	    multithread.percent = 0;
+ 
+ 	    mesh->SetLocalH (bb.PMin(), bb.PMax(), mparam.grading);
+diff -N -r -u netgen45_orig/libsrc/occ/occgeom.cpp netgen45_new/libsrc/occ/occgeom.cpp
+--- netgen45_orig/libsrc/occ/occgeom.cpp	2006-04-13 12:58:37.000000000 +0400
++++ netgen45_new/libsrc/occ/occgeom.cpp	2006-04-25 11:55:09.301578078 +0400
+@@ -947,13 +947,13 @@
+ 
+   void OCCGeometry :: BuildVisualizationMesh ()
+   {
+-
+-    cout << "Preparing visualization (deflection = " << vispar.occdeflection << ") ... " << flush;
++    double vispar_occdeflection = 0.01;
++    cout << "Preparing visualization (deflection = " << vispar_occdeflection << ") ... " << flush;
+ 
+ 
+     BRepTools::Clean (shape);
+     //WriteOCC_STL("test.stl");
+-    BRepMesh_IncrementalMesh::BRepMesh_IncrementalMesh (shape, vispar.occdeflection, true);
++    BRepMesh_IncrementalMesh::BRepMesh_IncrementalMesh (shape, vispar_occdeflection, true);
+     cout << "done" << endl;
+ 
+ 
+diff -N -r -u netgen45_orig/libsrc/occ/occgeom.hpp netgen45_new/libsrc/occ/occgeom.hpp
+--- netgen45_orig/libsrc/occ/occgeom.hpp	2006-04-13 12:58:37.000000000 +0400
++++ netgen45_new/libsrc/occ/occgeom.hpp	2006-04-25 11:55:09.302577907 +0400
+@@ -69,7 +69,7 @@
+ #include "IGESToBRep_Reader.hxx"
+ #include "Interface_Static.hxx"
+ #include "GeomAPI_ExtremaCurveCurve.hxx"
+-#include "Standard_ErrorHandler.hxx"
++//#include "Standard_ErrorHandler.hxx"
+ #include "Standard_Failure.hxx"
+ #include "ShapeUpgrade_ShellSewing.hxx"
+ #include "ShapeFix_Shape.hxx"
+@@ -88,7 +88,7 @@
+ namespace netgen
+ {
+ 
+-#include "../visualization/vispar.hpp"
++  //#include "../visualization/vispar.hpp"
+   //  class VisualizationParameters;
+   //  extern VisualizationParameters vispar;
+ 
+diff -N -r -u netgen45_orig/makeForSalome.sh netgen45_new/makeForSalome.sh
+--- netgen45_orig/makeForSalome.sh	1970-01-01 03:00:00.000000000 +0300
++++ netgen45_new/makeForSalome.sh	2006-04-25 11:55:09.302577907 +0400
+@@ -0,0 +1,31 @@
++#! /bin/sh
++cp ngtcltk/ngnewdelete.* libsrc/interface/
++
++MACHINE=LINUX
++export MACHINE
++make -C libsrc/csg
++make -C libsrc/general
++make -C libsrc/geom2d
++make -C libsrc/gprim
++make -C libsrc/interface
++make -C libsrc/linalg
++make -C libsrc/meshing
++make -C libsrc/opti
++make -C libsrc/stlgeom
++make -C libsrc/occ
++
++if [ ! -d install ] ; then
++	mkdir install
++fi
++
++cp -r lib install/
++
++if [ ! -d install/include ] ; then
++	mkdir install/include
++fi
++
++cp libsrc/interface/nglib.h libsrc/general/*.hpp libsrc/csg/*.hpp libsrc/geom2d/*.hpp \
++    libsrc/gprim/*.hpp libsrc/linalg/*.hpp libsrc/meshing/*.hpp \
++    libsrc/occ/*.hpp libsrc/opti/*.hpp libsrc/include/mydefs.hpp \
++    libsrc/stlgeom/*.hpp libsrc/include/mystdlib.h \
++    install/include

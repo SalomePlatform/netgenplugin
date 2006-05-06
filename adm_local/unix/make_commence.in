@@ -105,6 +105,7 @@ OCC_VIEWER_LIBS=@CAS_VIEWER@
 OCC_MODELER_LIBS=@CAS_MODELER@
 OCC_DATAEXCHANGE_LIBS=@CAS_DATAEXCHANGE@
 OCC_LIBS=@CAS_LDFLAGS@
+OCC_LDPATH=@CAS_LDPATH@
 
 # MPICH
 
@@ -234,7 +235,13 @@ all:
 Makefile: $(top_builddir)/config.status $(srcdir)/Makefile.in
 	cd $(top_builddir) ; ./config.status
 
-$(top_builddir)/config.status: $(top_srcdir)/configure
+LOCAL_MAKE = make_commence make_omniorb
+
+KERNEL_MAKE = make_module make_conclude depend SALOMEconfig.h F77config.h sstream envScript
+
+$(top_builddir)/config.status: $(top_srcdir)/configure \
+			       $(LOCAL_MAKE:%=$(top_srcdir)/adm_local/unix/%.in) \
+			       $(KERNEL_MAKE:%=$(KERNEL_ROOT_DIR)/salome_adm/unix/%.in)
 	cd $(top_builddir) ; ./config.status --recheck
 
 # VPATH contain $(srcdir), so make configure is good in top_srcdir and we must add target configure otherwise :-)
@@ -249,7 +256,7 @@ $(top_srcdir)/configure.in: $(top_srcdir)/configure.in.base
 	cd $(top_srcdir) && ./build_configure
 
 
-ACLOCAL_SRC = \
+ACLOCAL_KERNEL = \
 ac_cxx_bool.m4                    check_corba.m4			\
 ac_cxx_depend_flag.m4             check_hdf5.m4      enable_pthreads.m4	\
 ac_cxx_mutable.m4                 check_mico.m4      libtool.m4		\
@@ -270,11 +277,11 @@ ACLOCAL_GEOM =                    check_GEOM.m4
 
 ACLOCAL_SMESH =                   check_SMESH.m4
 
-$(top_srcdir)/aclocal.m4: $(ACLOCAL_SRC:%=@KERNEL_ROOT_DIR@/salome_adm/unix/config_files/%) \
+$(top_srcdir)/aclocal.m4: $(ACLOCAL_KERNEL%=@KERNEL_ROOT_DIR@/salome_adm/unix/config_files/%) \
                           $(ACLOCAL_GUI:%=@GUI_ROOT_DIR@/adm_local/unix/config_files/%) \
                           $(ACLOCAL_GEOM:%=@GEOM_ROOT_DIR@/adm_local/unix/config_files/%) \
                           $(ACLOCAL_SMESH:%=@SMESH_ROOT_DIR@/adm_local/unix/config_files/%)
-	cd $(top_srcdir) ; aclocal --acdir=adm_local/unix/config_files -I @KERNEL_ROOT_DIR@/salome_adm/unix/config_files \
+	cd $(top_srcdir) ; aclocal -I adm_local/unix/config_files -I @KERNEL_ROOT_DIR@/salome_adm/unix/config_files \
                                                                        -I @GUI_ROOT_DIR@/adm_local/unix/config_files \
                                                                        -I @GEOM_ROOT_DIR@/adm_local/unix/config_files \
                                                                        -I @SMESH_ROOT_DIR@/adm_local/unix/config_files

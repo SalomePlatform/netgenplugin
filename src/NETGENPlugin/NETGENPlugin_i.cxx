@@ -30,6 +30,16 @@ using namespace std;
 #include "utilities.h"
 
 #include "NETGENPlugin_NETGEN_3D_i.hxx"
+#include "NETGENPlugin_NETGEN_2D_i.hxx"
+#include "NETGENPlugin_NETGEN_2D3D_i.hxx"
+#include "NETGENPlugin_Hypothesis_i.hxx"
+#include "NETGENPlugin_Hypothesis_2D_i.hxx"
+
+template <class T> class NETGENPlugin_Creator_i:public HypothesisCreator_i<T>
+{
+  // as we have 'module NETGENPlugin' in NETGENPlugin_Algorithm.idl
+  virtual std::string GetModuleName() { return "NETGENPlugin"; }
+};
 
 //=============================================================================
 /*!
@@ -49,7 +59,16 @@ extern "C"
 
     // Algorithms
     if (strcmp(aHypName, "NETGEN_3D") == 0)
-      aCreator = new HypothesisCreator_i<NETGENPlugin_NETGEN_3D_i>;
+      aCreator = new NETGENPlugin_Creator_i<NETGENPlugin_NETGEN_3D_i>;
+    else if (strcmp(aHypName, "NETGEN_2D") == 0)
+      aCreator = new NETGENPlugin_Creator_i<NETGENPlugin_NETGEN_2D_i>;
+    else if (strcmp(aHypName, "NETGEN_2D3D") == 0)
+      aCreator = new NETGENPlugin_Creator_i<NETGENPlugin_NETGEN_2D3D_i>;
+    // Hypotheses
+    else if (strcmp(aHypName, "NETGEN_Parameters") == 0)
+      aCreator = new NETGENPlugin_Creator_i<NETGENPlugin_Hypothesis_i>;
+    else if (strcmp(aHypName, "NETGEN_Parameters_2D") == 0)
+      aCreator = new NETGENPlugin_Creator_i<NETGENPlugin_Hypothesis_2D_i>;
     else ;
 
     return aCreator;

@@ -1,0 +1,84 @@
+#  Copyright (C) 2005  OPEN CASCADE, EADS/CCR, LIP6, CEA/DEN,
+#  CEDRAT, EDF R&D, LEG, PRINCIPIA R&D, BUREAU VERITAS, L3S, LJLL, MENSI
+#
+#  This library is free software; you can redistribute it and/or
+#  modify it under the terms of the GNU Lesser General Public
+#  License as published by the Free Software Foundation; either
+#  version 2.1 of the License.
+#
+#  This library is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+#  Lesser General Public License for more details.
+#
+#  You should have received a copy of the GNU Lesser General Public
+#  License along with this library; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
+#
+#  See http://www.salome-platform.org/
+#
+# This is a Qt message file in .po format.  Each msgid starts with
+# a scope.  This scope should *NOT* be translated - eg. "Foo::Bar"
+# would be translated to "Pub", not "Foo::Pub".
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"POT-Creation-Date: 2002-05-28 10:46:48 AM CEST\n"
+"PO-Revision-Date: YYYY-MM-DD\n"
+"Last-Translator: FULLNAME <EMAIL@ADDRESS>\n"
+"Content-Type: text/plain; charset=iso-8859-1\n"
+
+
+msgid "NETGEN_MAX_SIZE"
+msgstr "Max. Size"
+
+msgid "NETGEN_SECOND_ORDER"
+msgstr "Second Order"
+
+msgid "NETGEN_OPTIMIZE"
+msgstr "Optimize"
+
+msgid "NETGEN_FINENESS"
+msgstr "Fineness"
+
+msgid "NETGEN_VERYCOARSE"
+msgstr "Very Coarse"
+
+msgid "NETGEN_COARSE"
+msgstr "Coarse"
+
+msgid "NETGEN_MODERATE"
+msgstr "Moderate"
+
+msgid "NETGEN_FINE"
+msgstr "Fine"
+
+msgid "NETGEN_VERYFINE"
+msgstr "Very Fine"
+
+msgid "NETGEN_CUSTOM"
+msgstr "Custom"
+
+msgid "NETGEN_GROWTH_RATE"
+msgstr "Growth Rate"
+
+msgid "NETGEN_SEG_PER_EDGE"
+msgstr "Nb. Segs per Edge"
+
+msgid "NETGEN_SEG_PER_RADIUS"
+msgstr "Nb. Segs per Radius"
+
+msgid "NETGEN_ALLOW_QUADRANGLES"
+msgstr "Allow Quadrangles"
+
+msgid "NETGEN_2D_HYPOTHESIS"
+msgstr "Netgen 2D"
+
+msgid "NETGEN_3D_HYPOTHESIS"
+msgstr "Netgen 3D"
+
+msgid "NETGEN_2D_TITLE"
+msgstr "Hypothesis Construction"
+
+msgid "NETGEN_3D_TITLE"
+msgstr "Hypothesis Construction"

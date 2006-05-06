@@ -17,15 +17,11 @@
 #
 #  See http://www.salome-platform.org/
 #
-# -* Makefile *- 
-#
-# Author : Edward AGAPOV (OCC)
-# Module : NETGENPLUGIN
-# Date : 10/01/2004
-#
-#
+#  File   : Makefile.in
+#  Author : Michael Sazonov
+#  Module : NETGENPLUGIN
+#  $Header$
 
-# source path
 top_srcdir=@top_srcdir@
 top_builddir=../..
 srcdir=@srcdir@
@@ -33,34 +29,46 @@ VPATH=.:@srcdir@:@top_srcdir@/idl:$(top_builddir)/idl:${KERNEL_ROOT_DIR}/idl/sal
 
 @COMMENCE@
 
-LIB_SRC = \
-	NETGENPlugin_NETGEN_3D.cxx \
-	NETGENPlugin_NETGEN_3D_i.cxx \
-	NETGENPlugin_NETGEN_2D.cxx \
-	NETGENPlugin_NETGEN_2D_i.cxx \
-	NETGENPlugin_NETGEN_2D3D.cxx \
-	NETGENPlugin_NETGEN_2D3D_i.cxx \
-	NETGENPlugin_Hypothesis.cxx \
-	NETGENPlugin_Hypothesis_i.cxx \
-	NETGENPlugin_Hypothesis_2D.cxx \
-	NETGENPlugin_Hypothesis_2D_i.cxx \
-	NETGENPlugin_Mesher.cxx \
-	NETGENPlugin_i.cxx
+# .po files to transform in .qm
+PO_FILES = \
+	NETGENPlugin_images.po \
+	NETGENPlugin_msg_en.po
 
-LIB_SERVER_IDL = NETGENPlugin_Algorithm.idl
+# Libraries targets
+LIB = libNETGENPluginGUI.la
+
+LIB_SRC = \
+	NETGENPluginGUI.cxx \
+	NETGENPluginGUI_HypothesisCreator.cxx
+
+LIB_MOC = \
+	NETGENPluginGUI_HypothesisCreator.h
 
 LIB_CLIENT_IDL = \
+	SALOME_Exception.idl \
+	SALOME_GenericObj.idl \
 	SALOME_Component.idl \
 	SALOME_Comm.idl \
 	GEOM_Gen.idl \
-	MED.idl
+	MED.idl \
+	SMESH_Gen.idl \
+	SMESH_Mesh.idl \
+	SMESH_Group.idl \
+	NETGENPlugin_Algorithm.idl
 
-# Libraries targets
-LIB = libNETGENEngine.la
+LIB_SERVER_IDL = 
 
-NETGEN_INCLUDES = @NETGEN_INCLUDES@
-CPPFLAGS += $(NETGEN_INCLUDES)
-CXXFLAGS += $(NETGEN_INCLUDES)
-LDFLAGS  += -lNETGEN
+# additionnal information to compil and link file
+
+CPPFLAGS += $(QT_INCLUDES) $(OCC_INCLUDES) $(PYTHON_INCLUDES) \
+	    -I${KERNEL_ROOT_DIR}/include/salome -I${GUI_ROOT_DIR}/include/salome \
+	    -I${GEOM_ROOT_DIR}/include/salome -I${SMESH_ROOT_DIR}/include/salome \
+	     $(BOOST_CPPFLAGS)
+CXXFLAGS += -I${KERNEL_ROOT_DIR}/include/salome -I${GUI_ROOT_DIR}/include/salome \
+	    -I${GEOM_ROOT_DIR}/include/salome  -I${SMESH_ROOT_DIR}/include/salome
+
+LDFLAGS += -lSMESH $(OCC_KERNEL_LIBS) -L${KERNEL_ROOT_DIR}/lib/salome \
+	   -L${GUI_ROOT_DIR}/lib/salome -L${GEOM_ROOT_DIR}/lib/salome \
+	   -L${SMESH_ROOT_DIR}/lib/salome
 
 @CONCLUDE@

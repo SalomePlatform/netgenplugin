@@ -1,3 +1,22 @@
+// Copyright (C) 2005  OPEN CASCADE, EADS/CCR, LIP6, CEA/DEN,
+// CEDRAT, EDF R&D, LEG, PRINCIPIA R&D, BUREAU VERITAS, L3S, LJLL, MENSI
+//
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 2.1 of the License.
+//
+// This library is distributed in the hope that it will be useful
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
+//
+// See http://www.salome-platform.org/
+//
 //=============================================================================
 // File      : NETGENPlugin_NETGEN_3D.cxx
 //             Moved here from SMESH_NETGEN_3D.cxx
@@ -17,7 +36,7 @@ using namespace std;
 #include "SMESHDS_Mesh.hxx"
 #include "SMDS_MeshElement.hxx"
 #include "SMDS_MeshNode.hxx"
-#include "StdMeshers_Helper.hxx"
+#include "SMESH_MesherHelper.hxx"
 
 #include <BRep_Tool.hxx>
 #include <TopExp.hxx>
@@ -34,7 +53,10 @@ using namespace std;
   Netgen include files
 */
 
-#include "nglib.h"
+namespace nglib {
+#include <nglib.h>
+}
+using namespace nglib;
 
 //=============================================================================
 /*!
@@ -138,7 +160,7 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
   // get triangles on aShell and make a map of nodes to Netgen node IDs
   // -------------------------------------------------------------------
 
-  StdMeshers_Helper* myTool = new StdMeshers_Helper(aMesh);
+  SMESH_MesherHelper* myTool = new SMESH_MesherHelper(aMesh);
   bool _quadraticMesh = myTool->IsQuadraticSubMesh(aShape);
 
   typedef map< const SMDS_MeshNode*, int> TNodeToIDMap;

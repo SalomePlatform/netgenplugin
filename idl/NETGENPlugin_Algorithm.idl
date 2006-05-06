@@ -40,6 +40,56 @@ module NETGENPlugin
   {
   };
 
+  /*!
+   * NETGENPlugin_NETGEN_2D: interface of "1D-2D (Netgen)" algorithm
+   */
+  interface NETGENPlugin_NETGEN_2D : SMESH::SMESH_2D_Algo
+  {
+  };
+
+  /*!
+   * NETGENPlugin_NETGEN_2D3D: interface of "1D-2D-3D (Netgen)" algorithm
+   */
+  interface NETGENPlugin_NETGEN_2D3D : SMESH::SMESH_3D_Algo
+  {
+  };
+
+  /*!
+   * NETGENPlugin_Hypothesis: interface of "NETGEN parameters" hypothesis
+   */
+  interface NETGENPlugin_Hypothesis : SMESH::SMESH_Hypothesis
+  {
+    void SetMaxSize(in double value);
+    double GetMaxSize();
+
+    void SetSecondOrder(in boolean value);
+    boolean GetSecondOrder();
+
+    void SetOptimize(in boolean value);
+    boolean GetOptimize();
+
+    void SetFineness(in long value);
+    long GetFineness();
+
+    void SetGrowthRate(in double value);
+    double GetGrowthRate();
+
+    void SetNbSegPerEdge(in double value);
+    double GetNbSegPerEdge();
+
+    void SetNbSegPerRadius(in double value);
+    double GetNbSegPerRadius();
+  };
+
+  /*!
+   * NETGENPlugin_Hypothesis_2D: interface of "NETGEN 2D parameters" hypothesis
+   */
+  interface NETGENPlugin_Hypothesis_2D : NETGENPlugin_Hypothesis
+  {
+    void SetQuadAllowed(in boolean value);
+    boolean GetQuadAllowed();
+  };
+
 };
 
 #endif

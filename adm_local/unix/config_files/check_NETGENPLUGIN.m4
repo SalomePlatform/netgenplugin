@@ -3,7 +3,7 @@ AC_DEFUN([CHECK_NETGEN],[
 AC_REQUIRE([AC_PROG_CXX])dnl
 AC_REQUIRE([AC_PROG_CXXCPP])dnl
 
-AC_CHECKING(for Netgen Libraries)
+AC_CHECKING(for Netgen 4.5 and higher Libraries)
 
 AC_LANG_SAVE
 AC_LANG_CPLUSPLUS
@@ -57,8 +57,8 @@ if test "x$NETGEN_HOME" != "x"; then
 
   CPPFLAGS_old="$CPPFLAGS"
   CXXFLAGS_old="$CXXFLAGS"
-  CPPFLAGS="$NETGEN_INCLUDES $CPPFLAGS"
-  CXXFLAGS="$NETGEN_INCLUDES $CXXFLAGS"
+  CPPFLAGS="$NETGEN_INCLUDES $CAS_CPPFLAGS $CPPFLAGS"
+  CXXFLAGS="$NETGEN_INCLUDES $CAS_CPPFLAGS $CXXFLAGS"
 
   AC_MSG_CHECKING(for Netgen header file)
 
@@ -68,13 +68,19 @@ if test "x$NETGEN_HOME" != "x"; then
     AC_MSG_CHECKING(for Netgen libraries)
 
     LDFLAGS_old="$LDFLAGS"
-    LDFLAGS="-L. -lNETGEN $LDFLAGS"
+    LDFLAGS="-L. -lNETGEN $CAS_LDPATH -lTKBRep -lTKShHealing -lTKSTEP -lTKXSBase -lTKIGES -lTKSTL -lTKTopAlgo $LDFLAGS"
 
     AC_TRY_COMPILE(#include <iostream.h>
 #include <fstream.h>
+namespace nglib {
 #include "nglib.h"
-,Ng_Init();
- Ng_Exit();,Netgen_ok=yes;ar x "$NETGEN_LIBS_DIR/libnginterface.a";
+}
+#define OCCGEOMETRY
+#include <occgeom.hpp>
+,nglib::Ng_Init();
+ netgen::OCCGeometry occgeo;
+ nglib::Ng_Exit();,Netgen_ok=yes;ar x "$NETGEN_LIBS_DIR/libnginterface.a";
+	    ar x "$NETGEN_LIBS_DIR/libocc.a";
             ar x "$NETGEN_LIBS_DIR/libcsg.a";
             ar x "$NETGEN_LIBS_DIR/libgprim.a";
             ar x "$NETGEN_LIBS_DIR/libmesh.a";
@@ -83,17 +89,22 @@ if test "x$NETGEN_HOME" != "x"; then
             ar x "$NETGEN_LIBS_DIR/libla.a";
             ar x "$NETGEN_LIBS_DIR/libstlgeom.a";
             ar x "$NETGEN_LIBS_DIR/libgeom2d.a";
-            $CXX -shared linopt.o bfgs.o linsearch.o global.o bisect.o meshtool.o refine.o ruler3.o improve3.o adfront3.o tetrarls.o prism2rls.o pyramidrls.o pyramid2rls.o netrule3.o ruler2.o meshclass.o improve2.o adfront2.o netrule2.o triarls.o geomsearch.o secondorder.o meshtype.o parser3.o quadrls.o specials.o parser2.o meshing2.o meshing3.o meshfunc.o localh.o improve2gen.o delaunay.o boundarylayer.o msghandler.o meshfunc2d.o smoothing2.o smoothing3.o topology.o curvedelems.o clusters.o zrefine.o ngexception.o geomtest3d.o geom2d.o geom3d.o adtree.o transform3d.o geomfuncs.o polynomial.o densemat.o vector.o basemat.o sparsmat.o algprim.o brick.o manifold.o bspline2d.o meshsurf.o csgeom.o polyhedra.o curve2d.o singularref.o edgeflw.o solid.o explicitcurve2d.o specpoin.o gencyl.o revolution.o genmesh.o spline3d.o surface.o identify.o triapprox.o meshstlsurface.o stlline.o stltopology.o stltool.o stlgeom.o stlgeomchart.o stlgeommesh.o table.o optmem.o spbita2d.o hashtabl.o sort.o flags.o seti.o bitarray.o array.o symbolta.o mystring.o moveablemem.o spline2d.o splinegeometry2.o ngnewdelete.o nglib.o -o libNETGEN.so;
-            rm -rf adfront2.o adfront3.o adtree.o algprim.o array.o basemat.o bfgs.o bisect.o bitarray.o boundarylayer.o brick.o bspline2d.o clusters.o csgeom.o csgparser.o curve2d.o curvedelems.o delaunay.o densemat.o dynamicmem.o edgeflw.o explicitcurve2d.o extrusion.o flags.o gencyl.o genmesh.o geom2dmesh.o geom2d.o geom3d.o geomfuncs.o geomsearch.o geomtest3d.o global.o hashtabl.o hprefinement.o identify.o importsolution.o improve2gen.o improve2.o improve3.o linopt.o linsearch.o localh.o manifold.o meshclass.o meshfunc2d.o meshfunc.o meshing2.o meshing3.o meshstlsurface.o meshsurf.o meshtool.o meshtype.o moveablemem.o msghandler.o mystring.o netrule2.o netrule3.o ngexception.o nglib.o ngnewdelete.o optmem.o parser2.o parser3.o parthreads.o polyhedra.o polynomial.o prism2rls.o pyramid2rls.o pyramidrls.o quadrls.o readuser.o refine.o revolution.o ruler2.o ruler3.o secondorder.o seti.o singularref.o smoothing2.o smoothing3.o solid.o sort.o sparsmat.o spbita2d.o specials.o specpoin.o spline2d.o spline3d.o splinegeometry2.o stlgeomchart.o stlgeommesh.o stlgeom.o stlline.o stltool.o stltopology.o surface.o symbolta.o table.o tetrarls.o topology.o transform3d.o triapprox.o triarls.o vector.o writeabaqus.o writediffpack.o writefeap.o writefluent.o writepermas.o writetecplot.o writetochnog.o writeuser.o wuchemnitz.o zrefine.o,
+            $CXX -shared linopt.o bfgs.o linsearch.o global.o bisect.o meshtool.o refine.o ruler3.o improve3.o adfront3.o tetrarls.o prism2rls.o profiler.o pyramidrls.o pyramid2rls.o netrule3.o ruler2.o meshclass.o improve2.o adfront2.o netrule2.o triarls.o geomsearch.o secondorder.o meshtype.o parser3.o quadrls.o specials.o parser2.o meshing2.o meshing3.o meshfunc.o localh.o improve2gen.o delaunay.o boundarylayer.o msghandler.o meshfunc2d.o smoothing2.o smoothing3.o topology.o curvedelems_new.o clusters.o zrefine.o ngexception.o geomtest3d.o geom2d.o geom2dmesh.o geom3d.o adtree.o transform3d.o geomfuncs.o polynomial.o densemat.o vector.o basemat.o sparsmat.o algprim.o brick.o manifold.o bspline2d.o meshsurf.o csgeom.o polyhedra.o curve2d.o singularref.o edgeflw.o solid.o explicitcurve2d.o specpoin.o gencyl.o revolution.o genmesh.o genmesh2d.o spline3d.o surface.o identify.o triapprox.o meshstlsurface.o stlline.o stltopology.o stltool.o stlgeom.o stlgeomchart.o stlgeommesh.o table.o optmem.o spbita2d.o hashtabl.o sort.o flags.o seti.o bitarray.o array.o symbolta.o mystring.o moveablemem.o spline.o splinegeometry.o ngnewdelete.o nglib.o hprefinement.o Partition_Inter2d.o Partition_Loop.o Partition_Loop3d.o Partition_Inter3d.o Partition_Loop2d.o Partition_Spliter.o occgeom.o occgenmesh.o occmeshsurf.o -o libNETGEN.so;
+            rm -rf linopt.o bfgs.o linsearch.o global.o bisect.o meshtool.o refine.o ruler3.o improve3.o adfront3.o tetrarls.o prism2rls.o profiler.o pyramidrls.o pyramid2rls.o netrule3.o ruler2.o meshclass.o improve2.o adfront2.o netrule2.o triarls.o geomsearch.o secondorder.o meshtype.o parser3.o quadrls.o specials.o parser2.o meshing2.o meshing3.o meshfunc.o localh.o improve2gen.o delaunay.o boundarylayer.o msghandler.o meshfunc2d.o smoothing2.o smoothing3.o topology.o curvedelems_new.o clusters.o zrefine.o ngexception.o geomtest3d.o geom2d.o geom2dmesh.o geom3d.o adtree.o transform3d.o geomfuncs.o polynomial.o densemat.o vector.o basemat.o sparsmat.o algprim.o brick.o manifold.o bspline2d.o meshsurf.o csgeom.o polyhedra.o curve2d.o singularref.o edgeflw.o solid.o explicitcurve2d.o specpoin.o gencyl.o revolution.o genmesh.o genmesh2d.o spline3d.o surface.o identify.o triapprox.o meshstlsurface.o stlline.o stltopology.o stltool.o stlgeom.o stlgeomchart.o stlgeommesh.o table.o optmem.o spbita2d.o hashtabl.o sort.o flags.o seti.o bitarray.o array.o symbolta.o mystring.o moveablemem.o spline.o splinegeometry.o ngnewdelete.o nglib.o hprefinement.o Partition_Inter2d.o Partition_Loop.o Partition_Loop3d.o Partition_Inter3d.o Partition_Loop2d.o Partition_Spliter.o occgeom.o occgenmesh.o occmeshsurf.o csgparser.o dynamicmem.o extrusion.o occconstruction.o parthreads.o readuser.o writeabaqus.o writediffpack.o writeelmer.o writefeap.o writefluent.o writegmsh.o writejcm.o writepermas.o writetecplot.o writetochnog.o writeuser.o wuchemnitz.o,
             Netgen_ok=no)
 
     AC_CACHE_VAL(salome_netgen_lib,[
                  AC_TRY_LINK(
 #include <iostream.h>
 #include <fstream.h>
+namespace nglib {
 #include "nglib.h"
-,Ng_Init();
- Ng_Exit();,
+}
+#define OCCGEOMETRY
+#include <occgeom.hpp>
+,nglib::Ng_Init();
+ netgen::OCCGeometry occgeo;
+ nglib::Ng_Exit();,
     eval "salome_netgen_lib=yes";rm -rf libNETGEN.so,eval "salome_netgen_lib=no";rm -rf libNETGEN.so)
   ])
     Netgen_ok="$salome_netgen_lib"
