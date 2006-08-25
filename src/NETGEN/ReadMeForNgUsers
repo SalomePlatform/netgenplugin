@@ -9,6 +9,11 @@ Patch the netgen 4.5 distribution:
 $ cd netgen45
 $ patch -p1 < patch_directory/netgen45ForSalome.patch
 
+Set CASROOT environment variable to OCCT installation path,
+as Netgen 4.5 uses Open CASCADE Technology:
+
+$ setenv CASROOT <occt_installation_path>
+
 Then run makeForSalome.sh (it will be created by the patch):
 $ sh makeForSalome.sh
 
@@ -72,7 +77,7 @@ nglib.o and ngnewdelete.o to the library libnginterface.a and
 recompile the libraries only.
 All this job is done by applying the patch and running the script makeForSalome.sh.
 
-Th suggested patch alters some Netgen sources to compile them.
+The suggested patch alters some Netgen sources to compile them.
 
 Michael SAZONOV
 m-sazonov@opencascade.com
