@@ -52,6 +52,9 @@ LIB_SERVER_IDL = NETGENPlugin_Algorithm.idl
 LIB_CLIENT_IDL = \
 	SALOME_Component.idl \
 	SALOME_Comm.idl \
+	SALOME_Exception.idl \
+	SALOME_GenericObj.idl \
+	SMESH_Hypothesis.idl \
 	GEOM_Gen.idl \
 	MED.idl
 
