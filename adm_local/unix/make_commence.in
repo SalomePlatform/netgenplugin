@@ -12,7 +12,7 @@ HAVE_SSTREAM=@HAVE_SSTREAM@
 
 
 LIBS=@LIBS@ 
-LDFLAGS=@LDFLAGS@ -L$(top_builddir)/lib/salome -Xlinker -rpath-link -Xlinker $(top_builddir)/lib/salome
+LDFLAGS=@LDFLAGS@ -L$(top_builddir)/lib@LIB_LOCATION_SUFFIX@/salome -Xlinker -rpath-link -Xlinker $(top_builddir)/lib@LIB_LOCATION_SUFFIX@/salome
 # add libstdc++ to link c++ library with libtool !
 LDFLAGS+= -lstdc++
 
@@ -175,7 +175,7 @@ SALOME_INCLUDES = \
 CPPFLAGS += -DSOLIDGEOM -DLINUX $(OCC_INCLUDES) $(SALOME_INCLUDES) $(BOOST_CPPFLAGS)
 CXXFLAGS += -DSOLIDGEOM -DLINUX $(OCC_CXXFLAGS) $(SALOME_INCLUDES)
 
-LDFLAGS += -lSMESHimpl -lSMESHEngine -lStdMeshers -lStdMeshersEngine -L${KERNEL_ROOT_DIR}/lib/salome -L${SMESH_ROOT_DIR}/lib/salome -L${GEOM_ROOT_DIR}/lib/salome -lSalomeGenericObj
+LDFLAGS += -lSMESHimpl -lSMESHEngine -lStdMeshers -lStdMeshersEngine -L${KERNEL_ROOT_DIR}/lib@LIB_LOCATION_SUFFIX@/salome -L${SMESH_ROOT_DIR}/lib@LIB_LOCATION_SUFFIX@/salome -L${GEOM_ROOT_DIR}/lib@LIB_LOCATION_SUFFIX@/salome -lSalomeGenericObj
 
 # add corba libs when link salome application ! 
 #LDFLAGS+= $(CORBA_LIBS)
@@ -205,7 +205,7 @@ LN_S=@LN_S@
 prefix=@prefix@
 exec_prefix=@exec_prefix@
 bindir=@bindir@/salome
-libdir=@libdir@/salome
+libdir=@exec_prefix@/lib@LIB_LOCATION_SUFFIX@/salome
 # warning : if user give this path in configure we could have salome/salome :-(
 includedir=@includedir@/salome
 datadir=@datadir@/salome
