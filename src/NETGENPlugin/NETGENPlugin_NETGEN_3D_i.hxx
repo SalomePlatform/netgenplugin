@@ -30,6 +30,8 @@
 #ifndef _NETGENPlugin_NETGEN_3D_I_HXX_
 #define _NETGENPlugin_NETGEN_3D_I_HXX_
 
+#include "NETGENPlugin_Defs.hxx"
+
 #include <SALOMEconfig.h>
 #include CORBA_SERVER_HEADER(NETGENPlugin_Algorithm)
 
@@ -39,7 +41,7 @@
 // ======================================================
 // NETGEN 3d algorithm
 // ======================================================
-class NETGENPlugin_NETGEN_3D_i:
+class NETGENPLUGIN_EXPORT NETGENPlugin_NETGEN_3D_i:
   public virtual POA_NETGENPlugin::NETGENPlugin_NETGEN_3D,
   public virtual SMESH_3D_Algo_i
 {

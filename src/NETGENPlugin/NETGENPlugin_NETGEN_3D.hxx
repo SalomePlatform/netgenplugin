@@ -23,19 +23,20 @@
 // Created   : lundi 27 Janvier 2003
 // Author    : Nadir BOUHAMOU (CEA)
 // Project   : SALOME
-// Copyright : CEA 2003
 // $Header$
 //=============================================================================
 
 #ifndef _NETGENPlugin_NETGEN_3D_HXX_
 #define _NETGENPlugin_NETGEN_3D_HXX_
 
+#include "NETGENPlugin_Defs.hxx"
+
 #include "SMESH_3D_Algo.hxx"
 #include "SMESH_Mesh.hxx"
 #include "StdMeshers_MaxElementVolume.hxx"
 #include "Utils_SALOME_Exception.hxx"
 
-class NETGENPlugin_NETGEN_3D: public SMESH_3D_Algo
+class NETGENPLUGIN_EXPORT NETGENPlugin_NETGEN_3D: public SMESH_3D_Algo
 {
 public:
   NETGENPlugin_NETGEN_3D(int hypId, int studyId, SMESH_Gen* gen);

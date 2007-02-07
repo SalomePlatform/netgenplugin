@@ -52,6 +52,9 @@ LIB_SERVER_IDL = NETGENPlugin_Algorithm.idl
 LIB_CLIENT_IDL = \
 	SALOME_Component.idl \
 	SALOME_Comm.idl \
+	SALOME_Exception.idl \
+	SALOME_GenericObj.idl \
+	SMESH_Hypothesis.idl \
 	GEOM_Gen.idl \
 	MED.idl
 
@@ -61,6 +64,6 @@ LIB = libNETGENEngine.la
 NETGEN_INCLUDES = @NETGEN_INCLUDES@
 CPPFLAGS += $(NETGEN_INCLUDES)
 CXXFLAGS += $(NETGEN_INCLUDES)
-LDFLAGS  += -lNETGEN
+LDFLAGS  +=  -L${NETGENPLUGIN_ROOT_DIR}/lib@LIB_LOCATION_SUFFIX@/salome -lNETGEN
 
 @CONCLUDE@

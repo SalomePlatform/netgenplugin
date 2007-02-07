@@ -25,8 +25,6 @@
 // Project   : SALOME
 // $Header$
 //=============================================================================
-using namespace std;
-
 #include "NETGENPlugin_Mesher.hxx"
 #include "NETGENPlugin_Hypothesis_2D.hxx"
 
@@ -56,6 +54,8 @@ namespace netgen {
   extern MeshingParameters mparam;
 }
 
+using namespace std;
+
 //=============================================================================
 /*!
  *
@@ -70,22 +70,27 @@ NETGENPlugin_Mesher::NETGENPlugin_Mesher (SMESHDS_Mesh* meshDS,
     _isVolume(isVolume),
     _optimize(true)
 {
+#ifdef WNT
+  netgen::MeshingParameters& mparams = netgen::GlobalMeshingParameters();
+#else
+  netgen::MeshingParameters& mparams = netgen::mparam;
+#endif
   // Initialize global NETGEN parameters by default values:
   // maximal mesh edge size
-  netgen::mparam.maxh = NETGENPlugin_Hypothesis::GetDefaultMaxSize();
+  mparams.maxh = NETGENPlugin_Hypothesis::GetDefaultMaxSize();
   // minimal number of segments per edge
-  netgen::mparam.segmentsperedge = NETGENPlugin_Hypothesis::GetDefaultNbSegPerEdge();
+  mparams.segmentsperedge = NETGENPlugin_Hypothesis::GetDefaultNbSegPerEdge();
   // rate of growth of size between elements
-  netgen::mparam.grading = NETGENPlugin_Hypothesis::GetDefaultGrowthRate();
+  mparams.grading = NETGENPlugin_Hypothesis::GetDefaultGrowthRate();
   // safety factor for curvatures (elements per radius)
-  netgen::mparam.curvaturesafety = NETGENPlugin_Hypothesis::GetDefaultNbSegPerRadius();
+  mparams.curvaturesafety = NETGENPlugin_Hypothesis::GetDefaultNbSegPerRadius();
   // create elements of second order
-  netgen::mparam.secondorder = NETGENPlugin_Hypothesis::GetDefaultSecondOrder() ? 1 : 0;
+  mparams.secondorder = NETGENPlugin_Hypothesis::GetDefaultSecondOrder() ? 1 : 0;
   // quad-dominated surface meshing
   if (_isVolume)
-    netgen::mparam.quad = 0;
+    mparams.quad = 0;
   else
-    netgen::mparam.quad = NETGENPlugin_Hypothesis_2D::GetDefaultQuadAllowed() ? 1 : 0;
+    mparams.quad = NETGENPlugin_Hypothesis_2D::GetDefaultQuadAllowed() ? 1 : 0;
 }
 
 //=============================================================================
@@ -97,21 +102,26 @@ void NETGENPlugin_Mesher::SetParameters(const NETGENPlugin_Hypothesis* hyp)
 {
   if (hyp)
   {
+#ifdef WNT
+    netgen::MeshingParameters& mparams = netgen::GlobalMeshingParameters();
+#else
+    netgen::MeshingParameters& mparams = netgen::mparam;
+#endif
     // Initialize global NETGEN parameters:
     // maximal mesh segment size
-    netgen::mparam.maxh = hyp->GetMaxSize();
+    mparams.maxh = hyp->GetMaxSize();
     // minimal number of segments per edge
-    netgen::mparam.segmentsperedge = hyp->GetNbSegPerEdge();
+    mparams.segmentsperedge = hyp->GetNbSegPerEdge();
     // rate of growth of size between elements
-    netgen::mparam.grading = hyp->GetGrowthRate();
+    mparams.grading = hyp->GetGrowthRate();
     // safety factor for curvatures (elements per radius)
-    netgen::mparam.curvaturesafety = hyp->GetNbSegPerRadius();
+    mparams.curvaturesafety = hyp->GetNbSegPerRadius();
     // create elements of second order
-    netgen::mparam.secondorder = hyp->GetSecondOrder() ? 1 : 0;
+    mparams.secondorder = hyp->GetSecondOrder() ? 1 : 0;
     // quad-dominated surface meshing
     // only triangles are allowed for volumic mesh
     if (!_isVolume)
-      netgen::mparam.quad = static_cast<const NETGENPlugin_Hypothesis_2D*>
+      mparams.quad = static_cast<const NETGENPlugin_Hypothesis_2D*>
         (hyp)->GetQuadAllowed() ? 1 : 0;
     _optimize = hyp->GetOptimize();
   }
@@ -147,14 +157,19 @@ Standard_Boolean IsEqual(const Link& aLink1, const Link& aLink2)
 //=============================================================================
 bool NETGENPlugin_Mesher::Compute()
 {
+#ifdef WNT
+  netgen::MeshingParameters& mparams = netgen::GlobalMeshingParameters();
+#else
+  netgen::MeshingParameters& mparams = netgen::mparam;
+#endif  
   MESSAGE("Compute with:\n"
-          " max size = " << netgen::mparam.maxh << "\n"
-          " segments per edge = " << netgen::mparam.segmentsperedge);
+          " max size = " << mparams.maxh << "\n"
+          " segments per edge = " << mparams.segmentsperedge);
   MESSAGE("\n"
-          " growth rate = " << netgen::mparam.grading << "\n"
-          " elements per radius = " << netgen::mparam.curvaturesafety << "\n"
-          " second order = " << netgen::mparam.secondorder << "\n"
-          " quad allowed = " << netgen::mparam.quad);
+          " growth rate = " << mparams.grading << "\n"
+          " elements per radius = " << mparams.curvaturesafety << "\n"
+          " second order = " << mparams.secondorder << "\n"
+          " quad allowed = " << mparams.quad);
 
   nglib::Ng_Init();
 
@@ -190,7 +205,7 @@ bool NETGENPlugin_Mesher::Compute()
   int endWith = (_optimize
                  ? (_isVolume ? netgen::MESHCONST_OPTVOLUME : netgen::MESHCONST_OPTSURFACE)
                  : netgen::MESHCONST_MESHSURFACE);
-  char *optstr;
+  char *optstr = 0;
 
   int err = 0;
   try
@@ -202,7 +217,7 @@ bool NETGENPlugin_Mesher::Compute()
       startWith = endWith = netgen::MESHCONST_MESHVOLUME;
       err = netgen::OCCGenerateMesh(occgeo, ngMesh, startWith, endWith, optstr);
     }
-    if (!err && netgen::mparam.secondorder > 0)
+    if (!err && mparams.secondorder > 0)
     {
       netgen::OCCRefinementSurfaces ref (occgeo);
       ref.MakeSecondOrder (*ngMesh);

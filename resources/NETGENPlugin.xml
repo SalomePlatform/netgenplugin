@@ -7,8 +7,8 @@
 
 <meshers-group name="NETGEN"
                resources="NETGENPlugin"
-               server-lib="libNETGENEngine.so"
-               gui-lib="libNETGENPluginGUI.so">
+               server-lib="NETGENEngine"
+               gui-lib="NETGENPluginGUI">
   <hypotheses>
     <hypothesis type="NETGEN_Parameters"
 		label-id="NETGEN 3D Parameters"

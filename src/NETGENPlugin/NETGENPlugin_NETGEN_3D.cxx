@@ -26,8 +26,6 @@
 // Copyright : CEA 2003
 // $Header$
 //=============================================================================
-using namespace std;
-
 #include "NETGENPlugin_NETGEN_3D.hxx"
 
 #include "SMESH_Gen.hxx"

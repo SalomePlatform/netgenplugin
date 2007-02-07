@@ -22,8 +22,8 @@ AC_CANONICAL_HOST
 PACKAGE=salome
 AC_SUBST(PACKAGE)
 
-VERSION=3.2.2
-XVERSION=0x030202
+VERSION=3.2.4
+XVERSION=0x030204
 AC_SUBST(VERSION)
 AC_SUBST(XVERSION)
 
@@ -360,7 +360,7 @@ else
 fi
 
 # make other build directories
-for rep in salome_adm adm_local doc bin/salome include/salome lib/salome share/salome/resources/${MODULE_NAME} idl
+for rep in salome_adm adm_local doc bin/salome include/salome lib${LIB_LOCATION_SUFFIX}/salome share/salome/resources/${MODULE_NAME} idl
 do
 #   if test ! -d $rep ; then
 #      eval mkdir $rep

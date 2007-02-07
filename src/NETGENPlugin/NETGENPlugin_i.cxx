@@ -26,7 +26,6 @@
 //  Module : SMESH
 //  $Header$
 
-using namespace std;
 #include "utilities.h"
 
 #include "NETGENPlugin_NETGEN_3D_i.hxx"
@@ -49,6 +48,7 @@ template <class T> class NETGENPlugin_Creator_i:public HypothesisCreator_i<T>
 
 extern "C"
 {
+  NETGENPLUGIN_EXPORT
   GenericHypothesisCreator_i* GetHypothesisCreator (const char* aHypName)
   {
     MESSAGE("GetHypothesisCreator " << aHypName);

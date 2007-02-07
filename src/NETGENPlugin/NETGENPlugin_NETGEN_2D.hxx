@@ -29,6 +29,8 @@
 #ifndef _NETGENPlugin_NETGEN_2D_HXX_
 #define _NETGENPlugin_NETGEN_2D_HXX_
 
+#include "NETGENPlugin_Defs.hxx"
+
 #include "SMESH_2D_Algo.hxx"
 #include "SMESH_Mesh.hxx"
 #include "StdMeshers_MaxElementVolume.hxx"
@@ -36,7 +38,7 @@
 
 class NETGENPlugin_Hypothesis_2D;
 
-class NETGENPlugin_NETGEN_2D: public SMESH_2D_Algo
+class NETGENPLUGIN_EXPORT NETGENPlugin_NETGEN_2D: public SMESH_2D_Algo
 {
 public:
   NETGENPlugin_NETGEN_2D(int hypId, int studyId, SMESH_Gen* gen);

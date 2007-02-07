@@ -25,8 +25,6 @@
 // Project   : SALOME
 // $Header$
 //=============================================================================
-using namespace std;
-
 #include "NETGENPlugin_NETGEN_2D3D.hxx"
 #include "NETGENPlugin_Hypothesis.hxx"
 #include "NETGENPlugin_Mesher.hxx"
@@ -38,6 +36,8 @@ using namespace std;
 #include <utilities.h>
 
 #include <list>
+
+using namespace std;
 
 //=============================================================================
 /*!

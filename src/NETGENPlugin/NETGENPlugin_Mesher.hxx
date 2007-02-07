@@ -29,6 +29,8 @@
 #ifndef _NETGENPlugin_Mesher_HXX_
 #define _NETGENPlugin_Mesher_HXX_
 
+#include "NETGENPlugin_Defs.hxx"
+
 class SMESHDS_Mesh;
 class TopoDS_Shape;
 class NETGENPlugin_Hypothesis;
@@ -37,7 +39,7 @@ class NETGENPlugin_Hypothesis;
  * \brief This class calls the NETGEN mesher of OCC geometry
  */
 
-class NETGENPlugin_Mesher 
+class NETGENPLUGIN_EXPORT NETGENPlugin_Mesher 
 {
  public:
   // ---------- PUBLIC METHODS ----------

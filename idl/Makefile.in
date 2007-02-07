@@ -46,7 +46,7 @@ $(IDL_FILES:%=$(top_builddir)/idl/salome/%):$(IDL_FILES:%=$(top_srcdir)/idl/%)
 # python wrap
 lib: pyidl
 
-PYTHON_BUILD_SITE=$(top_builddir)/lib/python$(PYTHON_VERSION)/site-packages/@PACKAGE@
+PYTHON_BUILD_SITE=$(top_builddir)/lib@LIB_LOCATION_SUFFIX@/python$(PYTHON_VERSION)/site-packages/@PACKAGE@
 
 pyidl: $(PYTHON_BUILD_SITE) $(IDL_FILES:%.idl=$(PYTHON_BUILD_SITE)/%_idl.py)
 
