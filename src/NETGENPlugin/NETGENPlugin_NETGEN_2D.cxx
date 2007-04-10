@@ -119,53 +119,10 @@ bool NETGENPlugin_NETGEN_2D::CheckHypothesis
 bool NETGENPlugin_NETGEN_2D::Compute(SMESH_Mesh&         aMesh,
                                      const TopoDS_Shape& aShape)
 {
-  SMESHDS_Mesh* meshDS = aMesh.GetMeshDS();
+  //SMESHDS_Mesh* meshDS = aMesh.GetMeshDS();
 
-  NETGENPlugin_Mesher mesher(meshDS, aShape, false);
+  NETGENPlugin_Mesher mesher(&aMesh, aShape, false);
+//   NETGENPlugin_Mesher mesher(meshDS, aShape, false);
   mesher.SetParameters(_hypothesis);
   return mesher.Compute();
-}
-
-//=============================================================================
-/*!
- *  
- */
-//=============================================================================
-
-ostream & NETGENPlugin_NETGEN_2D::SaveTo(ostream & save)
-{
-  return save;
-}
-
-//=============================================================================
-/*!
- *  
- */
-//=============================================================================
-
-istream & NETGENPlugin_NETGEN_2D::LoadFrom(istream & load)
-{
-  return load;
-}
-
-//=============================================================================
-/*!
- *  
- */
-//=============================================================================
-
-ostream & operator << (ostream & save, NETGENPlugin_NETGEN_2D & hyp)
-{
-  return hyp.SaveTo( save );
-}
-
-//=============================================================================
-/*!
- *  
- */
-//=============================================================================
-
-istream & operator >> (istream & load, NETGENPlugin_NETGEN_2D & hyp)
-{
-  return hyp.LoadFrom( load );
 }

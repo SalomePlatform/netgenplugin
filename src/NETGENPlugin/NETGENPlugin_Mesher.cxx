@@ -30,6 +30,9 @@ using namespace std;
 #include "NETGENPlugin_Mesher.hxx"
 #include "NETGENPlugin_Hypothesis_2D.hxx"
 
+#include <SMESH_Mesh.hxx>
+#include <SMESH_Comment.hxx>
+#include <SMESH_subMesh.hxx>
 #include <SMESHDS_Mesh.hxx>
 #include <SMDS_MeshElement.hxx>
 #include <SMDS_MeshNode.hxx>
@@ -62,10 +65,10 @@ namespace netgen {
  */
 //=============================================================================
 
-NETGENPlugin_Mesher::NETGENPlugin_Mesher (SMESHDS_Mesh* meshDS,
+NETGENPlugin_Mesher::NETGENPlugin_Mesher (SMESH_Mesh* mesh,
                                           const TopoDS_Shape& aShape,
                                           const bool isVolume)
-  : _meshDS  (meshDS),
+  : _mesh  (mesh),
     _shape   (aShape),
     _isVolume(isVolume),
     _optimize(true)
@@ -156,6 +159,7 @@ bool NETGENPlugin_Mesher::Compute()
           " second order = " << netgen::mparam.secondorder << "\n"
           " quad allowed = " << netgen::mparam.quad);
 
+  SMESH_ComputeErrorPtr error = SMESH_ComputeError::New();
   nglib::Ng_Init();
 
   // -------------------------
@@ -193,14 +197,17 @@ bool NETGENPlugin_Mesher::Compute()
   char *optstr;
 
   int err = 0;
+  SMESH_Comment comment;
   try
   {
     err = netgen::OCCGenerateMesh(occgeo, ngMesh, startWith, endWith, optstr);
+    if (err) comment << "Error in netgen::OCCGenerateMesh()";
     if (!err && !_optimize)
     {
       // we have got surface mesh only, so generate volume mesh
       startWith = endWith = netgen::MESHCONST_MESHVOLUME;
       err = netgen::OCCGenerateMesh(occgeo, ngMesh, startWith, endWith, optstr);
+      if (err) comment << "Error in netgen::OCCGenerateMesh()";
     }
     if (!err && netgen::mparam.secondorder > 0)
     {
@@ -210,8 +217,8 @@ bool NETGENPlugin_Mesher::Compute()
   }
   catch (netgen::NgException exc)
   {
-    MESSAGE ("Exception in NETGEN: " << exc.What());
-    err = 1;
+    error->myName = err = COMPERR_ALGO_FAILED;
+    comment << exc.What();
   }
 
   int nbNod = ngMesh->GetNP();
@@ -229,8 +236,9 @@ bool NETGENPlugin_Mesher::Compute()
   // Feed back the SMESHDS with the generated Nodes and Elements
   // -----------------------------------------------------------
 
+  SMESHDS_Mesh* meshDS = _mesh->GetMeshDS();
   bool isOK = ( !err && (_isVolume ? (nbVol > 0) : (nbFac > 0)) );
-  if ( isOK )
+  if ( true /*isOK*/ ) // get whatever built
   {
     // vector of nodes in which node index == netgen ID
     vector< SMDS_MeshNode* > nodeVec ( nbNod + 1 );
@@ -238,7 +246,7 @@ bool NETGENPlugin_Mesher::Compute()
     NCollection_Map<int> pindMap;
     // create and insert nodes into nodeVec
     int i;
-    for (i = 1; i <= nbNod && isOK; ++i )
+    for (i = 1; i <= nbNod /*&& isOK*/; ++i )
     {
       const netgen::MeshPoint& ngPoint = ngMesh->Point(i);
       SMDS_MeshNode* node = NULL;
@@ -248,7 +256,7 @@ bool NETGENPlugin_Mesher::Compute()
       {
         // point on vertex
         aVert = TopoDS::Vertex(occgeo.vmap(i));
-        SMESHDS_SubMesh * submesh = _meshDS->MeshElements(aVert);
+        SMESHDS_SubMesh * submesh = meshDS->MeshElements(aVert);
         if (submesh)
         {
           SMDS_NodeIteratorPtr it = submesh->GetNodes();
@@ -262,25 +270,26 @@ bool NETGENPlugin_Mesher::Compute()
           newNodeOnVertex = true;
       }
       if (!node)
-        node = _meshDS->AddNode(ngPoint.X(), ngPoint.Y(), ngPoint.Z());
+        node = meshDS->AddNode(ngPoint.X(), ngPoint.Y(), ngPoint.Z());
       if (!node)
       {
         MESSAGE("Cannot create a mesh node");
-        isOK = false;
+        if ( !comment.size() ) comment << "Cannot create a mesh node";
+        nbSeg = nbFac = nbVol = isOK = 0;
         break;
       }
       nodeVec.at(i) = node;
       if (newNodeOnVertex)
       {
         // point on vertex
-        _meshDS->SetNodeOnVertex(node, aVert);
+        meshDS->SetNodeOnVertex(node, aVert);
         pindMap.Add(i);
       }
     }
 
     // create mesh segments along geometric edges
     NCollection_Map<Link> linkMap;
-    for (i = 1; i <= nbSeg && isOK; ++i )
+    for (i = 1; i <= nbSeg/* && isOK*/; ++i )
     {
       const netgen::Segment& seg = ngMesh->LineSegment(i);
       Link link(seg.p1, seg.p2);
@@ -314,28 +323,29 @@ bool NETGENPlugin_Mesher::Compute()
           continue;
         if (!aEdge.IsNull())
         {
-          _meshDS->SetNodeOnEdge(nodeVec.at(pind), aEdge, param);
+          meshDS->SetNodeOnEdge(nodeVec.at(pind), aEdge, param);
           pindMap.Add(pind);
         }
       }
       SMDS_MeshEdge* edge;
       if (nbp < 3) // second order ?
-        edge = _meshDS->AddEdge(nodeVec.at(pinds[0]), nodeVec.at(pinds[1]));
+        edge = meshDS->AddEdge(nodeVec.at(pinds[0]), nodeVec.at(pinds[1]));
       else
-        edge = _meshDS->AddEdge(nodeVec.at(pinds[0]), nodeVec.at(pinds[1]),
+        edge = meshDS->AddEdge(nodeVec.at(pinds[0]), nodeVec.at(pinds[1]),
                                 nodeVec.at(pinds[2]));
       if (!edge)
       {
+        if ( !comment.size() ) comment << "Cannot create a mesh edge";
         MESSAGE("Cannot create a mesh edge");
-        isOK = false;
+        nbSeg = nbFac = nbVol = isOK = 0;
         break;
       }
       if (!aEdge.IsNull())
-        _meshDS->SetMeshElementOnShape(edge, aEdge);
+        meshDS->SetMeshElementOnShape(edge, aEdge);
     }
 
     // create mesh faces along geometric faces
-    for (i = 1; i <= nbFac && isOK; ++i )
+    for (i = 1; i <= nbFac/* && isOK*/; ++i )
     {
       const netgen::Element2d& elem = ngMesh->SurfaceElement(i);
       int aGeomFaceInd = elem.GetIndex();
@@ -353,7 +363,7 @@ bool NETGENPlugin_Mesher::Compute()
         if (!aFace.IsNull())
         {
           const netgen::PointGeomInfo& pgi = elem.GeomInfoPi(j);
-          _meshDS->SetNodeOnFace(node, aFace, pgi.u, pgi.v);
+          meshDS->SetNodeOnFace(node, aFace, pgi.u, pgi.v);
           pindMap.Add(pind);
         }
       }
@@ -361,16 +371,16 @@ bool NETGENPlugin_Mesher::Compute()
       switch (elem.GetType())
       {
       case netgen::TRIG:
-        face = _meshDS->AddFace(nodes[0],nodes[1],nodes[2]);
+        face = meshDS->AddFace(nodes[0],nodes[1],nodes[2]);
         break;
       case netgen::QUAD:
-        face = _meshDS->AddFace(nodes[0],nodes[1],nodes[2],nodes[3]);
+        face = meshDS->AddFace(nodes[0],nodes[1],nodes[2],nodes[3]);
         break;
       case netgen::TRIG6:
-        face = _meshDS->AddFace(nodes[0],nodes[1],nodes[2],nodes[5],nodes[3],nodes[4]);
+        face = meshDS->AddFace(nodes[0],nodes[1],nodes[2],nodes[5],nodes[3],nodes[4]);
         break;
       case netgen::QUAD8:
-        face = _meshDS->AddFace(nodes[0],nodes[1],nodes[2],nodes[3],
+        face = meshDS->AddFace(nodes[0],nodes[1],nodes[2],nodes[3],
                                nodes[4],nodes[7],nodes[5],nodes[6]);
         break;
       default:
@@ -379,16 +389,17 @@ bool NETGENPlugin_Mesher::Compute()
       }
       if (!face)
       {
+        if ( !comment.size() ) comment << "Cannot create a mesh face";
         MESSAGE("Cannot create a mesh face");
-        isOK = false;
+        nbSeg = nbFac = nbVol = isOK = 0;
         break;
       }
       if (!aFace.IsNull())
-        _meshDS->SetMeshElementOnShape(face, aFace);
+        meshDS->SetMeshElementOnShape(face, aFace);
     }
 
     // create tetrahedra
-    for (i = 1; i <= nbVol && isOK; ++i)
+    for (i = 1; i <= nbVol/* && isOK*/; ++i)
     {
       const netgen::Element& elem = ngMesh->VolumeElement(i);
       int aSolidInd = elem.GetIndex();
@@ -406,7 +417,7 @@ bool NETGENPlugin_Mesher::Compute()
         if (!aSolid.IsNull())
         {
           // point in solid
-          _meshDS->SetNodeInVolume(node, aSolid);
+          meshDS->SetNodeInVolume(node, aSolid);
           pindMap.Add(pind);
         }
       }
@@ -414,11 +425,11 @@ bool NETGENPlugin_Mesher::Compute()
       switch (elem.GetType())
       {
       case netgen::TET:
-        vol = _meshDS->AddVolume(nodes[0],nodes[1],nodes[2],nodes[3]);
+        vol = meshDS->AddVolume(nodes[0],nodes[1],nodes[2],nodes[3]);
         break;
       case netgen::TET10:
-        vol = _meshDS->AddVolume(nodes[0],nodes[1],nodes[2],nodes[3],
-                                 nodes[4],nodes[7],nodes[5],nodes[6],nodes[8],nodes[9]);
+        vol = meshDS->AddVolume(nodes[0],nodes[1],nodes[2],nodes[3],
+                                nodes[4],nodes[7],nodes[5],nodes[6],nodes[8],nodes[9]);
         break;
       default:
         MESSAGE("NETGEN created a volume of unexpected type, ignoring");
@@ -426,17 +437,41 @@ bool NETGENPlugin_Mesher::Compute()
       }
       if (!vol)
       {
+        if ( !comment.size() ) comment << "Cannot create a mesh volume";
         MESSAGE("Cannot create a mesh volume");
-        isOK = false;
+        nbSeg = nbFac = nbVol = isOK = 0;
         break;
       }
       if (!aSolid.IsNull())
-        _meshDS->SetMeshElementOnShape(vol, aSolid);
+        meshDS->SetMeshElementOnShape(vol, aSolid);
+    }
+  }
+
+  if ( error->IsOK() && ( !isOK || comment.size() > 0 ))
+    error->myName = COMPERR_ALGO_FAILED;
+  if ( !comment.empty() )
+    error->myComment = comment;
+
+  // set bad compute error to subshapes of all failed subshapes shapes
+  if ( !error->IsOK() && err )
+  {
+    for (int i = 1; i <= occgeo.fmap.Extent(); i++) {
+      int status = occgeo.facemeshstatus[i-1];
+      if (status == 1 ) continue;
+      if ( SMESH_subMesh* sm = _mesh->GetSubMeshContaining( occgeo.fmap( i ))) {
+        SMESH_ComputeErrorPtr& smError = sm->GetComputeError();
+        if ( !smError || smError->IsOK() ) {
+          if ( status == -1 )
+            smError.reset( new SMESH_ComputeError( error->myName, error->myComment ));
+          else
+            smError.reset( new SMESH_ComputeError( COMPERR_ALGO_FAILED, "Ignored" ));
+        }
+      }
     }
   }
 
   nglib::Ng_DeleteMesh((nglib::Ng_Mesh*)ngMesh);
   nglib::Ng_Exit();
 
-  return isOK;
+  return error->IsOK();
 }

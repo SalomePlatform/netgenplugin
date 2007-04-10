@@ -30,12 +30,13 @@ using namespace std;
 
 #include "NETGENPlugin_NETGEN_3D.hxx"
 
-#include "SMESH_Gen.hxx"
-#include "SMESH_Mesh.hxx"
-#include "SMESH_ControlsDef.hxx"
-#include "SMESHDS_Mesh.hxx"
 #include "SMDS_MeshElement.hxx"
 #include "SMDS_MeshNode.hxx"
+#include "SMESHDS_Mesh.hxx"
+#include "SMESH_Comment.hxx"
+#include "SMESH_ControlsDef.hxx"
+#include "SMESH_Gen.hxx"
+#include "SMESH_Mesh.hxx"
 #include "SMESH_MesherHelper.hxx"
 
 #include <BRep_Tool.hxx>
@@ -160,7 +161,8 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
   // get triangles on aShell and make a map of nodes to Netgen node IDs
   // -------------------------------------------------------------------
 
-  SMESH_MesherHelper* myTool = new SMESH_MesherHelper(aMesh);
+  SMESH_MesherHelper helper(aMesh);
+  SMESH_MesherHelper* myTool = &helper;
   bool _quadraticMesh = myTool->IsQuadraticSubMesh(aShape);
 
   typedef map< const SMDS_MeshNode*, int> TNodeToIDMap;
@@ -187,12 +189,12 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
       {
         // check element
         const SMDS_MeshElement* elem = iteratorElem->next();
-        if ( !elem ||
-             !( elem->NbNodes()==3 || ( _quadraticMesh && elem->NbNodes()==6) ) ) {
-          INFOS( "NETGENPlugin_NETGEN_3D::Compute(), bad mesh");
-          delete myTool; myTool = 0;
-          return false;
-        }
+        if ( !elem )
+          return error( COMPERR_BAD_INPUT_MESH, "Null element encounters");
+        bool isTraingle = ( elem->NbNodes()==3 || (_quadraticMesh && elem->NbNodes()==6 ));
+        if ( !isTraingle )
+          return error( COMPERR_BAD_INPUT_MESH,
+                        SMESH_Comment("Not triangle element ")<<elem->GetID());
         // keep a triangle
         triangles.push_back( elem );
         isReversed.push_back( isRev );
@@ -316,7 +318,17 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
   }
   catch (...) {
     MESSAGE("An exception has been caught during the Volume Mesh Generation ...");
+    error(dfltErr(), "Exception in Ng_GenerateVolumeMesh()");
     status = NG_VOLUME_FAILURE;
+  }
+  if ( GetComputeError()->IsOK() ) {
+    switch ( status ) {
+    case NG_SURFACE_INPUT_ERROR:error( status, "NG_SURFACE_INPUT_ERROR");
+    case NG_VOLUME_FAILURE:     error( status, "NG_VOLUME_FAILURE");
+    case NG_STL_INPUT_ERROR:    error( status, "NG_STL_INPUT_ERROR");
+    case NG_SURFACE_FAILURE:    error( status, "NG_SURFACE_FAILURE");
+    case NG_FILE_NOT_FOUND:     error( status, "NG_FILE_NOT_FOUND");
+    };
   }
 
   int Netgen_NbOfNodesNew = Ng_GetNP(Netgen_mesh);
@@ -331,7 +343,7 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
   // Feed back the SMESHDS with the generated Nodes and Volume Elements
   // -------------------------------------------------------------------
 
-  bool isOK = ( status == NG_OK && Netgen_NbOfTetra > 0 );
+  bool isOK = ( /*status == NG_OK &&*/ Netgen_NbOfTetra > 0 );// get whatever built
   if ( isOK )
   {
     // vector of nodes in which node index == netgen ID
@@ -368,51 +380,5 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
   Ng_DeleteMesh(Netgen_mesh);
   Ng_Exit();
 
-  delete myTool; myTool = 0;
-
-  return isOK;
-}
-
-//=============================================================================
-/*!
- *  
- */
-//=============================================================================
-
-ostream & NETGENPlugin_NETGEN_3D::SaveTo(ostream & save)
-{
-  return save;
-}
-
-//=============================================================================
-/*!
- *  
- */
-//=============================================================================
-
-istream & NETGENPlugin_NETGEN_3D::LoadFrom(istream & load)
-{
-  return load;
-}
-
-//=============================================================================
-/*!
- *  
- */
-//=============================================================================
-
-ostream & operator << (ostream & save, NETGENPlugin_NETGEN_3D & hyp)
-{
-  return hyp.SaveTo( save );
-}
-
-//=============================================================================
-/*!
- *  
- */
-//=============================================================================
-
-istream & operator >> (istream & load, NETGENPlugin_NETGEN_3D & hyp)
-{
-  return hyp.LoadFrom( load );
+  return (status == NG_OK);
 }
