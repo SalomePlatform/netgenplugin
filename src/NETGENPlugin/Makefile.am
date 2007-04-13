@@ -20,20 +20,21 @@
 # -* Makefile *- 
 #
 # Author : Edward AGAPOV (OCC)
+#  Modified by : Alexander BORODIN (OCN) - autotools usage
 # Module : NETGENPLUGIN
 # Date : 10/01/2004
 #
 #
 
-# source path
-top_srcdir=@top_srcdir@
-top_builddir=../..
-srcdir=@srcdir@
-VPATH=.:@srcdir@:@top_srcdir@/idl:$(top_builddir)/idl:${KERNEL_ROOT_DIR}/idl/salome:${GUI_ROOT_DIR}/idl/salome:${GEOM_ROOT_DIR}/idl/salome:${SMESH_ROOT_DIR}/idl/salome:${MED_ROOT_DIR}/idl/salome
+include $(top_srcdir)/adm_local/unix/make_common_starter.am
 
-@COMMENCE@
+# header files 
+salomeinclude_HEADERS =
 
-LIB_SRC = \
+# Libraries targets
+lib_LTLIBRARIES = libNETGENEngine.la
+
+dist_libNETGENEngine_la_SOURCES = \
 	NETGENPlugin_NETGEN_3D.cxx \
 	NETGENPlugin_NETGEN_3D_i.cxx \
 	NETGENPlugin_NETGEN_2D.cxx \
@@ -47,23 +48,19 @@ LIB_SRC = \
 	NETGENPlugin_Mesher.cxx \
 	NETGENPlugin_i.cxx
 
-LIB_SERVER_IDL = NETGENPlugin_Algorithm.idl
+libNETGENEngine_la_CPPFLAGS = \
+        $(KERNEL_CXXFLAGS) \
+        $(GUI_CXXFLAGS) \
+	$(MED_CXXFLAGS) \
+	$(GEOM_CXXFLAGS) \
+	$(CAS_CPPFLAGS) \
+	$(NETGEN_INCLUDES) \
+	$(SMESH_CXXFLAGS) \
+	-I$(top_builddir)/idl \
+	-I$(top_builddir)/salome_adm/unix
 
-LIB_CLIENT_IDL = \
-	SALOME_Component.idl \
-	SALOME_Comm.idl \
-	SALOME_Exception.idl \
-	SALOME_GenericObj.idl \
-	SMESH_Hypothesis.idl \
-	GEOM_Gen.idl \
-	MED.idl
-
-# Libraries targets
-LIB = libNETGENEngine.la
-
-NETGEN_INCLUDES = @NETGEN_INCLUDES@
-CPPFLAGS += $(NETGEN_INCLUDES)
-CXXFLAGS += $(NETGEN_INCLUDES)
-LDFLAGS  +=  -L${NETGENPLUGIN_ROOT_DIR}/lib@LIB_LOCATION_SUFFIX@/salome -lNETGEN
-
-@CONCLUDE@
+libNETGENEngine_la_LDFLAGS  = \
+	../NETGEN/libNETGEN.la \
+	../../idl/libSalomeIDLNETGENPLUGIN.la \
+	$(SMESH_LDPATH) -lSMESHimpl -lSMESHEngine -lStdMeshersEngine \
+	$(KERNEL_LDPATH) -lSalomeGenericObj
