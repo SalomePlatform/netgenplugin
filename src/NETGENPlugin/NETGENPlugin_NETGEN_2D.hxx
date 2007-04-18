@@ -51,11 +51,6 @@ public:
   virtual bool Compute(SMESH_Mesh& aMesh,
 		       const TopoDS_Shape& aShape);
 
-  ostream & SaveTo(ostream & save);
-  istream & LoadFrom(istream & load);
-  friend ostream & operator << (ostream & save, NETGENPlugin_NETGEN_2D & hyp);
-  friend istream & operator >> (istream & load, NETGENPlugin_NETGEN_2D & hyp);
-
 protected:
   const NETGENPlugin_Hypothesis_2D* _hypothesis;
 };
