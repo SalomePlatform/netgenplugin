@@ -53,6 +53,8 @@ libNETGENPluginGUI_la_CPPFLAGS = \
 	$(MED_CXXFLAGS) \
 	$(SMESH_CXXFLAGS) \
 	$(BOOST_CPPFLAGS) \
+	$(CORBA_CXXFLAGS) \
+	$(CORBA_INCLUDES) \
 	-I$(srcdir)/../NETGENPlugin \
 	-I$(top_builddir)/idl \
 	-I$(top_builddir)/salome_adm/unix
