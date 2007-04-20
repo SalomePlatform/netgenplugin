@@ -72,12 +72,6 @@ nodist_libNETGEN_la_SOURCES =
 
 
 libNETGEN_la_LDFLAGS  = $(LIB_OBJ_O) \
-	$(CAS_LDPATH) -lTKBRep -lTKShHealing -lTKSTEP -lTKXSBase -lTKIGES
-
-if USE_GFORTRAN
-libNETGEN_la_LDFLAGS += -lgfortran
-else  !USE_GFORTRAN
-libNETGEN_la_LDFLAGS += -lg2c
-endif
+	$(CAS_LDPATH) -lTKBRep -lTKShHealing -lTKSTEP -lTKXSBase -lTKIGES $(FCLIBS)
 
 libNETGEN_la_DEPENDENCIES = $(LIB_OBJ_O)
