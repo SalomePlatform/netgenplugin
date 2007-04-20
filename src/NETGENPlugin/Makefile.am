@@ -56,6 +56,8 @@ libNETGENEngine_la_CPPFLAGS = \
 	$(CAS_CPPFLAGS) \
 	$(NETGEN_INCLUDES) \
 	$(SMESH_CXXFLAGS) \
+	$(CORBA_CXXFLAGS) \
+	$(CORBA_INCLUDES) \
 	-I$(top_builddir)/idl \
 	-I$(top_builddir)/salome_adm/unix
 
