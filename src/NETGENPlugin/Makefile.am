@@ -64,5 +64,5 @@ libNETGENEngine_la_CPPFLAGS = \
 libNETGENEngine_la_LDFLAGS  = \
 	../NETGEN/libNETGEN.la \
 	../../idl/libSalomeIDLNETGENPLUGIN.la \
-	$(SMESH_LDPATH) -lSMESHimpl -lSMESHEngine -lStdMeshersEngine \
-	$(KERNEL_LDPATH) -lSalomeGenericObj
+	$(SMESH_LDFLAGS) -lSMESHimpl -lSMESHEngine -lStdMeshersEngine \
+	$(KERNEL_LDFLAGS) -lSalomeGenericObj

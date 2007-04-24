@@ -72,6 +72,6 @@ nodist_libNETGEN_la_SOURCES =
 
 
 libNETGEN_la_LDFLAGS  = $(LIB_OBJ_O) \
-	$(CAS_LDPATH) -lTKBRep -lTKShHealing -lTKSTEP -lTKXSBase -lTKIGES $(FCLIBS)
+	$(CAS_LDPATH) -lTKernel -lTKBRep -lTKShHealing -lTKSTEP -lTKXSBase -lTKIGES -lTKMesh -lTKSTL $(FCLIBS) $(STDLIB)
 
 libNETGEN_la_DEPENDENCIES = $(LIB_OBJ_O)
