@@ -327,7 +327,7 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
     status = NG_VOLUME_FAILURE;
   }
   catch (...) {
-    error(dfltErr(), "Exception in Ng_GenerateVolumeMesh()");
+    error("Exception in Ng_GenerateVolumeMesh()");
     status = NG_VOLUME_FAILURE;
   }
   if ( GetComputeError()->IsOK() ) {
