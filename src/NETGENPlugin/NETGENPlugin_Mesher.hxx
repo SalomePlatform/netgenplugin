@@ -29,12 +29,13 @@
 #ifndef _NETGENPlugin_Mesher_HXX_
 #define _NETGENPlugin_Mesher_HXX_
 
-#include "SMESH_ComputeError.hxx"
-
 class SMESH_Mesh;
 class SMESHDS_Mesh;
 class TopoDS_Shape;
 class NETGENPlugin_Hypothesis;
+namespace netgen {
+  class OCCGeometry;
+}
 
 /*!
  * \brief This class calls the NETGEN mesher of OCC geometry
@@ -51,6 +52,11 @@ class NETGENPlugin_Mesher
   void SetParameters(const NETGENPlugin_Hypothesis* hyp);
 
   bool Compute();
+
+  static void PrepareOCCgeometry(netgen::OCCGeometry& occgeom,
+                                 const TopoDS_Shape&  shape);
+
+  static void RemoveTmpFiles();
 
  private:
   SMESH_Mesh*          _mesh;

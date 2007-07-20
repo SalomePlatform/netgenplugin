@@ -32,6 +32,7 @@ using namespace std;
 
 #include <SMESH_Mesh.hxx>
 #include <SMESH_Comment.hxx>
+#include <SMESH_ComputeError.hxx>
 #include <SMESH_subMesh.hxx>
 #include <SMESHDS_Mesh.hxx>
 #include <SMDS_MeshElement.hxx>
@@ -45,6 +46,8 @@ using namespace std;
 #include <TopExp_Explorer.hxx>
 #include <TopoDS.hxx>
 #include <NCollection_Map.hxx>
+#include <OSD_Path.hxx>
+#include <OSD_File.hxx>
 
 // Netgen include files
 namespace nglib {
@@ -143,6 +146,32 @@ Standard_Boolean IsEqual(const Link& aLink1, const Link& aLink2)
           aLink1.n1 == aLink2.n2 && aLink1.n2 == aLink2.n1);
 }
 
+//================================================================================
+/*!
+ * \brief Initialize netgen::OCCGeometry with OCCT shape
+ */
+//================================================================================
+
+void NETGENPlugin_Mesher::PrepareOCCgeometry(netgen::OCCGeometry& occgeo,
+                                             const TopoDS_Shape&  shape)
+{
+  occgeo.shape = shape;
+  occgeo.changed = 1;
+  occgeo.BuildFMap();
+  BRepTools::Clean (shape);
+  BRepMesh_IncrementalMesh::BRepMesh_IncrementalMesh (shape, 0.01, true);
+  Bnd_Box bb;
+  BRepBndLib::Add (shape, bb);
+  double x1,y1,z1,x2,y2,z2;
+  bb.Get (x1,y1,z1,x2,y2,z2);
+  MESSAGE("shape bounding box:\n" <<
+          "(" << x1 << " " << y1 << " " << z1 << ") " <<
+          "(" << x2 << " " << y2 << " " << z2 << ")");
+  netgen::Point<3> p1 = netgen::Point<3> (x1,y1,z1);
+  netgen::Point<3> p2 = netgen::Point<3> (x2,y2,z2);
+  occgeo.boundingbox = netgen::Box<3> (p1,p2);
+}
+
 //=============================================================================
 /*!
  * Here we are going to use the NETGEN mesher
@@ -167,21 +196,7 @@ bool NETGENPlugin_Mesher::Compute()
   // -------------------------
 
   netgen::OCCGeometry occgeo;
-  occgeo.shape = _shape;
-  occgeo.changed = 1;
-  occgeo.BuildFMap();
-  BRepTools::Clean (_shape);
-  BRepMesh_IncrementalMesh::BRepMesh_IncrementalMesh (_shape, 0.01, true);
-  Bnd_Box bb;
-  BRepBndLib::Add (_shape, bb);
-  double x1,y1,z1,x2,y2,z2;
-  bb.Get (x1,y1,z1,x2,y2,z2);
-  MESSAGE("shape bounding box:\n" <<
-          "(" << x1 << " " << y1 << " " << z1 << ") " <<
-          "(" << x2 << " " << y2 << " " << z2 << ")");
-  netgen::Point<3> p1 = netgen::Point<3> (x1,y1,z1);
-  netgen::Point<3> p2 = netgen::Point<3> (x2,y2,z2);
-  occgeo.boundingbox = netgen::Box<3> (p1,p2);
+  PrepareOCCgeometry( occgeo, _shape );
 
   // -------------------------
   // Generate the mesh
@@ -473,5 +488,19 @@ bool NETGENPlugin_Mesher::Compute()
   nglib::Ng_DeleteMesh((nglib::Ng_Mesh*)ngMesh);
   nglib::Ng_Exit();
 
+  RemoveTmpFiles();
+
   return error->IsOK();
+}
+
+//================================================================================
+/*!
+ * \brief Remove "test.out" and "problemfaces" files in current directory
+ */
+//================================================================================
+
+void NETGENPlugin_Mesher::RemoveTmpFiles()
+{
+  OSD_File( OSD_Path("test.out") ).Remove();
+  OSD_File( OSD_Path("problemfaces") ).Remove();
 }
