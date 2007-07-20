@@ -45,7 +45,9 @@ LIB_SRC = \
 	NETGENPlugin_Hypothesis_2D.cxx \
 	NETGENPlugin_Hypothesis_2D_i.cxx \
 	NETGENPlugin_Mesher.cxx \
-	NETGENPlugin_i.cxx
+	NETGENPlugin_i.cxx \
+	NETGENPlugin_NETGEN_2D_ONLY.cxx \
+	NETGENPlugin_NETGEN_2D_ONLY_i.cxx
 
 LIB_SERVER_IDL = NETGENPlugin_Algorithm.idl
 
