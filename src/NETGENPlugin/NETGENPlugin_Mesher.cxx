@@ -48,6 +48,7 @@ using namespace std;
 #include <NCollection_Map.hxx>
 #include <OSD_Path.hxx>
 #include <OSD_File.hxx>
+#include <TCollection_AsciiString.hxx>
 
 // Netgen include files
 namespace nglib {
@@ -501,6 +502,12 @@ bool NETGENPlugin_Mesher::Compute()
 
 void NETGENPlugin_Mesher::RemoveTmpFiles()
 {
-  OSD_File( OSD_Path("test.out") ).Remove();
-  OSD_File( OSD_Path("problemfaces") ).Remove();
+  TCollection_AsciiString str("test.out");
+  OSD_Path path1( str );
+  OSD_File file1( path1 );
+  file1.Remove();
+  str = "problemfaces";
+  OSD_Path path2( str );
+  OSD_File file2( path2 );
+  file2.Remove();
 }
