@@ -28,6 +28,8 @@
 //=============================================================================
 #include "NETGENPlugin_NETGEN_3D.hxx"
 
+#include "NETGENPlugin_Mesher.hxx"
+
 #include "SMDS_MeshElement.hxx"
 #include "SMDS_MeshNode.hxx"
 #include "SMESHDS_Mesh.hxx"
@@ -41,6 +43,9 @@
 #include <TopExp.hxx>
 #include <TopExp_Explorer.hxx>
 #include <TopoDS.hxx>
+
+#include <Standard_Failure.hxx>
+#include <Standard_ErrorHandler.hxx>
 
 #include "utilities.h"
 
@@ -312,11 +317,17 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
   Ng_Result status;
 
   try {
+#if (OCC_VERSION_MAJOR << 16 | OCC_VERSION_MINOR << 8 | OCC_VERSION_MAINTENANCE) > 0x060100
+    OCC_CATCH_SIGNALS;
+#endif
     status = Ng_GenerateVolumeMesh(Netgen_mesh, &Netgen_param);
   }
+  catch (Standard_Failure& exc) {
+    error(COMPERR_OCC_EXCEPTION, exc.GetMessageString());
+    status = NG_VOLUME_FAILURE;
+  }
   catch (...) {
-    MESSAGE("An exception has been caught during the Volume Mesh Generation ...");
-    error(dfltErr(), "Exception in Ng_GenerateVolumeMesh()");
+    error("Exception in Ng_GenerateVolumeMesh()");
     status = NG_VOLUME_FAILURE;
   }
   if ( GetComputeError()->IsOK() ) {
@@ -377,6 +388,8 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
 
   Ng_DeleteMesh(Netgen_mesh);
   Ng_Exit();
+
+  NETGENPlugin_Mesher::RemoveTmpFiles();
 
   return (status == NG_OK);
 }

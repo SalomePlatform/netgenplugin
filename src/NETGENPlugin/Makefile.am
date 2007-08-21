@@ -41,6 +41,8 @@ dist_libNETGENEngine_la_SOURCES = \
 	NETGENPlugin_NETGEN_2D_i.cxx \
 	NETGENPlugin_NETGEN_2D3D.cxx \
 	NETGENPlugin_NETGEN_2D3D_i.cxx \
+	NETGENPlugin_NETGEN_2D_ONLY.cxx \
+	NETGENPlugin_NETGEN_2D_ONLY_i.cxx \
 	NETGENPlugin_Hypothesis.cxx \
 	NETGENPlugin_Hypothesis_i.cxx \
 	NETGENPlugin_Hypothesis_2D.cxx \

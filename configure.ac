@@ -225,35 +225,61 @@ CORBA=adm_local/unix/$corba
 
 echo
 echo ---------------------------------------------
-echo testing openGL
-echo ---------------------------------------------
-echo
-
-CHECK_OPENGL
-
-echo
-echo ---------------------------------------------
-echo testing QT
-echo ---------------------------------------------
-echo
-
-CHECK_QT
-
-echo
-echo ---------------------------------------------
 echo testing MSG2QM
 echo ---------------------------------------------
 echo
 
 CHECK_MSG2QM
 
-echo
-echo ---------------------------------------------
-echo testing VTK
-echo ---------------------------------------------
-echo
+NETGENPLUGIN_WITH_GUI=yes
 
-CHECK_VTK
+AM_CONDITIONAL(NETGENPLUGIN_ENABLE_GUI, [test "${NETGENPLUGIN_WITH_GUI}" = "yes"])
+
+if test "${NETGENPLUGIN_WITH_GUI}" = "yes"; then
+    echo
+    echo ---------------------------------------------
+    echo testing openGL
+    echo ---------------------------------------------
+    echo
+
+    CHECK_OPENGL
+
+    echo
+    echo ---------------------------------------------
+    echo testing QT
+    echo ---------------------------------------------
+    echo
+
+    CHECK_QT
+
+    echo
+    echo ---------------------------------------------
+    echo testing VTK
+    echo ---------------------------------------------
+    echo
+
+    CHECK_VTK
+
+    echo
+    echo ---------------------------------------------
+    echo Testing GUI
+    echo ---------------------------------------------
+    echo
+
+    CHECK_SALOME_GUI
+
+    echo
+    echo ---------------------------------------------
+    echo Testing full GUI
+    echo ---------------------------------------------
+    echo
+
+    CHECK_CORBA_IN_GUI
+    if test "x${CORBA_IN_GUI}" != "xyes"; then
+      echo "failed : For configure NETGENPLUGIN module necessary full GUI !"
+      exit
+    fi
+fi
 
 echo
 echo ---------------------------------------------
@@ -278,26 +304,6 @@ echo ---------------------------------------------
 echo
 
 CHECK_HTML_GENERATORS
-
-echo
-echo ---------------------------------------------
-echo Testing GUI
-echo ---------------------------------------------
-echo
-
-CHECK_SALOME_GUI
-
-echo
-echo ---------------------------------------------
-echo Testing full GUI
-echo ---------------------------------------------
-echo
-
-CHECK_CORBA_IN_GUI
-if test "x${CORBA_IN_GUI}" != "xyes"; then
-  echo "failed : For configure NETGENPLUGIN module necessary full GUI !"
-  exit
-fi
 
 echo
 echo ---------------------------------------------
