@@ -55,9 +55,10 @@ namespace nglib {
 #define OCCGEOMETRY
 #include <occgeom.hpp>
 #include <meshing.hpp>
+//#include <meshtype.hpp>
 namespace netgen {
   extern int OCCGenerateMesh (OCCGeometry&, Mesh*&, int, int, char*);
-  extern MeshingParameters mparam;
+  /*extern*/ MeshingParameters mparam;
 }
 
 using namespace std;
@@ -266,7 +267,7 @@ static TError AddSegmentsToMesh(netgen::Mesh&                    ngMesh,
     seg.p2 = firstPointID;
   }
 
-  ngMesh.CalcSurfacesOfNode();
+  ngMesh.CalcSurfacesOfNode();  
 
   return TError();
 }

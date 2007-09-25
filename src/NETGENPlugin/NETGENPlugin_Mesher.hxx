@@ -30,6 +30,7 @@
 #define _NETGENPlugin_Mesher_HXX_
 
 #include "NETGENPlugin_Defs.hxx"
+#include "StdMeshers_FaceSide.hxx"
 
 class SMESH_Mesh;
 class SMESHDS_Mesh;

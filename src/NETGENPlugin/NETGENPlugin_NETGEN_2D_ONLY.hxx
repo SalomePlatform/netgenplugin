@@ -27,10 +27,25 @@
 #include "SMESH_2D_Algo.hxx"
 #include "SMESH_Mesh.hxx"
 
+/*#define OCCGEOMETRY
+#include <occgeom.hpp>
+#include <meshing.hpp>//amv*/
+
 class StdMeshers_MaxElementArea;
 class StdMeshers_LengthFromEdges;
 class StdMeshers_QuadranglePreference;
 //class NETGENPlugin_Hypothesis;
+
+/*namespace netgen {
+  class OCCGeometry;
+}*/
+/*namespace netgen {
+  class OCCGeometry;
+  extern int OCCGenerateMesh (OCCGeometry&, Mesh*&, int, int, char*);
+  extern MeshingParameters mparam;
+}*/
+
+//using namespace netgen;
 
 /*!
  * \brief Mesher generating 2D elements on a geometrical face taking
@@ -52,6 +67,12 @@ public:
 
   virtual bool Compute(SMESH_Mesh&         aMesh,
                        const TopoDS_Shape& aShape);
+
+  /*static TError AddSegmentsToMesh(netgen::Mesh&                    ngMesh,
+                                OCCGeometry&                     geom,
+                                const TSideVector&               wires,
+                                SMESH_MesherHelper&              helper,
+                                vector< const SMDS_MeshNode* > & nodeVec); //amv*/
 
 protected:
   const StdMeshers_MaxElementArea*       _hypMaxElementArea;

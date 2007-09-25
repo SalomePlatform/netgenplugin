@@ -170,6 +170,9 @@ void NETGENPlugin_Mesher::PrepareOCCgeometry(netgen::OCCGeometry& occgeo,
   occgeo.shape = shape;
   occgeo.changed = 1;
   occgeo.BuildFMap();
+  //amv for test
+  occgeo.amv_test();
+  
   BRepTools::Clean (shape);
   BRepMesh_IncrementalMesh::BRepMesh_IncrementalMesh (shape, 0.01, true);
   Bnd_Box bb;
@@ -433,7 +436,7 @@ bool NETGENPlugin_Mesher::Compute()
     // create tetrahedra
     for (i = 1; i <= nbVol/* && isOK*/; ++i)
     {
-      const netgen::Element& elem = ngMesh->VolumeElement(i);
+      const netgen::Element& elem = ngMesh->VolumeElement(i);      
       int aSolidInd = elem.GetIndex();
       TopoDS_Solid aSolid;
       if (aSolidInd > 0 && aSolidInd <= occgeo.somap.Extent())
