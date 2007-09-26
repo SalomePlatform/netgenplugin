@@ -169,9 +169,7 @@ void NETGENPlugin_Mesher::PrepareOCCgeometry(netgen::OCCGeometry& occgeo,
 {
   occgeo.shape = shape;
   occgeo.changed = 1;
-  occgeo.BuildFMap();
-  //amv for test
-  occgeo.amv_test();
+  occgeo.BuildFMap();  
   
   BRepTools::Clean (shape);
   BRepMesh_IncrementalMesh::BRepMesh_IncrementalMesh (shape, 0.01, true);
