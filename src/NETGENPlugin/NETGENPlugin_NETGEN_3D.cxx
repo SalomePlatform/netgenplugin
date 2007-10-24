@@ -393,3 +393,181 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
 
   return (status == NG_OK);
 }
+
+bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh& aMesh,
+                                     SMESH_MesherHelper* aHelper)
+{
+  MESSAGE("NETGENPlugin_NETGEN_3D::Compute with maxElmentsize = " << _maxElementVolume);  
+  const int invalid_ID = -1;
+  bool _quadraticMesh = false;
+  typedef map< const SMDS_MeshNode*, int> TNodeToIDMap;
+  TNodeToIDMap nodeToNetgenID;
+  list< const SMDS_MeshElement* > triangles;
+  SMESHDS_Mesh* MeshDS = aHelper->GetMeshDS();
+
+  SMESH_MesherHelper::MType MeshType = aHelper->IsQuadraticMesh();
+  
+  if(MeshType == SMESH_MesherHelper::COMP)
+    return error( COMPERR_BAD_INPUT_MESH,
+                  SMESH_Comment("Mesh with linear and quadratic elements given."));
+  else if (MeshType == SMESH_MesherHelper::QUADRATIC)
+    _quadraticMesh = true;
+    
+  SMDS_FaceIteratorPtr iteratorFace = MeshDS->facesIterator();
+
+  while(iteratorFace->more())
+  {
+    // check element
+    const SMDS_MeshElement* elem = iteratorFace->next();
+    if ( !elem )
+      return error( COMPERR_BAD_INPUT_MESH, "Null element encounters");
+    bool isTraingle = ( elem->NbNodes()==3 || (_quadraticMesh && elem->NbNodes()==6 ));
+    if ( !isTraingle )
+      return error( COMPERR_BAD_INPUT_MESH,
+                    SMESH_Comment("Not triangle element ")<<elem->GetID());
+    
+    // keep a triangle
+    triangles.push_back( elem );
+    // put elem nodes to nodeToNetgenID map
+    SMDS_ElemIteratorPtr triangleNodesIt = elem->nodesIterator();
+    while ( triangleNodesIt->more() ) {
+      const SMDS_MeshNode * node =
+        static_cast<const SMDS_MeshNode *>(triangleNodesIt->next());
+      if(aHelper->IsMedium(node))
+        continue;
+      
+      nodeToNetgenID.insert( make_pair( node, invalid_ID ));
+    }
+  }
+
+  // ---------------------------------
+  // Feed the Netgen with surface mesh
+  // ---------------------------------
+
+  int Netgen_NbOfNodes = 0;
+  int Netgen_param2ndOrder = 0;
+  double Netgen_paramFine = 1.;
+  double Netgen_paramSize = _maxElementVolume;
+  
+  double Netgen_point[3];
+  int Netgen_triangle[3];
+  int Netgen_tetrahedron[4];
+
+  Ng_Init();
+
+  Ng_Mesh * Netgen_mesh = Ng_NewMesh();
+
+    // set nodes and remember thier netgen IDs
+  
+  TNodeToIDMap::iterator n_id = nodeToNetgenID.begin();
+  for ( ; n_id != nodeToNetgenID.end(); ++n_id )
+  {
+    const SMDS_MeshNode* node = n_id->first;
+
+    Netgen_point [ 0 ] = node->X();
+    Netgen_point [ 1 ] = node->Y();
+    Netgen_point [ 2 ] = node->Z();
+    Ng_AddPoint(Netgen_mesh, Netgen_point);
+    n_id->second = ++Netgen_NbOfNodes; // set netgen ID
+
+  }
+
+  // set triangles
+  list< const SMDS_MeshElement* >::iterator tria = triangles.begin();
+  for ( ; tria != triangles.end(); ++tria)
+  {
+    int i = 0;
+    SMDS_ElemIteratorPtr triangleNodesIt = (*tria)->nodesIterator();
+    while ( triangleNodesIt->more() ) {
+      const SMDS_MeshNode * node =
+        static_cast<const SMDS_MeshNode *>(triangleNodesIt->next());
+      if(aHelper->IsMedium(node))
+        continue;
+      Netgen_triangle[ i ] = nodeToNetgenID[ node ];
+      ++i;
+    }
+    
+    Ng_AddSurfaceElement(Netgen_mesh, NG_TRIG, Netgen_triangle);
+  }
+
+  // -------------------------
+  // Generate the volume mesh
+  // -------------------------
+
+  Ng_Meshing_Parameters Netgen_param;
+
+  Netgen_param.secondorder = Netgen_param2ndOrder;
+  Netgen_param.fineness = Netgen_paramFine;
+  Netgen_param.maxh = Netgen_paramSize;
+
+  Ng_Result status;
+
+  try {
+#if (OCC_VERSION_MAJOR << 16 | OCC_VERSION_MINOR << 8 | OCC_VERSION_MAINTENANCE) > 0x060100
+    OCC_CATCH_SIGNALS;
+#endif
+    status = Ng_GenerateVolumeMesh(Netgen_mesh, &Netgen_param);
+  }
+  catch (Standard_Failure& exc) {
+    error(COMPERR_OCC_EXCEPTION, exc.GetMessageString());
+    status = NG_VOLUME_FAILURE;
+  }
+  catch (...) {
+    error("Bad mesh input!!!");
+    status = NG_VOLUME_FAILURE;
+  }
+  if ( GetComputeError()->IsOK() ) {
+    error( status, "Bad mesh input!!!");
+  }
+
+  int Netgen_NbOfNodesNew = Ng_GetNP(Netgen_mesh);
+
+  int Netgen_NbOfTetra = Ng_GetNE(Netgen_mesh);
+
+  MESSAGE("End of Volume Mesh Generation. status=" << status <<
+          ", nb new nodes: " << Netgen_NbOfNodesNew - Netgen_NbOfNodes <<
+          ", nb tetra: " << Netgen_NbOfTetra);
+
+  // -------------------------------------------------------------------
+  // Feed back the SMESHDS with the generated Nodes and Volume Elements
+  // -------------------------------------------------------------------
+
+  bool isOK = ( Netgen_NbOfTetra > 0 );// get whatever built
+  if ( isOK )
+  {
+    // vector of nodes in which node index == netgen ID
+    vector< const SMDS_MeshNode* > nodeVec ( Netgen_NbOfNodesNew + 1 );
+    // insert old nodes into nodeVec
+    for ( n_id = nodeToNetgenID.begin(); n_id != nodeToNetgenID.end(); ++n_id ) {
+      nodeVec.at( n_id->second ) = n_id->first;
+    }
+    // create and insert new nodes into nodeVec
+    int nodeIndex = Netgen_NbOfNodes + 1;
+    
+    for ( ; nodeIndex <= Netgen_NbOfNodesNew; ++nodeIndex )
+    {
+      Ng_GetPoint( Netgen_mesh, nodeIndex, Netgen_point );
+      SMDS_MeshNode * node = aHelper->AddNode(Netgen_point[0],
+                                             Netgen_point[1],
+                                             Netgen_point[2]);
+      nodeVec.at(nodeIndex) = node;
+    }
+
+    // create tetrahedrons
+    for ( int elemIndex = 1; elemIndex <= Netgen_NbOfTetra; ++elemIndex )
+    {
+      Ng_GetVolumeElement(Netgen_mesh, elemIndex, Netgen_tetrahedron);
+      aHelper->AddVolume (nodeVec.at( Netgen_tetrahedron[0] ),
+                                                 nodeVec.at( Netgen_tetrahedron[1] ),
+                                                 nodeVec.at( Netgen_tetrahedron[2] ),
+                                                 nodeVec.at( Netgen_tetrahedron[3] ));
+    }
+  }
+
+  Ng_DeleteMesh(Netgen_mesh);
+  Ng_Exit();
+  
+  NETGENPlugin_Mesher::RemoveTmpFiles();
+  
+  return (status == NG_OK);
+}

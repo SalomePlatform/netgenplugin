@@ -24,6 +24,7 @@
                label-id="Tetrahedron (Netgen)"
                icon-id="mesh_algo_tetra.png"
                hypos="MaxElementVolume"
+	       need-geom="false"
                input="TRIA"
                dim="3"/>
     <algorithm type="NETGEN_2D"
