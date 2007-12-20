@@ -223,19 +223,19 @@ AC_SUBST_FILE(CORBA)
 corba=make_$ORB
 CORBA=adm_local/unix/$corba
 
-echo
-echo ---------------------------------------------
-echo testing MSG2QM
-echo ---------------------------------------------
-echo
-
-CHECK_MSG2QM
-
-NETGENPLUGIN_WITH_GUI=yes
+NETGENPLUGIN_WITH_GUI=no
 
 AM_CONDITIONAL(NETGENPLUGIN_ENABLE_GUI, [test "${NETGENPLUGIN_WITH_GUI}" = "yes"])
 
 if test "${NETGENPLUGIN_WITH_GUI}" = "yes"; then
+    echo
+    echo ---------------------------------------------
+    echo testing MSG2QM
+    echo ---------------------------------------------
+    echo
+
+    CHECK_MSG2QM
+
     echo
     echo ---------------------------------------------
     echo testing openGL
@@ -354,7 +354,12 @@ echo
 #AM_CONDITIONAL( USE_GFORTRAN, [test "$F77" = "gfortran"])
 
 echo Configure
+if test "${NETGENPLUGIN_WITH_GUI}" = "yes"; then
 variables="cc_ok boost_ok lex_yacc_ok python_ok swig_ok threads_ok OpenGL_ok qt_ok vtk_ok hdf5_ok omniORB_ok occ_ok doxygen_ok graphviz_ok Kernel_ok Geom_ok SMesh_ok Netgen_ok"
+fi
+if test "${NETGENPLUGIN_WITH_GUI}" = "no"; then
+variables="cc_ok boost_ok lex_yacc_ok python_ok swig_ok threads_ok hdf5_ok omniORB_ok occ_ok doxygen_ok graphviz_ok Kernel_ok Geom_ok SMesh_ok Netgen_ok"
+fi
 
 for var in $variables
 do
