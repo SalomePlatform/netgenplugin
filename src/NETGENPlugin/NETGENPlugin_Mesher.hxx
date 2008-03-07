@@ -29,28 +29,40 @@
 #ifndef _NETGENPlugin_Mesher_HXX_
 #define _NETGENPlugin_Mesher_HXX_
 
+#include "NETGENPlugin_Defs.hxx"
+#include "StdMeshers_FaceSide.hxx"
+
+class SMESH_Mesh;
 class SMESHDS_Mesh;
 class TopoDS_Shape;
 class NETGENPlugin_Hypothesis;
+namespace netgen {
+  class OCCGeometry;
+}
 
 /*!
  * \brief This class calls the NETGEN mesher of OCC geometry
  */
 
-class NETGENPlugin_Mesher 
+class NETGENPLUGIN_EXPORT NETGENPlugin_Mesher 
 {
  public:
   // ---------- PUBLIC METHODS ----------
 
-  NETGENPlugin_Mesher (SMESHDS_Mesh* meshDS, const TopoDS_Shape& aShape,
+  NETGENPlugin_Mesher (SMESH_Mesh* mesh, const TopoDS_Shape& aShape,
                        const bool isVolume);
 
   void SetParameters(const NETGENPlugin_Hypothesis* hyp);
 
   bool Compute();
 
+  static void PrepareOCCgeometry(netgen::OCCGeometry& occgeom,
+                                 const TopoDS_Shape&  shape);
+
+  static void RemoveTmpFiles();
+
  private:
-  SMESHDS_Mesh*        _meshDS;
+  SMESH_Mesh*          _mesh;
   const TopoDS_Shape&  _shape;
   bool                 _isVolume;
   bool                 _optimize;

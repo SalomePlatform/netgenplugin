@@ -21,16 +21,16 @@
 #
 #  File   : Makefile.in
 #  Author : Patrick GOLDBRONN (CEA)
+#  Modified by : Alexander BORODIN (OCN) - autotools usage
 #  Module : SMESH
 #  $Header$
 
-top_srcdir=@top_srcdir@
-top_builddir=..
-srcdir=@srcdir@
-VPATH=.:@srcdir@
+include $(top_srcdir)/adm_local/unix/make_common_starter.am
 
-@COMMENCE@
+#SUBDIRS = NETGEN NETGENPlugin GUI
 
-SUBDIRS = NETGEN NETGENPlugin GUI
+SUBDIRS = NETGEN NETGENPlugin
 
-@MODULE@
+if NETGENPLUGIN_ENABLE_GUI
+  SUBDIRS += GUI
+endif

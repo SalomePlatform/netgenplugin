@@ -7,8 +7,8 @@
 
 <meshers-group name="NETGEN"
                resources="NETGENPlugin"
-               server-lib="libNETGENEngine.so"
-               gui-lib="libNETGENPluginGUI.so">
+               server-lib="NETGENEngine"
+               gui-lib="NETGENPluginGUI">
   <hypotheses>
     <hypothesis type="NETGEN_Parameters"
 		label-id="NETGEN 3D Parameters"
@@ -24,6 +24,7 @@
                label-id="Tetrahedron (Netgen)"
                icon-id="mesh_algo_tetra.png"
                hypos="MaxElementVolume"
+	       need-geom="false"
                input="TRIA"
                dim="3"/>
     <algorithm type="NETGEN_2D"
@@ -37,6 +38,14 @@
                icon-id="mesh_algo_netgen_2d3d.png"
                hypos="NETGEN_Parameters"
                dim="3"/>
+    <algorithm type="NETGEN_2D_ONLY"
+               label-id="Netgen 2D"
+               icon-id="mesh_algo_netgen_2d.png"
+               hypos="LengthFromEdges,MaxElementArea"
+               opt-hypos="QuadranglePreference"
+               input="EDGE"
+               output="TRIA,QUAD"
+               dim="2"/>
   </algorithms>
 </meshers-group>
 

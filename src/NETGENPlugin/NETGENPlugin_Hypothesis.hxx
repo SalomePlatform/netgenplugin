@@ -29,13 +29,17 @@
 #ifndef _NETGENPlugin_Hypothesis_HXX_
 #define _NETGENPlugin_Hypothesis_HXX_
 
+#include "NETGENPlugin_Defs.hxx"
+
 #include "SMESH_Hypothesis.hxx"
 #include "Utils_SALOME_Exception.hxx"
 
 //  Parameters for work of NETGEN
 //
 
-class NETGENPlugin_Hypothesis: public SMESH_Hypothesis
+using namespace std;
+
+class NETGENPLUGIN_EXPORT NETGENPlugin_Hypothesis: public SMESH_Hypothesis
 {
 public:
 
@@ -87,8 +91,8 @@ public:
   // Persistence
   virtual ostream & SaveTo(ostream & save);
   virtual istream & LoadFrom(istream & load);
-  friend ostream & operator <<(ostream & save, NETGENPlugin_Hypothesis & hyp);
-  friend istream & operator >>(istream & load, NETGENPlugin_Hypothesis & hyp);
+  friend NETGENPLUGIN_EXPORT ostream & operator <<(ostream & save, NETGENPlugin_Hypothesis & hyp);
+  friend NETGENPLUGIN_EXPORT istream & operator >>(istream & load, NETGENPlugin_Hypothesis & hyp);
 
   /*!
    * \brief Does nothing

@@ -26,11 +26,11 @@
 //  Module : SMESH
 //  $Header$
 
-using namespace std;
 #include "utilities.h"
 
 #include "NETGENPlugin_NETGEN_3D_i.hxx"
 #include "NETGENPlugin_NETGEN_2D_i.hxx"
+#include "NETGENPlugin_NETGEN_2D_ONLY_i.hxx"
 #include "NETGENPlugin_NETGEN_2D3D_i.hxx"
 #include "NETGENPlugin_Hypothesis_i.hxx"
 #include "NETGENPlugin_Hypothesis_2D_i.hxx"
@@ -49,6 +49,7 @@ template <class T> class NETGENPlugin_Creator_i:public HypothesisCreator_i<T>
 
 extern "C"
 {
+  NETGENPLUGIN_EXPORT
   GenericHypothesisCreator_i* GetHypothesisCreator (const char* aHypName)
   {
     MESSAGE("GetHypothesisCreator " << aHypName);
@@ -62,6 +63,8 @@ extern "C"
       aCreator = new NETGENPlugin_Creator_i<NETGENPlugin_NETGEN_3D_i>;
     else if (strcmp(aHypName, "NETGEN_2D") == 0)
       aCreator = new NETGENPlugin_Creator_i<NETGENPlugin_NETGEN_2D_i>;
+    else if (strcmp(aHypName, "NETGEN_2D_ONLY") == 0)
+      aCreator = new NETGENPlugin_Creator_i<NETGENPlugin_NETGEN_2D_ONLY_i>;
     else if (strcmp(aHypName, "NETGEN_2D3D") == 0)
       aCreator = new NETGENPlugin_Creator_i<NETGENPlugin_NETGEN_2D3D_i>;
     // Hypotheses

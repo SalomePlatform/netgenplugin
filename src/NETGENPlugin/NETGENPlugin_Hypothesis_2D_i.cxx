@@ -25,14 +25,14 @@
 // Project   : SALOME
 // $Header$
 //=============================================================================
-using namespace std;
-
 #include "NETGENPlugin_Hypothesis_2D_i.hxx"
 #include "SMESH_Gen.hxx"
 #include "SMESH_PythonDump.hxx"
 
 #include "Utils_CorbaException.hxx"
 #include "utilities.h"
+
+using namespace std;
 
 //=============================================================================
 /*!

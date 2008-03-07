@@ -28,6 +28,16 @@
 #ifndef NETGENPLUGINGUI_HypothesisCreator_HeaderFile
 #define NETGENPLUGINGUI_HypothesisCreator_HeaderFile
 
+#ifdef WIN32
+  #ifdef NETGENPLUGIN_GUI_EXPORTS
+    #define NETGENPLUGIN_GUI_EXPORT __declspec( dllexport )
+  #else
+    #define NETGENPLUGIN_GUI_EXPORT __declspec( dllimport )
+  #endif
+#else
+  #define NETGENPLUGIN_GUI_EXPORT
+#endif
+
 #include <SMESHGUI_Hypotheses.h>
 
 class QtxDblSpinBox;
@@ -46,7 +56,7 @@ typedef struct
 /*!
  * \brief Class for creation of NETGEN2D and NETGEN3D hypotheses
 */
-class NETGENPluginGUI_HypothesisCreator : public SMESHGUI_GenericHypothesisCreator
+class NETGENPLUGIN_GUI_EXPORT NETGENPluginGUI_HypothesisCreator : public SMESHGUI_GenericHypothesisCreator
 {
   Q_OBJECT
 

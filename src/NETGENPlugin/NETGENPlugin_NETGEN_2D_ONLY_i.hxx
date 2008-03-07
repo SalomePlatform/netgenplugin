@@ -21,40 +21,36 @@
 //
 //
 //
-//  File   : NETGENPlugin_NETGEN_3D_i.hxx
-//           Moved here from SMESH_NETGEN_3D_i.hxx
-//  Author : Nadir Bouhamou CEA
+//  File   : NETGENPlugin_NETGEN_2D_ONLY_i.cxx
+//  Author : Edward AGAPOV (OCC)
 //  Module : SMESH
-//  $Header$
 
-#ifndef _NETGENPlugin_NETGEN_3D_I_HXX_
-#define _NETGENPlugin_NETGEN_3D_I_HXX_
-
-#include "NETGENPlugin_Defs.hxx"
+#ifndef _NETGENPlugin_NETGEN_2D_ONLY_I_HXX_
+#define _NETGENPlugin_NETGEN_2D_ONLY_I_HXX_
 
 #include <SALOMEconfig.h>
 #include CORBA_SERVER_HEADER(NETGENPlugin_Algorithm)
 
-#include "SMESH_3D_Algo_i.hxx"
-#include "NETGENPlugin_NETGEN_3D.hxx"
+#include "SMESH_2D_Algo_i.hxx"
+#include "NETGENPlugin_NETGEN_2D_ONLY.hxx"
 
 // ======================================================
-// NETGEN 3d algorithm
+// NETGEN 2D algorithm
 // ======================================================
-class NETGENPLUGIN_EXPORT NETGENPlugin_NETGEN_3D_i:
-  public virtual POA_NETGENPlugin::NETGENPlugin_NETGEN_3D,
-  public virtual SMESH_3D_Algo_i
+class NETGENPlugin_NETGEN_2D_ONLY_i:
+  public virtual POA_NETGENPlugin::NETGENPlugin_NETGEN_2D_ONLY,
+  public virtual SMESH_2D_Algo_i
 {
 public:
   // Constructor
-  NETGENPlugin_NETGEN_3D_i( PortableServer::POA_ptr thePOA,
-                     int                     theStudyId,
-                     ::SMESH_Gen*            theGenImpl );
+  NETGENPlugin_NETGEN_2D_ONLY_i( PortableServer::POA_ptr thePOA,
+                                 int                     theStudyId,
+                                 ::SMESH_Gen*            theGenImpl );
   // Destructor
-  virtual ~NETGENPlugin_NETGEN_3D_i();
+  virtual ~NETGENPlugin_NETGEN_2D_ONLY_i();
  
   // Get implementation
-  ::NETGENPlugin_NETGEN_3D* GetImpl();
+  ::NETGENPlugin_NETGEN_2D_ONLY* GetImpl();
 };
 
 #endif

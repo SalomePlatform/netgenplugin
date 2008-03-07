@@ -1,5 +1,5 @@
 #  Copyright (C) 2005  OPEN CASCADE, EADS/CCR, LIP6, CEA/DEN,
-#  CEDRAT, EDF R&D, LEG, PRINCIPIA R&D, BUREAU VERITAS, L3S, LJLL, MENSI
+#  CEDRAT, EDF R&D, LEG, PRINCIPIA R&D, BUREAU VERITAS
 #
 #  This library is free software; you can redistribute it and/or
 #  modify it under the terms of the GNU Lesser General Public
@@ -17,44 +17,24 @@
 #
 # See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
 #
-# source path
-top_srcdir=@top_srcdir@
-top_builddir=..
-srcdir=@srcdir@
-VPATH=.:$(srcdir)/adm_local
+# -* Makefile *- 
+#
+# Author : Patrick GOLDBRONN (CEA)
+# Date : 28/06/2001
+# Modified by : Alexander BORODIN (OCN) - autotools usage
+#
 
+include $(top_srcdir)/adm_local/unix/make_common_starter.am
 
-all: resources
+SUBDIRS = idl adm_local resources src bin
 
-install:
-	cp -rf @top_srcdir@/adm_local @prefix@
+DIST_SUBDIRS = idl adm_local resources src bin 
 
-bin:
+DISTCLEANFILES = a.out aclocal.m4 configure
 
-resources :
-	cp -rf @top_srcdir@/adm_local $(top_builddir)
+salomeinclude_DATA=NETGENPLUGIN_version.h
 
-inc:
-
-lib:
-
-depend:
-
-depend_idl:
-
-install-end:
-
-install-include:
-
-install-bin:
-
-uninstall:
-
-uninstall-idl:
-
-distclean:
-
-clean:
-
-distclean-other:
-
+EXTRA_DIST+= \
+	build_configure \
+	clean_configure \
+	LICENCE

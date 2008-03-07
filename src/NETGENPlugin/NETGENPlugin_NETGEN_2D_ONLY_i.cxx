@@ -1,6 +1,7 @@
-//  NETGENPlugin : idl implementation
+//  SMESH SMESH_I : idl implementation based on 'SMESH' unit's calsses
 //
-//  Copyright (C) 2006  OPEN CASCADE, CEA/DEN, EDF R&D
+//  Copyright (C) 2003  OPEN CASCADE, EADS/CCR, LIP6, CEA/DEN,
+//  CEDRAT, EDF R&D, LEG, PRINCIPIA R&D, BUREAU VERITAS 
 // 
 //  This library is free software; you can redistribute it and/or 
 //  modify it under the terms of the GNU Lesser General Public 
@@ -19,64 +20,62 @@
 // See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
 //
 //
-//  File   : NETGENPlugin_NETGEN_2D_i.cxx
-//  Author : Michael Sazonov (OCN)
-//  Module : NETGENPlugin
-//  $Header$
+//
+//  File   : NETGENPlugin_NETGEN_2D_ONLY_i.cxx
+//  Author : Edward AGAPOV (OCC)
+//  Module : SMESH
 
-#include "NETGENPlugin_NETGEN_2D_i.hxx"
+#include "NETGENPlugin_NETGEN_2D_ONLY_i.hxx"
 #include "SMESH_Gen.hxx"
 
-#include "Utils_CorbaException.hxx"
 #include "utilities.h"
-
-using namespace std;
 
 //=============================================================================
 /*!
- *  NETGENPlugin_NETGEN_2D_i::NETGENPlugin_NETGEN_2D_i
+ *  NETGENPlugin_NETGEN_2D_ONLY_i::NETGENPlugin_NETGEN_2D_ONLY_i
  *
  *  Constructor
  */
 //=============================================================================
 
-NETGENPlugin_NETGEN_2D_i::NETGENPlugin_NETGEN_2D_i( PortableServer::POA_ptr thePOA,
-                                                    int                     theStudyId,
-                                                    ::SMESH_Gen*            theGenImpl )
+NETGENPlugin_NETGEN_2D_ONLY_i::NETGENPlugin_NETGEN_2D_ONLY_i( PortableServer::POA_ptr thePOA,
+				      int                     theStudyId,
+				      ::SMESH_Gen*            theGenImpl )
      : SALOME::GenericObj_i( thePOA ), 
        SMESH_Hypothesis_i( thePOA ), 
        SMESH_Algo_i( thePOA ),
        SMESH_2D_Algo_i( thePOA )
 {
-  MESSAGE( "NETGENPlugin_NETGEN_2D_i::NETGENPlugin_NETGEN_2D_i" );
-  myBaseImpl = new ::NETGENPlugin_NETGEN_2D( theGenImpl->GetANewId(),
-                                             theStudyId,
-                                             theGenImpl );
+  MESSAGE( "NETGENPlugin_NETGEN_2D_ONLY_i::NETGENPlugin_NETGEN_2D_ONLY_i" );
+  myBaseImpl = new ::NETGENPlugin_NETGEN_2D_ONLY( theGenImpl->GetANewId(),
+                                                  theStudyId,
+                                                  theGenImpl );
 }
 
 //=============================================================================
 /*!
- *  NETGENPlugin_NETGEN_2D_i::~NETGENPlugin_NETGEN_2D_i
+ *  NETGENPlugin_NETGEN_2D_ONLY_i::~NETGENPlugin_NETGEN_2D_ONLY_i
  *
  *  Destructor
  */
 //=============================================================================
 
-NETGENPlugin_NETGEN_2D_i::~NETGENPlugin_NETGEN_2D_i()
+NETGENPlugin_NETGEN_2D_ONLY_i::~NETGENPlugin_NETGEN_2D_ONLY_i()
 {
-  MESSAGE( "NETGENPlugin_NETGEN_2D_i::~NETGENPlugin_NETGEN_2D_i" );
+  MESSAGE( "NETGENPlugin_NETGEN_2D_ONLY_i::~NETGENPlugin_NETGEN_2D_ONLY_i" );
 }
 
 //=============================================================================
 /*!
- *  NETGENPlugin_NETGEN_2D_i::GetImpl
+ *  NETGENPlugin_NETGEN_2D_ONLY_i::GetImpl
  *
  *  Get implementation
  */
 //=============================================================================
 
-::NETGENPlugin_NETGEN_2D* NETGENPlugin_NETGEN_2D_i::GetImpl()
+::NETGENPlugin_NETGEN_2D_ONLY* NETGENPlugin_NETGEN_2D_ONLY_i::GetImpl()
 {
-  MESSAGE( "NETGENPlugin_NETGEN_2D_i::GetImpl" );
-  return ( ::NETGENPlugin_NETGEN_2D* )myBaseImpl;
+  MESSAGE( "NETGENPlugin_NETGEN_2D_ONLY_i::GetImpl" );
+  return ( ::NETGENPlugin_NETGEN_2D_ONLY* )myBaseImpl;
 }
+

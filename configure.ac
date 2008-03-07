@@ -11,21 +11,24 @@
 # Date : 28/06/2001
 # Modified by : Patrick GOLDBRONN (CEA)
 # Modified by : Marc Tajchman (CEA)
+# 13/03/2007: Alexander BORODIN - OCN
+# Reorganization for usage of autotools
 #
 # Created from configure.in.base
 #
 
-AC_INIT(src)
-AC_CONFIG_AUX_DIR(${KERNEL_ROOT_DIR}/salome_adm/unix/config_files)
+AC_INIT([Salome2 Project NETGENPLUGIN module], [4.1.1], [webmaster.salome@opencascade.com], [salome])
+AC_CONFIG_AUX_DIR(salome_adm/unix/config_files)
 AC_CANONICAL_HOST
+AC_CANONICAL_TARGET
+AM_INIT_AUTOMAKE
 
-PACKAGE=salome
-AC_SUBST(PACKAGE)
-
-VERSION=3.2.0
-XVERSION=0x030200
-AC_SUBST(VERSION)
+XVERSION=`echo $VERSION | awk -F. '{printf("0x%02x%02x%02x",$1,$2,$3)}'`
 AC_SUBST(XVERSION)
+
+# set up MODULE_NAME variable for dynamic construction of directories (resources, etc.)
+MODULE_NAME=netgenplugin
+AC_SUBST(MODULE_NAME)
 
 dnl
 dnl Initialize source and build root directories
@@ -102,6 +105,21 @@ AC_DEPEND_FLAG
 # AC_CC_WARNINGS([ansi])
 cc_ok=yes
 
+echo
+echo ---------------------------------------------
+echo testing Fortran
+echo ---------------------------------------------
+echo
+
+fortran_ok=no
+AC_PROG_F77
+AC_F77_LIBRARY_LDFLAGS
+AC_PROG_FC
+AC_FC_LIBRARY_LDFLAGS
+if test "X$FC" != "X" ; then
+   fortran_ok=yes
+fi
+
 dnl Library libdl :
 AC_CHECK_LIB(dl,dlopen)
 
@@ -149,6 +167,8 @@ echo ---------------------------------------------
 echo
 
 CHECK_PYTHON
+
+AM_PATH_PYTHON(2.3)
 
 dnl echo
 dnl echo ---------------------------------------------
@@ -203,37 +223,63 @@ AC_SUBST_FILE(CORBA)
 corba=make_$ORB
 CORBA=adm_local/unix/$corba
 
-echo
-echo ---------------------------------------------
-echo testing openGL
-echo ---------------------------------------------
-echo
+NETGENPLUGIN_WITH_GUI=no
 
-CHECK_OPENGL
+AM_CONDITIONAL(NETGENPLUGIN_ENABLE_GUI, [test "${NETGENPLUGIN_WITH_GUI}" = "yes"])
 
-echo
-echo ---------------------------------------------
-echo testing QT
-echo ---------------------------------------------
-echo
+if test "${NETGENPLUGIN_WITH_GUI}" = "yes"; then
+    echo
+    echo ---------------------------------------------
+    echo testing MSG2QM
+    echo ---------------------------------------------
+    echo
 
-CHECK_QT
+    CHECK_MSG2QM
 
-echo
-echo ---------------------------------------------
-echo testing MSG2QM
-echo ---------------------------------------------
-echo
+    echo
+    echo ---------------------------------------------
+    echo testing openGL
+    echo ---------------------------------------------
+    echo
 
-CHECK_MSG2QM
+    CHECK_OPENGL
 
-echo
-echo ---------------------------------------------
-echo testing VTK
-echo ---------------------------------------------
-echo
+    echo
+    echo ---------------------------------------------
+    echo testing QT
+    echo ---------------------------------------------
+    echo
 
-CHECK_VTK
+    CHECK_QT
+
+    echo
+    echo ---------------------------------------------
+    echo testing VTK
+    echo ---------------------------------------------
+    echo
+
+    CHECK_VTK
+
+    echo
+    echo ---------------------------------------------
+    echo Testing GUI
+    echo ---------------------------------------------
+    echo
+
+    CHECK_SALOME_GUI
+
+    echo
+    echo ---------------------------------------------
+    echo Testing full GUI
+    echo ---------------------------------------------
+    echo
+
+    CHECK_CORBA_IN_GUI
+    if test "x${CORBA_IN_GUI}" != "xyes"; then
+      echo "failed : For configure NETGENPLUGIN module necessary full GUI !"
+      exit
+    fi
+fi
 
 echo
 echo ---------------------------------------------
@@ -261,26 +307,6 @@ CHECK_HTML_GENERATORS
 
 echo
 echo ---------------------------------------------
-echo Testing GUI
-echo ---------------------------------------------
-echo
-
-CHECK_SALOME_GUI
-
-echo
-echo ---------------------------------------------
-echo Testing full GUI
-echo ---------------------------------------------
-echo
-
-CHECK_CORBA_IN_GUI
-if test "x${CORBA_IN_GUI}" != "xyes"; then
-  echo "failed : For configure NETGENPLUGIN module necessary full GUI !"
-  exit
-fi
-
-echo
-echo ---------------------------------------------
 echo Testing Kernel
 echo ---------------------------------------------
 echo
@@ -295,13 +321,13 @@ echo
 
 CHECK_GEOM
 
-# echo
-# echo ---------------------------------------------
-# echo Testing Med
-# echo ---------------------------------------------
-# echo
-# 
-# CHECK_MED
+ echo
+ echo ---------------------------------------------
+ echo Testing Med
+ echo ---------------------------------------------
+ echo
+ 
+CHECK_MED
 
 echo
 echo ---------------------------------------------
@@ -325,8 +351,15 @@ echo Summary
 echo ---------------------------------------------
 echo
 
+#AM_CONDITIONAL( USE_GFORTRAN, [test "$F77" = "gfortran"])
+
 echo Configure
+if test "${NETGENPLUGIN_WITH_GUI}" = "yes"; then
 variables="cc_ok boost_ok lex_yacc_ok python_ok swig_ok threads_ok OpenGL_ok qt_ok vtk_ok hdf5_ok omniORB_ok occ_ok doxygen_ok graphviz_ok Kernel_ok Geom_ok SMesh_ok Netgen_ok"
+fi
+if test "${NETGENPLUGIN_WITH_GUI}" = "no"; then
+variables="cc_ok boost_ok lex_yacc_ok python_ok swig_ok threads_ok hdf5_ok omniORB_ok occ_ok doxygen_ok graphviz_ok Kernel_ok Geom_ok SMesh_ok Netgen_ok"
+fi
 
 for var in $variables
 do
@@ -338,15 +371,6 @@ echo
 echo "Default ORB   : $DEFAULT_ORB"
 echo
 
-dnl generals files which could be included in every makefile
-
-AC_SUBST_FILE(COMMENCE) COMMENCE=adm_local/unix/make_commence
-AC_SUBST_FILE(CONCLUDE) CONCLUDE=salome_adm/unix/make_conclude
-AC_SUBST_FILE(MODULE) MODULE=salome_adm/unix/make_module
-
-dnl les dependences
-AC_SUBST_FILE(DEPEND) DEPEND=salome_adm/unix/depend
-
 dnl We don t need to say when we re entering directories if we re using
 dnl GNU make becuase make does it for us.
 if test "X$GMAKE" = "Xyes"; then
@@ -355,66 +379,9 @@ else
    AC_SUBST(SETX) SETX="set -x"
 fi
 
-# make other build directories
-for rep in salome_adm adm_local doc bin/salome include/salome lib/salome share/salome/resources idl
-do
-#   if test ! -d $rep ; then
-#      eval mkdir $rep
-#   fi
-    $INSTALL -d $rep
-done
-
-echo 
-echo ---------------------------------------------
-echo copying resource files, shell scripts, and 
-echo xml files
-echo ---------------------------------------------
-echo
-
-
-dnl copy resources directories
-
-#for i in `find $ROOT_SRCDIR -name 'resources' -print`
-#do
-#  local_res=`echo $i | sed -e "s,$ROOT_SRCDIR,.,"`
-#  local_res_dir=`echo $local_res | sed -e "s,[[^/]]*$,,;s,/$,,;s,^$,.,"`
-#  mkdir -p $local_res_dir
-#  cd $local_res_dir
-#  ln -fs $i
-#  echo $local_res
-#  cd $ROOT_BUILDDIR
-#done
-
 dnl copy shells and utilities contained in the bin directory
-dnl excluding .in files (treated in AC-OUTPUT below) and CVS 
+dnl excluding .in files (treated in AC-OUTPUT below) and CVS
 dnl directory
-
-#mkdir -p bin/salome
-#cd bin/salome
-#for i in $ROOT_SRCDIR/bin/*
-#do
-#  local_bin=`echo $i | sed -e "s,$ROOT_SRCDIR,.,"`
-#  case "$local_bin" in
-#        *.in | *~)                    ;;
-#        ./bin/CVS | ./bin/salome)                    ;;
-#        *) /usr/bin/install -C $i .; echo $local_bin ;;
-#  esac
-#done
-#cd $ROOT_BUILDDIR
-
-AC_SUBST_FILE(ENVSCRIPT) ENVSCRIPT=salome_adm/unix/envScript
-
-dnl copy xml files to the build tree (lib directory)
-dnl pourquoi ????
-
-#cd lib
-#for i in `find $ROOT_SRCDIR -name "*.xml" -print`
-#do
-#  ln -fs $i
-#  echo `echo $i | sed -e "s,$ROOT_SRCDIR,.,"`
-#done
-#cd $ROOT_BUILDDIR
-
 
 echo
 echo ---------------------------------------------
@@ -423,7 +390,27 @@ echo ---------------------------------------------
 echo
 
 #AC_OUTPUT_COMMANDS([ \
-#	chmod +x ./bin/* \
+#  chmod +x ./bin/*; \
+#  chmod +x ./bin/salome/*;
 #])
 
-## do not delete this line
+# This list is initiated using autoscan and must be updated manually
+# when adding a new file <filename>.in to manage. When you execute
+# autoscan, the Makefile list is generated in the output file configure.scan.
+# This could be helpfull to update de configuration.
+AC_OUTPUT([ \
+  ./salome_adm/unix/SALOMEconfig.h \
+  ./adm_local/Makefile \
+  ./adm_local/unix/Makefile \
+  ./adm_local/unix/config_files/Makefile \
+  ./bin/VERSION \
+  ./bin/Makefile \
+  ./NETGENPLUGIN_version.h \
+  ./src/Makefile \
+  ./src/GUI/Makefile \
+  ./src/NETGEN/Makefile \
+  ./src/NETGENPlugin/Makefile \
+  ./resources/Makefile \
+  ./idl/Makefile \
+  Makefile \
+])

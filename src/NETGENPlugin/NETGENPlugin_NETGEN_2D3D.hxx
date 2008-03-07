@@ -29,6 +29,8 @@
 #ifndef _NETGENPlugin_NETGEN_2D3D_HXX_
 #define _NETGENPlugin_NETGEN_2D3D_HXX_
 
+#include "NETGENPlugin_Defs.hxx"
+
 #include "SMESH_3D_Algo.hxx"
 #include "SMESH_Mesh.hxx"
 #include "StdMeshers_MaxElementVolume.hxx"
@@ -36,7 +38,7 @@
 
 class NETGENPlugin_Hypothesis;
 
-class NETGENPlugin_NETGEN_2D3D: public SMESH_3D_Algo
+class NETGENPLUGIN_EXPORT NETGENPlugin_NETGEN_2D3D: public SMESH_3D_Algo
 {
 public:
   NETGENPlugin_NETGEN_2D3D(int hypId, int studyId, SMESH_Gen* gen);
@@ -48,11 +50,6 @@ public:
 
   virtual bool Compute(SMESH_Mesh& aMesh,
 		       const TopoDS_Shape& aShape);
-
-  ostream & SaveTo(ostream & save);
-  istream & LoadFrom(istream & load);
-  friend ostream & operator << (ostream & save, NETGENPlugin_NETGEN_2D3D & hyp);
-  friend istream & operator >> (istream & load, NETGENPlugin_NETGEN_2D3D & hyp);
 
 protected:
   const NETGENPlugin_Hypothesis* _hypothesis;

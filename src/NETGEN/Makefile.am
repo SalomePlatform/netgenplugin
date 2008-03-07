@@ -20,23 +20,17 @@
 # -* Makefile *- 
 #
 # Author : Edward AGAPOV (OCC)
+#  Modified by : Alexander BORODIN (OCN) - autotools usage
 # Module : NETGENPLUGIN
 # Date : 10/01/2004
 #
 #
 
-top_srcdir=@top_srcdir@
-top_builddir=../..
-srcdir=@srcdir@
-VPATH=
+include $(top_srcdir)/adm_local/unix/make_common_starter.am
 
 # build .so of NETGEN itself
 
-@COMMENCE@
-
-LIB = libNETGEN.la
-
-@CONCLUDE@
+lib_LTLIBRARIES = libNETGEN.la
 
 LIB_OBJ_O = \
 	linopt.o bfgs.o linsearch.o global.o bisect.o meshtool.o refine.o ruler3.o \
@@ -70,19 +64,14 @@ $(LIB_OBJ_O):
 	ar x $(NETGEN_LIBS_DIR)/libgeom2d.a
 	rm -rf csgparser.o dynamicmem.o extrusion.o occconstruction.o parthreads.o readuser.o writeabaqus.o writediffpack.o writeelmer.o writefeap.o writefluent.o writegmsh.o writejcm.o writepermas.o writetecplot.o writetochnog.o writeuser.o wuchemnitz.o
 
-LIB_OBJ_LO = $(LIB_OBJ_O:%.o=%.lo)
+#LIB_OBJ_LO = $(LIB_OBJ_O:%.o=%.lo)
+#%.lo: %.o; @ln -s $< $@
 
-%.lo: %.o; @ln -s $< $@
+nodist_libNETGEN_la_SOURCES =
 
-$(LIB): $(LIB_OBJ_O) $(LIB_OBJ_LO)
-LIB_OBJ = $(LIB_OBJ_LO)
 
-ifeq ($(F77),gfortran)
-LDFLAGS += -lgfortran
-else
-LDFLAGS += -lg2c
-endif
 
-LDFLAGS  += $(OCC_LDPATH) -lTKBRep -lTKShHealing -lTKSTEP -lTKXSBase -lTKIGES
+libNETGEN_la_LDFLAGS  = $(LIB_OBJ_O) \
+	$(CAS_LDPATH) -lTKernel -lTKBRep -lTKShHealing -lTKSTEP -lTKXSBase -lTKIGES -lTKMesh -lTKSTL $(FCLIBS) $(STDLIB)
 
-MOSTLYCLEAN += $(LIB_OBJ_O)
+libNETGEN_la_DEPENDENCIES = $(LIB_OBJ_O)

@@ -26,9 +26,10 @@
 // $Header$
 //=============================================================================
 
-using namespace std;
 #include <NETGENPlugin_Hypothesis.hxx>
 #include <utilities.h>
+
+using namespace std;
 
 //=============================================================================
 /*!

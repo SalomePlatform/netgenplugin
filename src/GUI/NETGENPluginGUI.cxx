@@ -35,6 +35,7 @@
 //=============================================================================
 extern "C"
 {
+  NETGENPLUGIN_GUI_EXPORT
   SMESHGUI_GenericHypothesisCreator* GetHypothesisCreator( const QString& aHypType )
   {
     SMESHGUI_GenericHypothesisCreator* aCreator = NULL;

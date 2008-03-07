@@ -29,6 +29,8 @@
 #ifndef _NETGENPlugin_Hypothesis_i_HXX_
 #define _NETGENPlugin_Hypothesis_i_HXX_
 
+#include "NETGENPlugin_Defs.hxx"
+
 #include <SALOMEconfig.h>
 #include CORBA_SERVER_HEADER(NETGENPlugin_Algorithm)
 
@@ -39,7 +41,7 @@ class SMESH_Gen;
 
 // NETGENPlugin parameters hypothesis
 
-class NETGENPlugin_Hypothesis_i:
+class NETGENPLUGIN_EXPORT NETGENPlugin_Hypothesis_i:
   public virtual POA_NETGENPlugin::NETGENPlugin_Hypothesis,
   public virtual SMESH_Hypothesis_i
 {

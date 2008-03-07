@@ -24,12 +24,13 @@
 //  Module : NETGENPlugin
 //  $Header$
 
-using namespace std;
 #include "NETGENPlugin_NETGEN_2D3D_i.hxx"
 #include "SMESH_Gen.hxx"
 
 #include "Utils_CorbaException.hxx"
 #include "utilities.h"
+
+using namespace std;
 
 //=============================================================================
 /*!
