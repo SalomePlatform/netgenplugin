@@ -17,18 +17,13 @@
 # Created from configure.in.base
 #
 
-AC_INIT([Salome2 Project NETGENPLUGIN module], [4.0.0], [gboulant@CS], [salome])
+AC_INIT([Salome2 Project NETGENPLUGIN module], [4.1.1], [webmaster.salome@opencascade.com], [salome])
 AC_CONFIG_AUX_DIR(salome_adm/unix/config_files)
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
 AM_INIT_AUTOMAKE
 
-PACKAGE=salome
-AC_SUBST(PACKAGE)
-
-VERSION=4.0.0
-XVERSION=0x040000
-AC_SUBST(VERSION)
+XVERSION=`echo $VERSION | awk -F. '{printf("0x%02x%02x%02x",$1,$2,$3)}'`
 AC_SUBST(XVERSION)
 
 # set up MODULE_NAME variable for dynamic construction of directories (resources, etc.)
@@ -228,37 +223,63 @@ AC_SUBST_FILE(CORBA)
 corba=make_$ORB
 CORBA=adm_local/unix/$corba
 
-echo
-echo ---------------------------------------------
-echo testing openGL
-echo ---------------------------------------------
-echo
+NETGENPLUGIN_WITH_GUI=no
 
-CHECK_OPENGL
+AM_CONDITIONAL(NETGENPLUGIN_ENABLE_GUI, [test "${NETGENPLUGIN_WITH_GUI}" = "yes"])
 
-echo
-echo ---------------------------------------------
-echo testing QT
-echo ---------------------------------------------
-echo
+if test "${NETGENPLUGIN_WITH_GUI}" = "yes"; then
+    echo
+    echo ---------------------------------------------
+    echo testing MSG2QM
+    echo ---------------------------------------------
+    echo
 
-CHECK_QT
+    CHECK_MSG2QM
 
-echo
-echo ---------------------------------------------
-echo testing MSG2QM
-echo ---------------------------------------------
-echo
+    echo
+    echo ---------------------------------------------
+    echo testing openGL
+    echo ---------------------------------------------
+    echo
 
-CHECK_MSG2QM
+    CHECK_OPENGL
 
-echo
-echo ---------------------------------------------
-echo testing VTK
-echo ---------------------------------------------
-echo
+    echo
+    echo ---------------------------------------------
+    echo testing QT
+    echo ---------------------------------------------
+    echo
 
-CHECK_VTK
+    CHECK_QT
+
+    echo
+    echo ---------------------------------------------
+    echo testing VTK
+    echo ---------------------------------------------
+    echo
+
+    CHECK_VTK
+
+    echo
+    echo ---------------------------------------------
+    echo Testing GUI
+    echo ---------------------------------------------
+    echo
+
+    CHECK_SALOME_GUI
+
+    echo
+    echo ---------------------------------------------
+    echo Testing full GUI
+    echo ---------------------------------------------
+    echo
+
+    CHECK_CORBA_IN_GUI
+    if test "x${CORBA_IN_GUI}" != "xyes"; then
+      echo "failed : For configure NETGENPLUGIN module necessary full GUI !"
+      exit
+    fi
+fi
 
 echo
 echo ---------------------------------------------
@@ -283,26 +304,6 @@ echo ---------------------------------------------
 echo
 
 CHECK_HTML_GENERATORS
-
-echo
-echo ---------------------------------------------
-echo Testing GUI
-echo ---------------------------------------------
-echo
-
-CHECK_SALOME_GUI
-
-echo
-echo ---------------------------------------------
-echo Testing full GUI
-echo ---------------------------------------------
-echo
-
-CHECK_CORBA_IN_GUI
-if test "x${CORBA_IN_GUI}" != "xyes"; then
-  echo "failed : For configure NETGENPLUGIN module necessary full GUI !"
-  exit
-fi
 
 echo
 echo ---------------------------------------------
@@ -353,7 +354,12 @@ echo
 #AM_CONDITIONAL( USE_GFORTRAN, [test "$F77" = "gfortran"])
 
 echo Configure
+if test "${NETGENPLUGIN_WITH_GUI}" = "yes"; then
 variables="cc_ok boost_ok lex_yacc_ok python_ok swig_ok threads_ok OpenGL_ok qt_ok vtk_ok hdf5_ok omniORB_ok occ_ok doxygen_ok graphviz_ok Kernel_ok Geom_ok SMesh_ok Netgen_ok"
+fi
+if test "${NETGENPLUGIN_WITH_GUI}" = "no"; then
+variables="cc_ok boost_ok lex_yacc_ok python_ok swig_ok threads_ok hdf5_ok omniORB_ok occ_ok doxygen_ok graphviz_ok Kernel_ok Geom_ok SMesh_ok Netgen_ok"
+fi
 
 for var in $variables
 do

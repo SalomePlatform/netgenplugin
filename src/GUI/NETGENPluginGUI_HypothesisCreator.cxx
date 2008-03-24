@@ -122,16 +122,18 @@ QFrame* NETGENPluginGUI_HypothesisCreator::buildFrame()
   myGrowthRate->setMinValue( 0.1 );
   myGrowthRate->setMaxValue( 10 );
   myGrowthRate->setLineStep( 0.1 );
-  
+
+  const double VALUE_MAX = 1.0e+6;
+
   new QLabel( tr( "NETGEN_SEG_PER_EDGE" ), GroupC1 );
   myNbSegPerEdge = new QtxDblSpinBox( GroupC1 );
   myNbSegPerEdge->setMinValue( 0.2 );
-  myNbSegPerEdge->setMaxValue( 5.0 );
+  myNbSegPerEdge->setMaxValue( VALUE_MAX ); // (PAL14890) max value in native netgen gui is 5
   
   new QLabel( tr( "NETGEN_SEG_PER_RADIUS" ), GroupC1 );
   myNbSegPerRadius = new QtxDblSpinBox( GroupC1 );
   myNbSegPerRadius->setMinValue( 0.2 );
-  myNbSegPerRadius->setMaxValue( 5.0 );
+  myNbSegPerRadius->setMaxValue( VALUE_MAX ); // (PAL14890) max value in native netgen gui is 5
 
   if ( hypType()=="NETGEN_Parameters_2D" )
   {

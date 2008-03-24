@@ -27,4 +27,10 @@
 
 include $(top_srcdir)/adm_local/unix/make_common_starter.am
 
-SUBDIRS = NETGEN NETGENPlugin GUI
+#SUBDIRS = NETGEN NETGENPlugin GUI
+
+SUBDIRS = NETGEN NETGENPlugin
+
+if NETGENPLUGIN_ENABLE_GUI
+  SUBDIRS += GUI
+endif

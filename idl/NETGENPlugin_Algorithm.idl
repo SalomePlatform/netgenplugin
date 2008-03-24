@@ -41,16 +41,25 @@ module NETGENPlugin
   };
 
   /*!
-   * NETGENPlugin_NETGEN_2D: interface of "1D-2D (Netgen)" algorithm
+   * NETGENPlugin_NETGEN_2D: interface of "Netgen 1D-2D" algorithm
    */
   interface NETGENPlugin_NETGEN_2D : SMESH::SMESH_2D_Algo
   {
   };
 
   /*!
-   * NETGENPlugin_NETGEN_2D3D: interface of "1D-2D-3D (Netgen)" algorithm
+   * NETGENPlugin_NETGEN_2D3D: interface of "Netgen 1D-2D-3D" algorithm
    */
   interface NETGENPlugin_NETGEN_2D3D : SMESH::SMESH_3D_Algo
+  {
+  };
+
+  /*!
+   * NETGENPlugin_NETGEN_2D_ONLY: interface of "Netgen 2D" algorithm,
+   * generating 2D elements on a geometrical face taking
+   * into account pre-existing nodes on face boundaries
+   */
+  interface NETGENPlugin_NETGEN_2D_ONLY : SMESH::SMESH_2D_Algo
   {
   };
 
