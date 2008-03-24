@@ -40,7 +40,7 @@
 
 #include <SMESHGUI_Hypotheses.h>
 
-class QtxDblSpinBox;
+class QtxDoubleSpinBox;
 class QtxComboBox;
 class QCheckBox;
 class QLineEdit;
@@ -84,15 +84,15 @@ private:
   bool storeParamsToHypo( const NetgenHypothesisData& ) const;
 
 private:
- QLineEdit*       myName;
- QtxDblSpinBox*   myMaxSize;
- QCheckBox*       mySecondOrder;
- QCheckBox*       myOptimize;
- QtxComboBox*     myFineness;
- QtxDblSpinBox*   myGrowthRate;
- QtxDblSpinBox*   myNbSegPerEdge;
- QtxDblSpinBox*   myNbSegPerRadius;
- QCheckBox*       myAllowQuadrangles;
+ QLineEdit*        myName;
+ QtxDoubleSpinBox* myMaxSize;
+ QCheckBox*        mySecondOrder;
+ QCheckBox*        myOptimize;
+ QtxComboBox*      myFineness;
+ QtxDoubleSpinBox* myGrowthRate;
+ QtxDoubleSpinBox* myNbSegPerEdge;
+ QtxDoubleSpinBox* myNbSegPerRadius;
+ QCheckBox*        myAllowQuadrangles;
 
  bool myIs2D;
 };

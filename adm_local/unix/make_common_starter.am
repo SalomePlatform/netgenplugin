@@ -36,10 +36,10 @@ docdir             = $(datadir)/doc/@PACKAGE@
 	$(MOC) $< -o $@
 
 # qm-files generation
-%.qm: %.po
-	$(MSG2QM) $< $@
+%.qm: %.ts
+	$(LRELEASE) $< -qm $@
 
-EXTRA_DIST=$(MOC_FILES:%_moc.cxx=%.h) $(nodist_salomeres_DATA:%.qm=%.po)
+EXTRA_DIST=$(MOC_FILES:%_moc.cxx=%.h) $(nodist_salomeres_DATA:%.qm=%.ts)
 
 mostlyclean-local:
 	rm -f @builddir@/*_moc.cxx

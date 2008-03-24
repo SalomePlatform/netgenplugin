@@ -33,19 +33,20 @@
 #include CORBA_SERVER_HEADER(NETGENPlugin_Algorithm)
 
 #include <SUIT_Session.h>
+#include <SUIT_ResourceMgr.h>
 
 #include <SalomeApp_Tools.h>
 
-#include <QtxDblSpinBox.h>
+#include <QtxDoubleSpinBox.h>
 #include <QtxComboBox.h>
 
-#include <qlabel.h>
-#include <qgroupbox.h>
-#include <qframe.h>
-#include <qlayout.h>
-#include <qlineedit.h>
-#include <qcheckbox.h>
-#include <qpixmap.h>
+#include <QLabel>
+#include <QGroupBox>
+#include <QFrame>
+#include <QLayout>
+#include <QLineEdit>
+#include <QCheckBox>
+#include <QPixmap>
 
  enum Fineness
    {
@@ -79,34 +80,43 @@ bool NETGENPluginGUI_HypothesisCreator::checkParams() const
 
 QFrame* NETGENPluginGUI_HypothesisCreator::buildFrame()
 {
-  QFrame* fr = new QFrame( 0, "myframe" );
-  QVBoxLayout* lay = new QVBoxLayout( fr, 5, 0 );
+  QFrame* fr = new QFrame( 0 );
+  fr->setObjectName( "myframe" );
+  QVBoxLayout* lay = new QVBoxLayout( fr );
+  lay->setMargin( 5 );
+  lay->setSpacing( 0 );
 
-  QGroupBox* GroupC1 = new QGroupBox( 2, Qt::Horizontal, fr, "GroupC1" );
+  QGroupBox* GroupC1 = new QGroupBox( tr( "SMESH_ARGUMENTS" ), fr );
   lay->addWidget( GroupC1 );
   
-  GroupC1->setTitle( tr( "SMESH_ARGUMENTS"  ) );
-  GroupC1->layout()->setSpacing( 6 );
-  GroupC1->layout()->setMargin( 11 );
+  QGridLayout* aGroupLayout = new QGridLayout( GroupC1 );
+  aGroupLayout->setSpacing( 6 );
+  aGroupLayout->setMargin( 11 );
   
+  int row = 0;
   myName = 0;
   if( isCreation() )
   {
-    new QLabel( tr( "SMESH_NAME" ), GroupC1 );
+    aGroupLayout->addWidget( new QLabel( tr( "SMESH_NAME" ), GroupC1 ), row, 0 );
     myName = new QLineEdit( GroupC1 );
+    aGroupLayout->addWidget( myName, row, 1 );
+    row++;
   }
 
-  new QLabel( tr( "NETGEN_MAX_SIZE" ), GroupC1 );
-  myMaxSize = new QtxDblSpinBox( GroupC1 );
-  myMaxSize->setPrecision( 7 );
-  myMaxSize->setMinValue( 1e-07 );
-  myMaxSize->setMaxValue( 1e+06 );
-  myMaxSize->setLineStep( 10 );
+  aGroupLayout->addWidget( new QLabel( tr( "NETGEN_MAX_SIZE" ), GroupC1 ), row, 0 );
+  myMaxSize = new QtxDoubleSpinBox( GroupC1 );
+  myMaxSize->setDecimals( 7 );
+  myMaxSize->setMinimum( 1e-07 );
+  myMaxSize->setMaximum( 1e+06 );
+  myMaxSize->setSingleStep( 10 );
+  aGroupLayout->addWidget( myMaxSize, row, 1 );
+  row++;
   
   mySecondOrder = new QCheckBox( tr( "NETGEN_SECOND_ORDER" ), GroupC1 );
-  GroupC1->addSpace(0);
+  aGroupLayout->addWidget( mySecondOrder, row, 0 );
+  row++;
   
-  new QLabel( tr( "NETGEN_FINENESS" ), GroupC1 );
+  aGroupLayout->addWidget( new QLabel( tr( "NETGEN_FINENESS" ), GroupC1 ), row, 0 );
   myFineness = new QtxComboBox( GroupC1 );
   QStringList types;
   types.append( QObject::tr( "NETGEN_VERYCOARSE" ) );
@@ -115,35 +125,45 @@ QFrame* NETGENPluginGUI_HypothesisCreator::buildFrame()
   types.append( QObject::tr( "NETGEN_FINE" ) );
   types.append( QObject::tr( "NETGEN_VERYFINE" ) );
   types.append( QObject::tr( "NETGEN_CUSTOM" ) );
-  myFineness->insertStringList( types );
+  myFineness->insertItems( myFineness->count(), types );
+  aGroupLayout->addWidget( myFineness, row, 1 );
+  row++;
 
-  new QLabel( tr( "NETGEN_GROWTH_RATE" ), GroupC1 );
-  myGrowthRate = new QtxDblSpinBox( GroupC1 );
-  myGrowthRate->setMinValue( 0.1 );
-  myGrowthRate->setMaxValue( 10 );
-  myGrowthRate->setLineStep( 0.1 );
+  aGroupLayout->addWidget( new QLabel( tr( "NETGEN_GROWTH_RATE" ), GroupC1 ), row, 0 );
+  myGrowthRate = new QtxDoubleSpinBox( GroupC1 );
+  myGrowthRate->setMinimum( 0.1 );
+  myGrowthRate->setMaximum( 10 );
+  myGrowthRate->setSingleStep( 0.1 );
+  aGroupLayout->addWidget( myGrowthRate, row, 1 );
+  row++;
 
   const double VALUE_MAX = 1.0e+6;
 
-  new QLabel( tr( "NETGEN_SEG_PER_EDGE" ), GroupC1 );
-  myNbSegPerEdge = new QtxDblSpinBox( GroupC1 );
-  myNbSegPerEdge->setMinValue( 0.2 );
-  myNbSegPerEdge->setMaxValue( VALUE_MAX ); // (PAL14890) max value in native netgen gui is 5
+  aGroupLayout->addWidget( new QLabel( tr( "NETGEN_SEG_PER_EDGE" ), GroupC1 ), row, 0 );
+  myNbSegPerEdge = new QtxDoubleSpinBox( GroupC1 );
+  myNbSegPerEdge->setMinimum( 0.2 );
+  myNbSegPerEdge->setMaximum( VALUE_MAX ); // (PAL14890) max value in native netgen gui is 5
+  aGroupLayout->addWidget( myNbSegPerEdge, row, 1 );
+  row++;
   
-  new QLabel( tr( "NETGEN_SEG_PER_RADIUS" ), GroupC1 );
-  myNbSegPerRadius = new QtxDblSpinBox( GroupC1 );
-  myNbSegPerRadius->setMinValue( 0.2 );
-  myNbSegPerRadius->setMaxValue( VALUE_MAX ); // (PAL14890) max value in native netgen gui is 5
+  aGroupLayout->addWidget( new QLabel( tr( "NETGEN_SEG_PER_RADIUS" ), GroupC1 ), row, 0 );
+  myNbSegPerRadius = new QtxDoubleSpinBox( GroupC1 );
+  myNbSegPerRadius->setMinimum( 0.2 );
+  myNbSegPerRadius->setMaximum( VALUE_MAX ); // (PAL14890) max value in native netgen gui is 5
+  aGroupLayout->addWidget( myNbSegPerRadius, row, 1 );
+  row++;
 
   if ( hypType()=="NETGEN_Parameters_2D" )
   {
     myAllowQuadrangles = new QCheckBox( tr( "NETGEN_ALLOW_QUADRANGLES" ), GroupC1 );
-    GroupC1->addSpace(0);
+    aGroupLayout->addWidget( myAllowQuadrangles, row, 0 );
     myIs2D = true;
+    row++;
   }
 
   myOptimize = new QCheckBox( tr( "NETGEN_OPTIMIZE" ), GroupC1 );
-  GroupC1->addSpace(0);
+  aGroupLayout->addWidget( myOptimize, row, 0 );
+  row++;
   
   connect( myFineness, SIGNAL( activated( int ) ), this, SLOT( onFinenessChanged() ) );
   
@@ -160,7 +180,7 @@ void NETGENPluginGUI_HypothesisCreator::retrieveParams() const
   myMaxSize->setValue( data.myMaxSize );
   mySecondOrder->setChecked( data.mySecondOrder );
   myOptimize->setChecked( data.myOptimize );
-  myFineness->setCurrentItem( data.myFineness );
+  myFineness->setCurrentIndex( data.myFineness );
   myGrowthRate->setValue( data.myGrowthRate );
   myNbSegPerEdge->setValue( data.myNbSegPerEdge );
   myNbSegPerRadius->setValue( data.myNbSegPerRadius );
@@ -168,7 +188,7 @@ void NETGENPluginGUI_HypothesisCreator::retrieveParams() const
     myAllowQuadrangles->setChecked( data.myAllowQuadrangles );
 
   // update widgets
-  bool isCustom = (myFineness->currentItem() == UserDefined);
+  bool isCustom = (myFineness->currentIndex() == UserDefined);
   myGrowthRate->setEnabled(isCustom);
   myNbSegPerEdge->setEnabled(isCustom);
   myNbSegPerRadius->setEnabled(isCustom);
@@ -233,7 +253,7 @@ bool NETGENPluginGUI_HypothesisCreator::storeParamsToHypo( const NetgenHypothesi
   try
   {
     if( isCreation() )
-      SMESH::SetName( SMESH::FindSObject( h ), h_data.myName.latin1() );
+      SMESH::SetName( SMESH::FindSObject( h ), h_data.myName.toLatin1().data() );
 
     h->SetMaxSize( h_data.myMaxSize );
     h->SetSecondOrder( h_data.mySecondOrder );
@@ -271,7 +291,7 @@ bool NETGENPluginGUI_HypothesisCreator::readParamsFromWidgets( NetgenHypothesisD
   h_data.myMaxSize        = myMaxSize->value();
   h_data.mySecondOrder    = mySecondOrder->isChecked();
   h_data.myOptimize       = myOptimize->isChecked();
-  h_data.myFineness       = myFineness->currentItem();
+  h_data.myFineness       = myFineness->currentIndex();
   h_data.myGrowthRate     = myGrowthRate->value();
   h_data.myNbSegPerEdge   = myNbSegPerEdge->value();
   h_data.myNbSegPerRadius = myNbSegPerRadius->value();
@@ -284,7 +304,7 @@ bool NETGENPluginGUI_HypothesisCreator::readParamsFromWidgets( NetgenHypothesisD
 
 void NETGENPluginGUI_HypothesisCreator::onFinenessChanged()
 {
-  bool isCustom = (myFineness->currentItem() == UserDefined);
+  bool isCustom = (myFineness->currentIndex() == UserDefined);
   
   myGrowthRate->setEnabled(isCustom);
   myNbSegPerEdge->setEnabled(isCustom);
@@ -294,7 +314,7 @@ void NETGENPluginGUI_HypothesisCreator::onFinenessChanged()
     {
       double aGrowthRate, aNbSegPerEdge, aNbSegPerRadius;
       
-      switch ( myFineness->currentItem() )
+      switch ( myFineness->currentIndex() )
 	{
 	case VeryCoarse:
 	  aGrowthRate = 0.7;
@@ -332,16 +352,16 @@ void NETGENPluginGUI_HypothesisCreator::onFinenessChanged()
 
 QString NETGENPluginGUI_HypothesisCreator::caption() const
 {
-  return tr( QString( "NETGEN_%1_TITLE" ).arg(myIs2D?QString("2D"):QString("3D")) );
+  return tr( QString( "NETGEN_%1_TITLE" ).arg(myIs2D?QString("2D"):QString("3D")).toLatin1().data() );
 }
 
 QPixmap NETGENPluginGUI_HypothesisCreator::icon() const
 {
-  QString hypIconName = tr( QString("ICON_DLG_NETGEN_PARAMETERS%1").arg(myIs2D?QString("_2D"):QString("")) );
+  QString hypIconName = tr( QString("ICON_DLG_NETGEN_PARAMETERS%1").arg(myIs2D?QString("_2D"):QString("")).toLatin1().data() );
   return SUIT_Session::session()->resourceMgr()->loadPixmap( "NETGENPlugin", hypIconName );
 }
 
 QString NETGENPluginGUI_HypothesisCreator::type() const
 {
-  return tr( QString( "NETGEN_%1_HYPOTHESIS" ).arg(myIs2D?QString("2D"):QString("3D")) );
+  return tr( QString( "NETGEN_%1_HYPOTHESIS" ).arg(myIs2D?QString("2D"):QString("3D")).toLatin1().data() );
 }
