@@ -64,7 +64,8 @@ public:
   NETGENPluginGUI_HypothesisCreator( const QString& );
   virtual ~NETGENPluginGUI_HypothesisCreator();
 
-  virtual bool checkParams() const;
+  virtual bool     checkParams() const;
+  virtual QString  helpPage() const;
 
 protected:
   virtual QFrame*  buildFrame    ();
