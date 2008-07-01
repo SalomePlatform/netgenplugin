@@ -365,3 +365,8 @@ QString NETGENPluginGUI_HypothesisCreator::type() const
 {
   return tr( QString( "NETGEN_%1_HYPOTHESIS" ).arg(myIs2D?QString("2D"):QString("3D")).toLatin1().data() );
 }
+
+QString NETGENPluginGUI_HypothesisCreator::helpPage() const
+{
+  return "netgen_2d_3d_hypo_page.html";
+}
