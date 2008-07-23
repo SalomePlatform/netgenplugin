@@ -81,6 +81,8 @@ NETGENPlugin_NETGEN_3D::NETGENPlugin_NETGEN_3D(int hypId, int studyId,
   _maxElementVolume = 0.;
 
   _hypMaxElementVolume = NULL;
+
+  _requireShape = false; // can work without shape
 }
 
 //=============================================================================
