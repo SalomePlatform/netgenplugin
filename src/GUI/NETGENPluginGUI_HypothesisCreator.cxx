@@ -38,8 +38,8 @@
 #include <SalomeApp_Tools.h>
 
 #include <QtxDoubleSpinBox.h>
-#include <QtxComboBox.h>
 
+#include <QComboBox>
 #include <QLabel>
 #include <QGroupBox>
 #include <QFrame>
@@ -117,15 +117,11 @@ QFrame* NETGENPluginGUI_HypothesisCreator::buildFrame()
   row++;
   
   aGroupLayout->addWidget( new QLabel( tr( "NETGEN_FINENESS" ), GroupC1 ), row, 0 );
-  myFineness = new QtxComboBox( GroupC1 );
+  myFineness = new QComboBox( GroupC1 );
   QStringList types;
-  types.append( QObject::tr( "NETGEN_VERYCOARSE" ) );
-  types.append( QObject::tr( "NETGEN_COARSE" ) );
-  types.append( QObject::tr( "NETGEN_MODERATE" ) );
-  types.append( QObject::tr( "NETGEN_FINE" ) );
-  types.append( QObject::tr( "NETGEN_VERYFINE" ) );
-  types.append( QObject::tr( "NETGEN_CUSTOM" ) );
-  myFineness->insertItems( myFineness->count(), types );
+  types << tr( "NETGEN_VERYCOARSE" ) << tr( "NETGEN_COARSE" )   << tr( "NETGEN_MODERATE" ) <<
+           tr( "NETGEN_FINE" )       << tr( "NETGEN_VERYFINE" ) << tr( "NETGEN_CUSTOM" );
+  myFineness->addItems( types );
   aGroupLayout->addWidget( myFineness, row, 1 );
   row++;
 

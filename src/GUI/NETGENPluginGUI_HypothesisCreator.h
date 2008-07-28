@@ -41,7 +41,7 @@
 #include <SMESHGUI_Hypotheses.h>
 
 class QtxDoubleSpinBox;
-class QtxComboBox;
+class QComboBox;
 class QCheckBox;
 class QLineEdit;
 
@@ -89,7 +89,7 @@ private:
  QtxDoubleSpinBox* myMaxSize;
  QCheckBox*        mySecondOrder;
  QCheckBox*        myOptimize;
- QtxComboBox*      myFineness;
+ QComboBox*        myFineness;
  QtxDoubleSpinBox* myGrowthRate;
  QtxDoubleSpinBox* myNbSegPerEdge;
  QtxDoubleSpinBox* myNbSegPerRadius;
