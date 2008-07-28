@@ -223,19 +223,11 @@ AC_SUBST_FILE(CORBA)
 corba=make_$ORB
 CORBA=adm_local/unix/$corba
 
-NETGENPLUGIN_WITH_GUI=no
+NETGENPLUGIN_WITH_GUI=yes
 
 AM_CONDITIONAL(NETGENPLUGIN_ENABLE_GUI, [test "${NETGENPLUGIN_WITH_GUI}" = "yes"])
 
 if test "${NETGENPLUGIN_WITH_GUI}" = "yes"; then
-    echo
-    echo ---------------------------------------------
-    echo testing MSG2QM
-    echo ---------------------------------------------
-    echo
-
-    CHECK_MSG2QM
-
     echo
     echo ---------------------------------------------
     echo testing openGL

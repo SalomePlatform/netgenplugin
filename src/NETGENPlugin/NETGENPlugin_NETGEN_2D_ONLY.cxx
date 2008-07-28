@@ -114,11 +114,15 @@ bool NETGENPlugin_NETGEN_2D_ONLY::CheckHypothesis (SMESH_Mesh&         aMesh,
   _hypLengthFromEdges = 0;
   _hypQuadranglePreference = 0;
 
-  aStatus = HYP_MISSING;
-
   const list<const SMESHDS_Hypothesis*>& hyps = GetUsedHypothesis(aMesh, aShape, false);
 
-  if (hyps.empty()) return false;  // can't work with no hypothesis
+  if (hyps.empty())
+  {
+    aStatus = HYP_OK; //SMESH_Hypothesis::HYP_MISSING;
+    return true;  // (PAL13464) can work with no hypothesis, LengthFromEdges is default one
+  }
+
+  aStatus = HYP_MISSING;
 
   list<const SMESHDS_Hypothesis*>::const_iterator ith;
   for (ith = hyps.begin(); ith != hyps.end(); ++ith )
@@ -328,7 +332,7 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
   // --------------------
 
   double edgeLength = 0;
-  if (_hypLengthFromEdges)
+  if (_hypLengthFromEdges || !_hypLengthFromEdges && !_hypMaxElementArea)
   {
     int nbSegments = 0;
     for ( int iW = 0; iW < nbWires; ++iW )

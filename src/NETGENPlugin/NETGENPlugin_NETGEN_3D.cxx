@@ -38,6 +38,7 @@
 #include "SMESH_Gen.hxx"
 #include "SMESH_Mesh.hxx"
 #include "SMESH_MesherHelper.hxx"
+#include "StdMeshers_QuadToTriaAdaptor.hxx"
 
 #include <BRep_Tool.hxx>
 #include <TopExp.hxx>
@@ -80,6 +81,8 @@ NETGENPlugin_NETGEN_3D::NETGENPlugin_NETGEN_3D(int hypId, int studyId,
   _maxElementVolume = 0.;
 
   _hypMaxElementVolume = NULL;
+
+  _requireShape = false; // can work without shape
 }
 
 //=============================================================================
@@ -179,6 +182,9 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
   map< int, int* >::iterator shId_ngId;
   list< int > degenNgIds;
 
+  StdMeshers_QuadToTriaAdaptor Adaptor;
+  Adaptor.Compute(aMesh,aShape);
+
   for (TopExp_Explorer exp(aShape,TopAbs_FACE);exp.More();exp.Next())
   {
     const TopoDS_Shape& aShapeFace = exp.Current();
@@ -195,20 +201,43 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
         if ( !elem )
           return error( COMPERR_BAD_INPUT_MESH, "Null element encounters");
         bool isTraingle = ( elem->NbNodes()==3 || (_quadraticMesh && elem->NbNodes()==6 ));
-        if ( !isTraingle )
-          return error( COMPERR_BAD_INPUT_MESH,
-                        SMESH_Comment("Not triangle element ")<<elem->GetID());
-        // keep a triangle
-        triangles.push_back( elem );
-        isReversed.push_back( isRev );
-        // put elem nodes to nodeToNetgenID map
-        SMDS_ElemIteratorPtr triangleNodesIt = elem->nodesIterator();
-        while ( triangleNodesIt->more() ) {
-	  const SMDS_MeshNode * node =
-            static_cast<const SMDS_MeshNode *>(triangleNodesIt->next());
-          if(myTool->IsMedium(node))
-            continue;
-          nodeToNetgenID.insert( make_pair( node, invalid_ID ));
+        if ( !isTraingle ) {
+          //return error( COMPERR_BAD_INPUT_MESH,
+          //              SMESH_Comment("Not triangle element ")<<elem->GetID());
+          // using adaptor
+          std::list<const SMDS_FaceOfNodes*> faces = Adaptor.GetTriangles(elem);
+          if(faces.size()==0) {
+            return error( COMPERR_BAD_INPUT_MESH,
+                          SMESH_Comment("Not triangles in adaptor for element ")<<elem->GetID());
+          }
+          std::list<const SMDS_FaceOfNodes*>::iterator itf = faces.begin();
+          for(; itf!=faces.end(); itf++ ) {
+            triangles.push_back( (*itf) );
+            isReversed.push_back( isRev );
+            // put triange's nodes to nodeToNetgenID map
+            SMDS_ElemIteratorPtr triangleNodesIt = (*itf)->nodesIterator();
+            while ( triangleNodesIt->more() ) {
+              const SMDS_MeshNode * node =
+                static_cast<const SMDS_MeshNode *>(triangleNodesIt->next());
+              if(myTool->IsMedium(node))
+                continue;
+              nodeToNetgenID.insert( make_pair( node, invalid_ID ));
+            }
+          }
+        }
+        else {
+          // keep a triangle
+          triangles.push_back( elem );
+          isReversed.push_back( isRev );
+          // put elem nodes to nodeToNetgenID map
+          SMDS_ElemIteratorPtr triangleNodesIt = elem->nodesIterator();
+          while ( triangleNodesIt->more() ) {
+            const SMDS_MeshNode * node =
+              static_cast<const SMDS_MeshNode *>(triangleNodesIt->next());
+            if(myTool->IsMedium(node))
+              continue;
+            nodeToNetgenID.insert( make_pair( node, invalid_ID ));
+          }
         }
 #ifdef _DEBUG_
         // check if a trainge is degenerated
@@ -413,30 +442,51 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh& aMesh,
   else if (MeshType == SMESH_MesherHelper::QUADRATIC)
     _quadraticMesh = true;
     
-  SMDS_FaceIteratorPtr iteratorFace = MeshDS->facesIterator();
+  StdMeshers_QuadToTriaAdaptor Adaptor;
+  Adaptor.Compute(aMesh);
 
-  while(iteratorFace->more())
-  {
+  SMDS_FaceIteratorPtr iteratorFace = MeshDS->facesIterator();
+  while(iteratorFace->more()) {
     // check element
     const SMDS_MeshElement* elem = iteratorFace->next();
     if ( !elem )
       return error( COMPERR_BAD_INPUT_MESH, "Null element encounters");
     bool isTraingle = ( elem->NbNodes()==3 || (_quadraticMesh && elem->NbNodes()==6 ));
-    if ( !isTraingle )
-      return error( COMPERR_BAD_INPUT_MESH,
-                    SMESH_Comment("Not triangle element ")<<elem->GetID());
-    
-    // keep a triangle
-    triangles.push_back( elem );
-    // put elem nodes to nodeToNetgenID map
-    SMDS_ElemIteratorPtr triangleNodesIt = elem->nodesIterator();
-    while ( triangleNodesIt->more() ) {
-      const SMDS_MeshNode * node =
-        static_cast<const SMDS_MeshNode *>(triangleNodesIt->next());
-      if(aHelper->IsMedium(node))
-        continue;
-      
-      nodeToNetgenID.insert( make_pair( node, invalid_ID ));
+    if ( !isTraingle ) {
+      //return error( COMPERR_BAD_INPUT_MESH,
+      //              SMESH_Comment("Not triangle element ")<<elem->GetID());
+      // using adaptor
+      std::list<const SMDS_FaceOfNodes*> faces = Adaptor.GetTriangles(elem);
+      if(faces.size()==0) {
+        return error( COMPERR_BAD_INPUT_MESH,
+                      SMESH_Comment("Not triangles in adaptor for element ")<<elem->GetID());
+      }
+      std::list<const SMDS_FaceOfNodes*>::iterator itf = faces.begin();
+      for(; itf!=faces.end(); itf++ ) {
+        triangles.push_back( (*itf) );
+        // put triange's nodes to nodeToNetgenID map
+        SMDS_ElemIteratorPtr triangleNodesIt = (*itf)->nodesIterator();
+        while ( triangleNodesIt->more() ) {
+          const SMDS_MeshNode * node =
+            static_cast<const SMDS_MeshNode *>(triangleNodesIt->next());
+          if(aHelper->IsMedium(node))
+            continue;
+          nodeToNetgenID.insert( make_pair( node, invalid_ID ));
+        }
+      }
+    }
+    else {
+      // keep a triangle
+      triangles.push_back( elem );
+      // put elem nodes to nodeToNetgenID map
+      SMDS_ElemIteratorPtr triangleNodesIt = elem->nodesIterator();
+      while ( triangleNodesIt->more() ) {
+        const SMDS_MeshNode * node =
+          static_cast<const SMDS_MeshNode *>(triangleNodesIt->next());
+        if(aHelper->IsMedium(node))
+          continue;
+        nodeToNetgenID.insert( make_pair( node, invalid_ID ));
+      }
     }
   }
 
