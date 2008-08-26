@@ -5,8 +5,8 @@ diff -ur netgen-4.5.old/libsrc/makefile.inc netgen-4.5.new/libsrc/makefile.inc
  #
  include $(LIBSRC_DIR)/makefile.mach.$(MACHINE)
  #
--CPLUSPLUSFLAGS1 = -c -I$(LIBSRC_DIR)/include -I$(OCCINC_DIR) \
-+CPLUSPLUSFLAGS1 = -c -m64 -fPIC -I$(LIBSRC_DIR)/include -I$(OCCINC_DIR) \
+-CPLUSPLUSFLAGS1 = -c -fPIC -I$(LIBSRC_DIR)/include -I$(OCCINC_DIR) \
++CPLUSPLUSFLAGS1 = -c -m64 -D_OCC64 -fPIC -I$(LIBSRC_DIR)/include -I$(OCCINC_DIR) \
  	-DOCCGEOMETRY -DOCC52 -DHAVE_IOSTREAM -DHAVE_LIMITS_H
  #
  ARFLAGS = r
@@ -39,7 +39,7 @@ diff -ur netgen-4.5.old/Makefile netgen-4.5.new/Makefile
  #CPLUSPLUSFLAGS1 = -c -I$(LIBSRC_DIR)/include  -DOPENGL
  
 -CPLUSPLUSFLAGS1 = -c -I$(LIBSRC_DIR)/include -I$(OCCINC_DIR)  -I./ngsolve/include -Ilibsrc/interface -DOPENGL -I$(METISINC)
-+CPLUSPLUSFLAGS1 = -c -m64 -I$(LIBSRC_DIR)/include -I$(OCCINC_DIR)  -I./ngsolve/include -Ilibsrc/interface -I$(METISINC)
++CPLUSPLUSFLAGS1 = -c -m64 -D_OCC64 -I$(LIBSRC_DIR)/include -I$(OCCINC_DIR)  -I./ngsolve/include -Ilibsrc/interface -I$(METISINC)
  
  LINKFLAGS1 =   -lGL -lGLU -lX11 -lXext -lXmu 
  #
