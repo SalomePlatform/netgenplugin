@@ -359,7 +359,37 @@ diff -Naur netgen-4.5.old/libsrc/occ/occgenmesh.cpp netgen-4.5.new/libsrc/occ/oc
  	      {
  		exists = 1;
  		break;
-@@ -276,8 +273,8 @@
+@@ -163,6 +160,7 @@
+ 	  {
+ 	    TopoDS_Face face = TopoDS::Face(exp1.Current());
+ 	    int facenr = geom.fmap.FindIndex(face);
++            if ( facenr < 1 ) continue;
+ 
+ 	    if (face2solid[0][facenr-1] == 0)
+ 	      face2solid[0][facenr-1] = solidnr;
+@@ -184,6 +182,9 @@
+     int facenr = 0;
+     int edgenr = 0;
+     
++    // EAP, IMP [SALOME platform 0013410].
++    // take into account nb of already meshed edges
++    edgenr = mesh.GetNSeg();
+ 
+     (*testout) << "faces = " << geom.fmap.Extent() << endl;
+     int curr = 0;
+@@ -232,6 +233,11 @@
+ 		    continue;
+ 		  }
+ 
++                // EAP, IMP [SALOME platform 0013410].
++                // Do not divide already meshed edges
++                if ( geom.emap.FindIndex(edge) < 1 )
++                  continue;
++
+ 		if (geom.vmap.FindIndex(TopExp::FirstVertex (edge)) == 
+ 		    geom.vmap.FindIndex(TopExp::LastVertex (edge)))
+ 		  {
+@@ -276,8 +282,8 @@
  		    pnums.Last() = -1;
  		    for (PointIndex pi = 1; pi < first_ep; pi++)
  		      {
@@ -370,7 +400,7 @@ diff -Naur netgen-4.5.old/libsrc/occ/occgenmesh.cpp netgen-4.5.new/libsrc/occ/oc
  		      }
  		  }
  		
-@@ -287,7 +284,7 @@
+@@ -287,7 +293,7 @@
  		    bool exists = 0;
  		    int j;
  		    for (j = first_ep; j <= mesh.GetNP(); j++)
@@ -379,7 +409,7 @@ diff -Naur netgen-4.5.old/libsrc/occ/occgenmesh.cpp netgen-4.5.new/libsrc/occ/oc
  			{
  			  exists = 1;
  			  break;
-@@ -394,7 +391,7 @@
+@@ -394,7 +400,7 @@
      int i, j, k;
      int changed;
  
@@ -388,7 +418,7 @@ diff -Naur netgen-4.5.old/libsrc/occ/occgenmesh.cpp netgen-4.5.new/libsrc/occ/oc
      multithread.task = "Surface meshing";
    
      geom.facemeshstatus = 0;
-@@ -751,7 +748,7 @@
+@@ -751,7 +760,7 @@
      multithread.task = savetask;
    }
  
@@ -397,7 +427,7 @@ diff -Naur netgen-4.5.old/libsrc/occ/occgenmesh.cpp netgen-4.5.new/libsrc/occ/oc
    {
      double hret;
      kappa *= mparam.curvaturesafety;
-@@ -779,7 +776,7 @@
+@@ -779,7 +788,7 @@
        double nq = n*q;
      
        Point<3> p = p0 + 0.5*n;
@@ -406,7 +436,7 @@ diff -Naur netgen-4.5.old/libsrc/occ/occgenmesh.cpp netgen-4.5.new/libsrc/occ/oc
  
        if (lambda >= 0 && lambda <= 1)
  	{
-@@ -799,55 +796,55 @@
+@@ -799,55 +808,55 @@
  
  
  
@@ -482,7 +512,7 @@ diff -Naur netgen-4.5.old/libsrc/occ/occgenmesh.cpp netgen-4.5.new/libsrc/occ/oc
  
  	//(*testout) << "curvature " << curvature << endl;
  
-@@ -886,51 +883,47 @@
+@@ -886,51 +895,47 @@
  	pm1.SetX(0.5*(par0.X()+par2.X())); pm1.SetY(0.5*(par0.Y()+par2.Y()));
  	pm2.SetX(0.5*(par1.X()+par0.X())); pm2.SetY(0.5*(par1.Y()+par0.Y()));
  
@@ -549,7 +579,7 @@ diff -Naur netgen-4.5.old/libsrc/occ/occgenmesh.cpp netgen-4.5.new/libsrc/occ/oc
  	  (*testout) << pnt.X() << " " << pnt.Y() << " " << pnt.Z() << endl;
  	*/
        }
-@@ -970,7 +963,7 @@
+@@ -970,7 +975,7 @@
  	if (mparam.uselocalh)
  	  {
  
@@ -558,7 +588,7 @@ diff -Naur netgen-4.5.old/libsrc/occ/occgenmesh.cpp netgen-4.5.new/libsrc/occ/oc
  	    multithread.percent = 0;
  
  	    mesh->SetLocalH (bb.PMin(), bb.PMax(), mparam.grading);
-@@ -1075,7 +1068,6 @@
+@@ -1075,7 +1080,6 @@
  		if (triangulation.IsNull()) continue;
  	      
  		BRepAdaptor_Surface sf(face, Standard_True);
@@ -566,7 +596,7 @@ diff -Naur netgen-4.5.old/libsrc/occ/occgenmesh.cpp netgen-4.5.new/libsrc/occ/oc
  		
  		int ntriangles = triangulation -> NbTriangles();
  		for (int j = 1; j <= ntriangles; j++)
-@@ -1096,7 +1088,7 @@
+@@ -1096,7 +1100,7 @@
  		    maxside = max (maxside, p[1].Distance(p[2]));
  		    //cout << "\rFace " << i << " pos11 ntriangles " << ntriangles << " maxside " << maxside << flush;
  
@@ -845,6 +875,140 @@ diff -Naur netgen-4.5.old/libsrc/occ/occmeshsurf.cpp netgen-4.5.new/libsrc/occ/o
  
  
  namespace netgen
+@@ -40,6 +42,7 @@
+     */
+ 
+ 
++    n=0;
+ 
+     GeomLProp_SLProps lprop(occface,geominfo.u,geominfo.v,1,1e-5);
+     double setu=geominfo.u,setv=geominfo.v;
+@@ -49,57 +52,78 @@
+ 	double ustep = 0.01*(umax-umin);
+ 	double vstep = 0.01*(vmax-vmin);
+ 
+-	n=0;
+-
+-	while(setu < umax && (lprop.D1U().Magnitude() < 1e-5 || lprop.D1V().Magnitude() < 1e-5))
+-	  setu += ustep;
+-	if(setu < umax)
+-	  {
+-	    lprop.SetParameters(setu,setv);
+-	    n(0)+=lprop.Normal().X();
+-	    n(1)+=lprop.Normal().Y();
+-	    n(2)+=lprop.Normal().Z();
+-	  }
+-	setu = geominfo.u;
+-	while(setu > umin && (lprop.D1U().Magnitude() < 1e-5 || lprop.D1V().Magnitude() < 1e-5))
+-	  setu -= ustep;
+-	if(setu > umin)
+-	  {
+-	    lprop.SetParameters(setu,setv);
+-	    n(0)+=lprop.Normal().X();
+-	    n(1)+=lprop.Normal().Y();
+-	    n(2)+=lprop.Normal().Z();
+-	  }
+-	setu = geominfo.u;
+-
+-	while(setv < vmax && (lprop.D1U().Magnitude() < 1e-5 || lprop.D1V().Magnitude() < 1e-5))
+-	  setv += ustep;
+-	if(setv < vmax)
+-	  {
+-	    lprop.SetParameters(setu,setv);
+-	    n(0)+=lprop.Normal().X();
+-	    n(1)+=lprop.Normal().Y();
+-	    n(2)+=lprop.Normal().Z();
+-	  }
+-	setv = geominfo.v;
+-	while(setv > vmin && (lprop.D1U().Magnitude() < 1e-5 || lprop.D1V().Magnitude() < 1e-5))
+-	  setv -= ustep;
+-	if(setv > vmin)
+-	  {
+-	    lprop.SetParameters(setu,setv);
+-	    n(0)+=lprop.Normal().X();
+-	    n(1)+=lprop.Normal().Y();
+-	    n(2)+=lprop.Normal().Z();
+-	  }
+-	setv = geominfo.v;
+-
++        if ( lprop.D1V().Magnitude() < 1e-5 )
++        {
++          while(setu < umax && (lprop.D1V().Magnitude() < 1e-5 || !lprop.IsNormalDefined())) {
++            setu += ustep;
++            if(setu < umax)
++              lprop.SetParameters(setu,setv);
++          }
++          if (lprop.D1V().Magnitude() < 1e-5 || !lprop.IsNormalDefined()) {
++            setu = geominfo.u;
++            while(setu > umin && (lprop.D1V().Magnitude() < 1e-5 || !lprop.IsNormalDefined())) {
++              setu -= ustep;
++              if(setu > umin)
++                lprop.SetParameters(setu,setv);
++            }
++          }
++          ustep = 0;
++          vstep = 0.1*(vmax-vmin);
++          setv = vmin;
++        }
++        else
++        {
++          while(setv < vmax && (lprop.D1U().Magnitude() < 1e-5 || !lprop.IsNormalDefined())) {
++            setv += vstep;
++            if(setv < vmax)
++              lprop.SetParameters(setu,setv);
++          }
++          if (lprop.D1U().Magnitude() < 1e-5 || !lprop.IsNormalDefined()) {
++            setv = geominfo.v;
++            while(setv > vmin && (lprop.D1U().Magnitude() < 1e-5 || !lprop.IsNormalDefined())) {
++              setv -= vstep;
++              if(setv > vmin)
++                lprop.SetParameters(setu,setv);
++            }
++          }
++          vstep = 0;
++          ustep = 0.1*(umax-umin);
++          setu = umin;
++        }
++
++        if ( !lprop.IsNormalDefined() )
++          return;
++        gp_Vec N1 = lprop.Normal();
++
++        const double angleTol = PI / 180.;
++	while(setu < umax && setv < vmax) {
++          lprop.SetParameters(setu,setv);
++          if ( lprop.IsNormalDefined() ) {
++            gp_Vec Ni = lprop.Normal();
++            double angle = N1.Angle(Ni);
++            if ( angle > angleTol ) {
++              //cout << "Too large angle: " << angle * 180. / PI << endl;
++              return;
++            }
++            n(0)+=Ni.X();
++            n(1)+=Ni.Y();
++            n(2)+=Ni.Z();
++            setu += ustep;
++            setv += vstep;
++          }
++        }
+ 	n.Normalize();
++// 	(*testout) << "u " << geominfo.u << " v " << geominfo.v
++//                    <<" p " << lprop.Value().X()<<" "<<lprop.Value().Y()<<" "<<lprop.Value().Z()<<" "
++//                    <<" n " << n(0)<< " "<<n(1)<< " "<<n(2)<< " "<<endl;
+       }
+     else
+       {
+-	n(0)=lprop.Normal().X();
+-	n(1)=lprop.Normal().Y();
+-	n(2)=lprop.Normal().Z();
++        if ( lprop.IsNormalDefined() ) {
++          n(0)=lprop.Normal().X();
++          n(1)=lprop.Normal().Y();
++          n(2)=lprop.Normal().Z();
++        }
+       }
+ 
+     if(glob_testout)
 @@ -411,11 +413,16 @@
    }
  
