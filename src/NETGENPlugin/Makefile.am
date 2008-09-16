@@ -48,6 +48,10 @@ dist_libNETGENEngine_la_SOURCES = \
 	NETGENPlugin_Hypothesis_2D.cxx \
 	NETGENPlugin_Hypothesis_2D_i.cxx \
 	NETGENPlugin_Mesher.cxx \
+	NETGENPlugin_SimpleHypothesis_2D.cxx \
+	NETGENPlugin_SimpleHypothesis_3D.cxx \
+	NETGENPlugin_SimpleHypothesis_2D_i.cxx \
+	NETGENPlugin_SimpleHypothesis_3D_i.cxx \
 	NETGENPlugin_i.cxx
 
 libNETGENEngine_la_CPPFLAGS = \
