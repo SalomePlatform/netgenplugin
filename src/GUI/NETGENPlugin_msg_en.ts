@@ -19,6 +19,22 @@
             <translation>Hypothesis Construction</translation>
         </message>
         <message>
+            <source>NETGEN_SimpleParameters_3D_HYPOTHESIS</source>
+            <translation>Netgen 3D simple parameters</translation>
+        </message>
+        <message>
+            <source>NETGEN_SimpleParameters_3D_TITLE</source>
+            <translation>Hypothesis Construction</translation>
+        </message>
+        <message>
+            <source>NETGEN_SimpleParameters_2D_HYPOTHESIS</source>
+            <translation>Netgen 2D simple parameters</translation>
+        </message>
+        <message>
+            <source>NETGEN_SimpleParameters_2D_TITLE</source>
+            <translation>Hypothesis Construction</translation>
+        </message>
+        <message>
             <source>NETGEN_ALLOW_QUADRANGLES</source>
             <translation>Allow Quadrangles</translation>
         </message>
@@ -73,6 +89,26 @@
         <message>
             <source>NETGEN_VERYFINE</source>
             <translation>Very Fine</translation>
+        </message>
+        <message>
+            <source>NG_1D</source>
+            <translation>1D</translation>
+        </message>
+        <message>
+            <source>NG_2D</source>
+            <translation>2D</translation>
+        </message>
+        <message>
+            <source>NG_3D</source>
+            <translation>3D</translation>
+        </message>
+        <message>
+            <source>NG_LENGTH_FROM_EDGES</source>
+            <translation>Length from edges</translation>
+        </message>
+        <message>
+            <source>NG_LENGTH_FROM_FACES</source>
+            <translation>Length from faces</translation>
         </message>
     </context>
 </TS>

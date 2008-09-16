@@ -36,7 +36,7 @@
 #include "StdMeshers_MaxElementVolume.hxx"
 #include "Utils_SALOME_Exception.hxx"
 
-class NETGENPlugin_Hypothesis_2D;
+//class NETGENPlugin_Hypothesis_2D;
 
 class NETGENPLUGIN_EXPORT NETGENPlugin_NETGEN_2D: public SMESH_2D_Algo
 {
@@ -52,7 +52,7 @@ public:
 		       const TopoDS_Shape& aShape);
 
 protected:
-  const NETGENPlugin_Hypothesis_2D* _hypothesis;
+  const SMESHDS_Hypothesis* _hypothesis;
 };
 
 #endif

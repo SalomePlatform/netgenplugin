@@ -11,6 +11,14 @@
             <translation>mesh_hypo_netgen_2d.png</translation>
         </message>
         <message>
+            <source>ICON_DLG_NETGEN_SimpleParameters_3D</source>
+            <translation>mesh_hypo_netgen.png</translation>
+        </message>
+        <message>
+            <source>ICON_DLG_NETGEN_SimpleParameters_2D</source>
+            <translation>mesh_hypo_netgen_2d.png</translation>
+        </message>
+        <message>
             <source>ICON_SMESH_TREE_ALGO_NETGEN_2D</source>
             <translation>mesh_tree_algo_netgen_2d.png</translation>
         </message>
@@ -28,6 +36,14 @@
         </message>
         <message>
             <source>ICON_SMESH_TREE_HYPO_NETGEN_Parameters_2D</source>
+            <translation>mesh_tree_hypo_netgen_2d.png</translation>
+        </message>
+        <message>
+            <source>ICON_SMESH_TREE_HYPO_NETGEN_SimpleParameters_3D</source>
+            <translation>mesh_tree_hypo_netgen.png</translation>
+        </message>
+        <message>
+            <source>ICON_SMESH_TREE_HYPO_NETGEN_SimpleParameters_2D</source>
             <translation>mesh_tree_hypo_netgen_2d.png</translation>
         </message>
     </context>

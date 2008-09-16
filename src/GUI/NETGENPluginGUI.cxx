@@ -27,6 +27,7 @@
 
 //#include "SMESHGUI_Hypotheses.h"
 #include "NETGENPluginGUI_HypothesisCreator.h"
+#include "NETGENPluginGUI_SimpleCreator.h"
 
 //=============================================================================
 /*! GetHypothesisCreator
@@ -41,6 +42,9 @@ extern "C"
     SMESHGUI_GenericHypothesisCreator* aCreator = NULL;
     if( aHypType=="NETGEN_Parameters_2D" ||  aHypType=="NETGEN_Parameters" )
       aCreator =  new NETGENPluginGUI_HypothesisCreator( aHypType );
+    else if ( aHypType=="NETGEN_SimpleParameters_2D" ||
+              aHypType=="NETGEN_SimpleParameters_3D" )
+      aCreator =  new NETGENPluginGUI_SimpleCreator( aHypType );
     return aCreator;
   }
 }

@@ -19,40 +19,49 @@
 // See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
 //
 //
-// File      : NETGENPlugin_NETGEN_2D3D.hxx
-// Author    : Michael Sazonov (OCN)
-// Date      : 20/03/2006
+// File      : NETGENPlugin_SimpleHypothesis_3D.hxx
+// Author    : Edward AGAPOV
 // Project   : SALOME
-// $Header$
 //=============================================================================
 
-#ifndef _NETGENPlugin_NETGEN_2D3D_HXX_
-#define _NETGENPlugin_NETGEN_2D3D_HXX_
+#ifndef _NETGENPlugin_SimpleHypothesis_3D_HXX_
+#define _NETGENPlugin_SimpleHypothesis_3D_HXX_
 
 #include "NETGENPlugin_Defs.hxx"
+#include "NETGENPlugin_SimpleHypothesis_2D.hxx"
 
-#include "SMESH_3D_Algo.hxx"
-#include "SMESH_Mesh.hxx"
-#include "StdMeshers_MaxElementVolume.hxx"
-#include "Utils_SALOME_Exception.hxx"
+#include <Utils_SALOME_Exception.hxx>
 
-//class NETGENPlugin_Hypothesis;
+//  Simplified parameters of NETGEN
+//
 
-class NETGENPLUGIN_EXPORT NETGENPlugin_NETGEN_2D3D: public SMESH_3D_Algo
+using namespace std;
+
+class NETGENPLUGIN_EXPORT NETGENPlugin_SimpleHypothesis_3D: public NETGENPlugin_SimpleHypothesis_2D
 {
 public:
-  NETGENPlugin_NETGEN_2D3D(int hypId, int studyId, SMESH_Gen* gen);
-  virtual ~NETGENPlugin_NETGEN_2D3D();
 
-  virtual bool CheckHypothesis(SMESH_Mesh& aMesh,
-                               const TopoDS_Shape& aShape,
-                               SMESH_Hypothesis::Hypothesis_Status& aStatus);
+  NETGENPlugin_SimpleHypothesis_3D(int hypId, int studyId, SMESH_Gen * gen);
 
-  virtual bool Compute(SMESH_Mesh& aMesh,
-		       const TopoDS_Shape& aShape);
+  void LengthFromFaces();
 
-protected:
-  const SMESHDS_Hypothesis* _hypothesis;
+  void SetMaxElementVolume(double value);
+  double GetMaxElementVolume() const { return _volume; }
+
+  // Persistence
+  virtual ostream & SaveTo(ostream & save);
+  virtual istream & LoadFrom(istream & load);
+
+  /*!
+   * \brief Set parameters by mesh
+   * \param theMesh - the built mesh
+   * \param theShape - the geometry of interest
+   * \retval bool - true if theShape is meshed
+   */
+  virtual bool SetParametersByMesh(const SMESH_Mesh* theMesh, const TopoDS_Shape& theShape);
+
+private:
+  double _volume;
 };
 
 #endif

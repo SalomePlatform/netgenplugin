@@ -318,7 +318,7 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
   netgen::Mesh * ngMesh = new netgen::Mesh ();
 
   netgen::OCCGeometry occgeo;
-  NETGENPlugin_Mesher::PrepareOCCgeometry( occgeo, F );
+  NETGENPlugin_Mesher::PrepareOCCgeometry( occgeo, F, aMesh );
 
   vector< const SMDS_MeshNode* > nodeVec;
   problem = AddSegmentsToMesh( *ngMesh, occgeo, wires, helper, nodeVec );
