@@ -31,13 +31,16 @@
 
 #include "NETGENPlugin_Defs.hxx"
 #include "StdMeshers_FaceSide.hxx"
+#include <map>
 
 class SMESH_Mesh;
 class SMESHDS_Mesh;
 class TopoDS_Shape;
 class NETGENPlugin_Hypothesis;
+class NETGENPlugin_SimpleHypothesis_2D;
 namespace netgen {
   class OCCGeometry;
+  class Mesh;
 }
 
 /*!
@@ -53,19 +56,35 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_Mesher
                        const bool isVolume);
 
   void SetParameters(const NETGENPlugin_Hypothesis* hyp);
+  void SetParameters(const NETGENPlugin_SimpleHypothesis_2D* hyp);
 
   bool Compute();
 
-  static void PrepareOCCgeometry(netgen::OCCGeometry& occgeom,
-                                 const TopoDS_Shape&  shape);
+  static void PrepareOCCgeometry(netgen::OCCGeometry&          occgeom,
+                                 const TopoDS_Shape&           shape,
+                                 SMESH_Mesh&                   mesh,
+                                 std::list< SMESH_subMesh* > * meshedSM=0);
 
   static void RemoveTmpFiles();
+
+protected:
+
+  bool fillNgMesh(netgen::OCCGeometry&                occgeom,
+                  netgen::Mesh&                       ngMesh,
+                  std::vector<SMDS_MeshNode*>&        nodeVec,
+                  const std::list< SMESH_subMesh* > & meshedSM);
+
+  void defaultParameters();
+
 
  private:
   SMESH_Mesh*          _mesh;
   const TopoDS_Shape&  _shape;
   bool                 _isVolume;
   bool                 _optimize;
+
+  const NETGENPlugin_SimpleHypothesis_2D * _simpleHyp;
+  std::map< int, std::pair<int,int> >      _faceDescriptors;
 };
 
 #endif

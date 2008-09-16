@@ -33,10 +33,12 @@ lib_LTLIBRARIES = libNETGENPluginGUI.la
 
 dist_libNETGENPluginGUI_la_SOURCES = \
 	NETGENPluginGUI.cxx \
-	NETGENPluginGUI_HypothesisCreator.cxx
+	NETGENPluginGUI_HypothesisCreator.cxx \
+	NETGENPluginGUI_SimpleCreator.cxx
 
 MOC_FILES = \
-	NETGENPluginGUI_HypothesisCreator_moc.cxx
+	NETGENPluginGUI_HypothesisCreator_moc.cxx \
+	NETGENPluginGUI_SimpleCreator_moc.cxx
 
 nodist_libNETGENPluginGUI_la_SOURCES= \
 	$(MOC_FILES)

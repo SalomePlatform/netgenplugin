@@ -39,6 +39,12 @@ msgstr "mesh_hypo_netgen.png"
 msgid "ICON_DLG_NETGEN_PARAMETERS_2D"
 msgstr "mesh_hypo_netgen_2d.png"
 
+msgid "ICON_DLG_NETGEN_SimpleParameters_3D"
+msgstr "mesh_hypo_netgen.png"
+
+msgid "ICON_DLG_NETGEN_SimpleParameters_2D"
+msgstr "mesh_hypo_netgen_2d.png"
+
 #-----------------------------------------------------------
 # ObjectBrowser
 #-----------------------------------------------------------
@@ -56,4 +62,10 @@ msgid "ICON_SMESH_TREE_HYPO_NETGEN_Parameters"
 msgstr "mesh_tree_hypo_netgen.png"
 
 msgid "ICON_SMESH_TREE_HYPO_NETGEN_Parameters_2D"
+msgstr "mesh_tree_hypo_netgen_2d.png"
+
+msgid "ICON_SMESH_TREE_HYPO_NETGEN_SimpleParameters_3D"
+msgstr "mesh_tree_hypo_netgen.png"
+
+msgid "ICON_SMESH_TREE_HYPO_NETGEN_SimpleParameters_2D"
 msgstr "mesh_tree_hypo_netgen_2d.png"

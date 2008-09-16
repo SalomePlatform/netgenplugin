@@ -27,6 +27,7 @@
 //=============================================================================
 #include "NETGENPlugin_NETGEN_2D.hxx"
 #include "NETGENPlugin_Hypothesis_2D.hxx"
+#include "NETGENPlugin_SimpleHypothesis_2D.hxx"
 #include "NETGENPlugin_Mesher.hxx"
 
 #include <SMESH_Gen.hxx>
@@ -53,9 +54,11 @@ NETGENPlugin_NETGEN_2D::NETGENPlugin_NETGEN_2D(int hypId, int studyId,
   _name = "NETGEN_2D";
   _shapeType = (1 << TopAbs_FACE); // 1 bit /shape type
   _compatibleHypothesis.push_back("NETGEN_Parameters_2D");
+  _compatibleHypothesis.push_back("NETGEN_SimpleParameters_2D");
   _requireDescretBoundary = false;
   _onlyUnaryInput = false;
   _hypothesis = NULL;
+  _supportSubmeshes = true;
 }
 
 //=============================================================================
@@ -82,9 +85,6 @@ bool NETGENPlugin_NETGEN_2D::CheckHypothesis
 {
   _hypothesis = NULL;
 
-  list<const SMESHDS_Hypothesis*>::const_iterator itl;
-  const SMESHDS_Hypothesis* theHyp;
-
   const list<const SMESHDS_Hypothesis*>& hyps = GetUsedHypothesis(aMesh, aShape);
   int nbHyp = hyps.size();
   if (!nbHyp)
@@ -92,20 +92,20 @@ bool NETGENPlugin_NETGEN_2D::CheckHypothesis
     aStatus = SMESH_Hypothesis::HYP_OK;
     return true;  // can work with no hypothesis
   }
-
-  itl = hyps.begin();
-  theHyp = (*itl); // use only the first hypothesis
+  // use only the first hypothesis
+  const SMESHDS_Hypothesis* theHyp = hyps.front();
 
   string hypName = theHyp->GetName();
-
-  if (hypName == "NETGEN_Parameters_2D")
+  if ( find( _compatibleHypothesis.begin(), _compatibleHypothesis.end(),
+             hypName ) != _compatibleHypothesis.end() )
   {
-    _hypothesis = static_cast<const NETGENPlugin_Hypothesis_2D*> (theHyp);
-    ASSERT(_hypothesis);
+    _hypothesis = theHyp;
     aStatus = SMESH_Hypothesis::HYP_OK;
   }
   else
+  {
     aStatus = SMESH_Hypothesis::HYP_INCOMPATIBLE;
+  }
 
   return aStatus == SMESH_Hypothesis::HYP_OK;
 }
@@ -123,6 +123,7 @@ bool NETGENPlugin_NETGEN_2D::Compute(SMESH_Mesh&         aMesh,
 
   NETGENPlugin_Mesher mesher(&aMesh, aShape, false);
 //   NETGENPlugin_Mesher mesher(meshDS, aShape, false);
-  mesher.SetParameters(_hypothesis);
+  mesher.SetParameters(dynamic_cast<const NETGENPlugin_Hypothesis*>(_hypothesis));
+  mesher.SetParameters(dynamic_cast<const NETGENPlugin_SimpleHypothesis_2D*>(_hypothesis));
   return mesher.Compute();
 }

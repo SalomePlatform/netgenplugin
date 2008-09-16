@@ -82,3 +82,30 @@ msgstr "Hypothesis Construction"
 
 msgid "NETGEN_3D_TITLE"
 msgstr "Hypothesis Construction"
+
+msgid "NETGEN_SimpleParameters_3D_HYPOTHESIS"
+msgstr "Netgen 3D simple parameters"
+
+msgid "NETGEN_SimpleParameters_3D_TITLE"
+msgstr "Hypothesis Construction"
+
+msgid "NETGEN_SimpleParameters_2D_HYPOTHESIS"
+msgstr "Netgen 2D simple parameters"
+
+msgid "NETGEN_SimpleParameters_2D_TITLE"
+msgstr "Hypothesis Construction"
+
+msgid "NG_1D"
+msgstr "1D"
+
+msgid "NG_2D"
+msgstr "2D"
+
+msgid "NG_3D"
+msgstr "3D"
+
+msgid "NG_LENGTH_FROM_EDGES"
+msgstr "Length from edges"
+
+msgid "NG_LENGTH_FROM_FACES"
+msgstr "Length from faces"
