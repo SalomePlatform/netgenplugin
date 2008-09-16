@@ -28,8 +28,26 @@
 
 include $(top_srcdir)/adm_local/unix/make_common_starter.am
 
-# header files 
-salomeinclude_HEADERS =
+# header files
+salomeinclude_HEADERS = \
+        NETGENPlugin_NETGEN_3D.hxx \
+        NETGENPlugin_NETGEN_3D_i.hxx \
+        NETGENPlugin_NETGEN_2D.hxx \
+        NETGENPlugin_NETGEN_2D_i.hxx \
+        NETGENPlugin_NETGEN_2D3D.hxx \
+        NETGENPlugin_NETGEN_2D3D_i.hxx \
+        NETGENPlugin_NETGEN_2D_ONLY.hxx \
+        NETGENPlugin_NETGEN_2D_ONLY_i.hxx \
+        NETGENPlugin_Hypothesis.hxx \
+        NETGENPlugin_Hypothesis_i.hxx \
+        NETGENPlugin_Hypothesis_2D.hxx \
+        NETGENPlugin_Hypothesis_2D_i.hxx \
+	NETGENPlugin_SimpleHypothesis_2D.hxx \
+	NETGENPlugin_SimpleHypothesis_3D.hxx \
+	NETGENPlugin_SimpleHypothesis_2D_i.hxx \
+	NETGENPlugin_SimpleHypothesis_3D_i.hxx \
+	NETGENPlugin_Mesher.hxx \
+	NETGENPlugin_Defs.hxx
 
 # Libraries targets
 lib_LTLIBRARIES = libNETGENEngine.la

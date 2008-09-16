@@ -27,13 +27,19 @@
 
 include $(top_srcdir)/adm_local/unix/make_common_starter.am
 
-dist_salomeres_DATA = \
-	mesh_algo_netgen_2d.png \
-	mesh_algo_netgen_2d3d.png \
-	mesh_hypo_netgen.png \
-	mesh_hypo_netgen_2d.png \
-	mesh_tree_algo_netgen_2d.png \
-	mesh_tree_algo_netgen_2d3d.png \
-	mesh_tree_hypo_netgen.png \
-	mesh_tree_hypo_netgen_2d.png \
-	NETGENPlugin.xml
+dist_salomeres_DATA =		\
+	NETGENPlugin.xml	\
+	SalomeApp.xml
+
+if NETGENPLUGIN_ENABLE_GUI
+  dist_salomeres_DATA +=		\
+	mesh_algo_netgen_2d.png		\
+	mesh_algo_netgen_2d3d.png	\
+	mesh_hypo_netgen.png		\
+	mesh_hypo_netgen_2d.png		\
+	mesh_tree_algo_netgen_2d.png	\
+	mesh_tree_algo_netgen_2d3d.png	\
+	mesh_tree_hypo_netgen.png	\
+	mesh_tree_hypo_netgen_2d.png	\
+	mesh_tree_algo_netgen.png
+endif

@@ -69,9 +69,13 @@ $(LIB_OBJ_O):
 
 nodist_libNETGEN_la_SOURCES =
 
-
-
 libNETGEN_la_LDFLAGS  = $(LIB_OBJ_O) \
 	$(CAS_LDPATH) -lTKernel -lTKBRep -lTKShHealing -lTKSTEP -lTKXSBase -lTKIGES -lTKMesh -lTKSTL $(FCLIBS) $(STDLIB)
 
 libNETGEN_la_DEPENDENCIES = $(LIB_OBJ_O)
+
+EXTRA_DIST += \
+	ReadMeForNgUsers	\
+	netgen43ForSalome.patch	\
+	netgen45ForSalome.patch	\
+	netgen45lib64.patch
