@@ -212,8 +212,15 @@ void NETGENPlugin_Mesher::PrepareOCCgeometry(netgen::OCCGeometry&     occgeo,
 
   occgeo.shape = shape;
   occgeo.changed = 1;
-  //occgeo.BuildFMap();  
+  //occgeo.BuildFMap();
 
+  //rnv to fix 19978 issue
+  bool includeSelf = true;
+  if ( shape.ShapeType() == TopAbs_FACE) {
+    occgeo.fmap.Add( shape );
+    includeSelf = false;
+  }
+  
   // fill maps of shapes of occgeo with not yet meshed subshapes
 
   // get root submeshes
@@ -230,7 +237,7 @@ void NETGENPlugin_Mesher::PrepareOCCgeometry(netgen::OCCGeometry&     occgeo,
   list< SMESH_subMesh* >::iterator rootIt = rootSM.begin(), rootEnd = rootSM.end();
   for ( ; rootIt != rootEnd; ++rootIt ) {
     SMESH_subMesh * root = *rootIt;
-    SMESH_subMeshIteratorPtr smIt = root->getDependsOnIterator(/*includeSelf=*/true,
+    SMESH_subMeshIteratorPtr smIt = root->getDependsOnIterator(/*includeSelf=*/includeSelf,
                                                                /*complexShapeFirst=*/true);
     while ( smIt->more() ) {
       SMESH_subMesh* sm = smIt->next();
