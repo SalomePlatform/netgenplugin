@@ -49,8 +49,8 @@ public:
   static bool GetDefaultQuadAllowed();
 
   // Persistence
-  virtual ostream & SaveTo(ostream & save);
-  virtual istream & LoadFrom(istream & load);
+  virtual std::ostream & SaveTo(std::ostream & save);
+  virtual std::istream & LoadFrom(std::istream & load);
 
 private:
   bool _quadAllowed;

@@ -62,6 +62,7 @@ namespace nglib {
 #include <nglib.h>
 }
 using namespace nglib;
+using namespace std;
 
 //=============================================================================
 /*!

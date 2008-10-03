@@ -35,8 +35,6 @@
 //  Simplified parameters of NETGEN
 //
 
-using namespace std;
-
 class NETGENPLUGIN_EXPORT NETGENPlugin_SimpleHypothesis_2D: public SMESH_Hypothesis
 {
 public:
@@ -80,8 +78,8 @@ public:
   double GetMaxElementArea() const { return _area; }
 
   // Persistence
-  virtual ostream & SaveTo(ostream & save);
-  virtual istream & LoadFrom(istream & load);
+  virtual std::ostream & SaveTo(std::ostream & save);
+  virtual std::istream & LoadFrom(std::istream & load);
 
   /*!
    * \brief Set parameters by mesh

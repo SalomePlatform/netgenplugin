@@ -37,8 +37,6 @@
 //  Parameters for work of NETGEN
 //
 
-using namespace std;
-
 class NETGENPLUGIN_EXPORT NETGENPlugin_Hypothesis: public SMESH_Hypothesis
 {
 public:
@@ -89,10 +87,10 @@ public:
   static bool GetDefaultOptimize();
 
   // Persistence
-  virtual ostream & SaveTo(ostream & save);
-  virtual istream & LoadFrom(istream & load);
-  friend NETGENPLUGIN_EXPORT ostream & operator <<(ostream & save, NETGENPlugin_Hypothesis & hyp);
-  friend NETGENPLUGIN_EXPORT istream & operator >>(istream & load, NETGENPlugin_Hypothesis & hyp);
+  virtual std::ostream & SaveTo(std::ostream & save);
+  virtual std::istream & LoadFrom(std::istream & load);
+  friend NETGENPLUGIN_EXPORT std::ostream & operator <<(std::ostream & save, NETGENPlugin_Hypothesis & hyp);
+  friend NETGENPLUGIN_EXPORT std::istream & operator >>(std::istream & load, NETGENPlugin_Hypothesis & hyp);
 
   /*!
    * \brief Does nothing
