@@ -212,15 +212,8 @@ void NETGENPlugin_Mesher::PrepareOCCgeometry(netgen::OCCGeometry&     occgeo,
 
   occgeo.shape = shape;
   occgeo.changed = 1;
-  //occgeo.BuildFMap();  
+  //occgeo.BuildFMap();
 
-  //rnv to fix 19978 issue
-  bool includeSelf = true;
-  if ( shape.ShapeType() == TopAbs_FACE) {
-    occgeo.fmap.Add( shape );
-    includeSelf = false;
-  }
-  
   // fill maps of shapes of occgeo with not yet meshed subshapes
 
   // get root submeshes
@@ -237,16 +230,22 @@ void NETGENPlugin_Mesher::PrepareOCCgeometry(netgen::OCCGeometry&     occgeo,
   list< SMESH_subMesh* >::iterator rootIt = rootSM.begin(), rootEnd = rootSM.end();
   for ( ; rootIt != rootEnd; ++rootIt ) {
     SMESH_subMesh * root = *rootIt;
-    SMESH_subMeshIteratorPtr smIt = root->getDependsOnIterator(/*includeSelf=*/includeSelf,
+    SMESH_subMeshIteratorPtr smIt = root->getDependsOnIterator(/*includeSelf=*/true,
                                                                /*complexShapeFirst=*/true);
+    // to find a right orientation of subshapes (PAL20462)
+    TopTools_IndexedMapOfShape subShapes;
+    TopExp::MapShapes(root->GetSubShape(), subShapes);
     while ( smIt->more() ) {
       SMESH_subMesh* sm = smIt->next();
       if ( sm->IsEmpty() ) {
-        switch ( sm->GetSubShape().ShapeType() ) {
-        case TopAbs_FACE  : occgeo.fmap.Add( sm->GetSubShape() ); break;
-        case TopAbs_EDGE  : occgeo.emap.Add( sm->GetSubShape() ); break;
-        case TopAbs_VERTEX: occgeo.vmap.Add( sm->GetSubShape() ); break;
-        case TopAbs_SOLID :occgeo.somap.Add( sm->GetSubShape() ); break;
+        TopoDS_Shape shape = sm->GetSubShape();
+        if ( shape.ShapeType() != TopAbs_VERTEX )
+          shape = subShapes( subShapes.FindIndex( shape ));// - shape->index->oriented shape
+        switch ( shape.ShapeType() ) {
+        case TopAbs_FACE  : occgeo.fmap.Add( shape ); break;
+        case TopAbs_EDGE  : occgeo.emap.Add( shape ); break;
+        case TopAbs_VERTEX: occgeo.vmap.Add( shape ); break;
+        case TopAbs_SOLID :occgeo.somap.Add( shape ); break;
         default:;
         }
       }
