@@ -319,6 +319,8 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
 
   netgen::OCCGeometry occgeo;
   NETGENPlugin_Mesher::PrepareOCCgeometry( occgeo, F, aMesh );
+  occgeo.fmap.Clear(); // face can be reversed, which is wrong in this case (issue 19978)
+  occgeo.fmap.Add( F );
 
   vector< const SMDS_MeshNode* > nodeVec;
   problem = AddSegmentsToMesh( *ngMesh, occgeo, wires, helper, nodeVec );
