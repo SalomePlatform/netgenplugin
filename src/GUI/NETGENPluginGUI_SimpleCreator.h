@@ -25,7 +25,7 @@
 #define NETGENPluginGUI_SimpleCreator_H
 
 // SMESH includes
-#include "NETGENPlugin_Defs.hxx"
+//#include "NETGENPlugin_Defs.hxx"
 #include <SMESHGUI_Hypotheses.h>
 
 class  QCheckBox;
@@ -34,7 +34,7 @@ class  QRadioButton;
 class  QtxIntSpinBox;
 class  SMESHGUI_SpinBox;
 
-class NETGENPLUGIN_EXPORT NETGENPluginGUI_SimpleCreator : public SMESHGUI_GenericHypothesisCreator
+class NETGENPluginGUI_SimpleCreator : public SMESHGUI_GenericHypothesisCreator
 {
   Q_OBJECT
 
