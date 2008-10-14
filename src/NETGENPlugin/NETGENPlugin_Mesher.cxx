@@ -51,6 +51,7 @@
 #include <OSD_File.hxx>
 #include <TCollection_AsciiString.hxx>
 #include <TopTools_ListIteratorOfListOfShape.hxx>
+#include <Standard_ErrorHandler.hxx>
 
 // Netgen include files
 namespace nglib {
@@ -198,7 +199,13 @@ void NETGENPlugin_Mesher::PrepareOCCgeometry(netgen::OCCGeometry&     occgeo,
                                              list< SMESH_subMesh* > * meshedSM)
 {
   BRepTools::Clean (shape);
-  BRepMesh_IncrementalMesh::BRepMesh_IncrementalMesh (shape, 0.01, true);
+  try {
+#if (OCC_VERSION_MAJOR << 16 | OCC_VERSION_MINOR << 8 | OCC_VERSION_MAINTENANCE) > 0x060100
+    OCC_CATCH_SIGNALS;
+#endif
+    BRepMesh_IncrementalMesh::BRepMesh_IncrementalMesh (shape, 0.01, true);
+  } catch (Standard_Failure) {
+  }
   Bnd_Box bb;
   BRepBndLib::Add (shape, bb);
   double x1,y1,z1,x2,y2,z2;
