@@ -28,15 +28,7 @@
 #ifndef NETGENPLUGINGUI_HypothesisCreator_HeaderFile
 #define NETGENPLUGINGUI_HypothesisCreator_HeaderFile
 
-#ifdef WIN32
-  #ifdef NETGENPLUGIN_GUI_EXPORTS
-    #define NETGENPLUGIN_GUI_EXPORT __declspec( dllexport )
-  #else
-    #define NETGENPLUGIN_GUI_EXPORT __declspec( dllimport )
-  #endif
-#else
-  #define NETGENPLUGIN_GUI_EXPORT
-#endif
+#include "NETGENPluginGUI.h"
 
 #include <SMESHGUI_Hypotheses.h>
 

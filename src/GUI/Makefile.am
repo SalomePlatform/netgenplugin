@@ -33,6 +33,7 @@ lib_LTLIBRARIES = libNETGENPluginGUI.la
 
 dist_libNETGENPluginGUI_la_SOURCES = \
 	NETGENPluginGUI.cxx \
+	NETGENPluginGUI.h \
 	NETGENPluginGUI_HypothesisCreator.h \
 	NETGENPluginGUI_HypothesisCreator.cxx \
 	NETGENPluginGUI_SimpleCreator.h \
