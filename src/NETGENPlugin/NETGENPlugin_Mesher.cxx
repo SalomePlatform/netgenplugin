@@ -631,7 +631,7 @@ bool NETGENPlugin_Mesher::Compute()
       if ( simple3d ) {
         if ( double vol = simple3d->GetMaxElementVolume() ) {
           // max volume
-          mparams.maxh = pow( 72 * vol * vol, 1/3. );
+          mparams.maxh = pow( 72, 1/6. ) * pow( vol, 1/3. );
           mparams.maxh = min( mparams.maxh, occgeo.boundingbox.Diam()/2 );
         }
         else {
