@@ -276,7 +276,7 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
   int Netgen_NbOfNodes = 0;
   int Netgen_param2ndOrder = 0;
   double Netgen_paramFine = 1.;
-  double Netgen_paramSize = _maxElementVolume;
+  double Netgen_paramSize = pow( 72, 1/6. ) * pow( _maxElementVolume, 1/3. );
 
   double Netgen_point[3];
   int Netgen_triangle[3];
@@ -500,7 +500,7 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh& aMesh,
   int Netgen_NbOfNodes = 0;
   int Netgen_param2ndOrder = 0;
   double Netgen_paramFine = 1.;
-  double Netgen_paramSize = _maxElementVolume;
+  double Netgen_paramSize = pow( 72, 1/6. ) * pow( _maxElementVolume, 1/3. );
   
   double Netgen_point[3];
   int Netgen_triangle[3];
@@ -601,8 +601,8 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh& aMesh,
     {
       Ng_GetPoint( Netgen_mesh, nodeIndex, Netgen_point );
       SMDS_MeshNode * node = aHelper->AddNode(Netgen_point[0],
-                                             Netgen_point[1],
-                                             Netgen_point[2]);
+					      Netgen_point[1],
+					      Netgen_point[2]);
       nodeVec.at(nodeIndex) = node;
     }
 
@@ -611,9 +611,9 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh& aMesh,
     {
       Ng_GetVolumeElement(Netgen_mesh, elemIndex, Netgen_tetrahedron);
       aHelper->AddVolume (nodeVec.at( Netgen_tetrahedron[0] ),
-                                                 nodeVec.at( Netgen_tetrahedron[1] ),
-                                                 nodeVec.at( Netgen_tetrahedron[2] ),
-                                                 nodeVec.at( Netgen_tetrahedron[3] ));
+			  nodeVec.at( Netgen_tetrahedron[1] ),
+			  nodeVec.at( Netgen_tetrahedron[2] ),
+			  nodeVec.at( Netgen_tetrahedron[3] ));
     }
   }
 
