@@ -20,41 +20,49 @@
 //  See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
 //
 //  NETGENPlugin : C++ implementation
-// File      : NETGENPlugin_Hypothesis_2D.hxx
-// Author    : Michael Sazonov (OCN)
-// Date      : 27/03/2006
+// File      : NETGENPlugin_SimpleHypothesis_3D.hxx
+// Author    : Edward AGAPOV
 // Project   : SALOME
-// $Header$
 //=============================================================================
 //
-#ifndef _NETGENPlugin_Hypothesis_2D_HXX_
-#define _NETGENPlugin_Hypothesis_2D_HXX_
+#ifndef _NETGENPlugin_SimpleHypothesis_3D_HXX_
+#define _NETGENPlugin_SimpleHypothesis_3D_HXX_
 
 #include "NETGENPlugin_Defs.hxx"
+#include "NETGENPlugin_SimpleHypothesis_2D.hxx"
 
-#include "NETGENPlugin_Hypothesis.hxx"
-#include "Utils_SALOME_Exception.hxx"
+#include <Utils_SALOME_Exception.hxx>
 
-//  Parameters for work of NETGEN.
-// This class is just to give 2D dimension, actually
-// it inherits all behaviour of the parent 
+//  Simplified parameters of NETGEN
+//
 
-class NETGENPLUGIN_EXPORT  NETGENPlugin_Hypothesis_2D: public NETGENPlugin_Hypothesis
+using namespace std;
+
+class NETGENPLUGIN_EXPORT NETGENPlugin_SimpleHypothesis_3D: public NETGENPlugin_SimpleHypothesis_2D
 {
 public:
 
-  NETGENPlugin_Hypothesis_2D(int hypId, int studyId, SMESH_Gen * gen);
+  NETGENPlugin_SimpleHypothesis_3D(int hypId, int studyId, SMESH_Gen * gen);
 
-  void SetQuadAllowed(bool theVal);
-  bool GetQuadAllowed() const { return _quadAllowed; }
-  static bool GetDefaultQuadAllowed();
+  void LengthFromFaces();
+
+  void SetMaxElementVolume(double value);
+  double GetMaxElementVolume() const { return _volume; }
 
   // Persistence
   virtual ostream & SaveTo(ostream & save);
   virtual istream & LoadFrom(istream & load);
 
+  /*!
+   * \brief Set parameters by mesh
+   * \param theMesh - the built mesh
+   * \param theShape - the geometry of interest
+   * \retval bool - true if theShape is meshed
+   */
+  virtual bool SetParametersByMesh(const SMESH_Mesh* theMesh, const TopoDS_Shape& theShape);
+
 private:
-  bool _quadAllowed;
+  double _volume;
 };
 
 #endif

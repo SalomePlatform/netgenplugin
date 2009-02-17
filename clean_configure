@@ -1,3 +1,4 @@
+#!/bin/sh
 #  Copyright (C) 2007-2008  CEA/DEN, EDF R&D, OPEN CASCADE
 #
 #  Copyright (C) 2003-2007  OPEN CASCADE, EADS/CCR, LIP6, CEA/DEN,
@@ -19,6 +20,16 @@
 #
 #  See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
 #
-include $(top_srcdir)/adm_local/unix/make_common_starter.am
+rm -rf autom4te.cache aclocal.m4 configure make_config
+find . -name "*~" -print -exec rm {} \;
+find . -name "*.pyc" -print -exec rm {} \;
+#exit
+# ==================== ON SORT AVANT
 
-SUBDIRS = config_files
+find bin -name Makefile.in | xargs rm -f
+find doc -name Makefile.in | xargs rm -f
+find idl -name Makefile.in | xargs rm -f
+find resources -name Makefile.in | xargs rm -f
+find salome_adm -name Makefile.in | xargs rm -f
+find src -name Makefile.in | xargs rm -f
+rm -f Makefile.in

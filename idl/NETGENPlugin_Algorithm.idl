@@ -1,31 +1,32 @@
-//  Copyright (C) 2003  OPEN CASCADE, EADS/CCR, LIP6, CEA/DEN,
-//  CEDRAT, EDF R&D, LEG, PRINCIPIA R&D, BUREAU VERITAS 
-// 
-//  This library is free software; you can redistribute it and/or 
-//  modify it under the terms of the GNU Lesser General Public 
-//  License as published by the Free Software Foundation; either 
-//  version 2.1 of the License. 
-// 
-//  This library is distributed in the hope that it will be useful, 
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of 
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU 
-//  Lesser General Public License for more details. 
-// 
-//  You should have received a copy of the GNU Lesser General Public 
-//  License along with this library; if not, write to the Free Software 
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA 
-// 
-// See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
+//  Copyright (C) 2007-2008  CEA/DEN, EDF R&D, OPEN CASCADE
 //
+//  Copyright (C) 2003-2007  OPEN CASCADE, EADS/CCR, LIP6, CEA/DEN,
+//  CEDRAT, EDF R&D, LEG, PRINCIPIA R&D, BUREAU VERITAS
 //
+//  This library is free software; you can redistribute it and/or
+//  modify it under the terms of the GNU Lesser General Public
+//  License as published by the Free Software Foundation; either
+//  version 2.1 of the License.
+//
+//  This library is distributed in the hope that it will be useful,
+//  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+//  Lesser General Public License for more details.
+//
+//  You should have received a copy of the GNU Lesser General Public
+//  License along with this library; if not, write to the Free Software
+//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
+//
+//  See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
 //
 //  File   : NETGENPlugin_Algorithm.idl
 //  Author : Julia DOROVSKIKH
 //  $Header$
-
+//
 #ifndef _SMESH_NETGENALGORITHM_IDL_
 #define _SMESH_NETGENALGORITHM_IDL_
 
+#include "SALOME_Exception.idl"
 #include "SMESH_Hypothesis.idl"
 
 /*!
@@ -97,6 +98,69 @@ module NETGENPlugin
   {
     void SetQuadAllowed(in boolean value);
     boolean GetQuadAllowed();
+  };
+
+  /*!
+   * NETGENPlugin_Hypothesis: interface of "NETGEN 2D simple parameters" hypothesis
+   */
+  interface NETGENPlugin_SimpleHypothesis_2D : SMESH::SMESH_Hypothesis
+  {
+    /*!
+     * Sets <number of segments> value
+     */
+    void SetNumberOfSegments(in short nb) raises (SALOME::SALOME_Exception);
+    /*!
+     * Returns <number of segments> value.
+     * Can be zero in case if LocalLength() has been set
+     */
+    short GetNumberOfSegments();
+
+    /*!
+     * Sets <segment length> value
+     */
+    void SetLocalLength(in double segmentLength);
+    /*!
+     * Returns <segment length> value.
+     * Can be zero in case if NumberOfSegments() has been set
+     */
+    double GetLocalLength();
+
+    /*!
+     * Sets <maximum element area> to be dependent on 1D discretization
+     */
+    void LengthFromEdges();
+    /*!
+     * Sets <maximum element area> value.
+     * Zero or negative value means same as LengthFromEdges().
+     */
+    void SetMaxElementArea(in double area);
+    /*!
+     * Returns <maximum element area> value.
+     * Can be zero in case of LengthFromEdges()
+     */
+    double GetMaxElementArea();
+  };
+
+  /*!
+   * NETGENPlugin_SimpleHypothesis_3D: interface of "NETGEN 3D simple parameters" hypothesis
+   */
+  interface NETGENPlugin_SimpleHypothesis_3D : NETGENPlugin_SimpleHypothesis_2D
+  {
+    /*!
+     * Sets <maximum element volume> to be dependent on 2D discretization
+     */
+    void LengthFromFaces();
+    /*!
+     * Sets <maximum element volume> value.
+     * Zero or negative value means same as LengthFromFaces().
+     */
+    void SetMaxElementVolume(in double volume);
+
+    /*!
+     * Returns <maximum element volume> value
+     * Can be zero in case of LengthFromFaces()
+     */
+    double GetMaxElementVolume();
   };
 
 };

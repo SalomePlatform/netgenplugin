@@ -19,21 +19,18 @@
 //
 //  See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
 //
-//=============================================================================
-// File      : NETGENPlugin_Defs.hxx
-// Author    : Alexander A. BORODIN
+//  NETGENPlugin GUI: GUI for plugged-in mesher NETGENPlugin
+//  File   : NETGENPluginGUI.h
+//  Author : Alexander A. BORODIN
+//  Module : NETGENPlugin
+//  $Header: 
 //
-#ifndef _NETGENPlugin_DEFS_HXX_
-#define _NETGENPlugin_DEFS_HXX_
-
 #ifdef WIN32
-  #ifdef NETGENPLUGIN_EXPORTS
-    #define NETGENPLUGIN_EXPORT __declspec( dllexport )
+  #ifdef NETGENPLUGIN_GUI_EXPORTS
+    #define NETGENPLUGIN_GUI_EXPORT __declspec( dllexport )
   #else
-    #define NETGENPLUGIN_EXPORT __declspec( dllimport )
+    #define NETGENPLUGIN_GUI_EXPORT __declspec( dllimport )
   #endif
 #else
-  #define NETGENPLUGIN_EXPORT
-#endif
-
+  #define NETGENPLUGIN_GUI_EXPORT
 #endif

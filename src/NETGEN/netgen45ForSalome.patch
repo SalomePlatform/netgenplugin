@@ -1,6 +1,6 @@
-diff -Nru netgen-4.5_orig/libsrc/csg/meshsurf.cpp netgen-4.5_patch/libsrc/csg/meshsurf.cpp
---- netgen-4.5_orig/libsrc/csg/meshsurf.cpp	2006-02-14 10:54:35.000000000 +0300
-+++ netgen-4.5_patch/libsrc/csg/meshsurf.cpp	2006-10-25 16:05:59.000000000 +0400
+diff -Naur netgen-4.5.old/libsrc/csg/meshsurf.cpp netgen-4.5.new/libsrc/csg/meshsurf.cpp
+--- netgen-4.5.old/libsrc/csg/meshsurf.cpp	2006-02-14 11:54:35.000000000 +0300
++++ netgen-4.5.new/libsrc/csg/meshsurf.cpp	2008-02-12 14:57:01.000000000 +0300
 @@ -77,11 +77,12 @@
  }
  
@@ -15,9 +15,9 @@ diff -Nru netgen-4.5_orig/libsrc/csg/meshsurf.cpp netgen-4.5_patch/libsrc/csg/me
  }
  
  void MeshOptimize2dSurfaces :: ProjectPoint2 (INDEX surfind, INDEX surfind2, 
-diff -Nru netgen-4.5_orig/libsrc/csg/meshsurf.hpp netgen-4.5_patch/libsrc/csg/meshsurf.hpp
---- netgen-4.5_orig/libsrc/csg/meshsurf.hpp	2004-01-20 13:49:44.000000000 +0300
-+++ netgen-4.5_patch/libsrc/csg/meshsurf.hpp	2006-10-25 16:08:05.000000000 +0400
+diff -Naur netgen-4.5.old/libsrc/csg/meshsurf.hpp netgen-4.5.new/libsrc/csg/meshsurf.hpp
+--- netgen-4.5.old/libsrc/csg/meshsurf.hpp	2004-01-20 14:49:44.000000000 +0300
++++ netgen-4.5.new/libsrc/csg/meshsurf.hpp	2008-02-12 14:57:01.000000000 +0300
 @@ -45,7 +45,7 @@
      MeshOptimize2dSurfaces (const CSGeometry & ageometry); 
     
@@ -27,9 +27,9 @@ diff -Nru netgen-4.5_orig/libsrc/csg/meshsurf.hpp netgen-4.5_patch/libsrc/csg/me
      ///
      virtual void ProjectPoint2 (INDEX surfind, INDEX surfind2, Point3d & p) const;
      ///
-diff -Nru netgen-4.5_orig/libsrc/interface/Makefile netgen-4.5_patch/libsrc/interface/Makefile
---- netgen-4.5_orig/libsrc/interface/Makefile	2005-08-09 18:14:59.000000000 +0400
-+++ netgen-4.5_patch/libsrc/interface/Makefile	2006-04-27 13:12:54.000000000 +0400
+diff -Naur netgen-4.5.old/libsrc/interface/Makefile netgen-4.5.new/libsrc/interface/Makefile
+--- netgen-4.5.old/libsrc/interface/Makefile	2005-08-09 18:14:59.000000000 +0400
++++ netgen-4.5.new/libsrc/interface/Makefile	2008-02-12 14:57:01.000000000 +0300
 @@ -1,4 +1,5 @@
 -src = nginterface.cpp writeuser.cpp writediffpack.cpp writeabaqus.cpp writefluent.cpp writepermas.cpp writetochnog.cpp writetecplot.cpp wuchemnitz.cpp writetochnog.cpp writefeap.cpp writeelmer.cpp  writegmsh.cpp writejcm.cpp readuser.cpp importsolution.cpp 
 +#src = nginterface.cpp writeuser.cpp writediffpack.cpp writeabaqus.cpp writefluent.cpp writepermas.cpp writetochnog.cpp writetecplot.cpp wuchemnitz.cpp writetochnog.cpp writefeap.cpp writeelmer.cpp  writegmsh.cpp writejcm.cpp readuser.cpp importsolution.cpp
@@ -37,9 +37,9 @@ diff -Nru netgen-4.5_orig/libsrc/interface/Makefile netgen-4.5_patch/libsrc/inte
  #
  lib = nginterface
  libpath = libsrc/interface
-diff -Nru netgen-4.5_orig/libsrc/interface/nglib.cpp netgen-4.5_patch/libsrc/interface/nglib.cpp
---- netgen-4.5_orig/libsrc/interface/nglib.cpp	2005-10-18 17:53:18.000000000 +0400
-+++ netgen-4.5_patch/libsrc/interface/nglib.cpp	2006-04-27 13:12:54.000000000 +0400
+diff -Naur netgen-4.5.old/libsrc/interface/nglib.cpp netgen-4.5.new/libsrc/interface/nglib.cpp
+--- netgen-4.5.old/libsrc/interface/nglib.cpp	2005-10-18 17:53:18.000000000 +0400
++++ netgen-4.5.new/libsrc/interface/nglib.cpp	2008-02-12 14:57:01.000000000 +0300
 @@ -56,7 +56,8 @@
  
  void Ng_Exit ()
@@ -50,9 +50,9 @@ diff -Nru netgen-4.5_orig/libsrc/interface/nglib.cpp netgen-4.5_patch/libsrc/int
  }
    
  
-diff -Nru netgen-4.5_orig/libsrc/makefile.inc netgen-4.5_patch/libsrc/makefile.inc
---- netgen-4.5_orig/libsrc/makefile.inc	2005-09-02 17:17:51.000000000 +0400
-+++ netgen-4.5_patch/libsrc/makefile.inc	2006-10-26 09:33:58.000000000 +0400
+diff -Naur netgen-4.5.old/libsrc/makefile.inc netgen-4.5.new/libsrc/makefile.inc
+--- netgen-4.5.old/libsrc/makefile.inc	2005-09-02 17:17:51.000000000 +0400
++++ netgen-4.5.new/libsrc/makefile.inc	2008-02-12 14:59:55.000000000 +0300
 @@ -8,17 +8,14 @@
  LIBSRC_DIR=$(CPP_DIR)/libsrc
  LIB_DIR=$(CPP_DIR)/lib/$(MACHINE)
@@ -71,14 +71,14 @@ diff -Nru netgen-4.5_orig/libsrc/makefile.inc netgen-4.5_patch/libsrc/makefile.i
  include $(LIBSRC_DIR)/makefile.mach.$(MACHINE)
  #
 -CPLUSPLUSFLAGS1 = -c -I$(LIBSRC_DIR)/include -I$(OCCINC_DIR) 
-+CPLUSPLUSFLAGS1 = -c -I$(LIBSRC_DIR)/include -I$(OCCINC_DIR) \
++CPLUSPLUSFLAGS1 = -c -fPIC -I$(LIBSRC_DIR)/include -I$(OCCINC_DIR) \
 +	-DOCCGEOMETRY -DOCC52 -DHAVE_IOSTREAM -DHAVE_LIMITS_H
  #
  ARFLAGS = r
  #
-diff -Nru netgen-4.5_orig/libsrc/makefile.mach.LINUX netgen-4.5_patch/libsrc/makefile.mach.LINUX
---- netgen-4.5_orig/libsrc/makefile.mach.LINUX	2004-10-11 23:49:26.000000000 +0400
-+++ netgen-4.5_patch/libsrc/makefile.mach.LINUX	2006-04-27 13:12:54.000000000 +0400
+diff -Naur netgen-4.5.old/libsrc/makefile.mach.LINUX netgen-4.5.new/libsrc/makefile.mach.LINUX
+--- netgen-4.5.old/libsrc/makefile.mach.LINUX	2004-10-11 23:49:26.000000000 +0400
++++ netgen-4.5.new/libsrc/makefile.mach.LINUX	2008-02-12 14:57:01.000000000 +0300
 @@ -16,7 +16,7 @@
  #
  CFLAGS2 =
@@ -88,9 +88,29 @@ diff -Nru netgen-4.5_orig/libsrc/makefile.mach.LINUX netgen-4.5_patch/libsrc/mak
  	-ftemplate-depth-99 -finline-limit=10000 \
  	-Wdisabled-optimization  -funroll-loops  -DnoNGSOLVE
  
-diff -Nru netgen-4.5_orig/libsrc/meshing/improve2.cpp netgen-4.5_patch/libsrc/meshing/improve2.cpp
---- netgen-4.5_orig/libsrc/meshing/improve2.cpp	2006-01-11 18:08:19.000000000 +0300
-+++ netgen-4.5_patch/libsrc/meshing/improve2.cpp	2006-04-27 13:12:54.000000000 +0400
+diff -Naur netgen-4.5.old/libsrc/meshing/meshtype.cpp netgen-4.5.new/libsrc/meshing/meshtype.cpp
+--- netgen-4.5.old/libsrc/meshing/meshtype.cpp	2006-02-10 13:11:08.000000000 +0300
++++ netgen-4.5.new/libsrc/meshing/meshtype.cpp	2008-03-14 13:19:53.000000000 +0300
+@@ -1,4 +1,5 @@
+ #include <mystdlib.h>
++#include <float.h>
+ 
+ #include "meshing.hpp"  
+ 
+@@ -774,7 +775,7 @@
+       frob /= 2;
+ 
+       double det = trans.Det();
+-      if (det <= 0)
++      if (det <= DBL_MIN)
+ 	err += 1e12;
+       else
+ 	err += frob * frob / det;
+
+
+diff -Naur netgen-4.5.old/libsrc/meshing/improve2.cpp netgen-4.5.new/libsrc/meshing/improve2.cpp
+--- netgen-4.5.old/libsrc/meshing/improve2.cpp	2006-01-11 19:08:19.000000000 +0300
++++ netgen-4.5.new/libsrc/meshing/improve2.cpp	2008-02-12 14:57:01.000000000 +0300
 @@ -4,7 +4,7 @@
  #include <opti.hpp>
  
@@ -100,9 +120,9 @@ diff -Nru netgen-4.5_orig/libsrc/meshing/improve2.cpp netgen-4.5_patch/libsrc/me
  #endif
  
  namespace netgen
-diff -Nru netgen-4.5_orig/libsrc/meshing/improve2.hpp netgen-4.5_patch/libsrc/meshing/improve2.hpp
---- netgen-4.5_orig/libsrc/meshing/improve2.hpp	2004-10-12 23:22:55.000000000 +0400
-+++ netgen-4.5_patch/libsrc/meshing/improve2.hpp	2006-10-25 16:09:37.000000000 +0400
+diff -Naur netgen-4.5.old/libsrc/meshing/improve2.hpp netgen-4.5.new/libsrc/meshing/improve2.hpp
+--- netgen-4.5.old/libsrc/meshing/improve2.hpp	2004-10-12 23:22:55.000000000 +0400
++++ netgen-4.5.new/libsrc/meshing/improve2.hpp	2008-02-12 14:57:01.000000000 +0300
 @@ -32,17 +32,16 @@
    ///
    virtual void SelectSurfaceOfPoint (const Point3d & p,
@@ -129,9 +149,9 @@ diff -Nru netgen-4.5_orig/libsrc/meshing/improve2.hpp netgen-4.5_patch/libsrc/me
  
    ///
    virtual void GetNormalVector(INDEX surfind, const Point3d & p, PointGeomInfo & gi, Vec3d & n) const;
-diff -Nru netgen-4.5_orig/libsrc/meshing/smoothing2.cpp netgen-4.5_patch/libsrc/meshing/smoothing2.cpp
---- netgen-4.5_orig/libsrc/meshing/smoothing2.cpp	2006-01-11 18:08:20.000000000 +0300
-+++ netgen-4.5_patch/libsrc/meshing/smoothing2.cpp	2006-10-25 16:10:46.000000000 +0400
+diff -Naur netgen-4.5.old/libsrc/meshing/smoothing2.cpp netgen-4.5.new/libsrc/meshing/smoothing2.cpp
+--- netgen-4.5.old/libsrc/meshing/smoothing2.cpp	2006-01-11 19:08:20.000000000 +0300
++++ netgen-4.5.new/libsrc/meshing/smoothing2.cpp	2008-02-12 14:57:01.000000000 +0300
 @@ -300,7 +300,7 @@
    double Opti2SurfaceMinFunction :: 
    FuncGrad (const Vector & x, Vector & grad) const
@@ -250,9 +270,9 @@ diff -Nru netgen-4.5_orig/libsrc/meshing/smoothing2.cpp netgen-4.5_patch/libsrc/
  	      if (moveisok)
  		{
  		  for (j = 0; j < locelements.Size(); j++)
-diff -Nru netgen-4.5_orig/libsrc/occ/occconstruction.cpp netgen-4.5_patch/libsrc/occ/occconstruction.cpp
---- netgen-4.5_orig/libsrc/occ/occconstruction.cpp	2005-12-06 17:15:53.000000000 +0300
-+++ netgen-4.5_patch/libsrc/occ/occconstruction.cpp	2006-04-27 13:12:54.000000000 +0400
+diff -Naur netgen-4.5.old/libsrc/occ/occconstruction.cpp netgen-4.5.new/libsrc/occ/occconstruction.cpp
+--- netgen-4.5.old/libsrc/occ/occconstruction.cpp	2005-12-06 18:15:53.000000000 +0300
++++ netgen-4.5.new/libsrc/occ/occconstruction.cpp	2008-02-12 14:57:01.000000000 +0300
 @@ -28,8 +28,8 @@
  #include <BRepAlgoAPI_Common.hxx>
  #include <BRepAlgoAPI_Fuse.hxx>
@@ -264,9 +284,9 @@ diff -Nru netgen-4.5_orig/libsrc/occ/occconstruction.cpp netgen-4.5_patch/libsrc
  #include <BRepOffsetAPI_MakeOffsetShape.hxx>
  #include <ShapeFix_Shape.hxx>
  namespace netgen
-diff -Nru netgen-4.5_orig/libsrc/occ/occgenmesh.cpp netgen-4.5_patch/libsrc/occ/occgenmesh.cpp
---- netgen-4.5_orig/libsrc/occ/occgenmesh.cpp	2006-02-07 12:12:48.000000000 +0300
-+++ netgen-4.5_patch/libsrc/occ/occgenmesh.cpp	2006-10-25 16:14:48.000000000 +0400
+diff -Naur netgen-4.5.old/libsrc/occ/occgenmesh.cpp netgen-4.5.new/libsrc/occ/occgenmesh.cpp
+--- netgen-4.5.old/libsrc/occ/occgenmesh.cpp	2006-02-07 13:12:48.000000000 +0300
++++ netgen-4.5.new/libsrc/occ/occgenmesh.cpp	2008-02-12 14:57:01.000000000 +0300
 @@ -28,7 +28,7 @@
      return  Point<3> (p.X(), p.Y(), p.Z());
    }
@@ -339,7 +359,37 @@ diff -Nru netgen-4.5_orig/libsrc/occ/occgenmesh.cpp netgen-4.5_patch/libsrc/occ/
  	      {
  		exists = 1;
  		break;
-@@ -276,8 +273,8 @@
+@@ -163,6 +160,7 @@
+ 	  {
+ 	    TopoDS_Face face = TopoDS::Face(exp1.Current());
+ 	    int facenr = geom.fmap.FindIndex(face);
++            if ( facenr < 1 ) continue;
+ 
+ 	    if (face2solid[0][facenr-1] == 0)
+ 	      face2solid[0][facenr-1] = solidnr;
+@@ -184,6 +182,9 @@
+     int facenr = 0;
+     int edgenr = 0;
+     
++    // EAP, IMP [SALOME platform 0013410].
++    // take into account nb of already meshed edges
++    edgenr = mesh.GetNSeg();
+ 
+     (*testout) << "faces = " << geom.fmap.Extent() << endl;
+     int curr = 0;
+@@ -232,6 +233,11 @@
+ 		    continue;
+ 		  }
+ 
++                // EAP, IMP [SALOME platform 0013410].
++                // Do not divide already meshed edges
++                if ( geom.emap.FindIndex(edge) < 1 )
++                  continue;
++
+ 		if (geom.vmap.FindIndex(TopExp::FirstVertex (edge)) == 
+ 		    geom.vmap.FindIndex(TopExp::LastVertex (edge)))
+ 		  {
+@@ -276,8 +282,8 @@
  		    pnums.Last() = -1;
  		    for (PointIndex pi = 1; pi < first_ep; pi++)
  		      {
@@ -350,7 +400,7 @@ diff -Nru netgen-4.5_orig/libsrc/occ/occgenmesh.cpp netgen-4.5_patch/libsrc/occ/
  		      }
  		  }
  		
-@@ -287,7 +284,7 @@
+@@ -287,7 +293,7 @@
  		    bool exists = 0;
  		    int j;
  		    for (j = first_ep; j <= mesh.GetNP(); j++)
@@ -359,7 +409,7 @@ diff -Nru netgen-4.5_orig/libsrc/occ/occgenmesh.cpp netgen-4.5_patch/libsrc/occ/
  			{
  			  exists = 1;
  			  break;
-@@ -394,7 +391,7 @@
+@@ -394,7 +400,7 @@
      int i, j, k;
      int changed;
  
@@ -368,7 +418,7 @@ diff -Nru netgen-4.5_orig/libsrc/occ/occgenmesh.cpp netgen-4.5_patch/libsrc/occ/
      multithread.task = "Surface meshing";
    
      geom.facemeshstatus = 0;
-@@ -751,7 +748,7 @@
+@@ -751,7 +760,7 @@
      multithread.task = savetask;
    }
  
@@ -377,7 +427,7 @@ diff -Nru netgen-4.5_orig/libsrc/occ/occgenmesh.cpp netgen-4.5_patch/libsrc/occ/
    {
      double hret;
      kappa *= mparam.curvaturesafety;
-@@ -779,7 +776,7 @@
+@@ -779,7 +788,7 @@
        double nq = n*q;
      
        Point<3> p = p0 + 0.5*n;
@@ -386,7 +436,7 @@ diff -Nru netgen-4.5_orig/libsrc/occ/occgenmesh.cpp netgen-4.5_patch/libsrc/occ/
  
        if (lambda >= 0 && lambda <= 1)
  	{
-@@ -799,55 +796,55 @@
+@@ -799,55 +808,55 @@
  
  
  
@@ -462,7 +512,7 @@ diff -Nru netgen-4.5_orig/libsrc/occ/occgenmesh.cpp netgen-4.5_patch/libsrc/occ/
  
  	//(*testout) << "curvature " << curvature << endl;
  
-@@ -886,51 +883,47 @@
+@@ -886,51 +895,47 @@
  	pm1.SetX(0.5*(par0.X()+par2.X())); pm1.SetY(0.5*(par0.Y()+par2.Y()));
  	pm2.SetX(0.5*(par1.X()+par0.X())); pm2.SetY(0.5*(par1.Y()+par0.Y()));
  
@@ -529,7 +579,7 @@ diff -Nru netgen-4.5_orig/libsrc/occ/occgenmesh.cpp netgen-4.5_patch/libsrc/occ/
  	  (*testout) << pnt.X() << " " << pnt.Y() << " " << pnt.Z() << endl;
  	*/
        }
-@@ -970,7 +963,7 @@
+@@ -970,7 +975,7 @@
  	if (mparam.uselocalh)
  	  {
  
@@ -538,7 +588,7 @@ diff -Nru netgen-4.5_orig/libsrc/occ/occgenmesh.cpp netgen-4.5_patch/libsrc/occ/
  	    multithread.percent = 0;
  
  	    mesh->SetLocalH (bb.PMin(), bb.PMax(), mparam.grading);
-@@ -1075,7 +1068,6 @@
+@@ -1075,7 +1080,6 @@
  		if (triangulation.IsNull()) continue;
  	      
  		BRepAdaptor_Surface sf(face, Standard_True);
@@ -546,7 +596,7 @@ diff -Nru netgen-4.5_orig/libsrc/occ/occgenmesh.cpp netgen-4.5_patch/libsrc/occ/
  		
  		int ntriangles = triangulation -> NbTriangles();
  		for (int j = 1; j <= ntriangles; j++)
-@@ -1096,7 +1088,7 @@
+@@ -1096,7 +1100,7 @@
  		    maxside = max (maxside, p[1].Distance(p[2]));
  		    //cout << "\rFace " << i << " pos11 ntriangles " << ntriangles << " maxside " << maxside << flush;
  
@@ -555,9 +605,9 @@ diff -Nru netgen-4.5_orig/libsrc/occ/occgenmesh.cpp netgen-4.5_patch/libsrc/occ/
  		    //cout << "\rFace " << i << " pos12 ntriangles " << ntriangles << flush;
  		  }
  	      }
-diff -Nru netgen-4.5_orig/libsrc/occ/occgeom.cpp netgen-4.5_patch/libsrc/occ/occgeom.cpp
---- netgen-4.5_orig/libsrc/occ/occgeom.cpp	2006-01-25 15:35:50.000000000 +0300
-+++ netgen-4.5_patch/libsrc/occ/occgeom.cpp	2006-10-25 16:15:24.000000000 +0400
+diff -Naur netgen-4.5.old/libsrc/occ/occgeom.cpp netgen-4.5.new/libsrc/occ/occgeom.cpp
+--- netgen-4.5.old/libsrc/occ/occgeom.cpp	2006-01-25 16:35:50.000000000 +0300
++++ netgen-4.5.new/libsrc/occ/occgeom.cpp	2008-02-12 14:57:01.000000000 +0300
 @@ -7,6 +7,8 @@
  #include "ShapeAnalysis_ShapeContents.hxx"
  #include "ShapeAnalysis_CheckSmallFace.hxx"
@@ -734,9 +784,9 @@ diff -Nru netgen-4.5_orig/libsrc/occ/occgeom.cpp netgen-4.5_patch/libsrc/occ/occ
    
      return true;
    }
-diff -Nru netgen-4.5_orig/libsrc/occ/occgeom.hpp netgen-4.5_patch/libsrc/occ/occgeom.hpp
---- netgen-4.5_orig/libsrc/occ/occgeom.hpp	2006-01-25 15:35:50.000000000 +0300
-+++ netgen-4.5_patch/libsrc/occ/occgeom.hpp	2006-10-25 16:16:01.000000000 +0400
+diff -Naur netgen-4.5.old/libsrc/occ/occgeom.hpp netgen-4.5.new/libsrc/occ/occgeom.hpp
+--- netgen-4.5.old/libsrc/occ/occgeom.hpp	2006-01-25 16:35:50.000000000 +0300
++++ netgen-4.5.new/libsrc/occ/occgeom.hpp	2008-02-12 14:57:01.000000000 +0300
 @@ -15,8 +15,6 @@
  #include "Geom_Curve.hxx"
  #include "Geom2d_Curve.hxx"
@@ -813,9 +863,9 @@ diff -Nru netgen-4.5_orig/libsrc/occ/occgeom.hpp netgen-4.5_patch/libsrc/occ/occ
    OCCSurface GetSurface (int surfi)
    {
      cout << "OCCGeometry::GetSurface using PLANESPACE" << endl;
-diff -Nru netgen-4.5_orig/libsrc/occ/occmeshsurf.cpp netgen-4.5_patch/libsrc/occ/occmeshsurf.cpp
---- netgen-4.5_orig/libsrc/occ/occmeshsurf.cpp	2006-01-25 15:36:26.000000000 +0300
-+++ netgen-4.5_patch/libsrc/occ/occmeshsurf.cpp	2006-10-25 16:16:26.000000000 +0400
+diff -Naur netgen-4.5.old/libsrc/occ/occmeshsurf.cpp netgen-4.5.new/libsrc/occ/occmeshsurf.cpp
+--- netgen-4.5.old/libsrc/occ/occmeshsurf.cpp	2006-01-25 16:36:26.000000000 +0300
++++ netgen-4.5.new/libsrc/occ/occmeshsurf.cpp	2008-02-12 14:57:01.000000000 +0300
 @@ -5,6 +5,8 @@
  #include <occgeom.hpp>
  #include <meshing.hpp>
@@ -931,9 +981,9 @@ diff -Nru netgen-4.5_orig/libsrc/occ/occmeshsurf.cpp netgen-4.5_patch/libsrc/occ
  
  
  
-diff -Nru netgen-4.5_orig/libsrc/occ/occmeshsurf.hpp netgen-4.5_patch/libsrc/occ/occmeshsurf.hpp
---- netgen-4.5_orig/libsrc/occ/occmeshsurf.hpp	2005-06-09 18:51:10.000000000 +0400
-+++ netgen-4.5_patch/libsrc/occ/occmeshsurf.hpp	2006-10-25 16:17:22.000000000 +0400
+diff -Naur netgen-4.5.old/libsrc/occ/occmeshsurf.hpp netgen-4.5.new/libsrc/occ/occmeshsurf.hpp
+--- netgen-4.5.old/libsrc/occ/occmeshsurf.hpp	2005-06-09 18:51:10.000000000 +0400
++++ netgen-4.5.new/libsrc/occ/occmeshsurf.hpp	2008-02-12 14:57:01.000000000 +0300
 @@ -151,7 +151,7 @@
      MeshOptimize2dOCCSurfaces (const OCCGeometry & ageometry); 
     
@@ -953,9 +1003,9 @@ diff -Nru netgen-4.5_orig/libsrc/occ/occmeshsurf.hpp netgen-4.5_patch/libsrc/occ
  };
  
  
-diff -Nru netgen-4.5_orig/libsrc/stlgeom/meshstlsurface.cpp netgen-4.5_patch/libsrc/stlgeom/meshstlsurface.cpp
---- netgen-4.5_orig/libsrc/stlgeom/meshstlsurface.cpp	2006-01-11 18:08:20.000000000 +0300
-+++ netgen-4.5_patch/libsrc/stlgeom/meshstlsurface.cpp	2006-10-25 16:17:47.000000000 +0400
+diff -Naur netgen-4.5.old/libsrc/stlgeom/meshstlsurface.cpp netgen-4.5.new/libsrc/stlgeom/meshstlsurface.cpp
+--- netgen-4.5.old/libsrc/stlgeom/meshstlsurface.cpp	2006-01-11 19:08:20.000000000 +0300
++++ netgen-4.5.new/libsrc/stlgeom/meshstlsurface.cpp	2008-02-12 14:57:01.000000000 +0300
 @@ -946,20 +946,23 @@
  }
  
@@ -1004,9 +1054,9 @@ diff -Nru netgen-4.5_orig/libsrc/stlgeom/meshstlsurface.cpp netgen-4.5_patch/lib
  void MeshOptimizeSTLSurface :: GetNormalVector(INDEX surfind, const Point3d & p, Vec3d & n) const
  {
    n = geom.GetChartNormalVector();
-diff -Nru netgen-4.5_orig/libsrc/stlgeom/meshstlsurface.hpp netgen-4.5_patch/libsrc/stlgeom/meshstlsurface.hpp
---- netgen-4.5_orig/libsrc/stlgeom/meshstlsurface.hpp	2004-09-30 17:13:56.000000000 +0400
-+++ netgen-4.5_patch/libsrc/stlgeom/meshstlsurface.hpp	2006-10-25 16:17:59.000000000 +0400
+diff -Naur netgen-4.5.old/libsrc/stlgeom/meshstlsurface.hpp netgen-4.5.new/libsrc/stlgeom/meshstlsurface.hpp
+--- netgen-4.5.old/libsrc/stlgeom/meshstlsurface.hpp	2004-09-30 17:13:56.000000000 +0400
++++ netgen-4.5.new/libsrc/stlgeom/meshstlsurface.hpp	2008-02-12 14:57:01.000000000 +0300
 @@ -79,12 +79,10 @@
      virtual void SelectSurfaceOfPoint (const Point3d & p,
  				       const PointGeomInfo & gi);
@@ -1021,9 +1071,9 @@ diff -Nru netgen-4.5_orig/libsrc/stlgeom/meshstlsurface.hpp netgen-4.5_patch/lib
      virtual void GetNormalVector(INDEX surfind, const Point3d & p, Vec3d & n) const;
  };
  
-diff -Nru netgen-4.5_orig/makeForSalome.sh netgen-4.5_patch/makeForSalome.sh
---- netgen-4.5_orig/makeForSalome.sh	1970-01-01 03:00:00.000000000 +0300
-+++ netgen-4.5_patch/makeForSalome.sh	2006-04-27 13:12:54.000000000 +0400
+diff -Naur netgen-4.5.old/makeForSalome.sh netgen-4.5.new/makeForSalome.sh
+--- netgen-4.5.old/makeForSalome.sh	1970-01-01 03:00:00.000000000 +0300
++++ netgen-4.5.new/makeForSalome.sh	2008-02-12 14:57:01.000000000 +0300
 @@ -0,0 +1,31 @@
 +#! /bin/sh
 +cp ngtcltk/ngnewdelete.* libsrc/interface/
@@ -1056,3 +1106,124 @@ diff -Nru netgen-4.5_orig/makeForSalome.sh netgen-4.5_patch/makeForSalome.sh
 +    libsrc/occ/*.hpp libsrc/opti/*.hpp libsrc/include/mydefs.hpp \
 +    libsrc/stlgeom/*.hpp libsrc/include/mystdlib.h \
 +    install/include
+diff -Naur netgen-4.5.old/libsrc/occ/Partition_Inter2d.cxx netgen-4.5.new/libsrc/occ/Partition_Inter2d.cxx
+--- netgen-4.5.old/libsrc/occ/Partition_Inter2d.cxx	2005-06-09 18:51:10.000000000 +0400
++++ netgen-4.5.new/libsrc/occ/Partition_Inter2d.cxx	2008-02-26 12:34:14.000000000 +0300
+@@ -29,10 +29,10 @@
+ //  $Header$
+ 
+ //using namespace std;
+-#include "Partition_Inter2d.ixx"
+-
+ #include "utilities.h"
+ 
++#include "Partition_Inter2d.ixx"
++
+ #include <BRepAdaptor_Curve.hxx>
+ #include <BRepAlgo_AsDes.hxx>
+ #include <BRepLib_MakeVertex.hxx>
+diff -Naur netgen-4.5.old/libsrc/occ/Partition_Inter3d.cxx netgen-4.5.new/libsrc/occ/Partition_Inter3d.cxx
+--- netgen-4.5.old/libsrc/occ/Partition_Inter3d.cxx	2005-06-09 18:51:10.000000000 +0400
++++ netgen-4.5.new/libsrc/occ/Partition_Inter3d.cxx	2008-02-26 12:36:27.000000000 +0300
+@@ -29,13 +29,17 @@
+ //  $Header$
+ 
+ //using namespace std;
++
++#include "utilities.h"
++
+ #include "Partition_Inter2d.hxx"
+ #include "Partition_Inter3d.ixx"
+-#include "utilities.h"
+ 
+ #include <BRepAlgo_AsDes.hxx>
+ #include <BRepAlgo_Image.hxx>
+ #include <BRepLib.hxx>
++//using namespace std;
++
+ #include <BRepOffset_Tool.hxx>
+ #include <BRep_Builder.hxx>
+ #include <BRep_Tool.hxx>
+diff -Naur netgen-4.5.old/libsrc/occ/Partition_Loop2d.cxx netgen-4.5.new/libsrc/occ/Partition_Loop2d.cxx
+--- netgen-4.5.old/libsrc/occ/Partition_Loop2d.cxx	2005-06-09 18:51:10.000000000 +0400
++++ netgen-4.5.new/libsrc/occ/Partition_Loop2d.cxx	2008-02-26 12:37:10.000000000 +0300
+@@ -12,9 +12,11 @@
+ //  $Header$
+ 
+ //using namespace std;
+-#include "Partition_Loop2d.ixx"
++
+ 
+ #include "utilities.h"
++
++#include "Partition_Loop2d.ixx"
+ #include <stdio.h>
+ 
+ #include <BRepAdaptor_Curve2d.hxx>
+diff -Naur netgen-4.5.old/libsrc/occ/Partition_Loop3d.cxx netgen-4.5.new/libsrc/occ/Partition_Loop3d.cxx
+--- netgen-4.5.old/libsrc/occ/Partition_Loop3d.cxx	2005-06-09 18:51:10.000000000 +0400
++++ netgen-4.5.new/libsrc/occ/Partition_Loop3d.cxx	2008-02-26 12:39:32.000000000 +0300
+@@ -10,6 +10,11 @@
+ //  Module : GEOM
+ 
+ //using namespace std;
++
++
++
++#include "utilities.h"
++
+ #include "Partition_Loop3d.ixx"
+ 
+ #include <TopExp_Explorer.hxx>
+diff -Naur netgen-4.5.old/libsrc/occ/Partition_Loop.cxx netgen-4.5.new/libsrc/occ/Partition_Loop.cxx
+--- netgen-4.5.old/libsrc/occ/Partition_Loop.cxx	2005-06-09 18:51:10.000000000 +0400
++++ netgen-4.5.new/libsrc/occ/Partition_Loop.cxx	2008-02-26 12:40:41.000000000 +0300
+@@ -29,12 +29,14 @@
+ //  $Header$
+ 
+ //using namespace std;
+-#include <stdio.h>
+ 
+-#include "Partition_Loop.ixx"
+ 
+ #include "utilities.h"
+ 
++#include <stdio.h>
++
++#include "Partition_Loop.ixx"
++
+ #include <BRep_Builder.hxx>
+ #include <BRepAlgo_FaceRestrictor.hxx>
+ #include <BRep_Tool.hxx>
+diff -Naur netgen-4.5.old/libsrc/occ/Partition_Spliter.cxx netgen-4.5.new/libsrc/occ/Partition_Spliter.cxx
+--- netgen-4.5.old/libsrc/occ/Partition_Spliter.cxx	2005-07-11 10:33:27.000000000 +0400
++++ netgen-4.5.new/libsrc/occ/Partition_Spliter.cxx	2008-02-26 12:41:32.000000000 +0300
+@@ -29,14 +29,15 @@
+ //  $Header$
+ 
+ //using namespace std;
++
++#include "utilities.h"
++
+ #include "Partition_Inter2d.hxx"
+ #include "Partition_Inter3d.hxx"
+ #include "Partition_Loop2d.hxx"
+ #include "Partition_Loop3d.hxx"
+ #include "Partition_Spliter.ixx"
+ 
+-#include "utilities.h"
+-
+ #include <Precision.hxx>
+ #include <TopAbs_Orientation.hxx>
+ #include <TopExp.hxx>
+diff -Naur netgen-4.5.old/libsrc/occ/utilities.h netgen-4.5.new/libsrc/occ/utilities.h
+--- netgen-4.5.old/libsrc/occ/utilities.h	2005-02-11 14:35:43.000000000 +0300
++++ netgen-4.5.new/libsrc/occ/utilities.h	2008-02-26 12:28:02.000000000 +0300
+@@ -33,6 +33,7 @@
+ 
+ #include <string>
+ #include <iostream>
++#include <iomanip>
+ #include <cstdlib>
+ // #include "SALOME_Log.hxx"
+ 

@@ -20,45 +20,44 @@
 //  See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
 //
 //  NETGENPlugin : C++ implementation
-// File      : NETGENPlugin_Hypothesis_2D_i.hxx
-// Author    : Michael Sazonov (OCN)
-// Date      : 03/04/2006
+// File      : NETGENPlugin_SimpleHypothesis_3D_i.hxx
+// Author    : Edward AGAPOV
 // Project   : SALOME
-// $Header$
 //=============================================================================
 //
-#ifndef _NETGENPlugin_Hypothesis_2D_i_HXX_
-#define _NETGENPlugin_Hypothesis_2D_i_HXX_
+#ifndef _NETGENPlugin_SimpleHypothesis_3D_i_HXX_
+#define _NETGENPlugin_SimpleHypothesis_3D_i_HXX_
 
 #include "NETGENPlugin_Defs.hxx"
+#include "NETGENPlugin_SimpleHypothesis_2D_i.hxx"
 
 #include <SALOMEconfig.h>
 #include CORBA_SERVER_HEADER(NETGENPlugin_Algorithm)
 
-#include "NETGENPlugin_Hypothesis_i.hxx"
-#include "NETGENPlugin_Hypothesis_2D.hxx"
-
 class SMESH_Gen;
+class NETGENPlugin_SimpleHypothesis_3D;
 
-// NETGENPlugin parameters hypothesis (2D case)
+// Simplified NETGEN parameters (3D case)
 
-class NETGENPLUGIN_EXPORT  NETGENPlugin_Hypothesis_2D_i:
-  public virtual POA_NETGENPlugin::NETGENPlugin_Hypothesis_2D,
-  public NETGENPlugin_Hypothesis_i
+class NETGENPLUGIN_EXPORT  NETGENPlugin_SimpleHypothesis_3D_i:
+  public virtual POA_NETGENPlugin::NETGENPlugin_SimpleHypothesis_3D,
+  public virtual NETGENPlugin_SimpleHypothesis_2D_i
 {
  public:
   // Constructor
-  NETGENPlugin_Hypothesis_2D_i (PortableServer::POA_ptr thePOA,
-                                int                     theStudyId,
-                                ::SMESH_Gen*            theGenImpl);
+  NETGENPlugin_SimpleHypothesis_3D_i (PortableServer::POA_ptr thePOA,
+                                      int                     theStudyId,
+                                      ::SMESH_Gen*            theGenImpl);
   // Destructor
-  virtual ~NETGENPlugin_Hypothesis_2D_i();
+  virtual ~NETGENPlugin_SimpleHypothesis_3D_i();
 
-  void SetQuadAllowed(CORBA::Boolean theVal);
-  CORBA::Boolean GetQuadAllowed();
+  void LengthFromFaces();
+
+  void SetMaxElementVolume(CORBA::Double value);
+  CORBA::Double GetMaxElementVolume();
 
   // Get implementation
-  ::NETGENPlugin_Hypothesis_2D* GetImpl();
+  ::NETGENPlugin_SimpleHypothesis_3D* GetImpl();
   
   // Verify whether hypothesis supports given entity type 
   CORBA::Boolean IsDimSupported( SMESH::Dimension type );

@@ -1,27 +1,28 @@
-// Copyright (C) 2005  OPEN CASCADE, EADS/CCR, LIP6, CEA/DEN,
-// CEDRAT, EDF R&D, LEG, PRINCIPIA R&D, BUREAU VERITAS, L3S, LJLL, MENSI
+//  Copyright (C) 2007-2008  CEA/DEN, EDF R&D, OPEN CASCADE
 //
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License.
+//  Copyright (C) 2003-2007  OPEN CASCADE, EADS/CCR, LIP6, CEA/DEN,
+//  CEDRAT, EDF R&D, LEG, PRINCIPIA R&D, BUREAU VERITAS
 //
-// This library is distributed in the hope that it will be useful
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
+//  This library is free software; you can redistribute it and/or
+//  modify it under the terms of the GNU Lesser General Public
+//  License as published by the Free Software Foundation; either
+//  version 2.1 of the License.
 //
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
+//  This library is distributed in the hope that it will be useful,
+//  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+//  Lesser General Public License for more details.
 //
-// See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
+//  You should have received a copy of the GNU Lesser General Public
+//  License along with this library; if not, write to the Free Software
+//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
+//
+//  See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
 //
 // File      : NETGENPlugin_NETGEN_2D_ONLY.cxx
 // Author    : Edward AGAPOV (OCC)
 // Project   : SALOME
-
-
+//
 #include "NETGENPlugin_NETGEN_2D_ONLY.hxx"
 
 #include "NETGENPlugin_Mesher.hxx"
@@ -114,11 +115,15 @@ bool NETGENPlugin_NETGEN_2D_ONLY::CheckHypothesis (SMESH_Mesh&         aMesh,
   _hypLengthFromEdges = 0;
   _hypQuadranglePreference = 0;
 
-  aStatus = HYP_MISSING;
-
   const list<const SMESHDS_Hypothesis*>& hyps = GetUsedHypothesis(aMesh, aShape, false);
 
-  if (hyps.empty()) return false;  // can't work with no hypothesis
+  if (hyps.empty())
+  {
+    aStatus = HYP_OK; //SMESH_Hypothesis::HYP_MISSING;
+    return true;  // (PAL13464) can work with no hypothesis, LengthFromEdges is default one
+  }
+
+  aStatus = HYP_MISSING;
 
   list<const SMESHDS_Hypothesis*>::const_iterator ith;
   for (ith = hyps.begin(); ith != hyps.end(); ++ith )
@@ -314,7 +319,9 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
   netgen::Mesh * ngMesh = new netgen::Mesh ();
 
   netgen::OCCGeometry occgeo;
-  NETGENPlugin_Mesher::PrepareOCCgeometry( occgeo, F );
+  NETGENPlugin_Mesher::PrepareOCCgeometry( occgeo, F, aMesh );
+  occgeo.fmap.Clear(); // face can be reversed, which is wrong in this case (issue 19978)
+  occgeo.fmap.Add( F );
 
   vector< const SMDS_MeshNode* > nodeVec;
   problem = AddSegmentsToMesh( *ngMesh, occgeo, wires, helper, nodeVec );
@@ -328,7 +335,7 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
   // --------------------
 
   double edgeLength = 0;
-  if (_hypLengthFromEdges)
+  if (_hypLengthFromEdges || !_hypLengthFromEdges && !_hypMaxElementArea)
   {
     int nbSegments = 0;
     for ( int iW = 0; iW < nbWires; ++iW )

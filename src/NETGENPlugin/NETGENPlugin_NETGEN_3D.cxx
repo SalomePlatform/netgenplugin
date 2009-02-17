@@ -1,21 +1,23 @@
-// Copyright (C) 2005  OPEN CASCADE, EADS/CCR, LIP6, CEA/DEN,
-// CEDRAT, EDF R&D, LEG, PRINCIPIA R&D, BUREAU VERITAS, L3S, LJLL, MENSI
+//  Copyright (C) 2007-2008  CEA/DEN, EDF R&D, OPEN CASCADE
 //
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License.
+//  Copyright (C) 2003-2007  OPEN CASCADE, EADS/CCR, LIP6, CEA/DEN,
+//  CEDRAT, EDF R&D, LEG, PRINCIPIA R&D, BUREAU VERITAS
 //
-// This library is distributed in the hope that it will be useful
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
+//  This library is free software; you can redistribute it and/or
+//  modify it under the terms of the GNU Lesser General Public
+//  License as published by the Free Software Foundation; either
+//  version 2.1 of the License.
 //
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
+//  This library is distributed in the hope that it will be useful,
+//  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+//  Lesser General Public License for more details.
 //
-// See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
+//  You should have received a copy of the GNU Lesser General Public
+//  License along with this library; if not, write to the Free Software
+//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
+//
+//  See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
 //
 //=============================================================================
 // File      : NETGENPlugin_NETGEN_3D.cxx
@@ -23,9 +25,9 @@
 // Created   : lundi 27 Janvier 2003
 // Author    : Nadir BOUHAMOU (CEA)
 // Project   : SALOME
-// Copyright : CEA 2003
 // $Header$
 //=============================================================================
+//
 #include "NETGENPlugin_NETGEN_3D.hxx"
 
 #include "NETGENPlugin_Mesher.hxx"
@@ -38,6 +40,7 @@
 #include "SMESH_Gen.hxx"
 #include "SMESH_Mesh.hxx"
 #include "SMESH_MesherHelper.hxx"
+#include "StdMeshers_QuadToTriaAdaptor.hxx"
 
 #include <BRep_Tool.hxx>
 #include <TopExp.hxx>
@@ -80,6 +83,8 @@ NETGENPlugin_NETGEN_3D::NETGENPlugin_NETGEN_3D(int hypId, int studyId,
   _maxElementVolume = 0.;
 
   _hypMaxElementVolume = NULL;
+
+  _requireShape = false; // can work without shape
 }
 
 //=============================================================================
@@ -173,11 +178,17 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
   list< const SMDS_MeshElement* > triangles;
   list< bool >                    isReversed; // orientation of triangles
 
+  TopAbs_ShapeEnum mainType = aMesh.GetShapeToMesh().ShapeType();
+  bool checkReverse = ( mainType == TopAbs_COMPOUND || mainType == TopAbs_COMPSOLID );
+
   // for the degeneraged edge: ignore all but one node on it;
   // map storing ids of degen edges and vertices and their netgen id:
   map< int, int* > degenShapeIdToPtrNgId;
   map< int, int* >::iterator shId_ngId;
   list< int > degenNgIds;
+
+  StdMeshers_QuadToTriaAdaptor Adaptor;
+  Adaptor.Compute(aMesh,aShape);
 
   for (TopExp_Explorer exp(aShape,TopAbs_FACE);exp.More();exp.Next())
   {
@@ -185,7 +196,11 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
     const SMESHDS_SubMesh * aSubMeshDSFace = meshDS->MeshElements( aShapeFace );
     if ( aSubMeshDSFace )
     {
-      bool isRev = SMESH_Algo::IsReversedSubMesh( TopoDS::Face(aShapeFace), meshDS );
+      bool isRev = false;
+      if ( checkReverse && helper.NbAncestors(aShapeFace, aMesh, aShape.ShapeType()) > 1 )
+        // IsReversedSubMesh() can work wrong on strongly curved faces,
+        // so we use it as less as possible
+        isRev = SMESH_Algo::IsReversedSubMesh( TopoDS::Face(aShapeFace), meshDS );
 
       SMDS_ElemIteratorPtr iteratorElem = aSubMeshDSFace->GetElements();
       while ( iteratorElem->more() ) // loop on elements on a face
@@ -195,20 +210,43 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
         if ( !elem )
           return error( COMPERR_BAD_INPUT_MESH, "Null element encounters");
         bool isTraingle = ( elem->NbNodes()==3 || (_quadraticMesh && elem->NbNodes()==6 ));
-        if ( !isTraingle )
-          return error( COMPERR_BAD_INPUT_MESH,
-                        SMESH_Comment("Not triangle element ")<<elem->GetID());
-        // keep a triangle
-        triangles.push_back( elem );
-        isReversed.push_back( isRev );
-        // put elem nodes to nodeToNetgenID map
-        SMDS_ElemIteratorPtr triangleNodesIt = elem->nodesIterator();
-        while ( triangleNodesIt->more() ) {
-	  const SMDS_MeshNode * node =
-            static_cast<const SMDS_MeshNode *>(triangleNodesIt->next());
-          if(myTool->IsMedium(node))
-            continue;
-          nodeToNetgenID.insert( make_pair( node, invalid_ID ));
+        if ( !isTraingle ) {
+          //return error( COMPERR_BAD_INPUT_MESH,
+          //              SMESH_Comment("Not triangle element ")<<elem->GetID());
+          // using adaptor
+          std::list<const SMDS_FaceOfNodes*> faces = Adaptor.GetTriangles(elem);
+          if(faces.size()==0) {
+            return error( COMPERR_BAD_INPUT_MESH,
+                          SMESH_Comment("Not triangles in adaptor for element ")<<elem->GetID());
+          }
+          std::list<const SMDS_FaceOfNodes*>::iterator itf = faces.begin();
+          for(; itf!=faces.end(); itf++ ) {
+            triangles.push_back( (*itf) );
+            isReversed.push_back( isRev );
+            // put triange's nodes to nodeToNetgenID map
+            SMDS_ElemIteratorPtr triangleNodesIt = (*itf)->nodesIterator();
+            while ( triangleNodesIt->more() ) {
+              const SMDS_MeshNode * node =
+                static_cast<const SMDS_MeshNode *>(triangleNodesIt->next());
+              if(myTool->IsMedium(node))
+                continue;
+              nodeToNetgenID.insert( make_pair( node, invalid_ID ));
+            }
+          }
+        }
+        else {
+          // keep a triangle
+          triangles.push_back( elem );
+          isReversed.push_back( isRev );
+          // put elem nodes to nodeToNetgenID map
+          SMDS_ElemIteratorPtr triangleNodesIt = elem->nodesIterator();
+          while ( triangleNodesIt->more() ) {
+            const SMDS_MeshNode * node =
+              static_cast<const SMDS_MeshNode *>(triangleNodesIt->next());
+            if(myTool->IsMedium(node))
+              continue;
+            nodeToNetgenID.insert( make_pair( node, invalid_ID ));
+          }
         }
 #ifdef _DEBUG_
         // check if a trainge is degenerated
@@ -244,7 +282,7 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
   int Netgen_NbOfNodes = 0;
   int Netgen_param2ndOrder = 0;
   double Netgen_paramFine = 1.;
-  double Netgen_paramSize = _maxElementVolume;
+  double Netgen_paramSize = pow( 72, 1/6. ) * pow( _maxElementVolume, 1/3. );
 
   double Netgen_point[3];
   int Netgen_triangle[3];
@@ -301,7 +339,9 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
          (Netgen_triangle[0] != Netgen_triangle[1] &&
           Netgen_triangle[0] != Netgen_triangle[2] &&
           Netgen_triangle[2] != Netgen_triangle[1] ))
+    {
       Ng_AddSurfaceElement(Netgen_mesh, NG_TRIG, Netgen_triangle);
+    }
   }
 
   // -------------------------
@@ -413,30 +453,51 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh& aMesh,
   else if (MeshType == SMESH_MesherHelper::QUADRATIC)
     _quadraticMesh = true;
     
-  SMDS_FaceIteratorPtr iteratorFace = MeshDS->facesIterator();
+  StdMeshers_QuadToTriaAdaptor Adaptor;
+  Adaptor.Compute(aMesh);
 
-  while(iteratorFace->more())
-  {
+  SMDS_FaceIteratorPtr iteratorFace = MeshDS->facesIterator();
+  while(iteratorFace->more()) {
     // check element
     const SMDS_MeshElement* elem = iteratorFace->next();
     if ( !elem )
       return error( COMPERR_BAD_INPUT_MESH, "Null element encounters");
     bool isTraingle = ( elem->NbNodes()==3 || (_quadraticMesh && elem->NbNodes()==6 ));
-    if ( !isTraingle )
-      return error( COMPERR_BAD_INPUT_MESH,
-                    SMESH_Comment("Not triangle element ")<<elem->GetID());
-    
-    // keep a triangle
-    triangles.push_back( elem );
-    // put elem nodes to nodeToNetgenID map
-    SMDS_ElemIteratorPtr triangleNodesIt = elem->nodesIterator();
-    while ( triangleNodesIt->more() ) {
-      const SMDS_MeshNode * node =
-        static_cast<const SMDS_MeshNode *>(triangleNodesIt->next());
-      if(aHelper->IsMedium(node))
-        continue;
-      
-      nodeToNetgenID.insert( make_pair( node, invalid_ID ));
+    if ( !isTraingle ) {
+      //return error( COMPERR_BAD_INPUT_MESH,
+      //              SMESH_Comment("Not triangle element ")<<elem->GetID());
+      // using adaptor
+      std::list<const SMDS_FaceOfNodes*> faces = Adaptor.GetTriangles(elem);
+      if(faces.size()==0) {
+        return error( COMPERR_BAD_INPUT_MESH,
+                      SMESH_Comment("Not triangles in adaptor for element ")<<elem->GetID());
+      }
+      std::list<const SMDS_FaceOfNodes*>::iterator itf = faces.begin();
+      for(; itf!=faces.end(); itf++ ) {
+        triangles.push_back( (*itf) );
+        // put triange's nodes to nodeToNetgenID map
+        SMDS_ElemIteratorPtr triangleNodesIt = (*itf)->nodesIterator();
+        while ( triangleNodesIt->more() ) {
+          const SMDS_MeshNode * node =
+            static_cast<const SMDS_MeshNode *>(triangleNodesIt->next());
+          if(aHelper->IsMedium(node))
+            continue;
+          nodeToNetgenID.insert( make_pair( node, invalid_ID ));
+        }
+      }
+    }
+    else {
+      // keep a triangle
+      triangles.push_back( elem );
+      // put elem nodes to nodeToNetgenID map
+      SMDS_ElemIteratorPtr triangleNodesIt = elem->nodesIterator();
+      while ( triangleNodesIt->more() ) {
+        const SMDS_MeshNode * node =
+          static_cast<const SMDS_MeshNode *>(triangleNodesIt->next());
+        if(aHelper->IsMedium(node))
+          continue;
+        nodeToNetgenID.insert( make_pair( node, invalid_ID ));
+      }
     }
   }
 
@@ -447,7 +508,7 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh& aMesh,
   int Netgen_NbOfNodes = 0;
   int Netgen_param2ndOrder = 0;
   double Netgen_paramFine = 1.;
-  double Netgen_paramSize = _maxElementVolume;
+  double Netgen_paramSize = pow( 72, 1/6. ) * pow( _maxElementVolume, 1/3. );
   
   double Netgen_point[3];
   int Netgen_triangle[3];
@@ -548,8 +609,8 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh& aMesh,
     {
       Ng_GetPoint( Netgen_mesh, nodeIndex, Netgen_point );
       SMDS_MeshNode * node = aHelper->AddNode(Netgen_point[0],
-                                             Netgen_point[1],
-                                             Netgen_point[2]);
+					      Netgen_point[1],
+					      Netgen_point[2]);
       nodeVec.at(nodeIndex) = node;
     }
 
@@ -558,9 +619,9 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh& aMesh,
     {
       Ng_GetVolumeElement(Netgen_mesh, elemIndex, Netgen_tetrahedron);
       aHelper->AddVolume (nodeVec.at( Netgen_tetrahedron[0] ),
-                                                 nodeVec.at( Netgen_tetrahedron[1] ),
-                                                 nodeVec.at( Netgen_tetrahedron[2] ),
-                                                 nodeVec.at( Netgen_tetrahedron[3] ));
+			  nodeVec.at( Netgen_tetrahedron[1] ),
+			  nodeVec.at( Netgen_tetrahedron[2] ),
+			  nodeVec.at( Netgen_tetrahedron[3] ));
     }
   }
 

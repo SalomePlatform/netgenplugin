@@ -1,5 +1,28 @@
 <?xml version='1.0' encoding='us-ascii'?>
 <!DOCTYPE meshers PUBLIC "" "desktop.dtd">
+<!--
+  Copyright (C) 2007-2008  CEA/DEN, EDF R&D, OPEN CASCADE
+
+  Copyright (C) 2003-2007  OPEN CASCADE, EADS/CCR, LIP6, CEA/DEN,
+  CEDRAT, EDF R&D, LEG, PRINCIPIA R&D, BUREAU VERITAS
+
+  This library is free software; you can redistribute it and/or
+  modify it under the terms of the GNU Lesser General Public
+  License as published by the Free Software Foundation; either
+  version 2.1 of the License.
+
+  This library is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  Lesser General Public License for more details.
+
+  You should have received a copy of the GNU Lesser General Public
+  License along with this library; if not, write to the Free Software
+  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
+
+  See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
+
+-->
 
 <!--  GUI customization for MESH component  -->
 
@@ -18,6 +41,14 @@
 		label-id="NETGEN 2D Parameters"
 		icon-id="mesh_hypo_netgen_2d.png"
 		dim="2"/>
+    <hypothesis type="NETGEN_SimpleParameters_2D"
+		label-id="NETGEN 2D Simple Parameters"
+		icon-id="mesh_hypo_netgen_2d.png"
+		dim="2"/>
+    <hypothesis type="NETGEN_SimpleParameters_3D"
+		label-id="NETGEN 3D Simple Parameters"
+		icon-id="mesh_hypo_netgen.png"
+		dim="3"/>
   </hypotheses>
   <algorithms>
     <algorithm type="NETGEN_3D"
@@ -25,19 +56,23 @@
                icon-id="mesh_algo_tetra.png"
                hypos="MaxElementVolume"
 	       need-geom="false"
-               input="TRIA"
+               input="TRIA,QUAD"
                dim="3"/>
     <algorithm type="NETGEN_2D"
                label-id="Netgen 1D-2D"
                icon-id="mesh_algo_netgen_2d.png"
-               hypos="NETGEN_Parameters_2D"
+               hypos="NETGEN_Parameters_2D, NETGEN_SimpleParameters_2D"
                output="TRIA,QUAD"
-               dim="2"/>
+               dim="2"
+               support-submeshes="true"
+               />
     <algorithm type="NETGEN_2D3D"
                label-id="Netgen 1D-2D-3D"
                icon-id="mesh_algo_netgen_2d3d.png"
-               hypos="NETGEN_Parameters"
-               dim="3"/>
+               hypos="NETGEN_Parameters, NETGEN_SimpleParameters_3D"
+               dim="3"
+               support-submeshes="true"
+               />
     <algorithm type="NETGEN_2D_ONLY"
                label-id="Netgen 2D"
                icon-id="mesh_algo_netgen_2d.png"
