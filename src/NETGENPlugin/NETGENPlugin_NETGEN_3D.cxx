@@ -179,6 +179,9 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
   list< const SMDS_MeshElement* > triangles;
   list< bool >                    isReversed; // orientation of triangles
 
+  TopAbs_ShapeEnum mainType = aMesh.GetShapeToMesh().ShapeType();
+  bool checkReverse = ( mainType == TopAbs_COMPOUND || mainType == TopAbs_COMPSOLID );
+
   // for the degeneraged edge: ignore all but one node on it;
   // map storing ids of degen edges and vertices and their netgen id:
   map< int, int* > degenShapeIdToPtrNgId;
@@ -194,7 +197,11 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
     const SMESHDS_SubMesh * aSubMeshDSFace = meshDS->MeshElements( aShapeFace );
     if ( aSubMeshDSFace )
     {
-      bool isRev = SMESH_Algo::IsReversedSubMesh( TopoDS::Face(aShapeFace), meshDS );
+      bool isRev = false;
+      if ( checkReverse && helper.NbAncestors(aShapeFace, aMesh, aShape.ShapeType()) > 1 )
+        // IsReversedSubMesh() can work wrong on strongly curved faces,
+        // so we use it as less as possible
+        isRev = SMESH_Algo::IsReversedSubMesh( TopoDS::Face(aShapeFace), meshDS );
 
       SMDS_ElemIteratorPtr iteratorElem = aSubMeshDSFace->GetElements();
       while ( iteratorElem->more() ) // loop on elements on a face
@@ -333,7 +340,9 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
          (Netgen_triangle[0] != Netgen_triangle[1] &&
           Netgen_triangle[0] != Netgen_triangle[2] &&
           Netgen_triangle[2] != Netgen_triangle[1] ))
+    {
       Ng_AddSurfaceElement(Netgen_mesh, NG_TRIG, Netgen_triangle);
+    }
   }
 
   // -------------------------
