@@ -225,20 +225,18 @@ void NETGENPluginGUI_SimpleCreator::retrieveParams() const
   if ( isCreation() )
     myName->setText( hypName() );
 
-  // set default real values
+  // Set default values
 
   NETGENPlugin_SimpleHypothesis_2D_var h =
     NETGENPlugin_SimpleHypothesis_2D::_narrow( initParamsHypothesis( hasInitParamsHypothesis() ));
 
-  if ( double len = h->GetLocalLength() )
+  int dfltNbSeg = (int) h->GetNumberOfSegments();
+  myNbSeg->setValue( dfltNbSeg );
+  if ( double len = h->GetLocalLength() ) {
     myLength->setValue( len );
-  if ( double area = h->GetMaxElementArea() )
-    myArea->setValue( area );
-  if ( myVolume ) {
-    NETGENPlugin_SimpleHypothesis_3D_var h3d =
-      NETGENPlugin_SimpleHypothesis_3D::_narrow( initParamsHypothesis( hasInitParamsHypothesis()) );
-    if ( double volume = (double) h3d->GetMaxElementVolume() )
-      myVolume->setValue( volume );
+    myArea->setValue( len * len );
+    if ( myVolume )
+      myVolume->setValue( len * len * len );
   }
 
   h = NETGENPlugin_SimpleHypothesis_2D::_narrow( hypothesis() );
@@ -248,7 +246,7 @@ void NETGENPluginGUI_SimpleCreator::retrieveParams() const
   SMESH::ListOfParameters_var aParameters = h->GetLastParameters();
 
   // 1D
-  int nbSeg = (int) h->GetNumberOfSegments();
+  int nbSeg = isCreation() ? dfltNbSeg : (int) h->GetNumberOfSegments();
   myNbSegRadioBut->setChecked( nbSeg );
   myLengthRadioBut->setChecked( !nbSeg );
   QString aPrm;
