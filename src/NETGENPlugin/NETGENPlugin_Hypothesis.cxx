@@ -25,7 +25,7 @@
 // Date      : 28/03/2006
 // Project   : SALOME
 //
-#include <NETGENPlugin_Hypothesis.hxx>
+#include "NETGENPlugin_Hypothesis.hxx"
 #include <utilities.h>
 
 using namespace std;

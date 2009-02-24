@@ -68,6 +68,8 @@ libNETGENPluginGUI_la_CPPFLAGS = \
 
 libNETGENPluginGUI_la_LDFLAGS  = \
 	../NETGENPlugin/libNETGENEngine.la \
+	${QT_MT_LIBS} \
+	${GUI_LDFLAGS} -lSalomeApp -lqtx -lsuit \
 	${SMESH_LDFLAGS} -lSMESH \
 	$(CAS_KERNEL)
 

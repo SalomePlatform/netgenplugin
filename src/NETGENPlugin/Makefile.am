@@ -88,5 +88,6 @@ libNETGENEngine_la_CPPFLAGS = \
 libNETGENEngine_la_LDFLAGS  = \
 	../NETGEN/libNETGEN.la \
 	../../idl/libSalomeIDLNETGENPLUGIN.la \
-	$(SMESH_LDFLAGS) -lSMESHimpl -lSMESHEngine -lStdMeshersEngine \
-	$(KERNEL_LDFLAGS) -lSalomeGenericObj
+	$(CAS_LDPATH) -lTKernel -lTKBRep -lTKShHealing -lTKSTEP -lTKXSBase -lTKIGES -lTKMesh -lTKSTL -lTKG3d -lTKTopAlgo -lTKG2d -lTKBool -lTKGeomAlgo -lTKOffset -lTKGeomBase -lTKBO \
+	$(SMESH_LDFLAGS) -lSMESHimpl -lSMESHEngine -lStdMeshersEngine -lStdMeshers -lSMESHDS -lSMDS -lSMESHControls \
+	$(KERNEL_LDFLAGS) -lSalomeGenericObj -lSALOMELocalTrace -lOpUtil
