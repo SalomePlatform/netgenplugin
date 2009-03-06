@@ -26,7 +26,7 @@
 //  $Header: 
 //
 #ifdef WIN32
-  #ifdef NETGENPLUGIN_GUI_EXPORTS
+  #if defined NETGENPLUGIN_GUI_EXPORTS || defined NETGENPluginGUI_EXPORTS
     #define NETGENPLUGIN_GUI_EXPORT __declspec( dllexport )
   #else
     #define NETGENPLUGIN_GUI_EXPORT __declspec( dllimport )
