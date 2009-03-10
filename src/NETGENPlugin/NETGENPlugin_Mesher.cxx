@@ -549,7 +549,7 @@ bool NETGENPlugin_Mesher::Compute()
         // nb of segments
         mparams.segmentsperedge = nbSeg + 0.1;
         mparams.maxh = occgeo.boundingbox.Diam();
-        mparams.grading = 0;
+        mparams.grading = 0.01;
       }
       else {
         // segment length
