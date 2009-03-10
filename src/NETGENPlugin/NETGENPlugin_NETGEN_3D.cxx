@@ -25,7 +25,6 @@
 // Created   : lundi 27 Janvier 2003
 // Author    : Nadir BOUHAMOU (CEA)
 // Project   : SALOME
-// $Header$
 //=============================================================================
 //
 #include "NETGENPlugin_NETGEN_3D.hxx"
@@ -40,6 +39,7 @@
 #include "SMESH_Gen.hxx"
 #include "SMESH_Mesh.hxx"
 #include "SMESH_MesherHelper.hxx"
+#include "SMESH_MeshEditor.hxx"
 #include "StdMeshers_QuadToTriaAdaptor.hxx"
 
 #include <BRep_Tool.hxx>
@@ -64,6 +64,7 @@ namespace nglib {
 #include <nglib.h>
 }
 using namespace nglib;
+using namespace std;
 
 //=============================================================================
 /*!
@@ -173,7 +174,7 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
   SMESH_MesherHelper* myTool = &helper;
   bool _quadraticMesh = myTool->IsQuadraticSubMesh(aShape);
 
-  typedef map< const SMDS_MeshNode*, int> TNodeToIDMap;
+  typedef map< const SMDS_MeshNode*, int, TIDCompare< SMDS_MeshNode> > TNodeToIDMap;
   TNodeToIDMap nodeToNetgenID;
   list< const SMDS_MeshElement* > triangles;
   list< bool >                    isReversed; // orientation of triangles
