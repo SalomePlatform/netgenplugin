@@ -24,7 +24,6 @@
 // Author    : Michael Sazonov (OCN)
 // Date      : 31/03/2006
 // Project   : SALOME
-// $Header$
 //=============================================================================
 //
 #include "NETGENPlugin_Mesher.hxx"
@@ -273,15 +272,15 @@ void NETGENPlugin_Mesher::PrepareOCCgeometry(netgen::OCCGeometry&     occgeo,
  * \brief return id of netgen point corresponding to SMDS node
  */
 //================================================================================
+typedef map< const SMDS_MeshNode*, int > TNode2IdMap;
 
-static int ngNodeId( const SMDS_MeshNode*              node,
-                     netgen::Mesh&                     ngMesh,
-                     map< const SMDS_MeshNode*, int >& nodeNgIdMap)
+static int ngNodeId( const SMDS_MeshNode* node,
+                     netgen::Mesh&        ngMesh,
+                     TNode2IdMap&         nodeNgIdMap)
 {
   int newNgId = ngMesh.GetNP() + 1;
 
-  pair< map< const SMDS_MeshNode*, int >::iterator, bool > it_isNew =
-    nodeNgIdMap.insert( make_pair( node, newNgId ));
+  pair< TNode2IdMap::iterator, bool > it_isNew = nodeNgIdMap.insert( make_pair( node, newNgId ));
 
   if ( it_isNew.second ) {
     netgen::MeshPoint p( netgen::Point<3> (node->X(), node->Y(), node->Z()) );
@@ -301,7 +300,7 @@ bool NETGENPlugin_Mesher::fillNgMesh(netgen::OCCGeometry&           occgeom,
                                      vector<SMDS_MeshNode*>&        nodeVec,
                                      const list< SMESH_subMesh* > & meshedSM)
 {
-  map< const SMDS_MeshNode*, int > nodeNgIdMap;
+  TNode2IdMap nodeNgIdMap;
 
   TopTools_MapOfShape visitedShapes;
 
@@ -416,7 +415,7 @@ bool NETGENPlugin_Mesher::fillNgMesh(netgen::OCCGeometry&           occgeom,
       const TopoDS_Face& geomFace  = TopoDS::Face( sm->GetSubShape() );
       helper.SetSubShape( geomFace );
 
-      // find solids geomFace bounds
+      // Find solids the geomFace bounds
       int solidID1 = 0, solidID2 = 0;
       const TopTools_ListOfShape& ancestors = _mesh->GetAncestors( geomFace );
       TopTools_ListIteratorOfListOfShape ancestorIt ( ancestors );
@@ -433,7 +432,19 @@ bool NETGENPlugin_Mesher::fillNgMesh(netgen::OCCGeometry&           occgeom,
       _faceDescriptors[ faceID ].first  = solidID1;
       _faceDescriptors[ faceID ].second = solidID2;
 
-      // add surface elements
+      // Orient the face correctly in solidID1 (issue 0020206)
+      bool reverse = false;
+      if ( solidID1 ) {
+        TopoDS_Shape solid = occgeom.somap( solidID1 );
+        for ( TopExp_Explorer f( solid, TopAbs_FACE ); f.More(); f.Next() ) {
+          if ( geomFace.IsSame( f.Current() )) {
+            reverse = SMESH_Algo::IsReversedSubMesh( TopoDS::Face( f.Current()), helper.GetMeshDS() );
+            break;
+          }
+        }
+      }
+
+      // Add surface elements
       SMDS_ElemIteratorPtr faces = smDS->GetElements();
       while ( faces->more() ) {
 
@@ -462,9 +473,15 @@ bool NETGENPlugin_Mesher::fillNgMesh(netgen::OCCGeometry&           occgeom,
               inFaceNode = f->GetNode( i+1 );
             
           gp_XY uv = helper.GetNodeUV( geomFace, node, inFaceNode );
-          tri.GeomInfoPi(i+1).u = uv.X();
-          tri.GeomInfoPi(i+1).v = uv.Y();
-          tri.PNum(i+1) = ngNodeId( node, ngMesh, nodeNgIdMap );
+          if ( reverse ) {
+            tri.GeomInfoPi(3-i).u = uv.X();
+            tri.GeomInfoPi(3-i).v = uv.Y();
+            tri.PNum      (3-i) = ngNodeId( node, ngMesh, nodeNgIdMap );
+          } else {
+            tri.GeomInfoPi(i+1).u = uv.X();
+            tri.GeomInfoPi(i+1).v = uv.Y();
+            tri.PNum      (i+1) = ngNodeId( node, ngMesh, nodeNgIdMap );
+          }
         }
 
         ngMesh.AddSurfaceElement (tri);
@@ -486,7 +503,7 @@ bool NETGENPlugin_Mesher::fillNgMesh(netgen::OCCGeometry&           occgeom,
 
   // fill nodeVec
   nodeVec.resize( ngMesh.GetNP() + 1 );
-  map< const SMDS_MeshNode*, int >::iterator node_NgId, nodeNgIdEnd = nodeNgIdMap.end();
+  TNode2IdMap::iterator node_NgId, nodeNgIdEnd = nodeNgIdMap.end();
   for ( node_NgId = nodeNgIdMap.begin(); node_NgId != nodeNgIdEnd; ++node_NgId)
     nodeVec[ node_NgId->second ] = (SMDS_MeshNode*) node_NgId->first;
 
