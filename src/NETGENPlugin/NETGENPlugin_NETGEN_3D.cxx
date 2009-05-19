@@ -174,7 +174,7 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
   SMESH_MesherHelper* myTool = &helper;
   bool _quadraticMesh = myTool->IsQuadraticSubMesh(aShape);
 
-  typedef map< const SMDS_MeshNode*, int, TIDCompare< SMDS_MeshNode> > TNodeToIDMap;
+  typedef map< const SMDS_MeshNode*, int, TIDCompare > TNodeToIDMap;
   TNodeToIDMap nodeToNetgenID;
   list< const SMDS_MeshElement* > triangles;
   list< bool >                    isReversed; // orientation of triangles
@@ -215,13 +215,13 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
           //return error( COMPERR_BAD_INPUT_MESH,
           //              SMESH_Comment("Not triangle element ")<<elem->GetID());
           // using adaptor
-          std::list<const SMDS_FaceOfNodes*> faces = Adaptor.GetTriangles(elem);
-          if(faces.size()==0) {
+          const list<const SMDS_FaceOfNodes*>* faces = Adaptor.GetTriangles(elem);
+          if(faces==0) {
             return error( COMPERR_BAD_INPUT_MESH,
                           SMESH_Comment("Not triangles in adaptor for element ")<<elem->GetID());
           }
-          std::list<const SMDS_FaceOfNodes*>::iterator itf = faces.begin();
-          for(; itf!=faces.end(); itf++ ) {
+          list<const SMDS_FaceOfNodes*>::const_iterator itf = faces->begin();
+          for(; itf!=faces->end(); itf++ ) {
             triangles.push_back( (*itf) );
             isReversed.push_back( isRev );
             // put triange's nodes to nodeToNetgenID map
@@ -441,7 +441,7 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh& aMesh,
   MESSAGE("NETGENPlugin_NETGEN_3D::Compute with maxElmentsize = " << _maxElementVolume);  
   const int invalid_ID = -1;
   bool _quadraticMesh = false;
-  typedef map< const SMDS_MeshNode*, int> TNodeToIDMap;
+  typedef map< const SMDS_MeshNode*, int, TIDCompare > TNodeToIDMap;
   TNodeToIDMap nodeToNetgenID;
   list< const SMDS_MeshElement* > triangles;
   SMESHDS_Mesh* MeshDS = aHelper->GetMeshDS();
@@ -457,10 +457,14 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh& aMesh,
   StdMeshers_QuadToTriaAdaptor Adaptor;
   Adaptor.Compute(aMesh);
 
-  SMDS_FaceIteratorPtr iteratorFace = MeshDS->facesIterator();
-  while(iteratorFace->more()) {
+  SMDS_FaceIteratorPtr fIt = MeshDS->facesIterator();
+  TIDSortedElemSet sortedFaces; //  0020279: control the "random" use when using mesh algorithms
+  while( fIt->more()) sortedFaces.insert( fIt->next() );
+
+  TIDSortedElemSet::iterator itFace = sortedFaces.begin(), fEnd = sortedFaces.end();
+  for ( ; itFace != fEnd; ++itFace ) {
     // check element
-    const SMDS_MeshElement* elem = iteratorFace->next();
+    const SMDS_MeshElement* elem = *itFace;
     if ( !elem )
       return error( COMPERR_BAD_INPUT_MESH, "Null element encounters");
     bool isTraingle = ( elem->NbNodes()==3 || (_quadraticMesh && elem->NbNodes()==6 ));
@@ -468,13 +472,13 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh& aMesh,
       //return error( COMPERR_BAD_INPUT_MESH,
       //              SMESH_Comment("Not triangle element ")<<elem->GetID());
       // using adaptor
-      std::list<const SMDS_FaceOfNodes*> faces = Adaptor.GetTriangles(elem);
-      if(faces.size()==0) {
+      const list<const SMDS_FaceOfNodes*>* faces = Adaptor.GetTriangles(elem);
+      if(faces==0) {
         return error( COMPERR_BAD_INPUT_MESH,
                       SMESH_Comment("Not triangles in adaptor for element ")<<elem->GetID());
       }
-      std::list<const SMDS_FaceOfNodes*>::iterator itf = faces.begin();
-      for(; itf!=faces.end(); itf++ ) {
+      list<const SMDS_FaceOfNodes*>::const_iterator itf = faces->begin();
+      for(; itf!=faces->end(); itf++ ) {
         triangles.push_back( (*itf) );
         // put triange's nodes to nodeToNetgenID map
         SMDS_ElemIteratorPtr triangleNodesIt = (*itf)->nodesIterator();
