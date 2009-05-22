@@ -35,7 +35,7 @@ AC_INIT([Salome2 Project NETGENPLUGIN module], [5.1.1], [webmaster.salome@openca
 AC_CONFIG_AUX_DIR(salome_adm/unix/config_files)
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE([-Wno-portability])
 
 XVERSION=`echo $VERSION | awk -F. '{printf("0x%02x%02x%02x",$1,$2,$3)}'`
 AC_SUBST(XVERSION)
@@ -410,18 +410,18 @@ echo
 # autoscan, the Makefile list is generated in the output file configure.scan.
 # This could be helpfull to update de configuration.
 AC_OUTPUT([ \
-  ./salome_adm/unix/SALOMEconfig.h \
-  ./adm_local/Makefile \
-  ./adm_local/unix/Makefile \
-  ./adm_local/unix/config_files/Makefile \
-  ./bin/VERSION \
-  ./bin/Makefile \
-  ./NETGENPLUGIN_version.h \
-  ./src/Makefile \
-  ./src/GUI/Makefile \
-  ./src/NETGEN/Makefile \
-  ./src/NETGENPlugin/Makefile \
-  ./resources/Makefile \
-  ./idl/Makefile \
+  salome_adm/unix/SALOMEconfig.h \
+  adm_local/Makefile \
+  adm_local/unix/Makefile \
+  adm_local/unix/config_files/Makefile \
+  bin/VERSION \
+  bin/Makefile \
+  NETGENPLUGIN_version.h \
+  src/Makefile \
+  src/GUI/Makefile \
+  src/NETGEN/Makefile \
+  src/NETGENPlugin/Makefile \
+  resources/Makefile \
+  idl/Makefile \
   Makefile \
 ])
