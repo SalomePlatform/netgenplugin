@@ -27,7 +27,7 @@
 // $Header$
 //=============================================================================
 //
-#include <NETGENPlugin_Hypothesis_2D.hxx>
+#include "NETGENPlugin_Hypothesis_2D.hxx"
 #include <utilities.h>
 
 using namespace std;
