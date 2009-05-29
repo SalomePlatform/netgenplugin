@@ -1226,4 +1226,31 @@ diff -Naur netgen-4.5.old/libsrc/occ/utilities.h netgen-4.5.new/libsrc/occ/utili
 +#include <iomanip>
  #include <cstdlib>
  // #include "SALOME_Log.hxx"
+
+diff -Naur netgen-4.5.old/libsrc/general/profiler.cpp netgen-4.5.new/libsrc/general/profiler.cpp
+--- netgen-4.5.old/libsrc/general/profiler.cpp  2006-01-11 13:05:59.000000000 +0300
++++ netgen-4.5.new/libsrc/general/profiler.cpp  2009-05-28 18:47:00.000000000 +0400
+@@ -35,7 +35,10 @@
+     StopTimer (total_timer);
+
+     ofstream prof ("netgen.prof");
+-    Print (prof);
++
++    ostream& pprof = getenv("NETGEN_PROF") ? prof : std::cout;
++
++    Print (pprof);
+   }
+
+
+diff -Naur netgen-4.5.old/libsrc/meshing/meshtype.hpp netgen-4.5.new/libsrc/meshing/meshtype.hpp
+--- netgen-4.5.old/libsrc/meshing/meshtype.hpp	2009-05-28 19:22:04.000000000 +0400
++++ netgen-4.5.new/libsrc/meshing/meshtype.hpp	2009-05-28 18:37:18.000000000 +0400
+@@ -13,7 +13,7 @@
+     Classes for NETGEN
+ */
  
+-
++class Mesh;
+ enum ELEMENT_TYPE { 
+   SEGMENT = 1, SEGMENT3 = 2,
+   TRIG = 10, QUAD=11, TRIG6 = 12, QUAD6 = 13, QUAD8 = 14,
