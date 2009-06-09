@@ -1078,7 +1078,11 @@ diff -Naur netgen-4.5.old/makeForSalome.sh netgen-4.5.new/makeForSalome.sh
 +#! /bin/sh
 +cp ngtcltk/ngnewdelete.* libsrc/interface/
 +
-+MACHINE=LINUX
++if test `uname -m` == "x86_64" ; then
++ MACHINE=LINUX64
++else
++ MACHINE=LINUX
++fi
 +export MACHINE
 +make -C libsrc/csg
 +make -C libsrc/general
