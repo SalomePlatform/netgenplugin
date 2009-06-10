@@ -467,11 +467,11 @@ bool NETGENPlugin_Mesher::fillNgMesh(netgen::OCCGeometry&           occgeom,
         for ( int i = 0; i < 3; ++i ) {
           const SMDS_MeshNode* node = f->GetNode( i ), * inFaceNode=0;
           if ( helper.IsSeamShape( node->GetPosition()->GetShapeId() ))
-            if ( helper.IsSeamShape( f->GetNode( i+1 )->GetPosition()->GetShapeId() ))
-              inFaceNode = f->GetNode( i-1 );
+            if ( helper.IsSeamShape( f->GetNodeWrap( i+1 )->GetPosition()->GetShapeId() ))
+              inFaceNode = f->GetNodeWrap( i-1 );
             else 
-              inFaceNode = f->GetNode( i+1 );
-            
+              inFaceNode = f->GetNodeWrap( i+1 );
+
           gp_XY uv = helper.GetNodeUV( geomFace, node, inFaceNode );
           if ( reverse ) {
             tri.GeomInfoPi(3-i).u = uv.X();
