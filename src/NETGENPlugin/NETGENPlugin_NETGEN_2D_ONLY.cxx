@@ -442,3 +442,74 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
 
   return !err;
 }
+
+
+//=============================================================================
+/*!
+ *
+ */
+//=============================================================================
+
+bool NETGENPlugin_NETGEN_2D_ONLY::Evaluate(SMESH_Mesh& aMesh,
+					   const TopoDS_Shape& aShape,
+					   MapShapeNbElems& aResMap)
+{
+  TopoDS_Face F = TopoDS::Face(aShape);
+  if(F.IsNull())
+    return false;
+
+  // collect info from edges
+  int nb0d = 0, nb1d = 0;
+  bool IsQuadratic = false;
+  bool IsFirst = true;
+  double fullLen = 0.0;
+  TopTools_MapOfShape tmpMap;
+  for (TopExp_Explorer exp(F, TopAbs_EDGE); exp.More(); exp.Next()) {
+    TopoDS_Edge E = TopoDS::Edge(exp.Current());
+    if( tmpMap.Contains(E) )
+      continue;
+    tmpMap.Add(E);
+    SMESH_subMesh *aSubMesh = aMesh.GetSubMesh(exp.Current());
+    MapShapeNbElemsItr anIt = aResMap.find(aSubMesh);
+    std::vector<int> aVec = (*anIt).second;
+    nb0d += aVec[0];
+    nb1d += Max(aVec[1],aVec[2]);
+    double aLen = SMESH_Algo::EdgeLength(E);
+    fullLen += aLen;
+    if(IsFirst) {
+      IsQuadratic = (aVec[2] > aVec[1]);
+      IsFirst = false;
+    }
+  }
+  tmpMap.Clear();
+
+  // compute edge length
+  double ELen = 0;
+  if (_hypLengthFromEdges || !_hypLengthFromEdges && !_hypMaxElementArea) {
+    ELen = fullLen / nb1d;
+  }
+  if ( _hypMaxElementArea ) {
+    double maxArea = _hypMaxElementArea->GetMaxArea();
+    ELen = sqrt(2. * maxArea/sqrt(3.0));
+  }
+
+  GProp_GProps G;
+  BRepGProp::SurfaceProperties(F,G);
+  double anArea = G.Mass();
+  int nbFaces = (int) anArea/(ELen*ELen*sqrt(3)/4);
+  int nbNodes = (int) ( nbFaces*3 - (nb1d-1)*2 ) / 6 + 1;
+  std::vector<int> aVec(17);
+  for(int i=0; i<17; i++) aVec[i]=0;
+  if( IsQuadratic ) {
+    aVec[0] = nbNodes;
+    aVec[4] = nbFaces;
+  }
+  else {
+    aVec[0] = nbNodes;
+    aVec[3] = nbFaces;
+  }
+  SMESH_subMesh *sm = aMesh.GetSubMesh(F);
+  aResMap.insert(std::make_pair(sm,aVec));
+
+  return true;
+}

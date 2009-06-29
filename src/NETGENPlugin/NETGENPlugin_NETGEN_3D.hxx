@@ -54,6 +54,10 @@ public:
   virtual bool Compute(SMESH_Mesh& aMesh,
                        SMESH_MesherHelper* aHelper);
   
+  virtual bool Evaluate(SMESH_Mesh& aMesh,
+			const TopoDS_Shape& aShape,
+			MapShapeNbElems& aResMap);
+
 protected:
   double _maxElementVolume;
 

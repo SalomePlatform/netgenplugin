@@ -51,6 +51,7 @@
 #include <OSD_File.hxx>
 #include <TCollection_AsciiString.hxx>
 #include <TopTools_ListIteratorOfListOfShape.hxx>
+#include <TopTools_DataMapOfShapeInteger.hxx>
 #include <Standard_ErrorHandler.hxx>
 
 // Netgen include files
@@ -609,10 +610,20 @@ bool NETGENPlugin_Mesher::Compute()
         else {
           // length from edges
           double length = 0;
-          for ( TopExp_Explorer exp( _shape, TopAbs_EDGE ); exp.More(); exp.Next() )
+	  TopTools_MapOfShape tmpMap;
+          for ( TopExp_Explorer exp( _shape, TopAbs_EDGE ); exp.More(); exp.Next() ) {
+	    if( tmpMap.Contains(exp.Current()) )
+	      continue;
             length += SMESH_Algo::EdgeLength( TopoDS::Edge( exp.Current() ));
-          if ( ngMesh->GetNSeg() )
-            mparams.maxh = length / ngMesh->GetNSeg();
+	    tmpMap.Add(exp.Current());
+	  }
+	  tmpMap.Clear();
+          if ( ngMesh->GetNSeg() ) {
+	    // we have to multiply length by 2 since for each TopoDS_Edge there
+	    // are double set of NETGEN edges or, in other words, we have to
+	    // divide ngMesh->GetNSeg() on 2.
+            mparams.maxh = 2*length / ngMesh->GetNSeg();
+	  }
           else
             mparams.maxh = 1000;
           mparams.grading = 0.2; // slow size growth
@@ -953,4 +964,157 @@ void NETGENPlugin_Mesher::RemoveTmpFiles()
   OSD_Path path2( str );
   OSD_File file2( path2 );
   file2.Remove();
+}
+
+
+//=============================================================================
+/*!
+ * Evaluate
+ */
+//=============================================================================
+bool NETGENPlugin_Mesher::Evaluate(MapShapeNbElems& aResMap)
+{
+#ifdef WNT
+  netgen::MeshingParameters& mparams = netgen::GlobalMeshingParameters();
+#else
+  netgen::MeshingParameters& mparams = netgen::mparam;
+#endif  
+
+
+  // -------------------------
+  // Prepare OCC geometry
+  // -------------------------
+  netgen::OCCGeometry occgeo;
+  list< SMESH_subMesh* > meshedSM;
+  PrepareOCCgeometry( occgeo, _shape, *_mesh, &meshedSM );
+
+  // ----------------
+  // evaluate 1D 
+  // ----------------
+  // pass 1D simple parameters to NETGEN
+  int nbs = 0;
+  if ( _simpleHyp ) {
+    if ( int nbSeg = _simpleHyp->GetNumberOfSegments() ) {
+      nbs = nbSeg;
+      // nb of segments
+      mparams.segmentsperedge = nbSeg + 0.1;
+      mparams.maxh = occgeo.boundingbox.Diam();
+      mparams.grading = 0.01;
+    }
+    else {
+      // segment length
+      mparams.segmentsperedge = 1;
+      mparams.maxh = _simpleHyp->GetLocalLength();
+    }
+  }
+  TopTools_DataMapOfShapeInteger EdgesMap;
+  double fullLen = 0.0;
+  double fullNbSeg = 0;
+  for (TopExp_Explorer exp(_shape, TopAbs_EDGE); exp.More(); exp.Next()) {
+    TopoDS_Edge E = TopoDS::Edge( exp.Current() );
+    if( EdgesMap.IsBound(E) )
+      continue;
+    SMESH_subMesh *sm = _mesh->GetSubMesh(E);
+    double aLen = SMESH_Algo::EdgeLength(E);
+    fullLen += aLen;
+    int nb1d = nbs;
+    if(nb1d==0) {
+       nb1d = (int)aLen/mparams.maxh + 1;
+    }
+    fullNbSeg += nb1d;
+    std::vector<int> aVec(17);
+    for(int i=0; i<17; i++) aVec[i]=0;
+    if( mparams.secondorder > 0 ) {
+      aVec[0] = 2*nb1d - 1;
+      aVec[2] = nb1d;
+    }
+    else {
+      aVec[0] = nb1d - 1;
+      aVec[1] = nb1d;
+    }
+    aResMap.insert(std::make_pair(sm,aVec));
+    EdgesMap.Bind(E,nb1d);
+  }
+
+  // ----------------
+  // evaluate 2D 
+  // ----------------
+  if ( _simpleHyp ) {
+    if ( double area = _simpleHyp->GetMaxElementArea() ) {
+      // face area
+      mparams.maxh = sqrt(2. * area/sqrt(3.0));
+      mparams.grading = 0.4; // moderate size growth
+    }
+    else {
+      // length from edges
+      mparams.maxh = fullLen/fullNbSeg;
+      mparams.grading = 0.2; // slow size growth
+    }
+    mparams.maxh = min( mparams.maxh, occgeo.boundingbox.Diam()/2 );
+  }
+  for (TopExp_Explorer exp(_shape, TopAbs_FACE); exp.More(); exp.Next()) {
+    TopoDS_Face F = TopoDS::Face( exp.Current() );
+    SMESH_subMesh *sm = _mesh->GetSubMesh(F);
+    GProp_GProps G;
+    BRepGProp::SurfaceProperties(F,G);
+    double anArea = G.Mass();
+    int nb1d = 0;
+    for (TopExp_Explorer exp1(F,TopAbs_EDGE); exp1.More(); exp1.Next()) {
+      nb1d += EdgesMap.Find(exp1.Current());
+    }
+    int nbFaces = (int) anArea/(mparams.maxh*mparams.maxh*sqrt(3)/4);
+    int nbNodes = (int) ( nbFaces*3 - (nb1d-1)*2 ) / 6 + 1;
+    std::vector<int> aVec(17);
+    for(int i=0; i<17; i++) aVec[i]=0;
+    if( mparams.secondorder > 0 ) {
+      int nb1d_in = (nbFaces*3 - nb1d) / 2;
+      aVec[0] = nbNodes + nb1d_in;
+      aVec[4] = nbFaces;
+    }
+    else {
+      aVec[0] = nbNodes;
+      aVec[3] = nbFaces;
+    }
+    aResMap.insert(std::make_pair(sm,aVec));
+  }
+
+  // ----------------
+  // evaluate 3D
+  // ----------------
+  if(_isVolume) {
+    // pass 3D simple parameters to NETGEN
+    const NETGENPlugin_SimpleHypothesis_3D* simple3d =
+      dynamic_cast< const NETGENPlugin_SimpleHypothesis_3D* > ( _simpleHyp );
+    if ( simple3d ) {
+      if ( double vol = simple3d->GetMaxElementVolume() ) {
+	// max volume
+	mparams.maxh = pow( 72, 1/6. ) * pow( vol, 1/3. );
+	mparams.maxh = min( mparams.maxh, occgeo.boundingbox.Diam()/2 );
+      }
+      else {
+	// using previous length from faces
+      }
+      mparams.grading = 0.4;
+    }
+    GProp_GProps G;
+    BRepGProp::VolumeProperties(_shape,G);
+    double aVolume = G.Mass();
+    double tetrVol = 0.1179*mparams.maxh*mparams.maxh*mparams.maxh;
+    int nbVols = (int)aVolume/tetrVol;
+    int nb1d_in = (int) ( nbVols*6 - fullNbSeg ) / 6;
+    std::vector<int> aVec(17);
+    for(int i=0; i<17; i++) aVec[i]=0;
+    if( mparams.secondorder > 0 ) {
+      aVec[0] = nb1d_in/3 + 1 + nb1d_in;
+      aVec[9] = nbVols;
+    }
+    else {
+      aVec[0] = nb1d_in/3 + 1;
+      aVec[8] = nbVols;
+    }
+    SMESH_subMesh *sm = _mesh->GetSubMesh(_shape);
+    aResMap.insert(std::make_pair(sm,aVec));
+  }
+
+  return true;
 }

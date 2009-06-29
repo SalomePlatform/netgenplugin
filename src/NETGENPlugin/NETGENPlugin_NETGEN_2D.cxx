@@ -129,3 +129,21 @@ bool NETGENPlugin_NETGEN_2D::Compute(SMESH_Mesh&         aMesh,
   mesher.SetParameters(dynamic_cast<const NETGENPlugin_SimpleHypothesis_2D*>(_hypothesis));
   return mesher.Compute();
 }
+
+
+//=============================================================================
+/*!
+ *
+ */
+//=============================================================================
+
+bool NETGENPlugin_NETGEN_2D::Evaluate(SMESH_Mesh&         aMesh,
+				      const TopoDS_Shape& aShape,
+				      MapShapeNbElems& aResMap)
+{
+
+  NETGENPlugin_Mesher mesher(&aMesh, aShape, false);
+  mesher.SetParameters(dynamic_cast<const NETGENPlugin_Hypothesis*>(_hypothesis));
+  mesher.SetParameters(dynamic_cast<const NETGENPlugin_SimpleHypothesis_2D*>(_hypothesis));
+  return mesher.Evaluate(aResMap);
+}

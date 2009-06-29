@@ -61,6 +61,8 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_Mesher
 
   bool Compute();
 
+  bool Evaluate(MapShapeNbElems& aResMap);
+
   static void PrepareOCCgeometry(netgen::OCCGeometry&          occgeom,
                                  const TopoDS_Shape&           shape,
                                  SMESH_Mesh&                   mesh,
