@@ -1019,7 +1019,7 @@ bool NETGENPlugin_Mesher::Evaluate(MapShapeNbElems& aResMap)
     fullLen += aLen;
     int nb1d = nbs;
     if(nb1d==0) {
-       nb1d = (int)aLen/mparams.maxh + 1;
+       nb1d = (int)( aLen/mparams.maxh + 1 );
     }
     fullNbSeg += nb1d;
     std::vector<int> aVec(17);
@@ -1062,8 +1062,8 @@ bool NETGENPlugin_Mesher::Evaluate(MapShapeNbElems& aResMap)
     for (TopExp_Explorer exp1(F,TopAbs_EDGE); exp1.More(); exp1.Next()) {
       nb1d += EdgesMap.Find(exp1.Current());
     }
-    int nbFaces = (int) anArea/(mparams.maxh*mparams.maxh*sqrt(3)/4);
-    int nbNodes = (int) ( nbFaces*3 - (nb1d-1)*2 ) / 6 + 1;
+    int nbFaces = (int) ( anArea / ( mparams.maxh*mparams.maxh*sqrt(3.) / 4 ) );
+    int nbNodes = (int) ( ( nbFaces*3 - (nb1d-1)*2 ) / 6 + 1 );
     std::vector<int> aVec(17);
     for(int i=0; i<17; i++) aVec[i]=0;
     if( mparams.secondorder > 0 ) {

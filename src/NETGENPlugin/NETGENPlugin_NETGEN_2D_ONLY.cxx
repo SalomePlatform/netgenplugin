@@ -496,8 +496,8 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Evaluate(SMESH_Mesh& aMesh,
   GProp_GProps G;
   BRepGProp::SurfaceProperties(F,G);
   double anArea = G.Mass();
-  int nbFaces = (int) anArea/(ELen*ELen*sqrt(3)/4);
-  int nbNodes = (int) ( nbFaces*3 - (nb1d-1)*2 ) / 6 + 1;
+  int nbFaces = (int) ( anArea / ( ELen*ELen*sqrt(3.) / 4 ) );
+  int nbNodes = (int) ( ( nbFaces*3 - (nb1d-1)*2 ) / 6 + 1 );
   std::vector<int> aVec(17);
   for(int i=0; i<17; i++) aVec[i]=0;
   if( IsQuadratic ) {
