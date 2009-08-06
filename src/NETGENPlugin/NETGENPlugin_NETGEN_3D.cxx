@@ -657,6 +657,11 @@ bool NETGENPlugin_NETGEN_3D::Evaluate(SMESH_Mesh& aMesh,
     TopoDS_Face F = TopoDS::Face( exp.Current() );
     SMESH_subMesh *sm = aMesh.GetSubMesh(F);
     MapShapeNbElemsItr anIt = aResMap.find(sm);
+    if( anIt==aResMap.end() ) {
+      SMESH_ComputeErrorPtr& smError = sm->GetComputeError();
+      smError.reset( new SMESH_ComputeError(COMPERR_ALGO_FAILED,"Submesh can not be evaluated",this));
+      return false;
+    }
     std::vector<int> aVec = (*anIt).second;
     nbtri += Max(aVec[3],aVec[4]);
     nbqua += Max(aVec[5],aVec[6]);

@@ -471,6 +471,12 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Evaluate(SMESH_Mesh& aMesh,
     tmpMap.Add(E);
     SMESH_subMesh *aSubMesh = aMesh.GetSubMesh(exp.Current());
     MapShapeNbElemsItr anIt = aResMap.find(aSubMesh);
+    if( anIt==aResMap.end() ) {
+      SMESH_subMesh *sm = aMesh.GetSubMesh(F);
+      SMESH_ComputeErrorPtr& smError = sm->GetComputeError();
+      smError.reset( new SMESH_ComputeError(COMPERR_ALGO_FAILED,"Submesh can not be evaluated",this));
+      return false;
+    }
     std::vector<int> aVec = (*anIt).second;
     nb0d += aVec[0];
     nb1d += Max(aVec[1],aVec[2]);
