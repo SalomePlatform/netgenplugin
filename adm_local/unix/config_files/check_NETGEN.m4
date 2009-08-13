@@ -127,21 +127,24 @@ namespace nglib {
             rm -rf linopt.o bfgs.o linsearch.o global.o bisect.o meshtool.o refine.o ruler3.o improve3.o adfront3.o tetrarls.o prism2rls.o profiler.o pyramidrls.o pyramid2rls.o netrule3.o ruler2.o meshclass.o improve2.o adfront2.o netrule2.o triarls.o geomsearch.o secondorder.o meshtype.o parser3.o quadrls.o specials.o parser2.o meshing2.o meshing3.o meshfunc.o localh.o improve2gen.o delaunay.o boundarylayer.o msghandler.o meshfunc2d.o smoothing2.o smoothing3.o topology.o curvedelems_new.o clusters.o zrefine.o ngexception.o geomtest3d.o geom2d.o geom2dmesh.o geom3d.o adtree.o transform3d.o geomfuncs.o polynomial.o densemat.o vector.o basemat.o sparsmat.o algprim.o brick.o manifold.o bspline2d.o meshsurf.o csgeom.o polyhedra.o curve2d.o singularref.o edgeflw.o solid.o explicitcurve2d.o specpoin.o gencyl.o revolution.o genmesh.o genmesh2d.o spline3d.o surface.o identify.o triapprox.o meshstlsurface.o stlline.o stltopology.o stltool.o stlgeom.o stlgeomchart.o stlgeommesh.o table.o optmem.o spbita2d.o hashtabl.o sort.o flags.o seti.o bitarray.o array.o symbolta.o mystring.o moveablemem.o spline.o splinegeometry.o ngnewdelete.o nglib.o hprefinement.o Partition_Inter2d.o Partition_Loop.o Partition_Loop3d.o Partition_Inter3d.o Partition_Loop2d.o Partition_Spliter.o occgeom.o occgenmesh.o occmeshsurf.o csgparser.o dynamicmem.o extrusion.o occconstruction.o parthreads.o readuser.o writeabaqus.o writediffpack.o writeelmer.o writefeap.o writefluent.o writegmsh.o writejcm.o writepermas.o writetecplot.o writetochnog.o writeuser.o wuchemnitz.o,
             Netgen_ok=no)
 
-    AC_CACHE_VAL(salome_netgen_lib,[
-                 AC_TRY_LINK(
-#include <iostream>
-#include <fstream>
-namespace nglib {
-#include "nglib.h"
-}
-#define OCCGEOMETRY
-#include <occgeom.hpp>
-,nglib::Ng_Init();
- netgen::OCCGeometry occgeo;
- nglib::Ng_Exit();,
-    eval "salome_netgen_lib=yes";rm -rf libNETGEN.so,eval "salome_netgen_lib=no";rm -rf libNETGEN.so)
-  ])
-    Netgen_ok="$salome_netgen_lib"
+    AC_CACHE_VAL(salome_cv_netgen_lib,[
+                 AC_TRY_LINK([
+                     #include <iostream>
+                     #include <fstream>
+                     namespace nglib {
+                     #include "nglib.h"
+                     }
+                     #define OCCGEOMETRY
+                     #include <occgeom.hpp>
+                  ],[
+                     nglib::Ng_Init();
+                     netgen::OCCGeometry occgeo;
+                     nglib::Ng_Exit();
+                  ],
+                  [eval "salome_cv_netgen_lib=yes";rm -rf libNETGEN.so],
+                  [eval "salome_cv_netgen_lib=no";rm -rf libNETGEN.so])
+    ])
+    Netgen_ok="$salome_cv_netgen_lib"
 
 
     LDFLAGS="$LDFLAGS_old"
