@@ -45,7 +45,7 @@ SUBDIRS = idl adm_local resources src bin
 
 DIST_SUBDIRS = idl adm_local resources src bin 
 
-DISTCLEANFILES = a.out aclocal.m4 configure
+DISTCLEANFILES = a.out aclocal.m4 configure local-install.sh
 
 salomeinclude_DATA = NETGENPLUGIN_version.h
 
