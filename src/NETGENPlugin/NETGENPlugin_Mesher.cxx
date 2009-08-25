@@ -1022,15 +1022,15 @@ bool NETGENPlugin_Mesher::Evaluate(MapShapeNbElems& aResMap)
        nb1d = (int)( aLen/mparams.maxh + 1 );
     }
     fullNbSeg += nb1d;
-    std::vector<int> aVec(17);
-    for(int i=0; i<17; i++) aVec[i]=0;
+    std::vector<int> aVec(SMDSEntity_Last);
+    for(int i=SMDSEntity_Node; i<SMDSEntity_Last; i++) aVec[i]=0;
     if( mparams.secondorder > 0 ) {
-      aVec[0] = 2*nb1d - 1;
-      aVec[2] = nb1d;
+      aVec[SMDSEntity_Node] = 2*nb1d - 1;
+      aVec[SMDSEntity_Quad_Edge] = nb1d;
     }
     else {
-      aVec[0] = nb1d - 1;
-      aVec[1] = nb1d;
+      aVec[SMDSEntity_Node] = nb1d - 1;
+      aVec[SMDSEntity_Edge] = nb1d;
     }
     aResMap.insert(std::make_pair(sm,aVec));
     EdgesMap.Bind(E,nb1d);
@@ -1064,16 +1064,16 @@ bool NETGENPlugin_Mesher::Evaluate(MapShapeNbElems& aResMap)
     }
     int nbFaces = (int) ( anArea / ( mparams.maxh*mparams.maxh*sqrt(3.) / 4 ) );
     int nbNodes = (int) ( ( nbFaces*3 - (nb1d-1)*2 ) / 6 + 1 );
-    std::vector<int> aVec(17);
-    for(int i=0; i<17; i++) aVec[i]=0;
+    std::vector<int> aVec(SMDSEntity_Last);
+    for(int i=SMDSEntity_Node; i<SMDSEntity_Last; i++) aVec[i]=0;
     if( mparams.secondorder > 0 ) {
       int nb1d_in = (nbFaces*3 - nb1d) / 2;
-      aVec[0] = nbNodes + nb1d_in;
-      aVec[4] = nbFaces;
+      aVec[SMDSEntity_Node] = nbNodes + nb1d_in;
+      aVec[SMDSEntity_Quad_Triangle] = nbFaces;
     }
     else {
-      aVec[0] = nbNodes;
-      aVec[3] = nbFaces;
+      aVec[SMDSEntity_Node] = nbNodes;
+      aVec[SMDSEntity_Triangle] = nbFaces;
     }
     aResMap.insert(std::make_pair(sm,aVec));
   }
@@ -1102,15 +1102,15 @@ bool NETGENPlugin_Mesher::Evaluate(MapShapeNbElems& aResMap)
     double tetrVol = 0.1179*mparams.maxh*mparams.maxh*mparams.maxh;
     int nbVols = (int)aVolume/tetrVol;
     int nb1d_in = (int) ( nbVols*6 - fullNbSeg ) / 6;
-    std::vector<int> aVec(17);
-    for(int i=0; i<17; i++) aVec[i]=0;
+    std::vector<int> aVec(SMDSEntity_Last);
+    for(int i=SMDSEntity_Node; i<SMDSEntity_Last; i++) aVec[i]=0;
     if( mparams.secondorder > 0 ) {
-      aVec[0] = nb1d_in/3 + 1 + nb1d_in;
-      aVec[9] = nbVols;
+      aVec[SMDSEntity_Node] = nb1d_in/3 + 1 + nb1d_in;
+      aVec[SMDSEntity_Quad_Tetra] = nbVols;
     }
     else {
-      aVec[0] = nb1d_in/3 + 1;
-      aVec[8] = nbVols;
+      aVec[SMDSEntity_Node] = nb1d_in/3 + 1;
+      aVec[SMDSEntity_Tetra] = nbVols;
     }
     SMESH_subMesh *sm = _mesh->GetSubMesh(_shape);
     aResMap.insert(std::make_pair(sm,aVec));

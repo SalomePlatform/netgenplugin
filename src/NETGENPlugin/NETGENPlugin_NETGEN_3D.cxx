@@ -663,8 +663,8 @@ bool NETGENPlugin_NETGEN_3D::Evaluate(SMESH_Mesh& aMesh,
       return false;
     }
     std::vector<int> aVec = (*anIt).second;
-    nbtri += Max(aVec[3],aVec[4]);
-    nbqua += Max(aVec[5],aVec[6]);
+    nbtri += Max(aVec[SMDSEntity_Triangle],aVec[SMDSEntity_Quad_Triangle]);
+    nbqua += Max(aVec[SMDSEntity_Quadrangle],aVec[SMDSEntity_Quad_Quadrangle]);
     GProp_GProps G;
     BRepGProp::SurfaceProperties(F,G);
     double anArea = G.Mass();
@@ -684,10 +684,10 @@ bool NETGENPlugin_NETGEN_3D::Evaluate(SMESH_Mesh& aMesh,
     SMESH_subMesh *aSubMesh = aMesh.GetSubMesh(exp.Current());
     MapShapeNbElemsItr anIt = aResMap.find(aSubMesh);
     std::vector<int> aVec = (*anIt).second;
-    nb0d_e += aVec[0];
-    nb1d_e += Max(aVec[1],aVec[2]);
+    nb0d_e += aVec[SMDSEntity_Node];
+    nb1d_e += Max(aVec[SMDSEntity_Edge],aVec[SMDSEntity_Quad_Edge]);
     if(IsFirst) {
-      IsQuadratic = (aVec[2] > aVec[1]);
+      IsQuadratic = (aVec[SMDSEntity_Quad_Edge] > aVec[SMDSEntity_Edge]);
       IsFirst = false;
     }
   }
@@ -705,17 +705,17 @@ bool NETGENPlugin_NETGEN_3D::Evaluate(SMESH_Mesh& aMesh,
   int nbVols = (int)aVolume/tetrVol/CoeffQuality;
   int nb1d_f = (nbtri*3 + nbqua*4 - nb1d_e) / 2;
   int nb1d_in = (int) ( nbVols*6 - nb1d_e - nb1d_f ) / 5;
-  std::vector<int> aVec(17);
-  for(int i=0; i<17; i++) aVec[i]=0;
+  std::vector<int> aVec(SMDSEntity_Last);
+  for(int i=SMDSEntity_Node; i<SMDSEntity_Last; i++) aVec[i]=0;
   if( IsQuadratic ) {
-    aVec[0] = nb1d_in/6 + 1 + nb1d_in;
-    aVec[9] = nbVols - nbqua*2;
-    aVec[11] = nbqua;
+    aVec[SMDSEntity_Node] = nb1d_in/6 + 1 + nb1d_in;
+    aVec[SMDSEntity_Quad_Tetra] = nbVols - nbqua*2;
+    aVec[SMDSEntity_Quad_Pyramid] = nbqua;
   }
   else {
-    aVec[0] = nb1d_in/6 + 1;
-    aVec[8] = nbVols - nbqua*2;
-    aVec[10] = nbqua;
+    aVec[SMDSEntity_Node] = nb1d_in/6 + 1;
+    aVec[SMDSEntity_Tetra] = nbVols - nbqua*2;
+    aVec[SMDSEntity_Pyramid] = nbqua;
   }
   SMESH_subMesh *sm = aMesh.GetSubMesh(aShape);
   aResMap.insert(std::make_pair(sm,aVec));

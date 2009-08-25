@@ -478,12 +478,12 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Evaluate(SMESH_Mesh& aMesh,
       return false;
     }
     std::vector<int> aVec = (*anIt).second;
-    nb0d += aVec[0];
-    nb1d += Max(aVec[1],aVec[2]);
+    nb0d += aVec[SMDSEntity_Node];
+    nb1d += Max(aVec[SMDSEntity_Edge],aVec[SMDSEntity_Quad_Edge]);
     double aLen = SMESH_Algo::EdgeLength(E);
     fullLen += aLen;
     if(IsFirst) {
-      IsQuadratic = (aVec[2] > aVec[1]);
+      IsQuadratic = (aVec[SMDSEntity_Quad_Edge] > aVec[SMDSEntity_Edge]);
       IsFirst = false;
     }
   }
@@ -504,15 +504,15 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Evaluate(SMESH_Mesh& aMesh,
   double anArea = G.Mass();
   int nbFaces = (int) ( anArea / ( ELen*ELen*sqrt(3.) / 4 ) );
   int nbNodes = (int) ( ( nbFaces*3 - (nb1d-1)*2 ) / 6 + 1 );
-  std::vector<int> aVec(17);
-  for(int i=0; i<17; i++) aVec[i]=0;
+  std::vector<int> aVec(SMDSEntity_Last);
+  for(int i=SMDSEntity_Node; i<SMDSEntity_Last; i++) aVec[i]=0;
   if( IsQuadratic ) {
-    aVec[0] = nbNodes;
-    aVec[4] = nbFaces;
+    aVec[SMDSEntity_Node] = nbNodes;
+    aVec[SMDSEntity_Quad_Triangle] = nbFaces;
   }
   else {
-    aVec[0] = nbNodes;
-    aVec[3] = nbFaces;
+    aVec[SMDSEntity_Node] = nbNodes;
+    aVec[SMDSEntity_Triangle] = nbFaces;
   }
   SMESH_subMesh *sm = aMesh.GetSubMesh(F);
   aResMap.insert(std::make_pair(sm,aVec));
