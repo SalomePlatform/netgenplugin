@@ -41,7 +41,7 @@ diff -Naur netgen-4.5.old/libsrc/general/profiler.cpp netgen-4.5.new/libsrc/gene
 +      ofstream prof ("netgen.prof");
 +      Print (prof);
 +    }
-+    else {
++    else if ((env = getenv("NETGEN_PROF")) && !strcmp(env, "0")) {
 +      Print (std::cout);
 +    }
    }
