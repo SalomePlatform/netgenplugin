@@ -364,7 +364,7 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
   // Generate surface mesh
   // -------------------------
 
-  char *optstr;
+  char *optstr = 0;
   int startWith = MESHCONST_MESHSURFACE;
   int endWith   = MESHCONST_OPTSURFACE;
   int err = 1;
