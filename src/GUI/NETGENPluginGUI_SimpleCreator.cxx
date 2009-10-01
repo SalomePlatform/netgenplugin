@@ -329,7 +329,7 @@ QString NETGENPluginGUI_SimpleCreator::storeParams() const
       aVariablesList.append(myLength->text());
     }
     
-    h->SetParameters(SMESHGUI::JoinObjectParameters(aVariablesList));
+    h->SetParameters(aVariablesList.join(":").toLatin1().constData());
 
     // 2D
     if ( myArea->isEnabled() ) {
@@ -343,7 +343,7 @@ QString NETGENPluginGUI_SimpleCreator::storeParams() const
       aVariablesList.append(QString());
     }
 
-    h->SetParameters(SMESHGUI::JoinObjectParameters(aVariablesList));
+    h->SetParameters(aVariablesList.join(":").toLatin1().constData());
 
     // 3D
     if ( myVolume ) {
@@ -359,7 +359,7 @@ QString NETGENPluginGUI_SimpleCreator::storeParams() const
         valStr += "; lenFromFaces";
         aVariablesList.append(QString());
       }
-      h->SetParameters(SMESHGUI::JoinObjectParameters(aVariablesList));
+      h->SetParameters(aVariablesList.join(":").toLatin1().constData());
     }
   }
   catch(const SALOME::SALOME_Exception& ex)

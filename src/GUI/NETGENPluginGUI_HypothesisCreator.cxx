@@ -307,12 +307,12 @@ bool NETGENPluginGUI_HypothesisCreator::storeParamsToHypo( const NetgenHypothesi
 	  h_2d->SetQuadAllowed( h_data.myAllowQuadrangles );
       }
 
-    h->SetParameters(SMESHGUI::JoinObjectParameters(aVariablesList));
+    h->SetParameters(aVariablesList.join(":").toLatin1().constData());
     if( fineness==UserDefined )
       {
-        h->SetParameters(SMESHGUI::JoinObjectParameters(aVariablesList));
-        h->SetParameters(SMESHGUI::JoinObjectParameters(aVariablesList));
-        h->SetParameters(SMESHGUI::JoinObjectParameters(aVariablesList));
+        h->SetParameters(aVariablesList.join(":").toLatin1().constData());
+        h->SetParameters(aVariablesList.join(":").toLatin1().constData());
+        h->SetParameters(aVariablesList.join(":").toLatin1().constData());
       }
         
   }
