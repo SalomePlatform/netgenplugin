@@ -53,6 +53,7 @@
 #include <TopTools_ListIteratorOfListOfShape.hxx>
 #include <TopTools_DataMapOfShapeInteger.hxx>
 #include <Standard_ErrorHandler.hxx>
+#include <Standard_ProgramError.hxx>
 
 // Netgen include files
 namespace nglib {
@@ -68,6 +69,16 @@ namespace netgen {
 }
 
 using namespace std;
+
+static void removeFile( const TCollection_AsciiString& fileName )
+{
+  try {
+    OSD_File( fileName ).Remove();
+  }
+  catch ( Standard_ProgramError ) {
+    MESSAGE("Can't remove file: " << fileName.ToCString() << " ; file does not exist or permission denied");
+  }
+}
 
 //=============================================================================
 /*!
@@ -956,14 +967,8 @@ bool NETGENPlugin_Mesher::Compute()
 
 void NETGENPlugin_Mesher::RemoveTmpFiles()
 {
-  TCollection_AsciiString str("test.out");
-  OSD_Path path1( str );
-  OSD_File file1( path1 );
-  file1.Remove();
-  str = "problemfaces";
-  OSD_Path path2( str );
-  OSD_File file2( path2 );
-  file2.Remove();
+  removeFile("test.out");
+  removeFile("problemfaces");
 }
 
 
