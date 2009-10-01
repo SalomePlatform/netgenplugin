@@ -39,6 +39,7 @@
 #include "StdMeshers_LengthFromEdges.hxx"
 #include "StdMeshers_QuadranglePreference.hxx"
 
+#include <Precision.hxx>
 #include <Standard_ErrorHandler.hxx>
 #include <Standard_Failure.hxx>
 
@@ -492,17 +493,28 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Evaluate(SMESH_Mesh& aMesh,
   // compute edge length
   double ELen = 0;
   if (_hypLengthFromEdges || !_hypLengthFromEdges && !_hypMaxElementArea) {
-    ELen = fullLen / nb1d;
+    if ( nb1d > 0 )
+      ELen = fullLen / nb1d;
   }
   if ( _hypMaxElementArea ) {
     double maxArea = _hypMaxElementArea->GetMaxArea();
     ELen = sqrt(2. * maxArea/sqrt(3.0));
   }
+  if ( ELen < Precision::Confusion() ) {
+    SMESH_subMesh *sm = aMesh.GetSubMesh(F);
+    if ( sm ) {
+      SMESH_ComputeErrorPtr& smError = sm->GetComputeError();
+      smError.reset( new SMESH_ComputeError(COMPERR_ALGO_FAILED,"Submesh can not be evaluated.\nToo small element length",this));
+    }
+    return false;
+  }
 
   GProp_GProps G;
   BRepGProp::SurfaceProperties(F,G);
   double anArea = G.Mass();
-  int nbFaces = (int) ( anArea / ( ELen*ELen*sqrt(3.) / 4 ) );
+  int nbFaces = 0;
+  if ( ELen > Precision::Confusion() )
+    nbFaces = (int) ( anArea / ( ELen*ELen*sqrt(3.) / 4 ) );
   int nbNodes = (int) ( ( nbFaces*3 - (nb1d-1)*2 ) / 6 + 1 );
   std::vector<int> aVec(SMDSEntity_Last);
   for(int i=SMDSEntity_Node; i<SMDSEntity_Last; i++) aVec[i]=0;
