@@ -256,7 +256,7 @@ void NETGENPlugin_Mesher::PrepareOCCgeometry(netgen::OCCGeometry&     occgeo,
     TopExp::MapShapes(root->GetSubShape(), subShapes);
     while ( smIt->more() ) {
       SMESH_subMesh* sm = smIt->next();
-      if ( sm->IsEmpty() ) {
+      if ( !meshedSM || sm->IsEmpty() ) {
         TopoDS_Shape shape = sm->GetSubShape();
         if ( shape.ShapeType() != TopAbs_VERTEX )
           shape = subShapes( subShapes.FindIndex( shape ));// - shape->index->oriented shape
@@ -621,28 +621,28 @@ bool NETGENPlugin_Mesher::Compute()
         else {
           // length from edges
           double length = 0;
-	  TopTools_MapOfShape tmpMap;
+          TopTools_MapOfShape tmpMap;
           for ( TopExp_Explorer exp( _shape, TopAbs_EDGE ); exp.More(); exp.Next() ) {
-	    if( tmpMap.Contains(exp.Current()) )
-	      continue;
+            if( tmpMap.Contains(exp.Current()) )
+              continue;
             length += SMESH_Algo::EdgeLength( TopoDS::Edge( exp.Current() ));
-	    tmpMap.Add(exp.Current());
-	  }
-	  tmpMap.Clear();
+            tmpMap.Add(exp.Current());
+          }
+          tmpMap.Clear();
           if ( ngMesh->GetNSeg() ) {
-	    // we have to multiply length by 2 since for each TopoDS_Edge there
-	    // are double set of NETGEN edges or, in other words, we have to
-	    // divide ngMesh->GetNSeg() on 2.
+            // we have to multiply length by 2 since for each TopoDS_Edge there
+            // are double set of NETGEN edges or, in other words, we have to
+            // divide ngMesh->GetNSeg() on 2.
             mparams.maxh = 2*length / ngMesh->GetNSeg();
-	  }
+          }
           else
             mparams.maxh = 1000;
           mparams.grading = 0.2; // slow size growth
         }
         mparams.maxh = min( mparams.maxh, occgeo.boundingbox.Diam()/2 );
         ngMesh->SetGlobalH (mparams.maxh);
-	netgen::Box<3> bb = occgeo.GetBoundingBox();
-	bb.Increase (bb.Diam()/20);
+        netgen::Box<3> bb = occgeo.GetBoundingBox();
+        bb.Increase (bb.Diam()/20);
         ngMesh->SetLocalH (bb.PMin(), bb.PMax(), mparams.grading);
       }
       // let netgen compute 2D mesh
@@ -677,10 +677,10 @@ bool NETGENPlugin_Mesher::Compute()
           // length from faces
           mparams.maxh = ngMesh->AverageH();
         }
-// 	netgen::ARRAY<double> maxhdom;
-// 	maxhdom.SetSize (occgeo.NrSolids());
-// 	maxhdom = mparams.maxh;
-// 	ngMesh->SetMaxHDomain (maxhdom);
+//      netgen::ARRAY<double> maxhdom;
+//      maxhdom.SetSize (occgeo.NrSolids());
+//      maxhdom = mparams.maxh;
+//      ngMesh->SetMaxHDomain (maxhdom);
         ngMesh->SetGlobalH (mparams.maxh);
         mparams.grading = 0.4;
         ngMesh->CalcLocalH();
@@ -1092,12 +1092,12 @@ bool NETGENPlugin_Mesher::Evaluate(MapShapeNbElems& aResMap)
       dynamic_cast< const NETGENPlugin_SimpleHypothesis_3D* > ( _simpleHyp );
     if ( simple3d ) {
       if ( double vol = simple3d->GetMaxElementVolume() ) {
-	// max volume
-	mparams.maxh = pow( 72, 1/6. ) * pow( vol, 1/3. );
-	mparams.maxh = min( mparams.maxh, occgeo.boundingbox.Diam()/2 );
+        // max volume
+        mparams.maxh = pow( 72, 1/6. ) * pow( vol, 1/3. );
+        mparams.maxh = min( mparams.maxh, occgeo.boundingbox.Diam()/2 );
       }
       else {
-	// using previous length from faces
+        // using previous length from faces
       }
       mparams.grading = 0.4;
     }
@@ -1105,8 +1105,8 @@ bool NETGENPlugin_Mesher::Evaluate(MapShapeNbElems& aResMap)
     BRepGProp::VolumeProperties(_shape,G);
     double aVolume = G.Mass();
     double tetrVol = 0.1179*mparams.maxh*mparams.maxh*mparams.maxh;
-    int nbVols = (int)aVolume/tetrVol;
-    int nb1d_in = (int) ( nbVols*6 - fullNbSeg ) / 6;
+    int nbVols = int(aVolume/tetrVol);
+    int nb1d_in = int(( nbVols*6 - fullNbSeg ) / 6 );
     std::vector<int> aVec(SMDSEntity_Last);
     for(int i=SMDSEntity_Node; i<SMDSEntity_Last; i++) aVec[i]=0;
     if( mparams.secondorder > 0 ) {
