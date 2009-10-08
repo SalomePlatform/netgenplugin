@@ -79,7 +79,7 @@ NETGENPlugin_NETGEN_2D_ONLY::NETGENPlugin_NETGEN_2D_ONLY(int hypId, int studyId,
 {
   MESSAGE("NETGENPlugin_NETGEN_2D_ONLY::NETGENPlugin_NETGEN_2D_ONLY");
   _name = "NETGEN_2D_ONLY";
-
+  
   _shapeType = (1 << TopAbs_FACE);// 1 bit /shape type
 
   _compatibleHypothesis.push_back("MaxElementArea");
@@ -206,6 +206,10 @@ static TError AddSegmentsToMesh(netgen::Mesh&                    ngMesh,
     StdMeshers_FaceSidePtr wire = wires[ iW ];
     const vector<UVPtStruct>& uvPtVec = wire->GetUVPtStruct();
 
+    bool reverse = // 20526: [CEA] Disk meshing fails
+      ( wire->NbEdges() == 1 && 
+        geom.emap(geom.emap.FindIndex(wire->Edge(0))).Orientation() == TopAbs_REVERSED );
+
     int firstPointID = ngMesh.GetNP() + 1;
     int edgeID = 1, posID = -2;
     for ( int i = 0; i < wire->NbSegments(); ++i ) // loop on segments
@@ -255,6 +259,14 @@ static TError AddSegmentsToMesh(netgen::Mesh&                    ngMesh,
             seg.epgeominfo[ iEnd ].dist = helper.GetNodeU( edge, pnt.node );
         }
         seg.epgeominfo[ iEnd ].edgenr = edgeID; //  = geom.emap.FindIndex(edge);
+      }
+      // 20526: [CEA] Disk meshing fails
+      if (reverse)
+      {
+        swap (seg.p1, seg.p2);
+        swap (seg.epgeominfo[0].dist, seg.epgeominfo[1].dist);
+        swap (seg.epgeominfo[0].u, seg.epgeominfo[1].u);
+        swap (seg.epgeominfo[0].v, seg.epgeominfo[1].v);
       }
 
       ngMesh.AddSegment (seg);
@@ -452,8 +464,8 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
 //=============================================================================
 
 bool NETGENPlugin_NETGEN_2D_ONLY::Evaluate(SMESH_Mesh& aMesh,
-					   const TopoDS_Shape& aShape,
-					   MapShapeNbElems& aResMap)
+                                           const TopoDS_Shape& aShape,
+                                           MapShapeNbElems& aResMap)
 {
   TopoDS_Face F = TopoDS::Face(aShape);
   if(F.IsNull())
