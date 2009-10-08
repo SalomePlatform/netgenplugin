@@ -622,13 +622,10 @@ bool NETGENPlugin_Mesher::Compute()
           // length from edges
           double length = 0;
           TopTools_MapOfShape tmpMap;
-          for ( TopExp_Explorer exp( _shape, TopAbs_EDGE ); exp.More(); exp.Next() ) {
-            if( tmpMap.Contains(exp.Current()) )
-              continue;
-            length += SMESH_Algo::EdgeLength( TopoDS::Edge( exp.Current() ));
-            tmpMap.Add(exp.Current());
-          }
-          tmpMap.Clear();
+          for ( TopExp_Explorer exp( _shape, TopAbs_EDGE ); exp.More(); exp.Next() )
+            if( tmpMap.Add(exp.Current()) )
+              length += SMESH_Algo::EdgeLength( TopoDS::Edge( exp.Current() ));
+
           if ( ngMesh->GetNSeg() ) {
             // we have to multiply length by 2 since for each TopoDS_Edge there
             // are double set of NETGEN edges or, in other words, we have to
