@@ -35,6 +35,8 @@ AC_ARG_WITH(netgen,
 
 NETGEN_INCLUDES=""
 NETGEN_LIBS_DIR=""
+NETGEN_LIBS=""
+NETGEN_NEW=no
 
 Netgen_ok=no
 
@@ -52,29 +54,29 @@ fi
 
 if test "x$NETGEN_HOME" != "x"; then
 
-  echo
-  echo
-  echo -------------------------------------------------
+  if test -f ${NETGEN_HOME}/lib/libnglib.so ; then
+    NETGEN_NEW=yes  
+  fi
+
+  echo ----------------------------------------------------------
+  echo ----------------------------------------------------------
   echo You are about to choose to use somehow the
   echo Netgen Library to generate Tetrahedric mesh.
-  echo
-  echo WARNING
   echo ----------------------------------------------------------
   echo ----------------------------------------------------------
   echo You are strongly advised to consult the file
-  echo NETGENPLUGIN_SRC/src/NETGEN/ReadMeForNgUsers, particularly about
-  echo assumptions made on the installation of the Netgen
+  echo NETGENPLUGIN_SRC/src/NETGEN/ReadMeForNgUsers, particularly
+  echo about assumptions made on the installation of the Netgen
   echo application and libraries.
-  echo Ask your system administrator for those details.
   echo ----------------------------------------------------------
   echo ----------------------------------------------------------
-  echo 
-  echo
-
-  
 
   NETGEN_INCLUDES="-I${NETGEN_HOME}/include"
-  
+
+  if test "$NETGEN_NEW" = "yes" ; then
+    NETGEN_INCLUDES="${NETGEN_INCLUDES} -DNETGEN_NEW -I${NETGEN_HOME}/share/salome/include"
+  fi
+
   # check ${NETGEN_HOME}/lib/LINUX directory for libraries
   if test -f ${NETGEN_HOME}/lib/LINUX/libcsg.a ; then
   	NETGEN_LIBS_DIR="${NETGEN_HOME}/lib/LINUX"
@@ -98,6 +100,8 @@ if test "x$NETGEN_HOME" != "x"; then
 
   AC_CHECK_HEADER(nglib.h,Netgen_ok=yes,Netgen_ok=no)
   if test "x$Netgen_ok" == "xyes"; then
+
+    if test "$NETGEN_NEW" = "no" ; then
 
     AC_MSG_CHECKING(for Netgen libraries)
 
@@ -146,6 +150,81 @@ namespace nglib {
     ])
     Netgen_ok="$salome_cv_netgen_lib"
 
+    else
+
+      LDFLAGS_old="$LDFLAGS"
+      LDFLAGS="-L${NETGEN_LIBS_DIR} -lnglib $CAS_LDPATH -lTKBRep -lTKShHealing -lTKSTEP -lTKXSBase -lTKIGES -lTKSTL -lTKTopAlgo $LDFLAGS"
+
+      AC_MSG_CHECKING(for official Netgen libraries)
+      AC_CACHE_VAL(salome_cv_netgen_lib,[
+      AC_TRY_LINK([
+      #include <iostream>
+      #include <fstream>
+      namespace nglib {
+      #include "nglib.h"
+      }
+      ],[
+      nglib::Ng_Init();
+      nglib::Ng_Exit();
+      ],
+      [eval "salome_cv_netgen_lib=yes"],
+      [eval "salome_cv_netgen_lib=no"])
+      ])
+      Netgen_ok="$salome_cv_netgen_lib"
+
+      if test "$Netgen_ok" = "yes" ; then
+      AC_MSG_RESULT(yes)
+      AC_MSG_CHECKING(for occ support in Netgen libraries)
+      AC_CACHE_VAL(salome_cv_netgen_occ_lib,[
+      AC_TRY_LINK([
+      #include <iostream>
+      #include <fstream>
+      #define OCCGEOMETRY
+      namespace nglib {
+      #include "nglib.h"
+      }
+      ],[
+      nglib::Ng_Init();
+      nglib::Ng_OCC_Geometry * ng_occ_geom = nglib::Ng_OCC_NewGeometry();
+      nglib::Ng_Exit();
+      ],
+      [eval "salome_cv_netgen_occ_lib=yes"],
+      [eval "salome_cv_netgen_occ_lib=no"])
+      ])
+      Netgen_ok="$salome_cv_netgen_occ_lib"
+      fi
+
+      if test "$Netgen_ok" = "yes" ; then
+      AC_MSG_RESULT(yes)
+      AC_MSG_CHECKING(for salome patch in Netgen installation)
+      AC_CACHE_VAL(salome_cv_netgen_salome_patch_lib,[
+      AC_TRY_LINK([
+      #include <iostream>
+      #include <fstream>
+      #define OCCGEOMETRY
+      namespace nglib {
+      #include "nglib.h"
+      }
+      #include <occgeom.hpp>
+      ],[
+      nglib::Ng_Init();
+      netgen::OCCGeometry occgeo;
+      nglib::Ng_Exit();
+      ],
+      [eval "salome_cv_netgen_salome_patch_lib=yes"],
+      [eval "salome_cv_netgen_salome_patch_lib=no"])
+      ])
+      Netgen_ok="$salome_cv_netgen_salome_patch_lib"
+      fi
+
+      if test "x$Netgen_ok" == xno ; then
+      AC_MSG_RESULT(no)
+      AC_MSG_ERROR(Netgen is not properly installed)
+      fi
+
+      NETGEN_LIBS="-L${NETGEN_LIBS_DIR} -lnglib"
+
+    fi
 
     LDFLAGS="$LDFLAGS_old"
   fi
@@ -163,6 +242,8 @@ fi
 
 AC_SUBST(NETGEN_INCLUDES)
 AC_SUBST(NETGEN_LIBS_DIR)
+AC_SUBST(NETGEN_LIBS)
+AM_CONDITIONAL(NETGEN_NEW, [test x"$NETGEN_NEW" = x"yes"])
 
 AC_LANG_RESTORE
 

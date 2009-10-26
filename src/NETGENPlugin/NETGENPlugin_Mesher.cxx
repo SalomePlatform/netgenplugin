@@ -276,6 +276,10 @@ void NETGENPlugin_Mesher::PrepareOCCgeometry(netgen::OCCGeometry&     occgeo,
   }
   occgeo.facemeshstatus.SetSize (occgeo.fmap.Extent());
   occgeo.facemeshstatus = 0;
+#ifdef NETGEN_NEW
+  occgeo.face_maxh.SetSize(occgeo.fmap.Extent());
+  occgeo.face_maxh = netgen::mparam.maxh;
+#endif
 
 }
 
@@ -384,8 +388,13 @@ bool NETGENPlugin_Mesher::fillNgMesh(netgen::OCCGeometry&           occgeom,
 
           netgen::Segment seg;
           // ng node ids
+#ifdef NETGEN_NEW
+          seg.pnums[0] = prevNgId;
+          seg.pnums[1] = prevNgId = ngNodeId( p2.node, ngMesh, nodeNgIdMap );
+#else
           seg.p1 = prevNgId;
           seg.p2 = prevNgId = ngNodeId( p2.node, ngMesh, nodeNgIdMap );
+#endif
           // node param on curve
           seg.epgeominfo[ 0 ].dist = p1.param;
           seg.epgeominfo[ 1 ].dist = p2.param;
@@ -411,7 +420,11 @@ bool NETGENPlugin_Mesher::fillNgMesh(netgen::OCCGeometry&           occgeom,
               seg.epgeominfo[ 1 ].v = otherSeamParam;
               swap (seg.epgeominfo[0].u, seg.epgeominfo[1].u);
             }
+#ifdef NETGEN_NEW
+            swap (seg.pnums[0], seg.pnums[1]);
+#else
             swap (seg.p1, seg.p2);
+#endif
             swap (seg.epgeominfo[0].dist, seg.epgeominfo[1].dist);
             seg.edgenr = ngMesh.GetNSeg() + 1; // segment id
             ngMesh.AddSegment (seg);
@@ -748,7 +761,11 @@ bool NETGENPlugin_Mesher::Compute()
           newNodeOnVertex = true;
       }
       if (!node)
+#ifdef NETGEN_NEW
+        node = meshDS->AddNode(ngPoint(0), ngPoint(1), ngPoint(2));
+#else
         node = meshDS->AddNode(ngPoint.X(), ngPoint.Y(), ngPoint.Z());
+#endif
       if (!node)
       {
         MESSAGE("Cannot create a mesh node");
@@ -770,12 +787,20 @@ bool NETGENPlugin_Mesher::Compute()
     for (i = nbInitSeg+1; i <= nbSeg/* && isOK*/; ++i )
     {
       const netgen::Segment& seg = ngMesh->LineSegment(i);
+#ifdef NETGEN_NEW
+      Link link(seg.pnums[0], seg.pnums[1]);
+#else
       Link link(seg.p1, seg.p2);
+#endif
       if (linkMap.Contains(link))
         continue;
       linkMap.Add(link);
       TopoDS_Edge aEdge;
+#ifdef NETGEN_NEW
+      int pinds[3] = { seg.pnums[0], seg.pnums[1], seg.pnums[2] };
+#else
       int pinds[3] = { seg.p1, seg.p2, seg.pmid };
+#endif
       int nbp = 0;
       double param2 = 0;
       for (int j=0; j < 3; ++j)
@@ -966,6 +991,7 @@ void NETGENPlugin_Mesher::RemoveTmpFiles()
 {
   removeFile("test.out");
   removeFile("problemfaces");
+  removeFile("occmesh.rep");
 }
 
 

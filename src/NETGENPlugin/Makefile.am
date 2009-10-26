@@ -84,8 +84,13 @@ libNETGENEngine_la_CPPFLAGS = \
 	$(BOOST_CPPFLAGS) \
 	-I$(top_builddir)/idl
 
-libNETGENEngine_la_LDFLAGS  = \
-	../NETGEN/libNETGEN.la \
+if ! NETGEN_NEW
+libNETGENEngine_la_LDFLAGS = ../NETGEN/libNETGEN.la
+else
+libNETGENEngine_la_LDFLAGS = $(NETGEN_LIBS)
+endif
+
+libNETGENEngine_la_LDFLAGS  += \
 	../../idl/libSalomeIDLNETGENPLUGIN.la \
 	$(CAS_LDPATH) -lTKernel -lTKBRep -lTKShHealing -lTKSTEP -lTKXSBase -lTKIGES -lTKMesh -lTKSTL -lTKG3d -lTKTopAlgo -lTKG2d -lTKBool -lTKGeomAlgo -lTKOffset -lTKGeomBase -lTKBO \
 	$(SMESH_LDFLAGS) -lSMESHimpl -lSMESHEngine -lStdMeshersEngine -lStdMeshers -lSMESHDS -lSMDS -lSMESHControls \

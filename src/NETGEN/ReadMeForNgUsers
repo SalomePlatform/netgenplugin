@@ -1,3 +1,41 @@
+# ------------------------------------------------------------------
+# ------------------------------------------------------------------
+# Notes for Netgen >= 4.9
+# ------------------------------------------------------------------
+# ------------------------------------------------------------------
+
+Netgen can be find at http://www.hpfem.jku.at/netgen/
+
+1. How to build Netgen for Netgen Plugin
+------------------------------
+
+1.1. Download Netgen archive (here netgen-4.9.11.tar.gz) and unpack it
+
+1.2. Configure the netgen compilation. The "good" options are
+     ../netgen-4.9.11/configure \
+        --prefix=THE_INSTALLATION_PATH \
+        --enable-occ --enable-nglib --with-occ=${CASROOT} \
+        CXXFLAGS="-DOCCGEOMETRY -I${CASROOT}/inc -DHAVE_IOSTREAM -DHAVE_LIMITS -DHAVE_LIMITS_H -DHAVE_IOMANIP -I${TOGL_HOME}/include" \
+        LDFLAGS="-L${TOGL_HOME}/lib/Togl1.7"
+
+1.3. Compile the netgen product
+     make then make install
+
+1.4. Patch the installation directory to copy include files
+     needed by NETGEN Plugin. Use the script
+     NETGENPLUGIN_SRC/src/NETGEN/netgen_copy_include_for_salome
+     to achieve that. The first argument is the directory containing
+     the Netgen sources. The second argument is THE_INSTALLATION_PATH
+
+Erwan ADAM
+erwan.adam@cea.fr
+
+# ------------------------------------------------------------------
+# ------------------------------------------------------------------
+# Notes for Netgen 4.5
+# ------------------------------------------------------------------
+# ------------------------------------------------------------------
+
 The Netgen 4.5 from the web location : http://www.hpfem.jku.at/netgen/
 (CVS access) is used in the SMESH Module of Salome3 distribution.
 
@@ -92,3 +130,8 @@ The suggested patch alters some Netgen sources to compile them.
 
 Michael SAZONOV
 m-sazonov@opencascade.com
+
+# ------------------------------------------------------------------
+# ------------------------------------------------------------------
+# ------------------------------------------------------------------
+# ------------------------------------------------------------------
