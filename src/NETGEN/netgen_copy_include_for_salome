@@ -12,7 +12,7 @@ if ! test -d $install_dir/share/netgen ; then
     exit 1
 fi
 
-dest_dir=$install_dir/share/salome/include
+dest_dir=$install_dir/share/netgen/include
 mkdir -p $dest_dir > /dev/null 2>&1
 cp -af $src_dir/libsrc/occ/*.hpp $dest_dir
 cp -af $src_dir/libsrc/meshing/*.hpp $dest_dir

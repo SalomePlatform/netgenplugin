@@ -74,7 +74,7 @@ if test "x$NETGEN_HOME" != "x"; then
   NETGEN_INCLUDES="-I${NETGEN_HOME}/include"
 
   if test "$NETGEN_NEW" = "yes" ; then
-    NETGEN_INCLUDES="${NETGEN_INCLUDES} -DNETGEN_NEW -I${NETGEN_HOME}/share/salome/include"
+    NETGEN_INCLUDES="${NETGEN_INCLUDES} -DNETGEN_NEW -I${NETGEN_HOME}/share/netgen/include"
   fi
 
   # check ${NETGEN_HOME}/lib/LINUX directory for libraries
