@@ -47,6 +47,7 @@
 
 #include <list>
 #include <vector>
+#include <limits>
 
 /*
   Netgen include files

@@ -41,6 +41,7 @@
 #include <utilities.h>
 
 #include <vector>
+#include <limits>
 
 #include <BRep_Tool.hxx>
 #include <TopExp.hxx>
