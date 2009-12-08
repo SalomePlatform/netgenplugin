@@ -138,8 +138,8 @@ bool NETGENPlugin_NETGEN_2D::Compute(SMESH_Mesh&         aMesh,
 //=============================================================================
 
 bool NETGENPlugin_NETGEN_2D::Evaluate(SMESH_Mesh&         aMesh,
-				      const TopoDS_Shape& aShape,
-				      MapShapeNbElems& aResMap)
+                                      const TopoDS_Shape& aShape,
+                                      MapShapeNbElems& aResMap)
 {
 
   NETGENPlugin_Mesher mesher(&aMesh, aShape, false);

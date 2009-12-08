@@ -47,6 +47,7 @@
 
 #include <list>
 #include <vector>
+#include <limits>
 
 /*
   Netgen include files
@@ -206,10 +207,6 @@ static TError AddSegmentsToMesh(netgen::Mesh&                    ngMesh,
     StdMeshers_FaceSidePtr wire = wires[ iW ];
     const vector<UVPtStruct>& uvPtVec = wire->GetUVPtStruct();
 
-    bool reverse = // 20526: [CEA] Disk meshing fails
-      ( wire->NbEdges() == 1 && 
-        geom.emap(geom.emap.FindIndex(wire->Edge(0))).Orientation() == TopAbs_REVERSED );
-
     int firstPointID = ngMesh.GetNP() + 1;
     int edgeID = 1, posID = -2;
     for ( int i = 0; i < wire->NbSegments(); ++i ) // loop on segments
@@ -264,18 +261,6 @@ static TError AddSegmentsToMesh(netgen::Mesh&                    ngMesh,
             seg.epgeominfo[ iEnd ].dist = helper.GetNodeU( edge, pnt.node );
         }
         seg.epgeominfo[ iEnd ].edgenr = edgeID; //  = geom.emap.FindIndex(edge);
-      }
-      // 20526: [CEA] Disk meshing fails
-      if (reverse)
-      {
-#ifdef NETGEN_NEW
-        swap (seg.pnums[0], seg.pnums[1]);
-#else
-        swap (seg.p1, seg.p2);
-#endif
-        swap (seg.epgeominfo[0].dist, seg.epgeominfo[1].dist);
-        swap (seg.epgeominfo[0].u, seg.epgeominfo[1].u);
-        swap (seg.epgeominfo[0].v, seg.epgeominfo[1].v);
       }
 
       ngMesh.AddSegment (seg);
@@ -529,21 +514,19 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Evaluate(SMESH_Mesh& aMesh,
     double maxArea = _hypMaxElementArea->GetMaxArea();
     ELen = sqrt(2. * maxArea/sqrt(3.0));
   }
-  if ( ELen < Precision::Confusion() ) {
-    SMESH_subMesh *sm = aMesh.GetSubMesh(F);
-    if ( sm ) {
-      SMESH_ComputeErrorPtr& smError = sm->GetComputeError();
-      smError.reset( new SMESH_ComputeError(COMPERR_ALGO_FAILED,"Submesh can not be evaluated.\nToo small element length",this));
-    }
-    return false;
-  }
-
   GProp_GProps G;
   BRepGProp::SurfaceProperties(F,G);
   double anArea = G.Mass();
-  int nbFaces = 0;
-  if ( ELen > Precision::Confusion() )
-    nbFaces = (int) ( anArea / ( ELen*ELen*sqrt(3.) / 4 ) );
+
+  const int hugeNb = numeric_limits<int>::max()/10;
+  if ( anArea / hugeNb > ELen*ELen )
+  {
+    SMESH_subMesh *sm = aMesh.GetSubMesh(F);
+    SMESH_ComputeErrorPtr& smError = sm->GetComputeError();
+    smError.reset( new SMESH_ComputeError(COMPERR_ALGO_FAILED,"Submesh can not be evaluated.\nToo small element length",this));
+    return false;
+  }
+  int nbFaces = (int) ( anArea / ( ELen*ELen*sqrt(3.) / 4 ) );
   int nbNodes = (int) ( ( nbFaces*3 - (nb1d-1)*2 ) / 6 + 1 );
   std::vector<int> aVec(SMDSEntity_Last);
   for(int i=SMDSEntity_Node; i<SMDSEntity_Last; i++) aVec[i]=0;
