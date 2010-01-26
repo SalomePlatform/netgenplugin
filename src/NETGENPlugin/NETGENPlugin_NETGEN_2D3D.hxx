@@ -50,11 +50,11 @@ public:
                                SMESH_Hypothesis::Hypothesis_Status& aStatus);
 
   virtual bool Compute(SMESH_Mesh& aMesh,
-		       const TopoDS_Shape& aShape);
+                       const TopoDS_Shape& aShape);
 
   virtual bool Evaluate(SMESH_Mesh& aMesh,
-			const TopoDS_Shape& aShape,
-			MapShapeNbElems& aResMap);
+                        const TopoDS_Shape& aShape,
+                        MapShapeNbElems& aResMap);
 
 protected:
   const SMESHDS_Hypothesis* _hypothesis;

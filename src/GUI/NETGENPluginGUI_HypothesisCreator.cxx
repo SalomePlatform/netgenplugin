@@ -260,10 +260,10 @@ bool NETGENPluginGUI_HypothesisCreator::readParamsFromHypo( NetgenHypothesisData
   if ( myIs2D )
     {
       NETGENPlugin::NETGENPlugin_Hypothesis_2D_var h_2d =
-	NETGENPlugin::NETGENPlugin_Hypothesis_2D::_narrow( initParamsHypothesis() );
+        NETGENPlugin::NETGENPlugin_Hypothesis_2D::_narrow( initParamsHypothesis() );
 
       if ( !h_2d->_is_nil() )
-	h_data.myAllowQuadrangles = h_2d->GetQuadAllowed();
+        h_data.myAllowQuadrangles = h_2d->GetQuadAllowed();
     }
   
   return true;
@@ -289,9 +289,9 @@ bool NETGENPluginGUI_HypothesisCreator::storeParamsToHypo( const NetgenHypothesi
 
     if( fineness==UserDefined )
       {
-	h->SetGrowthRate( h_data.myGrowthRate );
-	h->SetNbSegPerEdge( h_data.myNbSegPerEdge );
-	h->SetNbSegPerRadius( h_data.myNbSegPerRadius );
+        h->SetGrowthRate( h_data.myGrowthRate );
+        h->SetNbSegPerEdge( h_data.myNbSegPerEdge );
+        h->SetNbSegPerRadius( h_data.myNbSegPerRadius );
         
         aVariablesList.append(h_data.myGrowthRateVar);
         aVariablesList.append(h_data.myNbSegPerEdgeVar);
@@ -300,11 +300,11 @@ bool NETGENPluginGUI_HypothesisCreator::storeParamsToHypo( const NetgenHypothesi
     
     if ( myIs2D )
       {
-	NETGENPlugin::NETGENPlugin_Hypothesis_2D_var h_2d =
-	  NETGENPlugin::NETGENPlugin_Hypothesis_2D::_narrow( h );
-	
-	if ( !h_2d->_is_nil() )
-	  h_2d->SetQuadAllowed( h_data.myAllowQuadrangles );
+        NETGENPlugin::NETGENPlugin_Hypothesis_2D_var h_2d =
+          NETGENPlugin::NETGENPlugin_Hypothesis_2D::_narrow( h );
+        
+        if ( !h_2d->_is_nil() )
+          h_2d->SetQuadAllowed( h_data.myAllowQuadrangles );
       }
 
     h->SetParameters(aVariablesList.join(":").toLatin1().constData());
@@ -360,34 +360,34 @@ void NETGENPluginGUI_HypothesisCreator::onFinenessChanged()
       double aGrowthRate, aNbSegPerEdge, aNbSegPerRadius;
       
       switch ( myFineness->currentIndex() )
-	{
-	case VeryCoarse:
-	  aGrowthRate = 0.7;
-	  aNbSegPerEdge = 0.3;
-	  aNbSegPerRadius = 1;
-	  break;
-	case Coarse:
-	  aGrowthRate = 0.5;
-	  aNbSegPerEdge = 0.5;
-	  aNbSegPerRadius = 1.5;
-	  break;
-	case Fine:
-	  aGrowthRate = 0.2;
-	  aNbSegPerEdge = 2;
-	  aNbSegPerRadius = 3;
-	  break;
-	case VeryFine:
-	  aGrowthRate = 0.1;
-	  aNbSegPerEdge = 3;
-	  aNbSegPerRadius = 5;
-	  break;
-	case Moderate:
-	default:
-	  aGrowthRate = 0.3;
-	  aNbSegPerEdge = 1;
-	  aNbSegPerRadius = 2;
-	  break;
-	}
+        {
+        case VeryCoarse:
+          aGrowthRate = 0.7;
+          aNbSegPerEdge = 0.3;
+          aNbSegPerRadius = 1;
+          break;
+        case Coarse:
+          aGrowthRate = 0.5;
+          aNbSegPerEdge = 0.5;
+          aNbSegPerRadius = 1.5;
+          break;
+        case Fine:
+          aGrowthRate = 0.2;
+          aNbSegPerEdge = 2;
+          aNbSegPerRadius = 3;
+          break;
+        case VeryFine:
+          aGrowthRate = 0.1;
+          aNbSegPerEdge = 3;
+          aNbSegPerRadius = 5;
+          break;
+        case Moderate:
+        default:
+          aGrowthRate = 0.3;
+          aNbSegPerEdge = 1;
+          aNbSegPerRadius = 2;
+          break;
+        }
       
       myGrowthRate->setValue( aGrowthRate );
       myNbSegPerEdge->setValue( aNbSegPerEdge );

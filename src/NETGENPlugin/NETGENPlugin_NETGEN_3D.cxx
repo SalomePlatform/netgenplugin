@@ -75,7 +75,7 @@ using namespace std;
 //=============================================================================
 
 NETGENPlugin_NETGEN_3D::NETGENPlugin_NETGEN_3D(int hypId, int studyId,
-			     SMESH_Gen* gen)
+                             SMESH_Gen* gen)
   : SMESH_3D_Algo(hypId, studyId, gen)
 {
   MESSAGE("NETGENPlugin_NETGEN_3D::NETGENPlugin_NETGEN_3D");
@@ -616,8 +616,8 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh& aMesh,
     {
       Ng_GetPoint( Netgen_mesh, nodeIndex, Netgen_point );
       SMDS_MeshNode * node = aHelper->AddNode(Netgen_point[0],
-					      Netgen_point[1],
-					      Netgen_point[2]);
+                                              Netgen_point[1],
+                                              Netgen_point[2]);
       nodeVec.at(nodeIndex) = node;
     }
 
@@ -626,9 +626,9 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh& aMesh,
     {
       Ng_GetVolumeElement(Netgen_mesh, elemIndex, Netgen_tetrahedron);
       aHelper->AddVolume (nodeVec.at( Netgen_tetrahedron[0] ),
-			  nodeVec.at( Netgen_tetrahedron[1] ),
-			  nodeVec.at( Netgen_tetrahedron[2] ),
-			  nodeVec.at( Netgen_tetrahedron[3] ));
+                          nodeVec.at( Netgen_tetrahedron[1] ),
+                          nodeVec.at( Netgen_tetrahedron[2] ),
+                          nodeVec.at( Netgen_tetrahedron[3] ));
     }
   }
 
@@ -648,8 +648,8 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh& aMesh,
 //=============================================================================
 
 bool NETGENPlugin_NETGEN_3D::Evaluate(SMESH_Mesh& aMesh,
-				      const TopoDS_Shape& aShape,
-				      MapShapeNbElems& aResMap)
+                                      const TopoDS_Shape& aShape,
+                                      MapShapeNbElems& aResMap)
 {
   int nbtri = 0, nbqua = 0;
   double fullArea = 0.0;
@@ -686,7 +686,7 @@ bool NETGENPlugin_NETGEN_3D::Evaluate(SMESH_Mesh& aMesh,
     if( anIt==aResMap.end() ) {
       SMESH_ComputeErrorPtr& smError = aSubMesh->GetComputeError();
       smError.reset( new SMESH_ComputeError(COMPERR_ALGO_FAILED,
-					    "Submesh can not be evaluated",this));
+                                            "Submesh can not be evaluated",this));
       return false;
     }
     std::vector<int> aVec = (*anIt).second;

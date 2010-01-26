@@ -141,8 +141,8 @@ bool NETGENPlugin_NETGEN_2D3D::Compute(SMESH_Mesh&         aMesh,
 //=============================================================================
 
 bool NETGENPlugin_NETGEN_2D3D::Evaluate(SMESH_Mesh&         aMesh,
-					const TopoDS_Shape& aShape,
-					MapShapeNbElems& aResMap)
+                                        const TopoDS_Shape& aShape,
+                                        MapShapeNbElems& aResMap)
 {
   NETGENPlugin_Mesher mesher(&aMesh, aShape, true);
   mesher.SetParameters(dynamic_cast<const NETGENPlugin_Hypothesis*>(_hypothesis));
