@@ -44,17 +44,19 @@
 #include <limits>
 
 #include <BRep_Tool.hxx>
-#include <TopExp.hxx>
-#include <TopExp_Explorer.hxx>
-#include <TopoDS.hxx>
 #include <NCollection_Map.hxx>
-#include <OSD_Path.hxx>
 #include <OSD_File.hxx>
-#include <TCollection_AsciiString.hxx>
-#include <TopTools_ListIteratorOfListOfShape.hxx>
-#include <TopTools_DataMapOfShapeInteger.hxx>
+#include <OSD_Path.hxx>
 #include <Standard_ErrorHandler.hxx>
 #include <Standard_ProgramError.hxx>
+#include <TCollection_AsciiString.hxx>
+#include <TopExp.hxx>
+#include <TopExp_Explorer.hxx>
+#include <TopTools_DataMapOfShapeInteger.hxx>
+#include <TopTools_DataMapIteratorOfDataMapOfShapeInteger.hxx>
+#include <TopTools_ListIteratorOfListOfShape.hxx>
+#include <TopTools_MapOfShape.hxx>
+#include <TopoDS.hxx>
 
 // Netgen include files
 namespace nglib {
@@ -982,20 +984,6 @@ bool NETGENPlugin_Mesher::Compute()
   return error->IsOK();
 }
 
-//================================================================================
-/*!
- * \brief Remove "test.out" and "problemfaces" files in current directory
- */
-//================================================================================
-
-void NETGENPlugin_Mesher::RemoveTmpFiles()
-{
-  removeFile("test.out");
-  removeFile("problemfaces");
-  removeFile("occmesh.rep");
-}
-
-
 //=============================================================================
 /*!
  * Evaluate
@@ -1007,15 +995,14 @@ bool NETGENPlugin_Mesher::Evaluate(MapShapeNbElems& aResMap)
   netgen::MeshingParameters& mparams = netgen::GlobalMeshingParameters();
 #else
   netgen::MeshingParameters& mparams = netgen::mparam;
-#endif  
+#endif
 
 
   // -------------------------
   // Prepare OCC geometry
   // -------------------------
   netgen::OCCGeometry occgeo;
-  list< SMESH_subMesh* > meshedSM;
-  PrepareOCCgeometry( occgeo, _shape, *_mesh, &meshedSM );
+  PrepareOCCgeometry( occgeo, _shape, *_mesh );
 
   bool tooManyElems = false;
   const int hugeNb = std::numeric_limits<int>::max() / 100;
@@ -1024,10 +1011,8 @@ bool NETGENPlugin_Mesher::Evaluate(MapShapeNbElems& aResMap)
   // evaluate 1D 
   // ----------------
   // pass 1D simple parameters to NETGEN
-  int nbs = 0;
   if ( _simpleHyp ) {
     if ( int nbSeg = _simpleHyp->GetNumberOfSegments() ) {
-      nbs = nbSeg;
       // nb of segments
       mparams.segmentsperedge = nbSeg + 0.1;
       mparams.maxh = occgeo.boundingbox.Diam();
@@ -1039,42 +1024,71 @@ bool NETGENPlugin_Mesher::Evaluate(MapShapeNbElems& aResMap)
       mparams.maxh = _simpleHyp->GetLocalLength();
     }
   }
-  TopTools_DataMapOfShapeInteger EdgesMap;
+  // let netgen create ngMesh and calculate element size on not meshed shapes
+  nglib::Ng_Init();
+  netgen::Mesh *ngMesh = NULL;
+  char *optstr = 0;
+  int startWith = netgen::MESHCONST_ANALYSE;
+  int endWith   = netgen::MESHCONST_MESHEDGES;
+  int err = netgen::OCCGenerateMesh(occgeo, ngMesh, startWith, endWith, optstr);
+  if (err) {
+    if ( SMESH_subMesh* sm = _mesh->GetSubMeshContaining( _shape ))
+      sm->GetComputeError().reset( new SMESH_ComputeError( COMPERR_ALGO_FAILED ));
+    return false;
+  }
+
+  // calculate total nb of segments and length of edges
   double fullLen = 0.0;
-  double fullNbSeg = 0;
-  for (TopExp_Explorer exp(_shape, TopAbs_EDGE); exp.More(); exp.Next()) {
+  int fullNbSeg = 0;
+  int entity = mparams.secondorder > 0 ? SMDSEntity_Quad_Edge : SMDSEntity_Edge;
+  TopTools_DataMapOfShapeInteger Edge2NbSeg;
+  for (TopExp_Explorer exp(_shape, TopAbs_EDGE); exp.More(); exp.Next())
+  {
     TopoDS_Edge E = TopoDS::Edge( exp.Current() );
-    if( EdgesMap.IsBound(E) )
+    if( !Edge2NbSeg.Bind(E,0) )
       continue;
-    SMESH_subMesh *sm = _mesh->GetSubMesh(E);
-    std::vector<int> aVec(SMDSEntity_Last, 0);
+
     double aLen = SMESH_Algo::EdgeLength(E);
     fullLen += aLen;
-    int nb1d = nbs;
-    tooManyElems = ( aLen/hugeNb > mparams.maxh );
-    if(nb1d==0 && !tooManyElems) {
-      nb1d = (int)( aLen/mparams.maxh + 1 );
-    }
-    if ( tooManyElems ) // avoid FPE
-    {
-      aVec[SMDSEntity_Node] = hugeNb;
-      aVec[ mparams.secondorder > 0 ? SMDSEntity_Quad_Edge : SMDSEntity_Edge] = hugeNb;
-    }
+
+    vector<int>& aVec = aResMap[_mesh->GetSubMesh(E)];
+    if ( aVec.empty() )
+      aVec.resize( SMDSEntity_Last, 0);
     else
-    {
-      fullNbSeg += nb1d;
-      if( mparams.secondorder > 0 ) {
-        aVec[SMDSEntity_Node] = 2*nb1d - 1;
-        aVec[SMDSEntity_Quad_Edge] = nb1d;
-      }
-      else {
-        aVec[SMDSEntity_Node] = nb1d - 1;
-        aVec[SMDSEntity_Edge] = nb1d;
-      }
-    }
-    aResMap.insert(std::make_pair(sm,aVec));
-    EdgesMap.Bind(E,nb1d);
+      fullNbSeg += aVec[ entity ];
   }
+
+  // store nb of segments computed by Netgen
+  NCollection_Map<Link> linkMap;
+  for (int i = 1; i <= ngMesh->GetNSeg(); ++i )
+  {
+    const netgen::Segment& seg = ngMesh->LineSegment(i);
+#ifdef NETGEN_NEW
+    Link link(seg.pnums[0], seg.pnums[1]);
+#else
+    Link link(seg.p1, seg.p2);
+#endif
+    if ( !linkMap.Add( link )) continue;
+    int aGeomEdgeInd = seg.epgeominfo[0].edgenr;
+    if (aGeomEdgeInd > 0 && aGeomEdgeInd <= occgeo.emap.Extent())
+    {
+      vector<int>& aVec = aResMap[_mesh->GetSubMesh(occgeo.emap(aGeomEdgeInd))];
+      aVec[ entity ]++;
+    }
+  }
+  // store nb of nodes on edges computed by Netgen
+  TopTools_DataMapIteratorOfDataMapOfShapeInteger Edge2NbSegIt(Edge2NbSeg);
+  for (; Edge2NbSegIt.More(); Edge2NbSegIt.Next())
+  {
+    vector<int>& aVec = aResMap[_mesh->GetSubMesh(Edge2NbSegIt.Key())];
+    if ( aVec[ entity ] > 1 && aVec[ SMDSEntity_Node ] == 0 )
+      aVec[SMDSEntity_Node] = mparams.secondorder > 0  ? 2*aVec[ entity ]-1 : aVec[ entity ]-1;
+
+    fullNbSeg += aVec[ entity ];
+    Edge2NbSeg( Edge2NbSegIt.Key() ) = aVec[ entity ];
+  }
+  nglib::Ng_DeleteMesh((nglib::Ng_Mesh*)ngMesh);
+  nglib::Ng_Exit();
 
   // ----------------
   // evaluate 2D 
@@ -1090,8 +1104,9 @@ bool NETGENPlugin_Mesher::Evaluate(MapShapeNbElems& aResMap)
       mparams.maxh = fullLen/fullNbSeg;
       mparams.grading = 0.2; // slow size growth
     }
-    mparams.maxh = min( mparams.maxh, occgeo.boundingbox.Diam()/2 );
   }
+  mparams.maxh = min( mparams.maxh, occgeo.boundingbox.Diam()/2 );
+  mparams.maxh = min( mparams.maxh, fullLen/fullNbSeg * (1. + mparams.grading));
 
   for (TopExp_Explorer exp(_shape, TopAbs_FACE); exp.More(); exp.Next())
   {
@@ -1103,13 +1118,16 @@ bool NETGENPlugin_Mesher::Evaluate(MapShapeNbElems& aResMap)
     tooManyElems = tooManyElems || ( anArea/hugeNb > mparams.maxh*mparams.maxh );
     int nb1d = 0;
     if ( !tooManyElems )
+    {
+      TopTools_MapOfShape egdes;
       for (TopExp_Explorer exp1(F,TopAbs_EDGE); exp1.More(); exp1.Next())
-        nb1d += EdgesMap.Find(exp1.Current());
-
-    int nbFaces = tooManyElems ? hugeNb : int( 4*anArea / mparams.maxh*mparams.maxh*sqrt(3.));
+        if ( egdes.Add( exp1.Current() ))
+          nb1d += Edge2NbSeg.Find(exp1.Current());
+    }
+    int nbFaces = tooManyElems ? hugeNb : int( 4*anArea / (mparams.maxh*mparams.maxh*sqrt(3.)));
     int nbNodes = tooManyElems ? hugeNb : (( nbFaces*3 - (nb1d-1)*2 ) / 6 + 1 );
 
-    std::vector<int> aVec(SMDSEntity_Last, 0);
+    vector<int> aVec(SMDSEntity_Last, 0);
     if( mparams.secondorder > 0 ) {
       int nb1d_in = (nbFaces*3 - nb1d) / 2;
       aVec[SMDSEntity_Node] = nbNodes + nb1d_in;
@@ -1119,7 +1137,7 @@ bool NETGENPlugin_Mesher::Evaluate(MapShapeNbElems& aResMap)
       aVec[SMDSEntity_Node] = nbNodes;
       aVec[SMDSEntity_Triangle] = nbFaces;
     }
-    aResMap.insert(std::make_pair(sm,aVec));
+    aResMap[sm].swap(aVec);
   }
 
   // ----------------
@@ -1139,6 +1157,7 @@ bool NETGENPlugin_Mesher::Evaluate(MapShapeNbElems& aResMap)
         // using previous length from faces
       }
       mparams.grading = 0.4;
+      mparams.maxh = min( mparams.maxh, fullLen/fullNbSeg * (1. + mparams.grading));
     }
     GProp_GProps G;
     BRepGProp::VolumeProperties(_shape,G);
@@ -1147,7 +1166,7 @@ bool NETGENPlugin_Mesher::Evaluate(MapShapeNbElems& aResMap)
     tooManyElems = tooManyElems || ( aVolume/hugeNb > tetrVol );
     int nbVols = tooManyElems ? hugeNb : int(aVolume/tetrVol);
     int nb1d_in = int(( nbVols*6 - fullNbSeg ) / 6 );
-    std::vector<int> aVec(SMDSEntity_Last, 0 );
+    vector<int> aVec(SMDSEntity_Last, 0 );
     if ( tooManyElems ) // avoid FPE
     {
       aVec[SMDSEntity_Node] = hugeNb;
@@ -1165,8 +1184,21 @@ bool NETGENPlugin_Mesher::Evaluate(MapShapeNbElems& aResMap)
       }
     }
     SMESH_subMesh *sm = _mesh->GetSubMesh(_shape);
-    aResMap.insert(std::make_pair(sm,aVec));
+    aResMap[sm].swap(aVec);
   }
 
   return true;
+}
+
+//================================================================================
+/*!
+ * \brief Remove "test.out" and "problemfaces" files in current directory
+ */
+//================================================================================
+
+void NETGENPlugin_Mesher::RemoveTmpFiles()
+{
+  removeFile("test.out");
+  removeFile("problemfaces");
+  removeFile("occmesh.rep");
 }
