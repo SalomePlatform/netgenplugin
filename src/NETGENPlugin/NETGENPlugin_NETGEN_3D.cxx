@@ -214,13 +214,11 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
           return error( COMPERR_BAD_INPUT_MESH, "Null element encounters");
         bool isTraingle = ( elem->NbNodes()==3 || (_quadraticMesh && elem->NbNodes()==6 ));
         if ( !isTraingle ) {
-          //return error( COMPERR_BAD_INPUT_MESH,
-          //              SMESH_Comment("Not triangle element ")<<elem->GetID());
           // using adaptor
           const list<const SMDS_FaceOfNodes*>* faces = Adaptor.GetTriangles(elem);
           if(faces==0) {
             return error( COMPERR_BAD_INPUT_MESH,
-                          SMESH_Comment("Not triangles in adaptor for element ")<<elem->GetID());
+                          SMESH_Comment("No triangles in adaptor for element ")<<elem->GetID());
           }
           list<const SMDS_FaceOfNodes*>::const_iterator itf = faces->begin();
           for(; itf!=faces->end(); itf++ ) {
@@ -471,13 +469,10 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh& aMesh,
       return error( COMPERR_BAD_INPUT_MESH, "Null element encounters");
     bool isTraingle = ( elem->NbNodes()==3 || (_quadraticMesh && elem->NbNodes()==6 ));
     if ( !isTraingle ) {
-      //return error( COMPERR_BAD_INPUT_MESH,
-      //              SMESH_Comment("Not triangle element ")<<elem->GetID());
       // using adaptor
       const list<const SMDS_FaceOfNodes*>* faces = Adaptor.GetTriangles(elem);
       if(faces==0) {
-        return error( COMPERR_BAD_INPUT_MESH,
-                      SMESH_Comment("Not triangles in adaptor for element ")<<elem->GetID());
+        continue; // Issue 0020682. There already can be 3d mesh
       }
       list<const SMDS_FaceOfNodes*>::const_iterator itf = faces->begin();
       for(; itf!=faces->end(); itf++ ) {
@@ -537,7 +532,6 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh& aMesh,
     Netgen_point [ 2 ] = node->Z();
     Ng_AddPoint(Netgen_mesh, Netgen_point);
     n_id->second = ++Netgen_NbOfNodes; // set netgen ID
-
   }
 
   // set triangles
@@ -554,7 +548,6 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh& aMesh,
       Netgen_triangle[ i ] = nodeToNetgenID[ node ];
       ++i;
     }
-    
     Ng_AddSurfaceElement(Netgen_mesh, NG_TRIG, Netgen_triangle);
   }
 
@@ -708,9 +701,9 @@ bool NETGENPlugin_NETGEN_3D::Evaluate(SMESH_Mesh& aMesh,
   double aVolume = G.Mass();
   double tetrVol = 0.1179*ELen*ELen*ELen;
   double CoeffQuality = 0.9;
-  int nbVols = (int)aVolume/tetrVol/CoeffQuality;
+  int nbVols = int( aVolume/tetrVol/CoeffQuality );
   int nb1d_f = (nbtri*3 + nbqua*4 - nb1d_e) / 2;
-  int nb1d_in = (int) ( nbVols*6 - nb1d_e - nb1d_f ) / 5;
+  int nb1d_in = (nbVols*6 - nb1d_e - nb1d_f ) / 5;
   std::vector<int> aVec(SMDSEntity_Last);
   for(int i=SMDSEntity_Node; i<SMDSEntity_Last; i++) aVec[i]=0;
   if( IsQuadratic ) {
