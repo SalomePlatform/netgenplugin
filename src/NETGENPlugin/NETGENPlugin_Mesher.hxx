@@ -24,8 +24,6 @@
 // Author    : Michael Sazonov (OCN)
 // Date      : 31/03/2006
 // Project   : SALOME
-// $Header$
-//=============================================================================
 //
 #ifndef _NETGENPlugin_Mesher_HXX_
 #define _NETGENPlugin_Mesher_HXX_
@@ -35,18 +33,33 @@
 #include <map>
 
 class SMESH_Mesh;
+class SMESH_Comment;
 class SMESHDS_Mesh;
 class TopoDS_Shape;
+class TopTools_DataMapOfShapeShape;
 class NETGENPlugin_Hypothesis;
 class NETGENPlugin_SimpleHypothesis_2D;
 namespace netgen {
   class OCCGeometry;
   class Mesh;
 }
+//=============================================================================
+/*!
+ * \brief Struct storing nb of entities in netgen mesh
+ */
+//=============================================================================
 
+struct NETGENPlugin_ngMeshInfo
+{
+  int _nbNodes, _nbSegments, _nbFaces, _nbVolumes;
+  NETGENPlugin_ngMeshInfo( netgen::Mesh* ngMesh=0);
+};
+
+//=============================================================================
 /*!
  * \brief This class calls the NETGEN mesher of OCC geometry
  */
+//=============================================================================
 
 class NETGENPLUGIN_EXPORT NETGENPlugin_Mesher 
 {
@@ -66,11 +79,15 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_Mesher
   static void PrepareOCCgeometry(netgen::OCCGeometry&          occgeom,
                                  const TopoDS_Shape&           shape,
                                  SMESH_Mesh&                   mesh,
-                                 std::list< SMESH_subMesh* > * meshedSM=0);
+                                 std::list< SMESH_subMesh* > * meshedSM=0,
+                                 TopTools_DataMapOfShapeShape* internalE2F=0);
 
-  static void RemoveTmpFiles();
-
-protected:
+  static int FillSMesh(const netgen::OCCGeometry&          occgeom,
+                       const netgen::Mesh&                 ngMesh,
+                       const NETGENPlugin_ngMeshInfo&      initState,
+                       SMESH_Mesh&                         sMesh,
+                       std::vector<SMDS_MeshNode*>&        nodeVec,
+                       SMESH_Comment&                      comment);
 
   bool fillNgMesh(netgen::OCCGeometry&                occgeom,
                   netgen::Mesh&                       ngMesh,
@@ -79,6 +96,7 @@ protected:
 
   void defaultParameters();
 
+  static void RemoveTmpFiles();
 
  private:
   SMESH_Mesh*          _mesh;
