@@ -212,7 +212,7 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
         const SMDS_MeshElement* elem = iteratorElem->next();
         if ( !elem )
           return error( COMPERR_BAD_INPUT_MESH, "Null element encounters");
-        bool isTraingle = ( elem->NbNodes()==3 || (_quadraticMesh && elem->NbNodes()==6 ));
+        bool isTraingle = ( elem->NbNodes() == ( elem->IsQuadratic() ? 6 : 3 ));
         if ( !isTraingle ) {
           // using adaptor
           const list<const SMDS_FaceOfNodes*>* faces = Adaptor.GetTriangles(elem);
@@ -467,7 +467,7 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh& aMesh,
     const SMDS_MeshElement* elem = *itFace;
     if ( !elem )
       return error( COMPERR_BAD_INPUT_MESH, "Null element encounters");
-    bool isTraingle = ( elem->NbNodes()==3 || (_quadraticMesh && elem->NbNodes()==6 ));
+    bool isTraingle = ( elem->NbNodes() == ( elem->IsQuadratic() ? 6 : 3 ));
     if ( !isTraingle ) {
       // using adaptor
       const list<const SMDS_FaceOfNodes*>* faces = Adaptor.GetTriangles(elem);
