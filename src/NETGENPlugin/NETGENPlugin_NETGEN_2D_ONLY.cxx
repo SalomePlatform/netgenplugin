@@ -151,7 +151,7 @@ bool NETGENPlugin_NETGEN_2D_ONLY::CheckHypothesis (SMESH_Mesh&         aMesh,
     return false;
   }
 
-  if ( _hypMaxElementArea || _hypLengthFromEdges )
+  if ( _hypMaxElementArea || _hypLengthFromEdges || _hypQuadranglePreference)
     aStatus = HYP_OK;
 
   return aStatus == HYP_OK;
