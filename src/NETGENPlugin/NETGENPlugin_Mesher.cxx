@@ -107,11 +107,7 @@ NETGENPlugin_Mesher::NETGENPlugin_Mesher (SMESH_Mesh* mesh,
 
 void NETGENPlugin_Mesher::defaultParameters()
 {
-#ifdef WNT
-  netgen::MeshingParameters& mparams = netgen::GlobalMeshingParameters();
-#else
   netgen::MeshingParameters& mparams = netgen::mparam;
-#endif
   // maximal mesh edge size
   mparams.maxh = NETGENPlugin_Hypothesis::GetDefaultMaxSize();
   // minimal number of segments per edge
@@ -138,11 +134,7 @@ void NETGENPlugin_Mesher::SetParameters(const NETGENPlugin_Hypothesis* hyp)
 {
   if (hyp)
   {
-#ifdef WNT
-    netgen::MeshingParameters& mparams = netgen::GlobalMeshingParameters();
-#else
     netgen::MeshingParameters& mparams = netgen::mparam;
-#endif
     // Initialize global NETGEN parameters:
     // maximal mesh segment size
     mparams.maxh = hyp->GetMaxSize();
@@ -822,11 +814,7 @@ int NETGENPlugin_Mesher::FillSMesh(const netgen::OCCGeometry&          occgeo,
 
 bool NETGENPlugin_Mesher::Compute()
 {
-#ifdef WNT
-  netgen::MeshingParameters& mparams = netgen::GlobalMeshingParameters();
-#else
   netgen::MeshingParameters& mparams = netgen::mparam;
-#endif  
   MESSAGE("Compute with:\n"
           " max size = " << mparams.maxh << "\n"
           " segments per edge = " << mparams.segmentsperedge);
@@ -1083,11 +1071,7 @@ bool NETGENPlugin_Mesher::Compute()
 //=============================================================================
 bool NETGENPlugin_Mesher::Evaluate(MapShapeNbElems& aResMap)
 {
-#ifdef WNT
-  netgen::MeshingParameters& mparams = netgen::GlobalMeshingParameters();
-#else
   netgen::MeshingParameters& mparams = netgen::mparam;
-#endif
 
 
   // -------------------------
