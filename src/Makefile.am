@@ -28,8 +28,12 @@
 include $(top_srcdir)/adm_local/unix/make_common_starter.am
 
 SUBDIRS =
-if ! NETGEN_NEW
+if CMAKE_BUILD
+else
+if NETGEN_NEW
+else
   SUBDIRS += NETGEN
+endif
 endif
 SUBDIRS += NETGENPlugin
 
