@@ -187,7 +187,7 @@ static TError AddSegmentsToMesh(netgen::Mesh&                    ngMesh,
         (new SMESH_ComputeError(COMPERR_BAD_INPUT_MESH,
                                 SMESH_Comment("Unexpected nb of points on wire ") << iW
                                 << ": " << uvPtVec.size()<<" != "<<wire->NbPoints()));
-    nbNodes += wire->NbSegments();
+    nbNodes += wire->NbPoints(); 
   }
   nodeVec.reserve( nbNodes );
 
@@ -206,11 +206,12 @@ static TError AddSegmentsToMesh(netgen::Mesh&                    ngMesh,
   {
     StdMeshers_FaceSidePtr wire = wires[ iW ];
     const vector<UVPtStruct>& uvPtVec = wire->GetUVPtStruct();
+    const int nbSegments = wire->NbPoints() - 1;
 
     int firstPointID = ngMesh.GetNP() + 1;
     int edgeID = 1, posID = -2;
     bool isInternalEdge = false;
-    for ( int i = 0; i < wire->NbSegments(); ++i ) // loop on segments
+    for ( int i = 0; i < nbSegments; ++i ) // loop on segments
     {
       // Add the first point of a segment
       const SMDS_MeshNode * n = uvPtVec[ i ].node;
