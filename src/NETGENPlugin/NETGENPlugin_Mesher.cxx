@@ -369,13 +369,7 @@ bool NETGENPlugin_Mesher::fillNgMesh(netgen::OCCGeometry&           occgeom,
           continue; // meshed face
 
         // find out orientation of geomEdge within face
-        TopAbs_Orientation fOri;
-        for ( TopExp_Explorer exp( face, TopAbs_EDGE ); exp.More(); exp.Next() ) {
-          if ( geomEdge.IsSame( exp.Current() )) {
-            fOri = exp.Current().Orientation();
-            break;
-          }
-        }
+        TopAbs_Orientation fOri = helper.GetSubShapeOri( face, geomEdge );
 
         // get all nodes from geomEdge
         bool isForwad = ( fOri == geomEdge.Orientation() );
@@ -591,55 +585,54 @@ int NETGENPlugin_Mesher::FillSMesh(const netgen::OCCGeometry&          occgeo,
   // create and insert nodes into nodeVec
   nodeVec.resize( nbNod + 1 );
   int i, nbInitNod = initState._nbNodes;
-  for (i = nbInitNod+1; i <= nbNod /*&& isOK*/; ++i )
+  for (i = nbInitNod+1; i <= nbNod; ++i )
   {
     const netgen::MeshPoint& ngPoint = ngMesh.Point(i);
     SMDS_MeshNode* node = NULL;
-    bool newNodeOnVertex = false;
     TopoDS_Vertex aVert;
-    if (i-nbInitNod <= occgeo.vmap.Extent())
+    // First, netgen creates nodes on vertices in occgeo.vmap,
+    // so node index corresponds to vertex index
+    // but (isuue 0020776) netgen does not create nodes with equal coordinates
+    if ( i-nbInitNod <= occgeo.vmap.Extent() )
     {
-      // point on vertex
-      aVert = TopoDS::Vertex(occgeo.vmap(i-nbInitNod));
-      SMESHDS_SubMesh * submesh = meshDS->MeshElements(aVert);
-      if (submesh)
+#ifdef NETGEN_NEW
+      gp_Pnt p (ngPoint(0), ngPoint(1), ngPoint(2));
+#else
+      gp_Pnt p (ngPoint.X(), ngPoint.Y(), ngPoint.Z());
+#endif
+      for (int iV = i-nbInitNod; aVert.IsNull() && iV <= occgeo.vmap.Extent(); ++iV)
       {
-        SMDS_NodeIteratorPtr it = submesh->GetNodes();
-        if (it->more())
-        {
-          node = const_cast<SMDS_MeshNode*> (it->next());
-          pindMap.Add(i);
-        }
+        aVert = TopoDS::Vertex( occgeo.vmap( iV ) );
+        gp_Pnt pV = BRep_Tool::Pnt( aVert );
+        if ( p.SquareDistance( pV ) > 1e-20 )
+          aVert.Nullify();
+        else
+          node = const_cast<SMDS_MeshNode*>( SMESH_Algo::VertexNode( aVert, meshDS ));
       }
-      if (!node)
-        newNodeOnVertex = true;
     }
-    if (!node)
+    if (node) // node found on vertex
+      pindMap.Add(i);
+    else
+    {
 #ifdef NETGEN_NEW
       node = meshDS->AddNode(ngPoint(0), ngPoint(1), ngPoint(2));
 #else
-    node = meshDS->AddNode(ngPoint.X(), ngPoint.Y(), ngPoint.Z());
+      node = meshDS->AddNode(ngPoint.X(), ngPoint.Y(), ngPoint.Z());
 #endif
-    if (!node)
-    {
-      MESSAGE("Cannot create a mesh node");
-      if ( !comment.size() ) comment << "Cannot create a mesh node";
-      nbSeg = nbFac = nbVol = 0;
-      break;
+      if (!aVert.IsNull())
+      {
+        // point on vertex
+        meshDS->SetNodeOnVertex(node, aVert);
+        pindMap.Add(i);
+      }
     }
     nodeVec_ACCESS(i) = node;
-    if (newNodeOnVertex)
-    {
-      // point on vertex
-      meshDS->SetNodeOnVertex(node, aVert);
-      pindMap.Add(i);
-    }
   }
 
   // create mesh segments along geometric edges
   NCollection_Map<Link> linkMap;
   int nbInitSeg = initState._nbSegments;
-  for (i = nbInitSeg+1; i <= nbSeg/* && isOK*/; ++i )
+  for (i = nbInitSeg+1; i <= nbSeg; ++i )
   {
     const netgen::Segment& seg = ngMesh.LineSegment(i);
 #ifdef NETGEN_NEW
@@ -647,9 +640,8 @@ int NETGENPlugin_Mesher::FillSMesh(const netgen::OCCGeometry&          occgeo,
 #else
     Link link(seg.p1, seg.p2);
 #endif
-    if (linkMap.Contains(link))
+    if (!linkMap.Add(link))
       continue;
-    linkMap.Add(link);
     TopoDS_Edge aEdge;
 #ifdef NETGEN_NEW
     int pinds[3] = { seg.pnums[0], seg.pnums[1], seg.pnums[2] };
@@ -875,7 +867,8 @@ bool NETGENPlugin_Mesher::Compute()
     err = netgen::OCCGenerateMesh(occgeo, ngMesh, startWith, endWith, optstr);
     if (err) comment << "Error in netgen::OCCGenerateMesh() at MESHCONST_ANALYSE step";
 
-    // precompute internal edges (issue 0020676)
+    // precompute internal edges (issue 0020676) in order to
+    // add mesh on them correctly (twice) to netgen mesh
     if ( !err && !internalEdge2Face.IsEmpty() )
     {
       netgen::OCCGeometry intEdgeOccgeo;
