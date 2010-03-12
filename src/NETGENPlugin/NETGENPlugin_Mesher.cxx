@@ -30,14 +30,15 @@
 #include "NETGENPlugin_Hypothesis_2D.hxx"
 #include "NETGENPlugin_SimpleHypothesis_3D.hxx"
 
-#include <SMESH_Mesh.hxx>
-#include <SMESH_Comment.hxx>
-#include <SMESH_ComputeError.hxx>
-#include <SMESH_subMesh.hxx>
-#include <SMESH_MesherHelper.hxx>
-#include <SMESHDS_Mesh.hxx>
 #include <SMDS_MeshElement.hxx>
 #include <SMDS_MeshNode.hxx>
+#include <SMESHDS_Mesh.hxx>
+#include <SMESH_Comment.hxx>
+#include <SMESH_ComputeError.hxx>
+#include <SMESH_File.hxx>
+#include <SMESH_Mesh.hxx>
+#include <SMESH_MesherHelper.hxx>
+#include <SMESH_subMesh.hxx>
 #include <utilities.h>
 
 #include <vector>
@@ -1268,31 +1269,48 @@ bool NETGENPlugin_Mesher::Evaluate(MapShapeNbElems& aResMap)
 
 //================================================================================
 /*!
- * \brief remove given file
- */
-//================================================================================
-
-static void removeFile( const TCollection_AsciiString& fileName )
-{
-  try {
-    OSD_File( fileName ).Remove();
-  }
-  catch ( Standard_ProgramError ) {
-    MESSAGE("Can't remove file: " << fileName.ToCString() << " ; file does not exist or permission denied");
-  }
-}
-
-//================================================================================
-/*!
  * \brief Remove "test.out" and "problemfaces" files in current directory
  */
 //================================================================================
 
 void NETGENPlugin_Mesher::RemoveTmpFiles()
 {
-  removeFile("test.out");
-  removeFile("problemfaces");
-  removeFile("occmesh.rep");
+  SMESH_File("test.out").remove();
+  SMESH_File("problemfaces").remove();
+  SMESH_File("occmesh.rep").remove();
+}
+
+//================================================================================
+/*!
+ * \brief Read mesh entities preventing successful computation from "test.out" file
+ */
+//================================================================================
+
+SMESH_ComputeErrorPtr
+NETGENPlugin_Mesher::readErrors(const vector<const SMDS_MeshNode* >& nodeVec)
+{
+  SMESH_ComputeErrorPtr err = SMESH_ComputeError::New
+    (COMPERR_BAD_INPUT_MESH, "some edges multiple times in surface mesh");
+  SMESH_File file("test.out");
+  vector<int> edge(2);
+  const char* badEdgeStr = " multiple times in surface mesh";
+  const int   badEdgeStrLen = strlen( badEdgeStr );
+  while( !file.eof() )
+  {
+    if ( strncmp( file, "Edge ", 5 ) == 0 &&
+         file.getInts( edge ) &&
+         strncmp( file, badEdgeStr, badEdgeStrLen ) == 0 &&
+         edge[0] < nodeVec.size() && edge[1] < nodeVec.size())
+    {
+      err->myBadElements.push_back( new SMDS_MeshEdge( nodeVec[ edge[0]], nodeVec[ edge[1]] ));
+      file += badEdgeStrLen;
+    }
+    else
+    {
+      ++file;
+    }
+  }
+  return err;
 }
 
 //================================================================================

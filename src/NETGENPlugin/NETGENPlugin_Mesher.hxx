@@ -31,6 +31,7 @@
 #include "NETGENPlugin_Defs.hxx"
 #include "StdMeshers_FaceSide.hxx"
 #include <map>
+#include <vector>
 
 class SMESH_Mesh;
 class SMESH_Comment;
@@ -97,6 +98,8 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_Mesher
   void defaultParameters();
 
   static void RemoveTmpFiles();
+
+  static SMESH_ComputeErrorPtr readErrors(const std::vector< const SMDS_MeshNode* >& nodeVec);
 
  private:
   SMESH_Mesh*          _mesh;
