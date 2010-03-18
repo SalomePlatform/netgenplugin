@@ -151,158 +151,6 @@ bool NETGENPlugin_NETGEN_3D::CheckHypothesis
   return isOk;
 }
 
-namespace
-{
-  //================================================================================
-  /*!
-   * \brief It correctly initializes netgen library at constructor and
-   *        correctly finishes using netgen library at destructor
-   */
-  //================================================================================
-
-  struct TNetgenLibWrapper
-  {
-    Ng_Mesh* _ngMesh;
-    TNetgenLibWrapper()
-    {
-      Ng_Init();
-      _ngMesh = Ng_NewMesh();
-    }
-    ~TNetgenLibWrapper()
-    {
-      Ng_DeleteMesh( _ngMesh );
-      Ng_Exit();
-      NETGENPlugin_Mesher::RemoveTmpFiles();
-    }
-  };
-
-  //================================================================================
-  /*!
-   * \brief Find mesh faces on non-internal geom faces sharing internal edge
-   *        some nodes of which are to be doubled to make the second border of the "crack"
-   */
-  //================================================================================
-
-  void findBorders( const set<int>&     internalShapeIds,
-                    SMESH_MesherHelper& helper,
-                    TIDSortedElemSet &  borderElems,
-                    set<int> &          borderFaceIds )
-  {
-    SMESH_Mesh*     mesh = helper.GetMesh();
-    SMESHDS_Mesh* meshDS = helper.GetMeshDS();
-
-    // loop on internal geom edges
-    set<int>::const_iterator intShapeId = internalShapeIds.begin();
-    for ( ; intShapeId != internalShapeIds.end(); ++intShapeId )
-    {
-      const TopoDS_Shape& s = meshDS->IndexToShape( *intShapeId );
-      if ( s.ShapeType() != TopAbs_EDGE ) continue;
-
-      // get internal and non-internal geom faces sharing the internal edge <s>
-      int intFace = 0;
-      set<int>::iterator bordFace = borderFaceIds.end();
-      TopTools_ListIteratorOfListOfShape ancIt( mesh->GetAncestors( s ));
-      for ( ; ancIt.More(); ancIt.Next() )
-      {
-        if ( ancIt.Value().ShapeType() != TopAbs_FACE ) continue;
-        int faceID = meshDS->ShapeToIndex( ancIt.Value() );
-        if ( internalShapeIds.count( faceID ))
-          intFace = faceID;
-        else
-          bordFace = borderFaceIds.insert( faceID ).first;
-      }
-      if ( bordFace == borderFaceIds.end() || !intFace ) continue;
-
-      // get all links of mesh faces on internal geom face sharing nodes on edge <s>
-      set< SMESH_OrientedLink > links; //!< links of faces on internal geom face
-      TIDSortedElemSet suspectFaces;   //!< mesh faces on border geom faces
-      SMESHDS_SubMesh* intFaceSM = meshDS->MeshElements( intFace );
-      if ( !intFaceSM || intFaceSM->NbElements() == 0 ) continue;
-      SMESH_subMeshIteratorPtr smIt = mesh->GetSubMesh( s )->getDependsOnIterator(true,true);
-      while ( smIt->more() )
-      {
-        SMESHDS_SubMesh* sm = smIt->next()->GetSubMeshDS();
-        if ( !sm ) continue;
-        SMDS_NodeIteratorPtr nIt = sm->GetNodes();
-        while ( nIt->more() )
-        {
-          const SMDS_MeshNode* nOnEdge = nIt->next();
-          SMDS_ElemIteratorPtr fIt = nOnEdge->GetInverseElementIterator(SMDSAbs_Face);
-          while ( fIt->more() )
-          {
-            const SMDS_MeshElement* f = fIt->next();
-            if ( intFaceSM->Contains( f ))
-            {
-              int nbNodes = f->NbNodes() / ( f->IsQuadratic() ? 2 : 1 );
-              for ( int i = 0; i < nbNodes; ++i )
-                links.insert( SMESH_OrientedLink( f->GetNode(i), f->GetNode((i+1)%nbNodes)));
-            }
-            else
-            {
-              suspectFaces.insert( f );
-            }
-          }
-        }
-      }
-      // <suspectFaces> having link with same orientation as mesh faces on
-      // the internal geom face are <borderElems>.
-      // Some of them have only one node on edge s, we collect them to decide
-      // later by links of found <borderElems>
-      TIDSortedElemSet posponedFaces;
-      set< SMESH_OrientedLink > borderLinks;
-      TIDSortedElemSet::iterator fIt = suspectFaces.begin();
-      for ( ; fIt != suspectFaces.end(); ++fIt )
-      {
-        const SMDS_MeshElement* f = *fIt;
-        bool linkFound = false, isBorder = false;
-        list< SMESH_OrientedLink > faceLinks;
-        int nbNodes = f->NbNodes() / ( f->IsQuadratic() ? 2 : 1 );
-        for ( int i = 0; i < nbNodes; ++i )
-        {
-          SMESH_OrientedLink link( f->GetNode(i), f->GetNode((i+1)%nbNodes));
-          faceLinks.push_back( link );
-          if ( !linkFound )
-          {
-            set< SMESH_OrientedLink >::iterator foundLink = links.find( link );
-            if ( foundLink != links.end() )
-            {
-              linkFound= true;
-              isBorder = ( foundLink->_reversed == link._reversed );
-              if ( !isBorder ) break;
-            }
-          }
-        }
-        if ( isBorder )
-        {
-          borderElems.insert( f );
-          borderLinks.insert( faceLinks.begin(), faceLinks.end() );
-        }
-        else if ( !linkFound )
-        {
-          posponedFaces.insert( f );
-        }
-      }
-      // decide on posponedFaces
-      for ( fIt = posponedFaces.begin(); fIt != posponedFaces.end(); ++fIt )
-      {
-        const SMDS_MeshElement* f = *fIt;
-        int nbNodes = f->NbNodes() / ( f->IsQuadratic() ? 2 : 1 );
-        for ( int i = 0; i < nbNodes; ++i )
-        {
-          SMESH_OrientedLink link( f->GetNode(i), f->GetNode((i+1)%nbNodes));
-          set< SMESH_OrientedLink >::iterator foundLink = borderLinks.find( link );
-          if ( foundLink != borderLinks.end() )
-          {
-            if ( foundLink->_reversed != link._reversed )
-              borderElems.insert( f );
-            break;
-          }
-        }
-      }
-    }
-  }
-}
-
 //=============================================================================
 /*!
  *Here we are going to use the NETGEN mesher
@@ -328,7 +176,7 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
   int Netgen_triangle[3];
   int Netgen_tetrahedron[4];
 
-  TNetgenLibWrapper ngLib;
+  NETGENPlugin_NetgenLibWrapper ngLib;
   Ng_Mesh * Netgen_mesh = ngLib._ngMesh;
 
   // maps of 1) ordinary nodes and 2) doubled nodes on internal shapes
@@ -342,60 +190,17 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
     SMESH::Controls::Area areaControl;
     SMESH::Controls::TSequenceOfXYZ nodesCoords;
 
-    // --------------------------------------------------------------------
     // Issue 0020676 (StudyFiss_bugNetgen3D.hdf). Pb with internal face.
     // Find internal geom faces, edges and vertices. 
     // Nodes and faces built on the found internal shapes
     // will be doubled in Netgen input to make two borders of the "crack".
-    // --------------------------------------------------------------------
 
-    set<int> internalShapeIds;
-    set<int> borderFaceIds; //!< non-internal geom faces sharing internal edge
+    NETGENPlugin_Internals internals( aMesh, aShape, /*is3D=*/true );
 
-    // mesh faces on <borderFaceIds>, having nodes on internal edge that are
-    // to be replaced by doubled nodes
+    // mesh faces on non-internal geom faces sharing internal edge, whose some nodes
+    // are on internal edge and are to be replaced by doubled nodes
     TIDSortedElemSet borderElems;
-
-    // find "internal" faces and edges
-    TopExp_Explorer exFa(aShape,TopAbs_FACE), exEd, exVe;
-    for ( ; exFa.More(); exFa.Next())
-    {
-      if ( exFa.Current().Orientation() == TopAbs_INTERNAL )
-      {
-        internalShapeIds.insert( meshDS->ShapeToIndex( exFa.Current() ));
-        for ( exEd.Init( exFa.Current(), TopAbs_EDGE ); exEd.More(); exEd.Next())
-          if ( helper.NbAncestors( exEd.Current(), aMesh, TopAbs_FACE ) > 1 )
-            internalShapeIds.insert( meshDS->ShapeToIndex( exEd.Current() ));
-      }
-    }
-    if ( !internalShapeIds.empty() )
-    {
-      // find internal vertices,
-      // we consider vertex internal if it is shared by more than one internal edge
-      TopTools_ListIteratorOfListOfShape ancIt;
-      set<int>::iterator intShapeId = internalShapeIds.begin();
-      for ( ; intShapeId != internalShapeIds.end(); ++intShapeId )
-      {
-        const TopoDS_Shape& s = meshDS->IndexToShape( *intShapeId );
-        if ( s.ShapeType() != TopAbs_EDGE ) continue;
-        for ( exVe.Init( s, TopAbs_VERTEX ); exVe.More(); exVe.Next())
-        {
-          set<int> internalEdges;
-          for ( ancIt.Initialize( aMesh.GetAncestors( exVe.Current() ));
-                ancIt.More(); ancIt.Next() )
-          {
-            if ( ancIt.Value().ShapeType() != TopAbs_EDGE ) continue;
-            int edgeID = meshDS->ShapeToIndex( ancIt.Value() );
-            if ( internalShapeIds.count( edgeID ))
-              internalEdges.insert( edgeID );
-          }
-          if ( internalEdges.size() > 1 )
-            internalShapeIds.insert( meshDS->ShapeToIndex( exVe.Current() ));
-        }
-      }
-      // find border shapes and mesh elements
-      findBorders( internalShapeIds, helper, borderElems, borderFaceIds );
-    }
+    internals.findBorderElements( borderElems );
 
     // ---------------------------------
     // Feed the Netgen with surface mesh
@@ -408,12 +213,12 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
     if ( aMesh.NbQuadrangles() > 0 )
       Adaptor.Compute(aMesh,aShape);
 
-    for ( exFa.ReInit(); exFa.More(); exFa.Next())
+    for ( TopExp_Explorer exFa( aShape, TopAbs_FACE ); exFa.More(); exFa.Next())
     {
       const TopoDS_Shape& aShapeFace = exFa.Current();
       int faceID = meshDS->ShapeToIndex( aShapeFace );
-      bool isInternalFace = internalShapeIds.count( faceID );
-      bool isBorderFace   = borderFaceIds.count( faceID );
+      bool isInternalFace = internals.isInternalShape( faceID );
+      bool isBorderFace   = internals.isBorderFace( faceID );
       bool isRev = false;
       if ( checkReverse && !isInternalFace &&
            helper.NbAncestors(aShapeFace, aMesh, aShape.ShapeType()) > 1 )
@@ -471,7 +276,7 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
                 node = SMESH_Algo::VertexNode( TopoDS::Vertex( vertex ), meshDS );
                 hasDegen = true;
               }
-              bool isDblN = isDblF && internalShapeIds.count( shapeID );
+              bool isDblN = isDblF && internals.isInternalShape( shapeID );
               int& ngID = nodeToNetgenID[isDblN].insert(TN2ID( node, invalid_ID )).first->second;
               if ( ngID == invalid_ID )
               {
@@ -681,7 +486,7 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
   int Netgen_triangle[3];
   int Netgen_tetrahedron[4];
 
-  TNetgenLibWrapper ngLib;
+  NETGENPlugin_NetgenLibWrapper ngLib;
   Ng_Mesh * Netgen_mesh = ngLib._ngMesh;
 
   // set nodes and remember thier netgen IDs

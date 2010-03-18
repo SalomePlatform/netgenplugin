@@ -174,6 +174,7 @@ static TError AddSegmentsToMesh(netgen::Mesh&                    ngMesh,
   // Check wires and count nodes
   // ----------------------------
   int nbNodes = 0;
+  double totalLength = 0;
   for ( int iW = 0; iW < wires.size(); ++iW )
   {
     StdMeshers_FaceSidePtr wire = wires[ iW ];
@@ -187,7 +188,8 @@ static TError AddSegmentsToMesh(netgen::Mesh&                    ngMesh,
         (new SMESH_ComputeError(COMPERR_BAD_INPUT_MESH,
                                 SMESH_Comment("Unexpected nb of points on wire ") << iW
                                 << ": " << uvPtVec.size()<<" != "<<wire->NbPoints()));
-    nbNodes += wire->NbPoints(); 
+    nbNodes += wire->NbPoints();
+    totalLength += wire->Length();
   }
   nodeVec.reserve( nbNodes );
 
@@ -200,7 +202,8 @@ static TError AddSegmentsToMesh(netgen::Mesh&                    ngMesh,
 //   ngMesh.SetLocalH (bb.PMin(), bb.PMax(), 0.5); // set grading
 
   const int faceID = 1, solidID = 0;
-  ngMesh.AddFaceDescriptor (FaceDescriptor(faceID, solidID, solidID, 0));
+  if ( ngMesh.GetNFD() < 1 )
+    ngMesh.AddFaceDescriptor (FaceDescriptor(faceID, solidID, solidID, 0));
 
   for ( int iW = 0; iW < wires.size(); ++iW )
   {
@@ -231,8 +234,8 @@ static TError AddSegmentsToMesh(netgen::Mesh&                    ngMesh,
       Segment seg;
 
 #ifdef NETGEN_NEW
-      seg.pnums[0] = ngMesh.GetNP();          // ng node id
-      seg.pnums[1] = seg.pnums[0] + 1;              // ng node id
+      seg.pnums[0] = ngMesh.GetNP();    // ng node id
+      seg.pnums[1] = seg.pnums[0] + 1;  // ng node id
 #else
       seg.p1 = ngMesh.GetNP();          // ng node id
       seg.p2 = seg.p1 + 1;              // ng node id
@@ -313,7 +316,71 @@ static TError AddSegmentsToMesh(netgen::Mesh&                    ngMesh,
 
   } // loop on wires of a face
 
-  ngMesh.CalcSurfacesOfNode();  
+  // add a segment instead of internal vertex
+  // const TopoDS_Face& face = TopoDS::Face( helper.GetSubShape() );
+//   for ( TopoDS_Iterator sh (face); sh.More(); sh.Next())
+//   {
+//     if ( sh.Value().ShapeType() != TopAbs_VERTEX ) continue;
+
+//     const TopoDS_Vertex V = TopoDS::Vertex( sh.Value() );
+//     SMESH_subMesh* sm = helper.GetMesh()->GetSubMesh( V );
+//     sm->ComputeStateEngine( SMESH_subMesh::COMPUTE );
+//     const SMDS_MeshNode * nV = SMESH_Algo::VertexNode( V, helper.GetMeshDS() );
+//     if ( !nV ) continue;
+//     double segLen = totalLength / ngMesh.GetNSeg() / 2;
+//     bool uvOK = false;
+//     gp_XY uvV = helper.GetNodeUV( face, nV, 0, &uvOK );
+//     if ( !uvOK ) helper.CheckNodeUV( face, nV, uvV, BRep_Tool::Tolerance( V ),/*force=*/true);
+//     gp_XY uvP( uvV.X() + segLen, uvV.Y() );
+//     TopLoc_Location loc;
+//     Handle(Geom_Surface) surf = BRep_Tool::Surface(face,loc);
+//     gp_Pnt P = surf->Value( uvP.X(), uvP.Y() ).Transformed( loc );
+
+//     MeshPoint mpV( Point<3> (nV->X(), nV->Y(), nV->Z()) );
+//     MeshPoint mpP( Point<3> (P.X(), P.Y(), P.Z()));
+
+//     ngMesh.AddPoint ( mpV, 1, EDGEPOINT );
+//     ngMesh.AddPoint ( mpP, 1, EDGEPOINT );
+
+//     nodeVec.push_back( nV );
+
+//     // Add the segment
+//     Segment seg;
+
+// #ifdef NETGEN_NEW
+//     seg.pnums[0] = ngMesh.GetNP()-1;  // ng node id
+//     seg.pnums[1] = ngMesh.GetNP();  // ng node id
+// #else
+//     seg.p1 = ngMesh.GetNP()-1;  // ng node id
+//     seg.p2 = ngMesh.GetNP(); // ng node id
+// #endif
+//     seg.edgenr = ngMesh.GetNSeg() + 1;// segment id
+//     seg.si = faceID;                  // = geom.fmap.FindIndex (face);
+
+//     seg.epgeominfo[ 0 ].dist = 0; // param on curve
+//     seg.epgeominfo[ 0 ].u    = uvV.X();
+//     seg.epgeominfo[ 0 ].v    = uvV.Y();
+//     seg.epgeominfo[ 1 ].dist = segLen; // param on curve
+//     seg.epgeominfo[ 1 ].u    = uvP.X();
+//     seg.epgeominfo[ 1 ].v    = uvP.Y();
+
+//     seg.epgeominfo[ 0 ].edgenr = 10; //  = geom.emap.FindIndex(edge);
+//     seg.epgeominfo[ 1 ].edgenr = 10; //  = geom.emap.FindIndex(edge);
+
+//     ngMesh.AddSegment (seg);
+
+//     // add reverse segment
+// #ifdef NETGEN_NEW
+//     swap (seg.pnums[0], seg.pnums[1]);
+// #else
+//     swap (seg.p1, seg.p2);
+// #endif
+//     swap( seg.epgeominfo[0], seg.epgeominfo[1] );
+//     seg.edgenr = ngMesh.GetNSeg() + 1; // segment id
+//     ngMesh.AddSegment (seg);
+//   }
+
+  ngMesh.CalcSurfacesOfNode();
 
   return TError();
 }
@@ -356,8 +423,8 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
   // Make input netgen mesh
   // -------------------------
 
-  Ng_Init();
-  netgen::Mesh * ngMesh = new netgen::Mesh ();
+  NETGENPlugin_NetgenLibWrapper ngLib;
+  netgen::Mesh * ngMesh = (netgen::Mesh*) ngLib._ngMesh;
 
   netgen::OCCGeometry occgeo;
   NETGENPlugin_Mesher::PrepareOCCgeometry( occgeo, F, aMesh );
@@ -366,10 +433,8 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
 
   vector< const SMDS_MeshNode* > nodeVec;
   problem = AddSegmentsToMesh( *ngMesh, occgeo, wires, helper, nodeVec );
-  if ( problem && !problem->IsOK() ) {
-    delete ngMesh; Ng_Exit();
+  if ( problem && !problem->IsOK() )
     return error( problem );
-  }
 
   // --------------------
   // compute edge length
@@ -479,11 +544,6 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
     else
       face = helper.AddFace(nodes[0],nodes[1],nodes[2],nodes[3]);
   }
-
-  Ng_DeleteMesh((nglib::Ng_Mesh*)ngMesh);
-  Ng_Exit();
-
-  NETGENPlugin_Mesher::RemoveTmpFiles();
 
   return !err;
 }

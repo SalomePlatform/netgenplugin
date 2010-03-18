@@ -62,9 +62,6 @@
 #include <TopoDS.hxx>
 
 // Netgen include files
-namespace nglib {
-#include <nglib.h>
-}
 #define OCCGEOMETRY
 #include <occgeom.hpp>
 #include <meshing.hpp>
@@ -74,13 +71,18 @@ namespace netgen {
   extern MeshingParameters mparam;
 }
 
+using namespace nglib;
 using namespace std;
 
 #ifdef _DEBUG_
-#define nodeVec_ACCESS(index) nodeVec.at((index))
+#define nodeVec_ACCESS(index) (SMDS_MeshNode*) nodeVec.at((index))
 #else
-#define nodeVec_ACCESS(index) nodeVec[index]
+#define nodeVec_ACCESS(index) (SMDS_MeshNode*) nodeVec[index]
 #endif
+
+// dump elements added to ng mesh
+//#define DUMP_SEGMENTS
+//#define DUMP_TRIANGLES
 
 //=============================================================================
 /*!
@@ -199,11 +201,11 @@ Standard_Boolean IsEqual(const Link& aLink1, const Link& aLink2)
  */
 //================================================================================
 
-void NETGENPlugin_Mesher::PrepareOCCgeometry(netgen::OCCGeometry&          occgeo,
-                                             const TopoDS_Shape&           shape,
-                                             SMESH_Mesh&                   mesh,
-                                             list< SMESH_subMesh* > *      meshedSM,
-                                             TopTools_DataMapOfShapeShape* internalE2F)
+void NETGENPlugin_Mesher::PrepareOCCgeometry(netgen::OCCGeometry&     occgeo,
+                                             const TopoDS_Shape&      shape,
+                                             SMESH_Mesh&              mesh,
+                                             list< SMESH_subMesh* > * meshedSM,
+                                             NETGENPlugin_Internals*  intern)
 {
   BRepTools::Clean (shape);
   try {
@@ -226,23 +228,6 @@ void NETGENPlugin_Mesher::PrepareOCCgeometry(netgen::OCCGeometry&          occge
 
   occgeo.shape = shape;
   occgeo.changed = 1;
-  //occgeo.BuildFMap();
-
-  TopTools_MapOfShape internalV;
-  if ( internalE2F )
-  {
-    for ( TopExp_Explorer f( shape, TopAbs_FACE ); f.More(); f.Next() )
-      for ( TopExp_Explorer e( f.Current(), TopAbs_EDGE ); e.More(); e.Next() )
-        if ( e.Current().Orientation() == TopAbs_INTERNAL )
-        {
-          SMESH_subMesh* sm = mesh.GetSubMesh( e.Current() );
-          if ( !meshedSM || sm->IsEmpty() ) {
-            internalE2F->Bind( e.Current(), f.Current() );
-            for ( TopoDS_Iterator v(e.Current()); v.More(); v.Next() )
-              internalV.Add( v.Value() );
-          }
-        }
-  }
 
   // fill maps of shapes of occgeo with not yet meshed subshapes
 
@@ -265,24 +250,29 @@ void NETGENPlugin_Mesher::PrepareOCCgeometry(netgen::OCCGeometry&          occge
     // to find a right orientation of subshapes (PAL20462)
     TopTools_IndexedMapOfShape subShapes;
     TopExp::MapShapes(root->GetSubShape(), subShapes);
-    while ( smIt->more() ) {
+    while ( smIt->more() )
+    {
       SMESH_subMesh* sm = smIt->next();
-      if ( !meshedSM || sm->IsEmpty() ) {
-        TopoDS_Shape shape = sm->GetSubShape();
+      TopoDS_Shape shape = sm->GetSubShape();
+      if ( intern && intern->isShapeToPrecompute( shape ))
+        continue;
+      if ( !meshedSM || sm->IsEmpty() )
+      {
         if ( shape.ShapeType() != TopAbs_VERTEX )
           shape = subShapes( subShapes.FindIndex( shape ));// shape -> index -> oriented shape
+        if ( shape.Orientation() >= TopAbs_INTERNAL )
+          shape.Orientation( TopAbs_FORWARD ); // isuue 0020676
         switch ( shape.ShapeType() ) {
         case TopAbs_FACE  : occgeo.fmap.Add( shape ); break;
-        case TopAbs_EDGE  :
-          if ( !internalE2F || !internalE2F->IsBound( shape )) occgeo.emap.Add( shape ); break;
-        case TopAbs_VERTEX:
-          if ( !internalV.Contains( shape )) occgeo.vmap.Add( shape ); break;
+        case TopAbs_EDGE  : occgeo.emap.Add( shape ); break;
+        case TopAbs_VERTEX: occgeo.vmap.Add( shape ); break;
         case TopAbs_SOLID :occgeo.somap.Add( shape ); break;
         default:;
         }
       }
       // collect submeshes of meshed shapes
-      else if (meshedSM) {
+      else if (meshedSM)
+      {
         meshedSM->push_back( sm );
       }
     }
@@ -305,17 +295,23 @@ typedef map< const SMDS_MeshNode*, int > TNode2IdMap;
 
 static int ngNodeId( const SMDS_MeshNode* node,
                      netgen::Mesh&        ngMesh,
-                     TNode2IdMap&         nodeNgIdMap)
+                     TNode2IdMap*         nodeNgIdMap,
+                     int                  isDoubledNode=0)
 {
   int newNgId = ngMesh.GetNP() + 1;
 
-  pair< TNode2IdMap::iterator, bool > it_isNew = nodeNgIdMap.insert( make_pair( node, newNgId ));
+  TNode2IdMap::iterator node_id =
+    nodeNgIdMap[isDoubledNode].insert( make_pair( node, newNgId )).first;
 
-  if ( it_isNew.second ) {
+  if ( node_id->second == newNgId)
+  {
+#if defined(DUMP_SEGMENTS) || defined(DUMP_TRIANGLES)
+    cout << "Ng " << newNgId << " - " << node;
+#endif
     netgen::MeshPoint p( netgen::Point<3> (node->X(), node->Y(), node->Z()) );
     ngMesh.AddPoint( p );
   }
-  return it_isNew.first->second;
+  return node_id->second;
 }
 
 //================================================================================
@@ -326,17 +322,24 @@ static int ngNodeId( const SMDS_MeshNode* node,
 
 bool NETGENPlugin_Mesher::fillNgMesh(netgen::OCCGeometry&           occgeom,
                                      netgen::Mesh&                  ngMesh,
-                                     vector<SMDS_MeshNode*>&        nodeVec,
-                                     const list< SMESH_subMesh* > & meshedSM)
+                                     vector<const SMDS_MeshNode*>&  nodeVec,
+                                     const list< SMESH_subMesh* > & meshedSM,
+                                     NETGENPlugin_Internals*        internalShapes)
 {
-  TNode2IdMap nodeNgIdMap;
+  TNode2IdMap nodeNgIdMap[2]; // the second map stores nodes doubled to make the crack
+  if ( !nodeVec.empty() )
+    for ( int i = 1; i < nodeVec.size(); ++i )
+      nodeNgIdMap[0].insert( make_pair( nodeVec[i], i ));
+
+  TIDSortedElemSet borderElems;
+  if ( internalShapes )
+    internalShapes->findBorderElements(borderElems);
 
   TopTools_MapOfShape visitedShapes;
 
   SMESH_MesherHelper helper (*_mesh);
 
   int faceID = occgeom.fmap.Extent();
-  _faceDescriptors.clear();
 
   list< SMESH_subMesh* >::const_iterator smIt, smEnd = meshedSM.end();
   for ( smIt = meshedSM.begin(); smIt != smEnd; ++smIt )
@@ -346,23 +349,25 @@ bool NETGENPlugin_Mesher::fillNgMesh(netgen::OCCGeometry&           occgeom,
       continue;
 
     SMESHDS_SubMesh * smDS = sm->GetSubMeshDS();
+    if ( !smDS ) continue;
 
     switch ( sm->GetSubShape().ShapeType() )
     {
     case TopAbs_EDGE: { // EDGE
       // ----------------------
-      const TopoDS_Edge& geomEdge  = TopoDS::Edge( sm->GetSubShape() );
+      TopoDS_Edge geomEdge  = TopoDS::Edge( sm->GetSubShape() );
+      if ( geomEdge.Orientation() >= TopAbs_INTERNAL )
+        geomEdge.Orientation( TopAbs_FORWARD ); // isuue 0020676
 
       // Add ng segments for each not meshed face the edge bounds
       TopTools_MapOfShape visitedAncestors;
-      const TopTools_ListOfShape& ancestors = _mesh->GetAncestors( geomEdge );
-      TopTools_ListIteratorOfListOfShape ancestorIt ( ancestors );
-      for ( ; ancestorIt.More(); ancestorIt.Next() )
+      PShapeIteratorPtr fIt = helper.GetAncestors( geomEdge, *sm->GetFather(), TopAbs_FACE );
+      while ( const TopoDS_Shape * anc = fIt->next() )
       {
-        const TopoDS_Shape & ans = ancestorIt.Value();
-        if ( ans.ShapeType() != TopAbs_FACE || !visitedAncestors.Add( ans ))
-          continue;
-        const TopoDS_Face& face = TopoDS::Face( ans );
+        if ( !visitedAncestors.Add( *anc )) continue;
+        TopoDS_Face face = TopoDS::Face( *anc );
+        if ( face.Orientation() >= TopAbs_INTERNAL )
+          face.Orientation( TopAbs_FORWARD ); // isuue 0020676
 
         int faceID = occgeom.fmap.FindIndex( face );
         if ( faceID < 1 )
@@ -416,7 +421,18 @@ bool NETGENPlugin_Mesher::fillNgMesh(netgen::OCCGeometry&           occgeom,
           seg.si = faceID;                   // = geom.fmap.FindIndex (face);
           seg.edgenr = ngMesh.GetNSeg() + 1; // segment id
           ngMesh.AddSegment (seg);
-
+#ifdef DUMP_SEGMENTS
+          cout << "Segment: " << seg.edgenr << " on SMESH face " << helper.GetMeshDS()->ShapeToIndex( face ) << endl
+               << "\tface index: " << seg.si << endl
+               << "\tp1: " << seg.p1 << endl
+               << "\tp2: " << seg.p2 << endl
+               << "\tp0 param: " << seg.epgeominfo[ 0 ].dist << endl
+               << "\tp0 uv: " << seg.epgeominfo[ 0 ].u <<", "<< seg.epgeominfo[ 0 ].v << endl
+               << "\tp0 edge: " << seg.epgeominfo[ 0 ].edgenr << endl
+               << "\tp1 param: " << seg.epgeominfo[ 1 ].dist << endl
+               << "\tp1 uv: " << seg.epgeominfo[ 1 ].u <<", "<< seg.epgeominfo[ 1 ].v << endl
+               << "\tp1 edge: " << seg.epgeominfo[ 1 ].edgenr << endl;
+#endif
           if ( isSeam )
           {
             if ( helper.GetPeriodicIndex() == 1 ) {
@@ -447,6 +463,9 @@ bool NETGENPlugin_Mesher::fillNgMesh(netgen::OCCGeometry&           occgeom,
             swap( seg.epgeominfo[0], seg.epgeominfo[1] );
             seg.edgenr = ngMesh.GetNSeg() + 1; // segment id
             ngMesh.AddSegment (seg);
+#ifdef DUMP_SEGMENTS
+            cout << "Segment: " << seg.edgenr << endl << "\t is REVERSE of the previous" << endl;
+#endif
           }
         }
       } // loop on geomEdge ancestors
@@ -461,16 +480,12 @@ bool NETGENPlugin_Mesher::fillNgMesh(netgen::OCCGeometry&           occgeom,
 
       // Find solids the geomFace bounds
       int solidID1 = 0, solidID2 = 0;
-      const TopTools_ListOfShape& ancestors = _mesh->GetAncestors( geomFace );
-      TopTools_ListIteratorOfListOfShape ancestorIt ( ancestors );
-      for ( ; ancestorIt.More(); ancestorIt.Next() )
+      PShapeIteratorPtr solidIt = helper.GetAncestors( geomFace, *sm->GetFather(), TopAbs_SOLID);
+      while ( const TopoDS_Shape * solid = solidIt->next() )
       {
-        const TopoDS_Shape & solid = ancestorIt.Value();
-        if ( solid.ShapeType() == TopAbs_SOLID  ) {
-          int id = occgeom.somap.FindIndex ( solid );
-          if ( solidID1 && id != solidID1 ) solidID2 = id;
-          else                              solidID1 = id;
-        }
+        int id = occgeom.somap.FindIndex ( *solid );
+        if ( solidID1 && id != solidID1 ) solidID2 = id;
+        else                              solidID1 = id;
       }
       faceID++;
       _faceDescriptors[ faceID ].first  = solidID1;
@@ -480,59 +495,88 @@ bool NETGENPlugin_Mesher::fillNgMesh(netgen::OCCGeometry&           occgeom,
       bool reverse = false;
       if ( solidID1 ) {
         TopoDS_Shape solid = occgeom.somap( solidID1 );
-        for ( TopExp_Explorer f( solid, TopAbs_FACE ); f.More(); f.Next() ) {
-          if ( geomFace.IsSame( f.Current() )) {
-            reverse = SMESH_Algo::IsReversedSubMesh( TopoDS::Face( f.Current()), helper.GetMeshDS() );
-            break;
-          }
-        }
+        TopAbs_Orientation faceOriInSolid = helper.GetSubShapeOri( solid, geomFace );
+        if ( faceOriInSolid >= 0 )
+          reverse = SMESH_Algo::IsReversedSubMesh
+            ( TopoDS::Face( geomFace.Oriented( faceOriInSolid )), helper.GetMeshDS() );
       }
 
       // Add surface elements
-      SMDS_ElemIteratorPtr faces = smDS->GetElements();
-      while ( faces->more() ) {
 
+      netgen::Element2d tri(3);
+      tri.SetIndex ( faceID );
+
+      // triangle on internal or "border" face having doubled nodes
+      netgen::Element2d triDbl(3);
+      triDbl.SetIndex ( faceID );
+      bool isInternalFace = ( internalShapes && geomFace.Orientation() == TopAbs_INTERNAL );
+      bool isBorderFace   = ( internalShapes && internalShapes->isBorderFace( sm->GetId() ));
+
+#ifdef DUMP_TRIANGLES
+      cout << "SMESH face " << helper.GetMeshDS()->ShapeToIndex( geomFace )
+           << " internal="<<isInternalFace<< " border="<<isBorderFace << endl;
+#endif
+      SMDS_ElemIteratorPtr faces = smDS->GetElements();
+      while ( faces->more() )
+      {
         const SMDS_MeshElement* f = faces->next();
-        if ( f->NbNodes() % 3 != 0 ) { // not triangle
-          for ( ancestorIt.Initialize(ancestors); ancestorIt.More(); ancestorIt.Next() )
-            if ( ancestorIt.Value().ShapeType() == TopAbs_SOLID  ) {
-              sm = _mesh->GetSubMesh( ancestorIt.Value() );
-              break;
-            }
+        if ( f->NbNodes() % 3 != 0 ) // not triangle
+        {
+          PShapeIteratorPtr solidIt=helper.GetAncestors(geomFace,*sm->GetFather(),TopAbs_SOLID);
+          if ( const TopoDS_Shape * solid = solidIt->next() )
+            sm = _mesh->GetSubMesh( *solid );
           SMESH_ComputeErrorPtr& smError = sm->GetComputeError();
           smError.reset( new SMESH_ComputeError(COMPERR_BAD_INPUT_MESH,"Not triangle submesh"));
           smError->myBadElements.push_back( f );
           return false;
         }
+        bool makeDbl = ( isInternalFace || ( isBorderFace && borderElems.count( f )));
 
-        netgen::Element2d tri(3);
-        tri.SetIndex ( faceID );
-
-        for ( int i = 0; i < 3; ++i ) {
+        for ( int i = 0; i < 3; ++i )
+        {
           const SMDS_MeshNode* node = f->GetNode( i ), * inFaceNode=0;
-          if ( helper.IsSeamShape( node->GetPosition()->GetShapeId() ))
+
+          // get node UV on face
+          int shapeID = node->GetPosition()->GetShapeId();
+          if ( helper.IsSeamShape( shapeID ))
             if ( helper.IsSeamShape( f->GetNodeWrap( i+1 )->GetPosition()->GetShapeId() ))
               inFaceNode = f->GetNodeWrap( i-1 );
             else 
               inFaceNode = f->GetNodeWrap( i+1 );
-
           gp_XY uv = helper.GetNodeUV( geomFace, node, inFaceNode );
-          if ( reverse ) {
-            tri.GeomInfoPi(3-i).u = uv.X();
-            tri.GeomInfoPi(3-i).v = uv.Y();
-            tri.PNum      (3-i) = ngNodeId( node, ngMesh, nodeNgIdMap );
-          } else {
-            tri.GeomInfoPi(i+1).u = uv.X();
-            tri.GeomInfoPi(i+1).v = uv.Y();
-            tri.PNum      (i+1) = ngNodeId( node, ngMesh, nodeNgIdMap );
+
+          int ind = reverse ? 3-i : i+1;
+          tri.GeomInfoPi(ind).u = uv.X();
+          tri.GeomInfoPi(ind).v = uv.Y();
+          tri.PNum      (ind) = ngNodeId( node, ngMesh, nodeNgIdMap );
+
+          if ( makeDbl )
+          {
+            int ngID = internalShapes->isInternalShape( shapeID ) ? ngNodeId( node, ngMesh, nodeNgIdMap, makeDbl ) : int ( tri.PNum( ind ));
+            if ( isBorderFace )
+            {
+              tri.PNum( ind ) = ngID;
+            }
+            else
+            {
+              triDbl.GeomInfoPi(4-ind) = tri.GeomInfoPi(ind);
+              triDbl.PNum      (4-ind) = ngID;
+            }
           }
         }
 
         ngMesh.AddSurfaceElement (tri);
 
+        if ( isInternalFace )
+          ngMesh.AddSurfaceElement (triDbl);
+#ifdef DUMP_TRIANGLES
+        cout << tri << endl;
+        if ( isInternalFace )
+          cout << triDbl << endl;
+#endif
       }
       break;
-    } //
+    } // case TopAbs_FACE
 
     case TopAbs_VERTEX: { // VERTEX
       // --------------------------
@@ -547,10 +591,12 @@ bool NETGENPlugin_Mesher::fillNgMesh(netgen::OCCGeometry&           occgeom,
 
   // fill nodeVec
   nodeVec.resize( ngMesh.GetNP() + 1 );
-  TNode2IdMap::iterator node_NgId, nodeNgIdEnd = nodeNgIdMap.end();
-  for ( node_NgId = nodeNgIdMap.begin(); node_NgId != nodeNgIdEnd; ++node_NgId)
-    nodeVec[ node_NgId->second ] = (SMDS_MeshNode*) node_NgId->first;
-
+  for ( int isDbl = 0; isDbl < 2; ++isDbl )
+  {
+    TNode2IdMap::iterator node_NgId, nodeNgIdEnd = nodeNgIdMap[isDbl].end();
+    for ( node_NgId = nodeNgIdMap[isDbl].begin(); node_NgId != nodeNgIdEnd; ++node_NgId)
+      nodeVec[ node_NgId->second ] = (SMDS_MeshNode*) node_NgId->first;
+  }
   return true;
 }
 
@@ -570,7 +616,7 @@ int NETGENPlugin_Mesher::FillSMesh(const netgen::OCCGeometry&          occgeo,
                                    const netgen::Mesh&                 ngMesh,
                                    const NETGENPlugin_ngMeshInfo&      initState,
                                    SMESH_Mesh&                         sMesh,
-                                   std::vector<SMDS_MeshNode*>&        nodeVec,
+                                   std::vector<const SMDS_MeshNode*>&  nodeVec,
                                    SMESH_Comment&                      comment)
 {
   int nbNod = ngMesh.GetNP();
@@ -626,7 +672,7 @@ int NETGENPlugin_Mesher::FillSMesh(const netgen::OCCGeometry&          occgeo,
         pindMap.Add(i);
       }
     }
-    nodeVec_ACCESS(i) = node;
+    nodeVec[i] = node;
   }
 
   // create mesh segments along geometric edges
@@ -696,7 +742,7 @@ int NETGENPlugin_Mesher::FillSMesh(const netgen::OCCGeometry&          occgeo,
 
   // create mesh faces along geometric faces
   int nbInitFac = initState._nbFaces;
-  for (i = nbInitFac+1; i <= nbFac/* && isOK*/; ++i )
+  for (i = nbInitFac+1; i <= nbFac; ++i )
   {
     const netgen::Element2d& elem = ngMesh.SurfaceElement(i);
     int aGeomFaceInd = elem.GetIndex();
@@ -807,6 +853,8 @@ int NETGENPlugin_Mesher::FillSMesh(const netgen::OCCGeometry&          occgeo,
 
 bool NETGENPlugin_Mesher::Compute()
 {
+  NETGENPlugin_NetgenLibWrapper ngLib;
+
   netgen::MeshingParameters& mparams = netgen::mparam;
   MESSAGE("Compute with:\n"
           " max size = " << mparams.maxh << "\n"
@@ -818,7 +866,7 @@ bool NETGENPlugin_Mesher::Compute()
           " quad allowed = " << mparams.quad);
 
   SMESH_ComputeErrorPtr error = SMESH_ComputeError::New();
-  nglib::Ng_Init();
+  
 
   // -------------------------
   // Prepare OCC geometry
@@ -826,8 +874,8 @@ bool NETGENPlugin_Mesher::Compute()
 
   netgen::OCCGeometry occgeo;
   list< SMESH_subMesh* > meshedSM;
-  TopTools_DataMapOfShapeShape internalEdge2Face;
-  PrepareOCCgeometry( occgeo, _shape, *_mesh, &meshedSM, &internalEdge2Face );
+  NETGENPlugin_Internals internals( *_mesh, _shape, _isVolume );
+  PrepareOCCgeometry( occgeo, _shape, *_mesh, &meshedSM, &internals );
 
   // -------------------------
   // Generate the mesh
@@ -840,13 +888,13 @@ bool NETGENPlugin_Mesher::Compute()
   int err = 0;
 
   // vector of nodes in which node index == netgen ID
-  vector< SMDS_MeshNode* > nodeVec;
+  vector< const SMDS_MeshNode* > nodeVec;
   try
   {
     // ----------------
     // compute 1D mesh
     // ----------------
-    // pass 1D simple parameters to NETGEN
+    // Pass 1D simple parameters to NETGEN
     if ( _simpleHyp ) {
       if ( int nbSeg = _simpleHyp->GetNumberOfSegments() ) {
         // nb of segments
@@ -860,53 +908,49 @@ bool NETGENPlugin_Mesher::Compute()
         mparams.maxh = _simpleHyp->GetLocalLength();
       }
     }
-    // let netgen create ngMesh and calculate element size on not meshed shapes
+    // Let netgen create ngMesh and calculate element size on not meshed shapes
     char *optstr = 0;
     int startWith = netgen::MESHCONST_ANALYSE;
     int endWith   = netgen::MESHCONST_ANALYSE;
     err = netgen::OCCGenerateMesh(occgeo, ngMesh, startWith, endWith, optstr);
     if (err) comment << "Error in netgen::OCCGenerateMesh() at MESHCONST_ANALYSE step";
+    ngLib.setMesh(( Ng_Mesh*) ngMesh );
 
-    // precompute internal edges (issue 0020676) in order to
+    // Precompute internal edges (issue 0020676) in order to
     // add mesh on them correctly (twice) to netgen mesh
-    if ( !err && !internalEdge2Face.IsEmpty() )
+    if ( !err && internals.hasInternalEdges() )
     {
-      netgen::OCCGeometry intEdgeOccgeo;
-      TopTools_DataMapIteratorOfDataMapOfShapeShape e2f( internalEdge2Face );
-      for ( ; e2f.More(); e2f.Next() )
-      {
-        intEdgeOccgeo.emap.Add( e2f.Key() );
-        intEdgeOccgeo.fmap.Add( e2f.Value() );
-        for ( TopoDS_Iterator v(e2f.Key() ); v.More(); v.Next() )
-          intEdgeOccgeo.vmap.Add( v.Value() );
-        SMESH_subMesh* sm = _mesh->GetSubMesh( e2f.Key() );
-        SMESH_subMeshIteratorPtr smIt = sm->getDependsOnIterator(/*includeSelf=*/true,true);
-        while ( smIt->more() ) meshedSM.push_back( smIt->next() );
-      }
-      intEdgeOccgeo.boundingbox = occgeo.boundingbox;
-      intEdgeOccgeo.shape = occgeo.shape;
+      // load internal shapes into OCCGeometry
+      netgen::OCCGeometry intOccgeo;
+      internals.getInternalEdges( intOccgeo.fmap, intOccgeo.emap, intOccgeo.vmap, meshedSM);
+      intOccgeo.boundingbox = occgeo.boundingbox;
+      intOccgeo.shape = occgeo.shape;
 
+      // let netgen compute element size by the main geometry in temporary mesh
       netgen::Mesh *tmpNgMesh = NULL;
       netgen::OCCGenerateMesh(occgeo, tmpNgMesh, startWith, endWith, optstr);
+      // compute mesh on internal edges
       endWith = netgen::MESHCONST_MESHEDGES;
-      err = netgen::OCCGenerateMesh(intEdgeOccgeo, tmpNgMesh, startWith, endWith, optstr);
+      err = netgen::OCCGenerateMesh(intOccgeo, tmpNgMesh, startWith, endWith, optstr);
       if (err) comment << "Error in netgen::OCCGenerateMesh() at meshing internal edges";
 
-      vector< SMDS_MeshNode* > tmpNodeVec;
-      FillSMesh( intEdgeOccgeo, *tmpNgMesh, initState, *_mesh, tmpNodeVec, comment );
+      // fill SMESH by netgen mesh
+      vector< const SMDS_MeshNode* > tmpNodeVec;
+      FillSMesh( intOccgeo, *tmpNgMesh, initState, *_mesh, tmpNodeVec, comment );
       err = ( !comment.empty() );
 
       nglib::Ng_DeleteMesh((nglib::Ng_Mesh*)tmpNgMesh);
     }
 
-    // fill ngMesh with nodes and elements of computed submeshes
+    // Fill ngMesh with nodes and elements of computed submeshes
     if ( !err )
     {
+      _faceDescriptors.clear();
       err = ! fillNgMesh(occgeo, *ngMesh, nodeVec, meshedSM);
     }
     initState = NETGENPlugin_ngMeshInfo(ngMesh);
 
-    // compute mesh
+    // Compute 1d mesh
     if (!err)
     {
       startWith = endWith = netgen::MESHCONST_MESHEDGES;
@@ -918,7 +962,7 @@ bool NETGENPlugin_Mesher::Compute()
     // ---------------------
     if (!err)
     {
-      // pass 2D simple parameters to NETGEN
+      // Pass 2D simple parameters to NETGEN
       if ( _simpleHyp ) {
         if ( double area = _simpleHyp->GetMaxElementArea() ) {
           // face area
@@ -927,20 +971,20 @@ bool NETGENPlugin_Mesher::Compute()
         }
         else {
           // length from edges
-          double length = 0;
-          TopTools_MapOfShape tmpMap;
-          for ( TopExp_Explorer exp( _shape, TopAbs_EDGE ); exp.More(); exp.Next() )
-            if( tmpMap.Add(exp.Current()) )
-              length += SMESH_Algo::EdgeLength( TopoDS::Edge( exp.Current() ));
-
           if ( ngMesh->GetNSeg() ) {
+            double edgeLength = 0;
+            TopTools_MapOfShape visitedEdges;
+            for ( TopExp_Explorer exp( _shape, TopAbs_EDGE ); exp.More(); exp.Next() )
+              if( visitedEdges.Add(exp.Current()) )
+                edgeLength += SMESH_Algo::EdgeLength( TopoDS::Edge( exp.Current() ));
             // we have to multiply length by 2 since for each TopoDS_Edge there
             // are double set of NETGEN edges or, in other words, we have to
-            // divide ngMesh->GetNSeg() on 2.
-            mparams.maxh = 2*length / ngMesh->GetNSeg();
+            // divide ngMesh->GetNSeg() by 2.
+            mparams.maxh = 2*edgeLength / ngMesh->GetNSeg();
           }
-          else
+          else {
             mparams.maxh = 1000;
+          }
           mparams.grading = 0.2; // slow size growth
         }
         mparams.maxh = min( mparams.maxh, occgeo.boundingbox.Diam()/2 );
@@ -949,7 +993,56 @@ bool NETGENPlugin_Mesher::Compute()
         bb.Increase (bb.Diam()/20);
         ngMesh->SetLocalH (bb.PMin(), bb.PMax(), mparams.grading);
       }
-      // let netgen compute 2D mesh
+
+      // Precompute internal faces (issue 0020676) in order to
+      // add mesh on them correctly (twice to emulate the crack) to netgen mesh
+      if ( internals.hasInternalFaces() )
+      {
+        // fill SMESH with generated segments
+        FillSMesh( occgeo, *ngMesh, initState, *_mesh, nodeVec, comment );
+
+        // load internal shapes into OCCGeometry
+        netgen::OCCGeometry intOccgeo;
+        list< SMESH_subMesh* > boundarySM;
+        internals.getInternalFaces( intOccgeo.fmap, intOccgeo.emap, meshedSM, boundarySM);
+        intOccgeo.boundingbox = occgeo.boundingbox;
+        intOccgeo.shape = occgeo.shape;
+        intOccgeo.facemeshstatus.SetSize (intOccgeo.fmap.Extent());
+        intOccgeo.facemeshstatus = 0;
+
+        // let netgen compute element size by the main geometry in temporary mesh
+        int start = netgen::MESHCONST_ANALYSE, end = netgen::MESHCONST_ANALYSE;
+        netgen::Mesh *tmpNgMesh = NULL;
+        netgen::OCCGenerateMesh(occgeo, tmpNgMesh, start, end, optstr);
+        // add already computed elements from submeshes of internal faces to tmpNgMesh
+        vector< const SMDS_MeshNode* > tmpNodeVec;
+        fillNgMesh(intOccgeo, *tmpNgMesh, tmpNodeVec, boundarySM);
+        // compute mesh on internal faces
+        NETGENPlugin_ngMeshInfo prevState(tmpNgMesh);
+        start = netgen::MESHCONST_MESHEDGES;
+        end = netgen::MESHCONST_MESHSURFACE;
+        err = netgen::OCCGenerateMesh(intOccgeo, tmpNgMesh, start, end, optstr);
+        if (err) comment << "Error in netgen::OCCGenerateMesh() at meshing internal faces";
+
+        // fill SMESH with computed elements
+        FillSMesh( intOccgeo, *tmpNgMesh, prevState, *_mesh, tmpNodeVec, comment );
+        err = ( !comment.empty() );
+
+        // add elements on internal faces to netgen mesh
+//         occgeo.facemeshstatus.SetSize (occgeo.fmap.Extent() + intOccgeo.fmap.Extent());
+//         occgeo.facemeshstatus = 0;
+//         for ( int i = 1; i <= intOccgeo.fmap.Extent(); ++i )
+//         {
+//           occgeo.fmap.Add(intOccgeo.fmap(i));
+//           occgeo.facemeshstatus[ occgeo.fmap.Extent()-1 ] = intOccgeo.facemeshstatus[i-1];
+//         }
+        err = ! fillNgMesh(occgeo, *ngMesh, nodeVec, meshedSM, &internals);
+        initState = NETGENPlugin_ngMeshInfo(ngMesh);
+
+        nglib::Ng_DeleteMesh((nglib::Ng_Mesh*)tmpNgMesh);
+      }
+
+      // Let netgen compute 2D mesh
       startWith = netgen::MESHCONST_MESHSURFACE;
       endWith = _optimize ? netgen::MESHCONST_OPTSURFACE : netgen::MESHCONST_MESHSURFACE;
       err = netgen::OCCGenerateMesh(occgeo, ngMesh, startWith, endWith, optstr);
@@ -960,7 +1053,7 @@ bool NETGENPlugin_Mesher::Compute()
     // ---------------------
     if (!err && _isVolume)
     {
-      // add ng face descriptors of meshed faces
+      // Add ng face descriptors of meshed faces
       map< int, pair<int,int> >::iterator fId_soIds = _faceDescriptors.begin();
       for ( ; fId_soIds != _faceDescriptors.end(); ++fId_soIds ) {
         int faceID   = fId_soIds->first;
@@ -968,7 +1061,7 @@ bool NETGENPlugin_Mesher::Compute()
         int solidID2 = fId_soIds->second.second;
         ngMesh->AddFaceDescriptor (netgen::FaceDescriptor(faceID, solidID1, solidID2, 0));
       }
-      // pass 3D simple parameters to NETGEN
+      // Pass 3D simple parameters to NETGEN
       const NETGENPlugin_SimpleHypothesis_3D* simple3d =
         dynamic_cast< const NETGENPlugin_SimpleHypothesis_3D* > ( _simpleHyp );
       if ( simple3d ) {
@@ -989,7 +1082,7 @@ bool NETGENPlugin_Mesher::Compute()
         mparams.grading = 0.4;
         ngMesh->CalcLocalH();
       }
-      // let netgen compute 3D mesh
+      // Let netgen compute 3D mesh
       startWith = netgen::MESHCONST_MESHVOLUME;
       endWith = _optimize ? netgen::MESHCONST_OPTVOLUME : netgen::MESHCONST_MESHVOLUME;
       err = netgen::OCCGenerateMesh(occgeo, ngMesh, startWith, endWith, optstr);
@@ -1026,6 +1119,9 @@ bool NETGENPlugin_Mesher::Compute()
   if ( true /*isOK*/ ) // get whatever built
     FillSMesh( occgeo, *ngMesh, initState, *_mesh, nodeVec, comment );
 
+  SMESH_ComputeErrorPtr readErr = readErrors(nodeVec);
+  if ( readErr && !readErr->myBadElements.empty() )
+    error = readErr;
 
   if ( error->IsOK() && ( !isOK || comment.size() > 0 ))
     error->myName = COMPERR_ALGO_FAILED;
@@ -1035,25 +1131,30 @@ bool NETGENPlugin_Mesher::Compute()
   // set bad compute error to subshapes of all failed subshapes shapes
   if ( !error->IsOK() && err )
   {
+    bool pb2D = false;
     for (int i = 1; i <= occgeo.fmap.Extent(); i++) {
       int status = occgeo.facemeshstatus[i-1];
       if (status == 1 ) continue;
+      pb2D = true;
       if ( SMESH_subMesh* sm = _mesh->GetSubMeshContaining( occgeo.fmap( i ))) {
         SMESH_ComputeErrorPtr& smError = sm->GetComputeError();
         if ( !smError || smError->IsOK() ) {
           if ( status == -1 )
-            smError.reset( new SMESH_ComputeError( error->myName, error->myComment ));
+            smError.reset( new SMESH_ComputeError( *error ));
           else
             smError.reset( new SMESH_ComputeError( COMPERR_ALGO_FAILED, "Ignored" ));
         }
       }
     }
+    if ( !pb2D ) // all faces are OK
+      for (int i = 1; i <= occgeo.somap.Extent(); i++)
+        if ( SMESH_subMesh* sm = _mesh->GetSubMeshContaining( occgeo.somap( i )))
+        {
+          SMESH_ComputeErrorPtr& smError = sm->GetComputeError();
+          if ( sm->IsEmpty() && ( !smError || smError->IsOK() ))
+            smError.reset( new SMESH_ComputeError( *error ));
+        }
   }
-
-  nglib::Ng_DeleteMesh((nglib::Ng_Mesh*)ngMesh);
-  nglib::Ng_Exit();
-
-  RemoveTmpFiles();
 
   return error->IsOK();
 }
@@ -1095,12 +1196,13 @@ bool NETGENPlugin_Mesher::Evaluate(MapShapeNbElems& aResMap)
     }
   }
   // let netgen create ngMesh and calculate element size on not meshed shapes
-  nglib::Ng_Init();
+  NETGENPlugin_NetgenLibWrapper ngLib;
   netgen::Mesh *ngMesh = NULL;
   char *optstr = 0;
   int startWith = netgen::MESHCONST_ANALYSE;
   int endWith   = netgen::MESHCONST_MESHEDGES;
   int err = netgen::OCCGenerateMesh(occgeo, ngMesh, startWith, endWith, optstr);
+  ngLib.setMesh(( Ng_Mesh*) ngMesh );
   if (err) {
     if ( SMESH_subMesh* sm = _mesh->GetSubMeshContaining( _shape ))
       sm->GetComputeError().reset( new SMESH_ComputeError( COMPERR_ALGO_FAILED ));
@@ -1157,8 +1259,6 @@ bool NETGENPlugin_Mesher::Evaluate(MapShapeNbElems& aResMap)
     fullNbSeg += aVec[ entity ];
     Edge2NbSeg( Edge2NbSegIt.Key() ) = aVec[ entity ];
   }
-  nglib::Ng_DeleteMesh((nglib::Ng_Mesh*)ngMesh);
-  nglib::Ng_Exit();
 
   // ----------------
   // evaluate 2D 
@@ -1283,7 +1383,7 @@ SMESH_ComputeErrorPtr
 NETGENPlugin_Mesher::readErrors(const vector<const SMDS_MeshNode* >& nodeVec)
 {
   SMESH_ComputeErrorPtr err = SMESH_ComputeError::New
-    (COMPERR_BAD_INPUT_MESH, "some edges multiple times in surface mesh");
+    (COMPERR_BAD_INPUT_MESH, "Some edges multiple times in surface mesh");
   SMESH_File file("test.out");
   vector<int> edge(2);
   const char* badEdgeStr = " multiple times in surface mesh";
@@ -1325,4 +1425,400 @@ NETGENPlugin_ngMeshInfo::NETGENPlugin_ngMeshInfo( netgen::Mesh* ngMesh)
   {
     _nbNodes = _nbSegments = _nbFaces = _nbVolumes = 0;
   }
+}
+
+//================================================================================
+/*!
+ * \brief Find "internal" sub-shapes
+ */
+//================================================================================
+
+NETGENPlugin_Internals::NETGENPlugin_Internals( SMESH_Mesh&         mesh,
+                                                const TopoDS_Shape& shape,
+                                                bool                is3D )
+  : _mesh( mesh ), _is3D( is3D )
+{
+  SMESHDS_Mesh* meshDS = mesh.GetMeshDS();
+
+  TopExp_Explorer f,e;
+  for ( f.Init( shape, TopAbs_FACE ); f.More(); f.Next() )
+  {
+    // find not computed internal edges
+
+    for ( e.Init( f.Current().Oriented(TopAbs_FORWARD), TopAbs_EDGE ); e.More(); e.Next() )
+      if ( e.Current().Orientation() == TopAbs_INTERNAL )
+      {
+        SMESH_subMesh* eSM = mesh.GetSubMesh( e.Current() );
+        if ( eSM->IsEmpty() )
+        {
+          int faceID = meshDS->ShapeToIndex( f.Current() );
+          _ev2face.insert( make_pair( eSM->GetId(), faceID ));
+          for ( TopoDS_Iterator v(e.Current()); v.More(); v.Next() )
+            _ev2face.insert( make_pair( meshDS->ShapeToIndex( v.Value() ), faceID ));
+        }
+      }
+    if ( is3D )
+    {
+      // find internal faces and their subshapes where nodes are to be doubled
+
+      if ( f.Current().Orientation() == TopAbs_INTERNAL )
+      {
+        _intShapes.insert( meshDS->ShapeToIndex( f.Current() ));
+
+        // egdes
+        list< TopoDS_Shape > edges;
+        for ( e.Init( f.Current(), TopAbs_EDGE ); e.More(); e.Next())
+          if ( SMESH_MesherHelper::NbAncestors( e.Current(), mesh, TopAbs_FACE ) > 1 )
+          {
+            _intShapes.insert( meshDS->ShapeToIndex( e.Current() ));
+            edges.push_back( e.Current() );
+            // find border faces
+            PShapeIteratorPtr fIt =
+              SMESH_MesherHelper::GetAncestors( edges.back(),mesh,TopAbs_FACE );
+            while ( const TopoDS_Shape* pFace = fIt->next() )
+              if ( !pFace->IsSame( f.Current() ))
+                _borderFaces.insert( meshDS->ShapeToIndex( *pFace ));
+          }
+        // vertices
+        // we consider vertex internal if it is shared by more than one internal edge
+        list< TopoDS_Shape >::iterator edge = edges.begin();
+        for ( ; edge != edges.end(); ++edge )
+          for ( TopoDS_Iterator v( *edge ); v.More(); v.Next() )
+          {
+            set<int> internalEdges;
+            PShapeIteratorPtr eIt =
+              SMESH_MesherHelper::GetAncestors( v.Value(),mesh,TopAbs_EDGE );
+            while ( const TopoDS_Shape* pEdge = eIt->next() )
+            {
+              int edgeID = meshDS->ShapeToIndex( *pEdge );
+              if ( isInternalShape( edgeID ))
+                internalEdges.insert( edgeID );
+            }
+            if ( internalEdges.size() > 1 )
+              _intShapes.insert( meshDS->ShapeToIndex( v.Value() ));
+          }
+      }
+    }
+  }
+}
+
+//================================================================================
+/*!
+ * \brief Find mesh faces on non-internal geom faces sharing internal edge
+ * some nodes of which are to be doubled to make the second border of the "crack"
+ */
+//================================================================================
+
+void NETGENPlugin_Internals::findBorderElements( TIDSortedElemSet & borderElems )
+{
+  if ( _intShapes.empty() ) return;
+
+  SMESH_Mesh& mesh = const_cast<SMESH_Mesh&>(_mesh);
+  SMESHDS_Mesh* meshDS = mesh.GetMeshDS();
+
+  // loop on internal geom edges
+  set<int>::const_iterator intShapeId = _intShapes.begin();
+  for ( ; intShapeId != _intShapes.end(); ++intShapeId )
+  {
+    const TopoDS_Shape& s = meshDS->IndexToShape( *intShapeId );
+    if ( s.ShapeType() != TopAbs_EDGE ) continue;
+
+    // get internal and non-internal geom faces sharing the internal edge <s>
+    int intFace = 0;
+    set<int>::iterator bordFace = _borderFaces.end();
+    PShapeIteratorPtr faces = SMESH_MesherHelper::GetAncestors( s, _mesh, TopAbs_FACE );
+    while ( const TopoDS_Shape* pFace = faces->next() )
+    {
+      int faceID = meshDS->ShapeToIndex( *pFace );
+      if ( isInternalShape( faceID ))
+        intFace = faceID;
+      else
+        bordFace = _borderFaces.insert( faceID ).first;
+    }
+    if ( bordFace == _borderFaces.end() || !intFace ) continue;
+
+    // get all links of mesh faces on internal geom face sharing nodes on edge <s>
+    set< SMESH_OrientedLink > links; //!< links of faces on internal geom face
+    list<const SMDS_MeshElement*> suspectFaces[2]; //!< mesh faces on border geom faces
+    int nbSuspectFaces = 0;
+    SMESHDS_SubMesh* intFaceSM = meshDS->MeshElements( intFace );
+    if ( !intFaceSM || intFaceSM->NbElements() == 0 ) continue;
+    SMESH_subMeshIteratorPtr smIt = mesh.GetSubMesh( s )->getDependsOnIterator(true,true);
+    while ( smIt->more() )
+    {
+      SMESHDS_SubMesh* sm = smIt->next()->GetSubMeshDS();
+      if ( !sm ) continue;
+      SMDS_NodeIteratorPtr nIt = sm->GetNodes();
+      while ( nIt->more() )
+      {
+        const SMDS_MeshNode* nOnEdge = nIt->next();
+        SMDS_ElemIteratorPtr fIt = nOnEdge->GetInverseElementIterator(SMDSAbs_Face);
+        while ( fIt->more() )
+        {
+          const SMDS_MeshElement* f = fIt->next();
+          int nbNodes = f->NbNodes() / ( f->IsQuadratic() ? 2 : 1 );
+          if ( intFaceSM->Contains( f ))
+          {
+            for ( int i = 0; i < nbNodes; ++i )
+              links.insert( SMESH_OrientedLink( f->GetNode(i), f->GetNode((i+1)%nbNodes)));
+          }
+          else
+          {
+            int nbDblNodes = 0;
+            for ( int i = 0; i < nbNodes; ++i )
+              nbDblNodes += isInternalShape( f->GetNode(i)->GetPosition()->GetShapeId() );
+            if ( nbDblNodes )
+              suspectFaces[ nbDblNodes < 2 ].push_back( f );
+            nbSuspectFaces++;
+          }
+        }
+      }
+    }
+    // suspectFaces[0] having link with same orientation as mesh faces on
+    // the internal geom face are <borderElems>. suspectFaces[1] have
+    // only one node on edge s, we decide on them later (at the 2nd loop)
+    // by links of <borderElems> found at the 1st and 2nd loops
+    set< SMESH_OrientedLink > borderLinks;
+    for ( int isPostponed = 0; isPostponed < 2; ++isPostponed )
+    {
+      list<const SMDS_MeshElement*>::iterator fIt = suspectFaces[isPostponed].begin();
+      for ( int nbF = 0; fIt != suspectFaces[isPostponed].end(); ++fIt, ++nbF )
+      {
+        const SMDS_MeshElement* f = *fIt;
+        bool isBorder = false, linkFound = false, borderLinkFound = false;
+        list< SMESH_OrientedLink > faceLinks;
+        int nbNodes = f->NbNodes() / ( f->IsQuadratic() ? 2 : 1 );
+        for ( int i = 0; i < nbNodes; ++i )
+        {
+          SMESH_OrientedLink link( f->GetNode(i), f->GetNode((i+1)%nbNodes));
+          faceLinks.push_back( link );
+          if ( !linkFound )
+          {
+            set< SMESH_OrientedLink >::iterator foundLink = links.find( link );
+            if ( foundLink != links.end() )
+            {
+              linkFound= true;
+              isBorder = ( foundLink->_reversed == link._reversed );
+              if ( !isBorder && !isPostponed ) break;
+              faceLinks.pop_back();
+            }
+            else if ( isPostponed && !borderLinkFound )
+            {
+              foundLink = borderLinks.find( link );
+              if ( foundLink != borderLinks.end() )
+              {
+                borderLinkFound = true;
+                isBorder = ( foundLink->_reversed != link._reversed );
+              }
+            }
+          }
+        }
+        if ( isBorder )
+        {
+          borderElems.insert( f );
+          borderLinks.insert( faceLinks.begin(), faceLinks.end() );
+        }
+        else if ( !linkFound && !borderLinkFound )
+        {
+          suspectFaces[1].push_back( f );
+          if ( nbF > 2 * nbSuspectFaces )
+            break; // dead loop protection
+        }
+      }
+    }
+//     TIDSortedElemSet posponedFaces;
+//     set< SMESH_OrientedLink > borderLinks;
+//     TIDSortedElemSet::iterator fIt = suspectFaces.begin();
+//     for ( ; fIt != suspectFaces.end(); ++fIt )
+//     {
+//       const SMDS_MeshElement* f = *fIt;
+//       bool linkFound = false, isBorder = false;
+//       list< SMESH_OrientedLink > faceLinks;
+//       int nbNodes = f->NbNodes() / ( f->IsQuadratic() ? 2 : 1 );
+//       for ( int i = 0; i < nbNodes; ++i )
+//       {
+//         SMESH_OrientedLink link( f->GetNode(i), f->GetNode((i+1)%nbNodes));
+//         faceLinks.push_back( link );
+//         if ( !linkFound )
+//         {
+//           set< SMESH_OrientedLink >::iterator foundLink = links.find( link );
+//           if ( foundLink != links.end() )
+//           {
+//             linkFound= true;
+//             isBorder = ( foundLink->_reversed == link._reversed );
+//             if ( !isBorder ) break;
+//           }
+//         }
+//       }
+//       if ( isBorder )
+//       {
+//         borderElems.insert( f );
+//         borderLinks.insert( faceLinks.begin(), faceLinks.end() );
+//       }
+//       else if ( !linkFound )
+//       {
+//         posponedFaces.insert( f );
+//       }
+//     }
+//     // decide on posponedFaces
+//     for ( fIt = posponedFaces.begin(); fIt != posponedFaces.end(); ++fIt )
+//     {
+//       const SMDS_MeshElement* f = *fIt;
+//       int nbNodes = f->NbNodes() / ( f->IsQuadratic() ? 2 : 1 );
+//       for ( int i = 0; i < nbNodes; ++i )
+//       {
+//         SMESH_OrientedLink link( f->GetNode(i), f->GetNode((i+1)%nbNodes));
+//         set< SMESH_OrientedLink >::iterator foundLink = borderLinks.find( link );
+//         if ( foundLink != borderLinks.end() )
+//         {
+//           if ( foundLink->_reversed != link._reversed )
+//             borderElems.insert( f );
+//           break;
+//         }
+//       }
+//     }
+  }
+}
+
+//================================================================================
+/*!
+ * \brief put internal shapes in maps and fill in submeshes to precompute
+ */
+//================================================================================
+
+void NETGENPlugin_Internals::getInternalEdges( TopTools_IndexedMapOfShape& fmap,
+                                               TopTools_IndexedMapOfShape& emap,
+                                               TopTools_IndexedMapOfShape& vmap,
+                                               list< SMESH_subMesh* >& smToPrecompute)
+{
+  if ( !hasInternalEdges() ) return;
+  map<int,int>::const_iterator ev_face = _ev2face.begin();
+  for ( ; ev_face != _ev2face.end(); ++ev_face )
+  {
+    const TopoDS_Shape& ev   = _mesh.GetMeshDS()->IndexToShape( ev_face->first );
+    const TopoDS_Shape& face = _mesh.GetMeshDS()->IndexToShape( ev_face->second );
+
+    ( ev.ShapeType() == TopAbs_EDGE ? emap : vmap ).Add( ev );
+    fmap.Add( face );
+    //cout<<"INTERNAL EDGE or VERTEX "<<ev_face->first<<" on face "<<ev_face->second<<endl;
+
+    smToPrecompute.push_back( _mesh.GetSubMeshContaining( ev_face->first ));
+  }
+}
+
+//================================================================================
+/*!
+ * \brief return shapes and submeshes to be meshed and already meshed boundary submeshes
+ */
+//================================================================================
+
+void NETGENPlugin_Internals::getInternalFaces( TopTools_IndexedMapOfShape& fmap,
+                                               TopTools_IndexedMapOfShape& emap,
+                                               list< SMESH_subMesh* >&     intFaceSM,
+                                               list< SMESH_subMesh* >&     boundarySM)
+{
+  if ( !hasInternalFaces() ) return;
+
+  // <fmap> and <emap> are for not yet meshed shapes
+  // <intFaceSM> is for submeshes of faces
+  // <boundarySM> is for meshed edges and vertices
+
+  intFaceSM.clear();
+  boundarySM.clear();
+
+  set<int> shapeIDs ( _intShapes );
+  if ( !_borderFaces.empty() )
+    shapeIDs.insert( _borderFaces.begin(), _borderFaces.end() );
+
+  set<int>::const_iterator intS = shapeIDs.begin();
+  for ( ; intS != shapeIDs.end(); ++intS )
+  {
+    SMESH_subMesh* sm = _mesh.GetSubMeshContaining( *intS );
+
+    if ( sm->GetSubShape().ShapeType() != TopAbs_FACE ) continue;
+
+    intFaceSM.push_back( sm );
+
+    // add submeshes of not computed internal faces
+    if ( !sm->IsEmpty() ) continue;
+
+    SMESH_subMeshIteratorPtr smIt = sm->getDependsOnIterator(true,true);
+    while ( smIt->more() )
+    {
+      sm = smIt->next();
+      const TopoDS_Shape& s = sm->GetSubShape();
+
+      if ( sm->IsEmpty() )
+      {
+        // not yet meshed
+        switch ( s.ShapeType() ) {
+        case TopAbs_FACE: fmap.Add ( s ); break;
+        case TopAbs_EDGE: emap.Add ( s ); break;
+        default:;
+        }
+      }
+      else
+      {
+        if ( s.ShapeType() != TopAbs_FACE )
+          boundarySM.push_back( sm );
+      }
+    }
+  }
+}
+
+//================================================================================
+/*!
+ * \brief Return true if given shape is to be precomputed in order to be correctly
+ * added to netgen mesh
+ */
+//================================================================================
+
+bool NETGENPlugin_Internals::isShapeToPrecompute(const TopoDS_Shape& s)
+{
+  int shapeID = _mesh.GetMeshDS()->ShapeToIndex( s );
+  switch ( s.ShapeType() ) {
+  case TopAbs_FACE  : return isInternalShape( shapeID ) || isBorderFace( shapeID );
+  case TopAbs_EDGE  : return isInternalEdge( shapeID );
+  case TopAbs_VERTEX: return false; //isInternalVertex( shapeID );
+  default:;
+  }
+  return false;
+}
+
+//================================================================================
+/*!
+ * \brief Initialize netgen library
+ */
+//================================================================================
+
+NETGENPlugin_NetgenLibWrapper::NETGENPlugin_NetgenLibWrapper()
+{
+  Ng_Init();
+  _ngMesh = Ng_NewMesh();
+}
+
+//================================================================================
+/*!
+ * \brief Finish using netgen library
+ */
+//================================================================================
+
+NETGENPlugin_NetgenLibWrapper::~NETGENPlugin_NetgenLibWrapper()
+{
+  Ng_DeleteMesh( _ngMesh );
+  Ng_Exit();
+  NETGENPlugin_Mesher::RemoveTmpFiles();
+}
+
+//================================================================================
+/*!
+ * \brief Set netgen mesh to delete at destruction
+ */
+//================================================================================
+
+void NETGENPlugin_NetgenLibWrapper::setMesh( Ng_Mesh* mesh )
+{
+  if ( _ngMesh )
+    Ng_DeleteMesh( _ngMesh );
+  _ngMesh = mesh;
 }
