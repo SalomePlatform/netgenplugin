@@ -31,6 +31,7 @@
 #include "NETGENPlugin_Defs.hxx"
 #include "StdMeshers_FaceSide.hxx"
 #include "SMDS_MeshElement.hxx"
+#include "SMESH_Algo.hxx"
 
 namespace nglib {
 #include <nglib.h>
@@ -45,6 +46,7 @@ class SMESH_Comment;
 class SMESHDS_Mesh;
 class TopoDS_Shape;
 class TopTools_DataMapOfShapeShape;
+class TopTools_IndexedMapOfShape;
 class NETGENPlugin_Hypothesis;
 class NETGENPlugin_SimpleHypothesis_2D;
 class NETGENPlugin_Internals;
@@ -78,7 +80,7 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_Mesher
   NETGENPlugin_Mesher (SMESH_Mesh* mesh, const TopoDS_Shape& aShape,
                        const bool isVolume);
 
-  void SetParameters(const NETGENPlugin_Hypothesis* hyp);
+  void SetParameters(const NETGENPlugin_Hypothesis*          hyp);
   void SetParameters(const NETGENPlugin_SimpleHypothesis_2D* hyp);
 
   bool Compute();
@@ -98,11 +100,24 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_Mesher
                        std::vector<const SMDS_MeshNode*>&  nodeVec,
                        SMESH_Comment&                      comment);
 
-  bool fillNgMesh(netgen::OCCGeometry&                occgeom,
+  bool fillNgMesh(const netgen::OCCGeometry&          occgeom,
                   netgen::Mesh&                       ngMesh,
                   std::vector<const SMDS_MeshNode*>&  nodeVec,
-                  const std::list< SMESH_subMesh* > & meshedSM,
-                  NETGENPlugin_Internals*             internalShapes=0);
+                  const std::list< SMESH_subMesh* > & meshedSM);
+
+  static void fixIntFaces(const netgen::OCCGeometry& occgeom,
+                          netgen::Mesh&              ngMesh,
+                          NETGENPlugin_Internals&    internalShapes);
+
+  static void addIntVerticesInFaces(const netgen::OCCGeometry&          occgeom,
+                                    netgen::Mesh&                       ngMesh,
+                                    std::vector<const SMDS_MeshNode*>&  nodeVec,
+                                    NETGENPlugin_Internals&             internalShapes);
+
+  static void addIntVerticesInSolids(const netgen::OCCGeometry&         occgeom,
+                                    netgen::Mesh&                       ngMesh,
+                                    std::vector<const SMDS_MeshNode*>&  nodeVec,
+                                    NETGENPlugin_Internals&             internalShapes);
 
   void defaultParameters();
 
@@ -133,6 +148,10 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_Mesher
  * and their vertices shared by several internal edges. Nodes built on the found
  * shapes and mesh faces built on the found internal faces are to be doubled in
  * netgen mesh to emulate a "crack"
+ *
+ * For internal faces a more simple solution is found, which is just to duplicate
+ * mesh faces on internal geom faces without modeling a "real crack". For this
+ * reason findBorderElements() is no more used anywhere.
  */
 //=============================================================================
 
@@ -141,35 +160,48 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_Internals
   SMESH_Mesh&       _mesh;
   bool              _is3D;
   //2D
-  std::map<int,int> _ev2face; //!< edges and vertices in faces where they are TopAbs_INTERNAL
+  std::map<int,int> _e2face;//!<edges and their vertices in faces where they are TopAbs_INTERNAL
+  std::map<int,std::list<int> > _f2v;//!<faces with internal vertices
   // 3D
   std::set<int>     _intShapes;
   std::set<int>     _borderFaces; //!< non-intrnal faces sharing the internal edge
+  std::map<int,std::list<int> > _s2v;//!<solids with internal vertices
 
 public:
   NETGENPlugin_Internals( SMESH_Mesh& mesh, const TopoDS_Shape& shape, bool is3D );
 
+  SMESH_Mesh& getMesh() const;
+
   bool isShapeToPrecompute(const TopoDS_Shape& s);
 
-  // 2D
-  bool hasInternalEdges() const { return !_ev2face.empty(); }
-  bool isInternalEdge(int id ) const { return _ev2face.count( id ); }
-  bool isInternalVertex(int id ) const { return _ev2face.count( id ); }
-  const std::map<int,int>& getEdgesAndVerticesWithFaces() const { return _ev2face; }
-  void getInternalEdges( TopTools_IndexedMapOfShape& fmap,
-                         TopTools_IndexedMapOfShape& emap,
-                         TopTools_IndexedMapOfShape& vmap,
-                         list< SMESH_subMesh* >& smToPrecompute);
+  // 2D meshing
+  // edges 
+  bool hasInternalEdges() const { return !_e2face.empty(); }
+  bool isInternalEdge( int id ) const { return _e2face.count( id ); }
+  const std::map<int,int>& getEdgesAndVerticesWithFaces() const { return _e2face; }
+  void getInternalEdges( TopTools_IndexedMapOfShape&  fmap,
+                         TopTools_IndexedMapOfShape&  emap,
+                         TopTools_IndexedMapOfShape&  vmap,
+                         std::list< SMESH_subMesh* >& smToPrecompute);
+  // vertices
+  bool hasInternalVertexInFace() const { return !_f2v.empty(); }
+  const std::map<int,std::list<int> >& getFacesWithVertices() const { return _f2v; }
 
-  // 3D
+  // 3D meshing
+  // faces
   bool hasInternalFaces() const { return !_intShapes.empty(); }
-  bool isInternalShape(int id ) const { return _intShapes.count( id ); }
+  bool isInternalShape( int id ) const { return _intShapes.count( id ); }
   void findBorderElements( std::set< const SMDS_MeshElement*, TIDCompare > & borderElems );
-  bool isBorderFace(int faceID ) const { return _borderFaces.count( faceID ); }
-  void getInternalFaces( TopTools_IndexedMapOfShape& fmap,
-                         TopTools_IndexedMapOfShape& emap,
-                         list< SMESH_subMesh* >&     facesSM,
-                         list< SMESH_subMesh* >&     boundarySM);
+  bool isBorderFace( int faceID ) const { return _borderFaces.count( faceID ); }
+  void getInternalFaces( TopTools_IndexedMapOfShape&  fmap,
+                         TopTools_IndexedMapOfShape&  emap,
+                         std::list< SMESH_subMesh* >& facesSM,
+                         std::list< SMESH_subMesh* >& boundarySM);
+  // vertices
+  bool hasInternalVertexInSolid() const { return !_s2v.empty(); }
+  bool hasInternalVertexInSolid(int soID ) const { return _s2v.count(soID); }
+  const std::map<int,std::list<int> >& getSolidsWithVertices() const { return _s2v; }
+
 
 };
 
