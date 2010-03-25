@@ -90,7 +90,7 @@ using namespace std;
 // dump elements added to ng mesh
 //#define DUMP_SEGMENTS
 //#define DUMP_TRIANGLES
-#define DUMP_TRIANGLES_SCRIPT "/tmp/trias.py" //!< debug addIntVerticesInSolids()
+//#define DUMP_TRIANGLES_SCRIPT "/tmp/trias.py" //!< debug addIntVerticesInSolids()
 
 //=============================================================================
 /*!
