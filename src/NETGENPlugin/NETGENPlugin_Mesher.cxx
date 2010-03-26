@@ -1924,7 +1924,7 @@ NETGENPlugin_Mesher::readErrors(const vector<const SMDS_MeshNode* >& nodeVec)
         err->myBadElements.push_back( new SMDS_FaceOfNodes( nodeVec[ three2[0]],
                                                             nodeVec[ three2[1]],
                                                             nodeVec[ three2[2]]));
-        //err->myComment = "intersecting elements";
+        err->myComment = "Intersecting triangles";
       }
       else
       {
