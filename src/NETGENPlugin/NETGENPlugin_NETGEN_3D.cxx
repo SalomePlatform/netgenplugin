@@ -271,7 +271,7 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
               Netgen_point [ 2 ] = node->Z();
               Ng_AddPoint(Netgen_mesh, Netgen_point);
             }
-            Netgen_triangle[ isRev ? 3-iN : iN ] = ngID;
+            Netgen_triangle[ isRev ? 2-iN : iN ] = ngID;
           }
           // add triangle
           if ( hasDegen && (Netgen_triangle[0] == Netgen_triangle[1] ||
