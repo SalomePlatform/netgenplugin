@@ -68,6 +68,8 @@ using namespace std;
 using namespace netgen;
 using namespace nglib;
 
+//#define DUMP_SEGMENTS
+
 //=============================================================================
 /*!
  *  
@@ -201,6 +203,10 @@ static TError AddSegmentsToMesh(netgen::Mesh&                    ngMesh,
 //   bb.Increase (bb.Diam()/10);
 //   ngMesh.SetLocalH (bb.PMin(), bb.PMax(), 0.5); // set grading
 
+  // map for nodes on vertices since they can be shared between wires
+  // ( issue 0020676, face_int_box.brep)
+  map<const SMDS_MeshNode*, int > node2ngID;
+
   const int faceID = 1, solidID = 0;
   if ( ngMesh.GetNFD() < 1 )
     ngMesh.AddFaceDescriptor (FaceDescriptor(faceID, solidID, solidID, 0));
@@ -211,35 +217,45 @@ static TError AddSegmentsToMesh(netgen::Mesh&                    ngMesh,
     const vector<UVPtStruct>& uvPtVec = wire->GetUVPtStruct();
     const int nbSegments = wire->NbPoints() - 1;
 
-    int firstPointID = ngMesh.GetNP() + 1;
     int edgeID = 1, posID = -2;
-    bool isInternalEdge = false;
+    bool isInternalWire = false;
     for ( int i = 0; i < nbSegments; ++i ) // loop on segments
     {
       // Add the first point of a segment
       const SMDS_MeshNode * n = uvPtVec[ i ].node;
       const int posShapeID = n->GetPosition()->GetShapeId();
+      bool onVertex = ( n->GetPosition()->GetTypeOfPosition() == SMDS_TOP_VERTEX );
 
       // skip nodes on degenerated edges
       if ( helper.IsDegenShape( posShapeID ) &&
            helper.IsDegenShape( uvPtVec[ i+1 ].node->GetPosition()->GetShapeId() ))
         continue;
 
-      nodeVec.push_back( n );
-
-      MeshPoint mp( Point<3> (n->X(), n->Y(), n->Z()) );
-      ngMesh.AddPoint ( mp, 1, EDGEPOINT );
+      int ngID1 = ngMesh.GetNP() + 1, ngID2 = ngID1+1;
+      if ( onVertex )
+        ngID1 = node2ngID.insert( make_pair( n, ngID1 )).first->second;
+      if ( ngID1 > ngMesh.GetNP() )
+      {
+        MeshPoint mp( Point<3> (n->X(), n->Y(), n->Z()) );
+        ngMesh.AddPoint ( mp, 1, EDGEPOINT );
+        nodeVec.push_back( n );
+      }
+      else
+      {
+        ngID2 = ngMesh.GetNP() + 1;
+        if ( i > 0 ) // prev segment belongs to same wire
+        {
+          Segment& prevSeg = ngMesh.LineSegment( ngMesh.GetNSeg() );
+          prevSeg[1] = ngID1;
+        }
+      }
 
       // Add the segment
       Segment seg;
 
-#ifdef NETGEN_NEW
-      seg.pnums[0] = ngMesh.GetNP();    // ng node id
-      seg.pnums[1] = seg.pnums[0] + 1;  // ng node id
-#else
-      seg.p1 = ngMesh.GetNP();          // ng node id
-      seg.p2 = seg.p1 + 1;              // ng node id
-#endif
+      seg[0] = ngID1;  // ng node id
+      seg[1] = ngID2;  // ng node id
+
       seg.edgenr = ngMesh.GetNSeg() + 1;// segment id
       seg.si = faceID;                  // = geom.fmap.FindIndex (face);
 
@@ -252,7 +268,7 @@ static TError AddSegmentsToMesh(netgen::Mesh&                    ngMesh,
         seg.epgeominfo[ iEnd ].v    = pnt.v;
 
         // find out edge id and node parameter on edge
-        bool onVertex = ( pnt.node->GetPosition()->GetTypeOfPosition() == SMDS_TOP_VERTEX );
+        onVertex = ( pnt.node->GetPosition()->GetTypeOfPosition() == SMDS_TOP_VERTEX );
         if ( onVertex || posShapeID != posID )
         {
           // get edge id
@@ -262,7 +278,7 @@ static TError AddSegmentsToMesh(netgen::Mesh&                    ngMesh,
           const TopoDS_Edge& edge = wire->Edge( wire->EdgeIndex( normParam ));
           edgeID = geom.emap.FindIndex( edge );
           posID  = posShapeID;
-          isInternalEdge = ( edge.Orientation() == TopAbs_INTERNAL );
+          isInternalWire = ( edge.Orientation() == TopAbs_INTERNAL );
           if ( onVertex ) // param on curve is different on each of two edges
             seg.epgeominfo[ iEnd ].dist = helper.GetNodeU( edge, pnt.node );
         }
@@ -271,47 +287,46 @@ static TError AddSegmentsToMesh(netgen::Mesh&                    ngMesh,
 
       ngMesh.AddSegment (seg);
 
-//       cout << "Segment: " << seg.edgenr << endl
-//            << "\tp1: " << seg.p1 << endl
-//            << "\tp2: " << seg.p2 << endl
-//            << "\tp0 param: " << seg.epgeominfo[ 0 ].dist << endl
-//            << "\tp0 uv: " << seg.epgeominfo[ 0 ].u <<", "<< seg.epgeominfo[ 0 ].v << endl
-//            << "\tp0 edge: " << seg.epgeominfo[ 0 ].edgenr << endl
-//            << "\tp1 param: " << seg.epgeominfo[ 1 ].dist << endl
-//            << "\tp1 uv: " << seg.epgeominfo[ 1 ].u <<", "<< seg.epgeominfo[ 1 ].v << endl
-//            << "\tp1 edge: " << seg.epgeominfo[ 1 ].edgenr << endl;
-
-      if ( isInternalEdge )
-      {
-#ifdef NETGEN_NEW
-        swap (seg.pnums[0], seg.pnums[1]);
-#else
-        swap (seg.p1, seg.p2);
+#ifdef DUMP_SEGMENTS
+        cout << "Segment: " << seg.edgenr << endl
+           << "\tp1: " << seg[0] << endl
+           << "\tp2: " << seg[1] << endl
+           << "\tp0 param: " << seg.epgeominfo[ 0 ].dist << endl
+           << "\tp0 uv: " << seg.epgeominfo[ 0 ].u <<", "<< seg.epgeominfo[ 0 ].v << endl
+           << "\tp0 edge: " << seg.epgeominfo[ 0 ].edgenr << endl
+           << "\tp1 param: " << seg.epgeominfo[ 1 ].dist << endl
+           << "\tp1 uv: " << seg.epgeominfo[ 1 ].u <<", "<< seg.epgeominfo[ 1 ].v << endl
+           << "\tp1 edge: " << seg.epgeominfo[ 1 ].edgenr << endl;
 #endif
+      if ( isInternalWire )
+      {
+        swap (seg[0], seg[1]);
         swap( seg.epgeominfo[0], seg.epgeominfo[1] );
         seg.edgenr = ngMesh.GetNSeg() + 1; // segment id
         ngMesh.AddSegment (seg);
+#ifdef DUMP_SEGMENTS
+        cout << "Segment: " << seg.edgenr << endl << "\tis REVRESE of the previous one" << endl;
+#endif
       }
     } // loop on segments on a wire
 
     // close chain of segments
-    bool isClosedWire = ( wire->FirstVertex().IsSame( wire->LastVertex() ));
-    if ( isClosedWire )
+    if ( nbSegments > 0 )
     {
-      Segment& seg = ngMesh.LineSegment( ngMesh.GetNSeg() );
-#ifdef NETGEN_NEW
-      seg.pnums[1] = firstPointID;
-#else
-      seg.p2 = firstPointID;
-#endif
-    }
-    else // INTERNAL wire (Issue 0020676)
-    {
-      const SMDS_MeshNode * n = uvPtVec.back().node;
-      nodeVec.push_back( n );
-
-      MeshPoint mp( Point<3> (n->X(), n->Y(), n->Z()) );
-      ngMesh.AddPoint ( mp, 1, EDGEPOINT );
+      Segment& lastSeg = ngMesh.LineSegment( ngMesh.GetNSeg() - int( isInternalWire));
+      const SMDS_MeshNode * lastNode = uvPtVec.back().node;
+      lastSeg[1] = node2ngID.insert( make_pair( lastNode, lastSeg[1] )).first->second;
+      if ( lastSeg[1] > ngMesh.GetNP() )
+      {
+        MeshPoint mp( Point<3> (lastNode->X(), lastNode->Y(), lastNode->Z()) );
+        ngMesh.AddPoint ( mp, 1, EDGEPOINT );
+        nodeVec.push_back( lastNode );
+      }
+      if ( isInternalWire )
+      {
+        Segment& realLastSeg = ngMesh.LineSegment( ngMesh.GetNSeg() );
+        realLastSeg[0] = lastSeg[1];
+      }
     }
 
   } // loop on wires of a face
