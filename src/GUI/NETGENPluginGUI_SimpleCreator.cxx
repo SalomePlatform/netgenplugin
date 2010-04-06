@@ -151,7 +151,7 @@ QFrame* NETGENPluginGUI_SimpleCreator::buildFrame()
   // * local length
   myLengthRadioBut = new QRadioButton( tr( "SMESH_LOCAL_LENGTH_HYPOTHESIS" ), dimGroup );
   myLength = new SMESHGUI_SpinBox( dimGroup );
-  myLength->RangeStepAndValidator( VALUE_SMALL, VALUE_MAX, 0.1, 6 );
+  myLength->RangeStepAndValidator( VALUE_SMALL, VALUE_MAX, 0.1, "length_precision" );
   myLength->setValue( 1. );
   dimLay->addWidget( myLengthRadioBut, dimRow, 0 );
   dimLay->addWidget( myLength, dimRow, 1 );
@@ -178,7 +178,7 @@ QFrame* NETGENPluginGUI_SimpleCreator::buildFrame()
   // * max area
   dimLay->addWidget( new QLabel( tr( "SMESH_MAX_ELEMENT_AREA_HYPOTHESIS" ), dimGroup), dimRow, 0);
   myArea = new SMESHGUI_SpinBox( dimGroup );
-  myArea->RangeStepAndValidator( VALUE_SMALL_2, VALUE_MAX_2, 0.1, 6 );
+  myArea->RangeStepAndValidator( VALUE_SMALL_2, VALUE_MAX_2, 0.1, "area_precision" );
   myArea->setValue( 1. );
   dimLay->addWidget( myArea, dimRow, 1 );
   dimRow++;
@@ -205,7 +205,7 @@ QFrame* NETGENPluginGUI_SimpleCreator::buildFrame()
     // * max volume
     dimLay->addWidget(new QLabel( tr("SMESH_MAX_ELEMENT_VOLUME_HYPOTHESIS"), dimGroup), dimRow, 0);
     myVolume = new SMESHGUI_SpinBox( dimGroup );
-    myVolume->RangeStepAndValidator( VALUE_SMALL_3, VALUE_MAX_3, 0.1, 6 );
+    myVolume->RangeStepAndValidator( VALUE_SMALL_3, VALUE_MAX_3, 0.1, "volume_precision" );
     myVolume->setValue( 1. );
     dimLay->addWidget( myVolume, dimRow, 1 );
     dimRow++;

@@ -30,6 +30,7 @@
 #include <SMESHGUI_Utils.h>
 #include <SMESHGUI_HypothesesUtils.h>
 #include <SMESHGUI.h>
+#include <SMESHGUI_SpinBox.h>
 
 #include CORBA_SERVER_HEADER(NETGENPlugin_Algorithm)
 
@@ -37,8 +38,6 @@
 #include <SUIT_ResourceMgr.h>
 
 #include <SalomeApp_Tools.h>
-
-#include <SalomeApp_DoubleSpinBox.h>
 
 #include <QComboBox>
 #include <QLabel>
@@ -110,11 +109,8 @@ QFrame* NETGENPluginGUI_HypothesisCreator::buildFrame()
   }
 
   aGroupLayout->addWidget( new QLabel( tr( "NETGEN_MAX_SIZE" ), GroupC1 ), row, 0 );
-  myMaxSize = new SalomeApp_DoubleSpinBox( GroupC1 );
-  myMaxSize->setDecimals( 7 );
-  myMaxSize->setMinimum( 1e-07 );
-  myMaxSize->setMaximum( 1e+06 );
-  myMaxSize->setSingleStep( 10 );
+  myMaxSize = new SMESHGUI_SpinBox( GroupC1 );
+  myMaxSize->RangeStepAndValidator( 1e-07, 1e+06, 10., "length_precision" );
   aGroupLayout->addWidget( myMaxSize, row, 1 );
   row++;
   
@@ -132,26 +128,22 @@ QFrame* NETGENPluginGUI_HypothesisCreator::buildFrame()
   row++;
 
   aGroupLayout->addWidget( new QLabel( tr( "NETGEN_GROWTH_RATE" ), GroupC1 ), row, 0 );
-  myGrowthRate = new SalomeApp_DoubleSpinBox( GroupC1 );
-  myGrowthRate->setMinimum( 0.1 );
-  myGrowthRate->setMaximum( 10 );
-  myGrowthRate->setSingleStep( 0.1 );
+  myGrowthRate = new SMESHGUI_SpinBox( GroupC1 );
+  myGrowthRate->RangeStepAndValidator( .1, 10., .1, "parametric_precision" );
   aGroupLayout->addWidget( myGrowthRate, row, 1 );
   row++;
 
   const double VALUE_MAX = 1.0e+6;
 
   aGroupLayout->addWidget( new QLabel( tr( "NETGEN_SEG_PER_EDGE" ), GroupC1 ), row, 0 );
-  myNbSegPerEdge = new SalomeApp_DoubleSpinBox( GroupC1 );
-  myNbSegPerEdge->setMinimum( 0.2 );
-  myNbSegPerEdge->setMaximum( VALUE_MAX ); // (PAL14890) max value in native netgen gui is 5
+  myNbSegPerEdge = new SMESHGUI_SpinBox( GroupC1 );
+  myNbSegPerEdge->RangeStepAndValidator( .2, VALUE_MAX, .1, "parametric_precision" );
   aGroupLayout->addWidget( myNbSegPerEdge, row, 1 );
   row++;
   
   aGroupLayout->addWidget( new QLabel( tr( "NETGEN_SEG_PER_RADIUS" ), GroupC1 ), row, 0 );
-  myNbSegPerRadius = new SalomeApp_DoubleSpinBox( GroupC1 );
-  myNbSegPerRadius->setMinimum( 0.2 );
-  myNbSegPerRadius->setMaximum( VALUE_MAX ); // (PAL14890) max value in native netgen gui is 5
+  myNbSegPerRadius = new SMESHGUI_SpinBox( GroupC1 );
+  myNbSegPerRadius->RangeStepAndValidator( .2, VALUE_MAX, .1, "parametric_precision" );
   aGroupLayout->addWidget( myNbSegPerRadius, row, 1 );
   row++;
 

@@ -32,7 +32,7 @@
 
 #include <SMESHGUI_Hypotheses.h>
 
-class SalomeApp_DoubleSpinBox;
+class SMESHGUI_SpinBox;
 class QComboBox;
 class QCheckBox;
 class QLineEdit;
@@ -79,13 +79,13 @@ private:
 
 private:
  QLineEdit*        myName;
- SalomeApp_DoubleSpinBox* myMaxSize;
+ SMESHGUI_SpinBox* myMaxSize;
  QCheckBox*        mySecondOrder;
  QCheckBox*        myOptimize;
  QComboBox*        myFineness;
- SalomeApp_DoubleSpinBox* myGrowthRate;
- SalomeApp_DoubleSpinBox* myNbSegPerEdge;
- SalomeApp_DoubleSpinBox* myNbSegPerRadius;
+ SMESHGUI_SpinBox* myGrowthRate;
+ SMESHGUI_SpinBox* myNbSegPerEdge;
+ SMESHGUI_SpinBox* myNbSegPerRadius;
  QCheckBox*        myAllowQuadrangles;
 
  bool myIs2D;
