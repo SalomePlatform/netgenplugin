@@ -59,7 +59,7 @@ namespace nglib {
 //#include <meshtype.hpp>
 namespace netgen {
   extern int OCCGenerateMesh (OCCGeometry&, Mesh*&, int, int, char*);
-  /*extern*/ MeshingParameters mparam;
+  extern MeshingParameters mparam;
 }
 
 using namespace std;
