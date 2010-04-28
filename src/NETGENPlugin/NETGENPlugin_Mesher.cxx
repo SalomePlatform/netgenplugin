@@ -828,8 +828,7 @@ void NETGENPlugin_Mesher::addIntVerticesInFaces(const netgen::OCCGeometry&     o
         netgen::MeshPoint mp( netgen::Point<3> (P.X(), P.Y(), P.Z()));
         ngMesh.AddPoint ( mp, 1, netgen::EDGEPOINT );
         segEnd2 = ngMesh.GetNP();
-//         cout << "Middle " << r << " uv " << uvP.X() << "," << uvP.Y()
-//              << "( " << ngMesh.Point(segEnd2).X()<<","<<ngMesh.Point(segEnd2).Y()<<","<<ngMesh.Point(segEnd2).Z()<<" )"<< endl;
+        //cout << "Middle " << r << " uv " << uvP.X() << "," << uvP.Y() << "( " << ngMesh.Point(segEnd2).X()<<","<<ngMesh.Point(segEnd2).Y()<<","<<ngMesh.Point(segEnd2).Z()<<" )"<< endl;
         SMDS_MeshNode * nP = helper.AddNode(P.X(), P.Y(), P.Z());
         nodeVec.push_back( nP );
       }
@@ -1994,10 +1993,14 @@ NETGENPlugin_Internals::NETGENPlugin_Internals( SMESH_Mesh&         mesh,
       }
 
     // find internal vertices in a face
+    set<int> intVV; // issue 0020850 where same vertex is twice in a face
     for ( TopoDS_Iterator fSub( f.Current() ); fSub.More(); fSub.Next())
       if ( fSub.Value().ShapeType() == TopAbs_VERTEX )
-        _f2v[ faceID ].push_back( meshDS->ShapeToIndex( fSub.Value() ));
-
+      {
+        int vID = meshDS->ShapeToIndex( fSub.Value() );
+        if ( intVV.insert( vID ).second )
+          _f2v[ faceID ].push_back( vID );
+      }
 
     if ( is3D )
     {
