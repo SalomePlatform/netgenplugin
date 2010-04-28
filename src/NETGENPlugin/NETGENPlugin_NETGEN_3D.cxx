@@ -443,8 +443,7 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
       // using adaptor
       const list<const SMDS_FaceOfNodes*>* faces = Adaptor.GetTriangles(elem);
       if(faces==0)
-        return error( COMPERR_BAD_INPUT_MESH,
-                      SMESH_Comment("No triangles in adaptor for element ")<<elem->GetID());
+        continue; // Issue 0020682. There already can be 3d mesh
       trias.assign( faces->begin(), faces->end() );
     }
     else {
