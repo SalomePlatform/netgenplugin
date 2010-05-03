@@ -234,10 +234,15 @@ namespace nglib {
 
   if test "x$Netgen_ok" == xno ; then
     AC_MSG_RESULT(no)
-    AC_MSG_WARN(Netgen libraries not found or not properly installed)
+    AC_MSG_ERROR(Netgen libraries not found or not properly installed)
   else
     AC_MSG_RESULT(yes)
   fi
+
+else
+
+    AC_MSG_ERROR(Netgen libraries not found. Please define NETGENHOME or use --with-netgen option)
+
 fi
 
 AC_SUBST(NETGEN_INCLUDES)
