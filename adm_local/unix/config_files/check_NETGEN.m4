@@ -219,7 +219,7 @@ namespace nglib {
 
       if test "x$Netgen_ok" == xno ; then
       AC_MSG_RESULT(no)
-      AC_MSG_ERROR(Netgen is not properly installed)
+      AC_MSG_ERROR(Netgen is not properly installed. Read NETGENPLUGIN_SRC/src/NETGEN/ReadMeForNgUsers for details.)
       fi
 
       NETGEN_LIBS="-L${NETGEN_LIBS_DIR} -lnglib"
