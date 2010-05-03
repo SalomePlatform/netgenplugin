@@ -290,6 +290,8 @@ void NETGENPlugin_Mesher::PrepareOCCgeometry(netgen::OCCGeometry&     occgeo,
 #ifdef NETGEN_NEW
   occgeo.face_maxh.SetSize(occgeo.fmap.Extent());
   occgeo.face_maxh = netgen::mparam.maxh;
+  occgeo.face_maxh_modified.SetSize(occgeo.fmap.Extent());
+  occgeo.face_maxh_modified = 0;
 #endif
 
 }
