@@ -1,4 +1,4 @@
-//  Copyright (C) 2007-2008  CEA/DEN, EDF R&D, OPEN CASCADE
+//  Copyright (C) 2007-2010  CEA/DEN, EDF R&D, OPEN CASCADE
 //
 //  Copyright (C) 2003-2007  OPEN CASCADE, EADS/CCR, LIP6, CEA/DEN,
 //  CEDRAT, EDF R&D, LEG, PRINCIPIA R&D, BUREAU VERITAS
@@ -19,6 +19,7 @@
 //
 //  See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
 //
+
 //=============================================================================
 // File      : NETGENPlugin_NETGEN_3D.cxx
 //             Moved here from SMESH_NETGEN_3D.cxx
@@ -442,8 +443,7 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
       // using adaptor
       const list<const SMDS_FaceOfNodes*>* faces = Adaptor.GetTriangles(elem);
       if(faces==0)
-        return error( COMPERR_BAD_INPUT_MESH,
-                      SMESH_Comment("No triangles in adaptor for element ")<<elem->GetID());
+        continue; // Issue 0020682. There already can be 3d mesh
       trias.assign( faces->begin(), faces->end() );
     }
     else {
