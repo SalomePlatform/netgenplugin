@@ -1,7 +1,4 @@
-#  Copyright (C) 2007-2008  CEA/DEN, EDF R&D, OPEN CASCADE
-#
-#  Copyright (C) 2003-2007  OPEN CASCADE, EADS/CCR, LIP6, CEA/DEN,
-#  CEDRAT, EDF R&D, LEG, PRINCIPIA R&D, BUREAU VERITAS
+#  Copyright (C) 2007-2010  CEA/DEN, EDF R&D, OPEN CASCADE
 #
 #  This library is free software; you can redistribute it and/or
 #  modify it under the terms of the GNU Lesser General Public
@@ -48,3 +45,5 @@ SET(NETGEN_LIBS ${NETGEN_LIBS} ${NETGEN_LIB_nginterface})
 SET(NETGEN_LIBS ${NETGEN_LIBS} ${NETGEN_LIB_occ})
 SET(NETGEN_LIBS ${NETGEN_LIBS} ${NETGEN_LIB_opti})
 SET(NETGEN_LIBS ${NETGEN_LIBS} ${NETGEN_LIB_stlgeom})
+
+SET(CMAKE_BUILD 1)

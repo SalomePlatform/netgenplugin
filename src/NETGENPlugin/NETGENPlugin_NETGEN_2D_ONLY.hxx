@@ -1,7 +1,4 @@
-//  Copyright (C) 2007-2008  CEA/DEN, EDF R&D, OPEN CASCADE
-//
-//  Copyright (C) 2003-2007  OPEN CASCADE, EADS/CCR, LIP6, CEA/DEN,
-//  CEDRAT, EDF R&D, LEG, PRINCIPIA R&D, BUREAU VERITAS
+//  Copyright (C) 2007-2010  CEA/DEN, EDF R&D, OPEN CASCADE
 //
 //  This library is free software; you can redistribute it and/or
 //  modify it under the terms of the GNU Lesser General Public
@@ -19,6 +16,7 @@
 //
 //  See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
 //
+
 // File      : NETGENPlugin_NETGEN_2D_ONLY.hxx
 // Project   : SALOME
 // Author    : Edward AGAPOV (OCC)
@@ -29,25 +27,9 @@
 #include "SMESH_2D_Algo.hxx"
 #include "SMESH_Mesh.hxx"
 
-/*#define OCCGEOMETRY
-#include <occgeom.hpp>
-#include <meshing.hpp>//amv*/
-
 class StdMeshers_MaxElementArea;
 class StdMeshers_LengthFromEdges;
 class StdMeshers_QuadranglePreference;
-//class NETGENPlugin_Hypothesis;
-
-/*namespace netgen {
-  class OCCGeometry;
-}*/
-/*namespace netgen {
-  class OCCGeometry;
-  extern int OCCGenerateMesh (OCCGeometry&, Mesh*&, int, int, char*);
-  extern MeshingParameters mparam;
-}*/
-
-//using namespace netgen;
 
 /*!
  * \brief Mesher generating 2D elements on a geometrical face taking

@@ -1,4 +1,4 @@
-dnl  Copyright (C) 2007-2008  CEA/DEN, EDF R&D, OPEN CASCADE
+dnl  Copyright (C) 2007-2010  CEA/DEN, EDF R&D, OPEN CASCADE
 dnl
 dnl  Copyright (C) 2003-2007  OPEN CASCADE, EADS/CCR, LIP6, CEA/DEN,
 dnl  CEDRAT, EDF R&D, LEG, PRINCIPIA R&D, BUREAU VERITAS
@@ -19,6 +19,7 @@ dnl  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 dnl
 dnl  See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
 dnl
+
 AC_DEFUN([CHECK_NETGEN],[
 
 AC_REQUIRE([AC_PROG_CXX])dnl
@@ -219,7 +220,7 @@ namespace nglib {
 
       if test "x$Netgen_ok" == xno ; then
       AC_MSG_RESULT(no)
-      AC_MSG_ERROR(Netgen is not properly installed)
+      AC_MSG_ERROR(Netgen is not properly installed. Read NETGENPLUGIN_SRC/src/NETGEN/ReadMeForNgUsers for details.)
       fi
 
       NETGEN_LIBS="-L${NETGEN_LIBS_DIR} -lnglib"
@@ -234,10 +235,15 @@ namespace nglib {
 
   if test "x$Netgen_ok" == xno ; then
     AC_MSG_RESULT(no)
-    AC_MSG_WARN(Netgen libraries not found or not properly installed)
+    AC_MSG_ERROR(Netgen libraries not found or not properly installed)
   else
     AC_MSG_RESULT(yes)
   fi
+
+else
+
+    AC_MSG_ERROR(Netgen libraries not found. Please define NETGENHOME or use --with-netgen option)
+
 fi
 
 AC_SUBST(NETGEN_INCLUDES)

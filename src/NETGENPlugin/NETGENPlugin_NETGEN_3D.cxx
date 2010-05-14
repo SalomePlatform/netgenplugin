@@ -1,4 +1,4 @@
-//  Copyright (C) 2007-2008  CEA/DEN, EDF R&D, OPEN CASCADE
+//  Copyright (C) 2007-2010  CEA/DEN, EDF R&D, OPEN CASCADE
 //
 //  Copyright (C) 2003-2007  OPEN CASCADE, EADS/CCR, LIP6, CEA/DEN,
 //  CEDRAT, EDF R&D, LEG, PRINCIPIA R&D, BUREAU VERITAS
@@ -19,6 +19,7 @@
 //
 //  See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
 //
+
 //=============================================================================
 // File      : NETGENPlugin_NETGEN_3D.cxx
 //             Moved here from SMESH_NETGEN_3D.cxx
@@ -42,11 +43,12 @@
 #include "SMESH_MeshEditor.hxx"
 #include "StdMeshers_QuadToTriaAdaptor.hxx"
 
+#include <BRepGProp.hxx>
 #include <BRep_Tool.hxx>
 #include <GProp_GProps.hxx>
-#include <BRepGProp.hxx>
 #include <TopExp.hxx>
 #include <TopExp_Explorer.hxx>
+#include <TopTools_ListIteratorOfListOfShape.hxx>
 #include <TopoDS.hxx>
 
 #include <Standard_Failure.hxx>
@@ -62,6 +64,8 @@
   Netgen include files
 */
 
+#define OCCGEOMETRY
+#include <occgeom.hpp>
 namespace nglib {
 #include <nglib.h>
 }
@@ -107,10 +111,9 @@ NETGENPlugin_NETGEN_3D::~NETGENPlugin_NETGEN_3D()
  */
 //=============================================================================
 
-bool NETGENPlugin_NETGEN_3D::CheckHypothesis
-                         (SMESH_Mesh& aMesh,
-                          const TopoDS_Shape& aShape,
-                          SMESH_Hypothesis::Hypothesis_Status& aStatus)
+bool NETGENPlugin_NETGEN_3D::CheckHypothesis (SMESH_Mesh&         aMesh,
+                                              const TopoDS_Shape& aShape,
+                                              Hypothesis_Status&  aStatus)
 {
   MESSAGE("NETGENPlugin_NETGEN_3D::CheckHypothesis");
 
@@ -163,90 +166,126 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
 
   SMESHDS_Mesh* meshDS = aMesh.GetMeshDS();
 
-  const int invalid_ID = -1;
-
-  SMESH::Controls::Area areaControl;
-  SMESH::Controls::TSequenceOfXYZ nodesCoords;
-
-  // -------------------------------------------------------------------
-  // get triangles on aShell and make a map of nodes to Netgen node IDs
-  // -------------------------------------------------------------------
-
   SMESH_MesherHelper helper(aMesh);
-  SMESH_MesherHelper* myTool = &helper;
-  bool _quadraticMesh = myTool->IsQuadraticSubMesh(aShape);
+  bool _quadraticMesh = helper.IsQuadraticSubMesh(aShape);
+  helper.SetElementsOnShape( true );
 
-  typedef map< const SMDS_MeshNode*, int, TIDCompare > TNodeToIDMap;
-  TNodeToIDMap nodeToNetgenID;
-  list< const SMDS_MeshElement* > triangles;
-  list< bool >                    isReversed; // orientation of triangles
+  int Netgen_NbOfNodes     = 0;
+  int Netgen_param2ndOrder = 0;
+  double Netgen_paramFine  = 1.;
+  double Netgen_paramSize  = pow( 72, 1/6. ) * pow( _maxElementVolume, 1/3. );
 
-  TopAbs_ShapeEnum mainType = aMesh.GetShapeToMesh().ShapeType();
-  bool checkReverse = ( mainType == TopAbs_COMPOUND || mainType == TopAbs_COMPSOLID );
+  double Netgen_point[3];
+  int Netgen_triangle[3];
+  int Netgen_tetrahedron[4];
 
-  // for the degeneraged edge: ignore all but one node on it;
-  // map storing ids of degen edges and vertices and their netgen id:
-  map< int, int* > degenShapeIdToPtrNgId;
-  map< int, int* >::iterator shId_ngId;
-  list< int > degenNgIds;
+  NETGENPlugin_NetgenLibWrapper ngLib;
+  Ng_Mesh * Netgen_mesh = ngLib._ngMesh;
 
-  StdMeshers_QuadToTriaAdaptor Adaptor;
-  Adaptor.Compute(aMesh,aShape);
-
-  for (TopExp_Explorer exp(aShape,TopAbs_FACE);exp.More();exp.Next())
+  // vector of nodes in which node index == netgen ID
+  vector< const SMDS_MeshNode* > nodeVec;
   {
-    const TopoDS_Shape& aShapeFace = exp.Current();
-    const SMESHDS_SubMesh * aSubMeshDSFace = meshDS->MeshElements( aShapeFace );
-    if ( aSubMeshDSFace )
+    const int invalid_ID = -1;
+
+    SMESH::Controls::Area areaControl;
+    SMESH::Controls::TSequenceOfXYZ nodesCoords;
+
+    // maps nodes to ng ID
+    typedef map< const SMDS_MeshNode*, int, TIDCompare > TNodeToIDMap;
+    typedef TNodeToIDMap::value_type                     TN2ID;
+    TNodeToIDMap nodeToNetgenID;
+
+    // find internal shapes
+    NETGENPlugin_Internals internals( aMesh, aShape, /*is3D=*/true );
+
+    // ---------------------------------
+    // Feed the Netgen with surface mesh
+    // ---------------------------------
+
+    TopAbs_ShapeEnum mainType = aMesh.GetShapeToMesh().ShapeType();
+    bool checkReverse = ( mainType == TopAbs_COMPOUND || mainType == TopAbs_COMPSOLID );
+
+    StdMeshers_QuadToTriaAdaptor Adaptor;
+    if ( aMesh.NbQuadrangles() > 0 )
+      Adaptor.Compute(aMesh,aShape);
+
+    for ( TopExp_Explorer exFa( aShape, TopAbs_FACE ); exFa.More(); exFa.Next())
     {
+      const TopoDS_Shape& aShapeFace = exFa.Current();
+      int faceID = meshDS->ShapeToIndex( aShapeFace );
+      bool isInternalFace = internals.isInternalShape( faceID );
       bool isRev = false;
-      if ( checkReverse && helper.NbAncestors(aShapeFace, aMesh, aShape.ShapeType()) > 1 )
+      if ( checkReverse && !isInternalFace &&
+           helper.NbAncestors(aShapeFace, aMesh, aShape.ShapeType()) > 1 )
         // IsReversedSubMesh() can work wrong on strongly curved faces,
         // so we use it as less as possible
         isRev = SMESH_Algo::IsReversedSubMesh( TopoDS::Face(aShapeFace), meshDS );
 
+      const SMESHDS_SubMesh * aSubMeshDSFace = meshDS->MeshElements( aShapeFace );
+      if ( !aSubMeshDSFace ) continue;
       SMDS_ElemIteratorPtr iteratorElem = aSubMeshDSFace->GetElements();
-      while ( iteratorElem->more() ) // loop on elements on a face
+      while ( iteratorElem->more() ) // loop on elements on a geom face
       {
-        // check element
+        // check mesh face
         const SMDS_MeshElement* elem = iteratorElem->next();
         if ( !elem )
           return error( COMPERR_BAD_INPUT_MESH, "Null element encounters");
+        vector< const SMDS_MeshElement* > trias;
         bool isTraingle = ( elem->NbNodes() == ( elem->IsQuadratic() ? 6 : 3 ));
-        if ( !isTraingle ) {
-          // using adaptor
+        if ( !isTraingle )
+        {
+          // use adaptor to convert quadrangle face into triangles
           const list<const SMDS_FaceOfNodes*>* faces = Adaptor.GetTriangles(elem);
-          if(faces==0) {
+          if(faces==0)
             return error( COMPERR_BAD_INPUT_MESH,
                           SMESH_Comment("No triangles in adaptor for element ")<<elem->GetID());
-          }
-          list<const SMDS_FaceOfNodes*>::const_iterator itf = faces->begin();
-          for(; itf!=faces->end(); itf++ ) {
-            triangles.push_back( (*itf) );
-            isReversed.push_back( isRev );
-            // put triange's nodes to nodeToNetgenID map
-            SMDS_ElemIteratorPtr triangleNodesIt = (*itf)->nodesIterator();
-            while ( triangleNodesIt->more() ) {
-              const SMDS_MeshNode * node =
-                static_cast<const SMDS_MeshNode *>(triangleNodesIt->next());
-              if(myTool->IsMedium(node))
-                continue;
-              nodeToNetgenID.insert( make_pair( node, invalid_ID ));
-            }
-          }
+          trias.assign( faces->begin(), faces->end() );
         }
-        else {
-          // keep a triangle
-          triangles.push_back( elem );
-          isReversed.push_back( isRev );
-          // put elem nodes to nodeToNetgenID map
-          SMDS_ElemIteratorPtr triangleNodesIt = elem->nodesIterator();
-          while ( triangleNodesIt->more() ) {
-            const SMDS_MeshNode * node =
-              static_cast<const SMDS_MeshNode *>(triangleNodesIt->next());
-            if(myTool->IsMedium(node))
-              continue;
-            nodeToNetgenID.insert( make_pair( node, invalid_ID ));
+        else
+        {
+          trias.push_back( elem );
+        }
+        // Add nodes of triangles and triangles them-selves to netgen mesh
+
+        for ( int i = 0; i < trias.size(); ++i )
+        {
+          // add three nodes of triangle
+          bool hasDegen = false;
+          for ( int iN = 0; iN < 3; ++iN )
+          {
+            const SMDS_MeshNode* node = trias[i]->GetNode( iN );
+            int shapeID = node->GetPosition()->GetShapeId();
+            if ( node->GetPosition()->GetTypeOfPosition() == SMDS_TOP_EDGE &&
+                 helper.IsDegenShape( shapeID ))
+            {
+              // ignore all nodes on degeneraged edge and use node on its vertex instead
+              TopoDS_Shape vertex = TopoDS_Iterator( meshDS->IndexToShape( shapeID )).Value();
+              node = SMESH_Algo::VertexNode( TopoDS::Vertex( vertex ), meshDS );
+              hasDegen = true;
+            }
+            int& ngID = nodeToNetgenID.insert(TN2ID( node, invalid_ID )).first->second;
+            if ( ngID == invalid_ID )
+            {
+              ngID = ++Netgen_NbOfNodes;
+              Netgen_point [ 0 ] = node->X();
+              Netgen_point [ 1 ] = node->Y();
+              Netgen_point [ 2 ] = node->Z();
+              Ng_AddPoint(Netgen_mesh, Netgen_point);
+            }
+            Netgen_triangle[ isRev ? 2-iN : iN ] = ngID;
+          }
+          // add triangle
+          if ( hasDegen && (Netgen_triangle[0] == Netgen_triangle[1] ||
+                            Netgen_triangle[0] == Netgen_triangle[2] ||
+                            Netgen_triangle[2] == Netgen_triangle[1] ))
+            continue;
+
+          Ng_AddSurfaceElement(Netgen_mesh, NG_TRIG, Netgen_triangle);
+
+          if ( isInternalFace && isTraingle )
+          {
+            swap( Netgen_triangle[1], Netgen_triangle[2] );
+            Ng_AddSurfaceElement(Netgen_mesh, NG_TRIG, Netgen_triangle);
           }
         }
 #ifdef _DEBUG_
@@ -257,91 +296,24 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
           MESSAGE( "Warning: Degenerated " << elem );
         }
 #endif
-      }
-      // look for degeneraged edges and vetices
-      for (TopExp_Explorer expE(aShapeFace,TopAbs_EDGE);expE.More();expE.Next())
-      {
-        TopoDS_Edge aShapeEdge = TopoDS::Edge( expE.Current() );
-        if ( BRep_Tool::Degenerated( aShapeEdge ))
-        {
-          degenNgIds.push_back( invalid_ID );
-          int* ptrIdOnEdge = & degenNgIds.back();
-          // remember edge id
-          int edgeID = meshDS->ShapeToIndex( aShapeEdge );
-          degenShapeIdToPtrNgId.insert( make_pair( edgeID, ptrIdOnEdge ));
-          // remember vertex id
-          int vertexID = meshDS->ShapeToIndex( TopExp::FirstVertex( aShapeEdge ));
-          degenShapeIdToPtrNgId.insert( make_pair( vertexID, ptrIdOnEdge ));
-        }
-      }
-    }
-  }
-  // ---------------------------------
-  // Feed the Netgen with surface mesh
-  // ---------------------------------
+      } // loop on elements on a face
+    } // loop on faces of a SOLID or SHELL
 
-  int Netgen_NbOfNodes = 0;
-  int Netgen_param2ndOrder = 0;
-  double Netgen_paramFine = 1.;
-  double Netgen_paramSize = pow( 72, 1/6. ) * pow( _maxElementVolume, 1/3. );
+    // insert old nodes into nodeVec
+    nodeVec.resize( nodeToNetgenID.size() + 1, 0 );
+    TNodeToIDMap::iterator n_id = nodeToNetgenID.begin();
+    for ( ; n_id != nodeToNetgenID.end(); ++n_id )
+      nodeVec[ n_id->second ] = n_id->first;
+    nodeToNetgenID.clear();
 
-  double Netgen_point[3];
-  int Netgen_triangle[3];
-  int Netgen_tetrahedron[4];
-
-  Ng_Init();
-
-  Ng_Mesh * Netgen_mesh = Ng_NewMesh();
-
-  // set nodes and remember thier netgen IDs
-  bool isDegen = false, hasDegen = !degenShapeIdToPtrNgId.empty();
-  TNodeToIDMap::iterator n_id = nodeToNetgenID.begin();
-  for ( ; n_id != nodeToNetgenID.end(); ++n_id )
-  {
-    const SMDS_MeshNode* node = n_id->first;
-
-    // ignore nodes on degenerated edge
-    if ( hasDegen ) {
-      int shapeId = node->GetPosition()->GetShapeId();
-      shId_ngId = degenShapeIdToPtrNgId.find( shapeId );
-      isDegen = ( shId_ngId != degenShapeIdToPtrNgId.end() );
-      if ( isDegen && *(shId_ngId->second) != invalid_ID ) {
-        n_id->second = *(shId_ngId->second);
-        continue;
-      }
-    }
-    Netgen_point [ 0 ] = node->X();
-    Netgen_point [ 1 ] = node->Y();
-    Netgen_point [ 2 ] = node->Z();
-    Ng_AddPoint(Netgen_mesh, Netgen_point);
-    n_id->second = ++Netgen_NbOfNodes; // set netgen ID
-
-    if ( isDegen ) // all nodes on a degen edge get one netgen ID
-      *(shId_ngId->second) = n_id->second;
-  }
-
-  // set triangles
-  list< const SMDS_MeshElement* >::iterator tria = triangles.begin();
-  list< bool >::iterator                 reverse = isReversed.begin();
-  for ( ; tria != triangles.end(); ++tria, ++reverse )
-  {
-    int i = 0;
-    SMDS_ElemIteratorPtr triangleNodesIt = (*tria)->nodesIterator();
-    while ( triangleNodesIt->more() ) {
-      const SMDS_MeshNode * node =
-        static_cast<const SMDS_MeshNode *>(triangleNodesIt->next());
-      if(myTool->IsMedium(node))
-        continue;
-      Netgen_triangle[ *reverse ? 2 - i : i ] = nodeToNetgenID[ node ];
-      ++i;
-    }
-    if ( !hasDegen ||
-         // ignore degenerated triangles, they have 2 or 3 same ids
-         (Netgen_triangle[0] != Netgen_triangle[1] &&
-          Netgen_triangle[0] != Netgen_triangle[2] &&
-          Netgen_triangle[2] != Netgen_triangle[1] ))
+    if ( internals.hasInternalVertexInSolid() )
     {
-      Ng_AddSurfaceElement(Netgen_mesh, NG_TRIG, Netgen_triangle);
+      netgen::OCCGeometry occgeo;
+      NETGENPlugin_Mesher::addIntVerticesInSolids( occgeo,
+                                                   (netgen::Mesh&) *Netgen_mesh,
+                                                   nodeVec,
+                                                   internals);
+      Netgen_NbOfNodes = Ng_GetNP(Netgen_mesh);
     }
   }
 
@@ -352,8 +324,8 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
   Ng_Meshing_Parameters Netgen_param;
 
   Netgen_param.secondorder = Netgen_param2ndOrder;
-  Netgen_param.fineness = Netgen_paramFine;
-  Netgen_param.maxh = Netgen_paramSize;
+  Netgen_param.fineness    = Netgen_paramFine;
+  Netgen_param.maxh        = Netgen_paramSize;
 
   Ng_Result status;
 
@@ -382,8 +354,7 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
   }
 
   int Netgen_NbOfNodesNew = Ng_GetNP(Netgen_mesh);
-
-  int Netgen_NbOfTetra = Ng_GetNE(Netgen_mesh);
+  int Netgen_NbOfTetra    = Ng_GetNE(Netgen_mesh);
 
   MESSAGE("End of Volume Mesh Generation. status=" << status <<
           ", nb new nodes: " << Netgen_NbOfNodesNew - Netgen_NbOfNodes <<
@@ -393,49 +364,46 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
   // Feed back the SMESHDS with the generated Nodes and Volume Elements
   // -------------------------------------------------------------------
 
+  if ( status == NG_VOLUME_FAILURE )
+  {
+    SMESH_ComputeErrorPtr err = NETGENPlugin_Mesher::readErrors(nodeVec);
+    if ( err && !err->myBadElements.empty() )
+      error( err );
+  }
+
   bool isOK = ( /*status == NG_OK &&*/ Netgen_NbOfTetra > 0 );// get whatever built
   if ( isOK )
   {
-    // vector of nodes in which node index == netgen ID
-    vector< const SMDS_MeshNode* > nodeVec ( Netgen_NbOfNodesNew + 1 );
-    // insert old nodes into nodeVec
-    for ( n_id = nodeToNetgenID.begin(); n_id != nodeToNetgenID.end(); ++n_id ) {
-      nodeVec.at( n_id->second ) = n_id->first;
-    }
     // create and insert new nodes into nodeVec
+    nodeVec.resize( Netgen_NbOfNodesNew + 1, 0 );
     int nodeIndex = Netgen_NbOfNodes + 1;
-    int shapeID = meshDS->ShapeToIndex( aShape );
     for ( ; nodeIndex <= Netgen_NbOfNodesNew; ++nodeIndex )
     {
       Ng_GetPoint( Netgen_mesh, nodeIndex, Netgen_point );
-      SMDS_MeshNode * node = meshDS->AddNode(Netgen_point[0],
-                                             Netgen_point[1],
-                                             Netgen_point[2]);
-      meshDS->SetNodeInVolume(node, shapeID);
-      nodeVec.at(nodeIndex) = node;
+      nodeVec.at(nodeIndex) = helper.AddNode(Netgen_point[0], Netgen_point[1], Netgen_point[2]);
     }
 
     // create tetrahedrons
     for ( int elemIndex = 1; elemIndex <= Netgen_NbOfTetra; ++elemIndex )
     {
       Ng_GetVolumeElement(Netgen_mesh, elemIndex, Netgen_tetrahedron);
-      SMDS_MeshVolume * elt = myTool->AddVolume (nodeVec.at( Netgen_tetrahedron[0] ),
-                                                 nodeVec.at( Netgen_tetrahedron[1] ),
-                                                 nodeVec.at( Netgen_tetrahedron[2] ),
-                                                 nodeVec.at( Netgen_tetrahedron[3] ));
-      meshDS->SetMeshElementOnShape(elt, shapeID );
+      helper.AddVolume (nodeVec.at( Netgen_tetrahedron[0] ),
+                        nodeVec.at( Netgen_tetrahedron[1] ),
+                        nodeVec.at( Netgen_tetrahedron[2] ),
+                        nodeVec.at( Netgen_tetrahedron[3] ));
     }
   }
-
-  Ng_DeleteMesh(Netgen_mesh);
-  Ng_Exit();
-
-  NETGENPlugin_Mesher::RemoveTmpFiles();
 
   return (status == NG_OK);
 }
 
-bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh& aMesh,
+//================================================================================
+/*!
+ * \brief Compute tetrahedral mesh from 2D mesh without geometry
+ */
+//================================================================================
+
+bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
                                      SMESH_MesherHelper* aHelper)
 {
   MESSAGE("NETGENPlugin_NETGEN_3D::Compute with maxElmentsize = " << _maxElementVolume);  
@@ -462,42 +430,32 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh& aMesh,
   while( fIt->more()) sortedFaces.insert( fIt->next() );
 
   TIDSortedElemSet::iterator itFace = sortedFaces.begin(), fEnd = sortedFaces.end();
-  for ( ; itFace != fEnd; ++itFace ) {
+  for ( ; itFace != fEnd; ++itFace )
+  {
     // check element
     const SMDS_MeshElement* elem = *itFace;
     if ( !elem )
       return error( COMPERR_BAD_INPUT_MESH, "Null element encounters");
+
+    vector< const SMDS_MeshElement* > trias;
     bool isTraingle = ( elem->NbNodes() == ( elem->IsQuadratic() ? 6 : 3 ));
     if ( !isTraingle ) {
       // using adaptor
       const list<const SMDS_FaceOfNodes*>* faces = Adaptor.GetTriangles(elem);
-      if(faces==0) {
+      if(faces==0)
         continue; // Issue 0020682. There already can be 3d mesh
-      }
-      list<const SMDS_FaceOfNodes*>::const_iterator itf = faces->begin();
-      for(; itf!=faces->end(); itf++ ) {
-        triangles.push_back( (*itf) );
-        // put triange's nodes to nodeToNetgenID map
-        SMDS_ElemIteratorPtr triangleNodesIt = (*itf)->nodesIterator();
-        while ( triangleNodesIt->more() ) {
-          const SMDS_MeshNode * node =
-            static_cast<const SMDS_MeshNode *>(triangleNodesIt->next());
-          if(aHelper->IsMedium(node))
-            continue;
-          nodeToNetgenID.insert( make_pair( node, invalid_ID ));
-        }
-      }
+      trias.assign( faces->begin(), faces->end() );
     }
     else {
-      // keep a triangle
-      triangles.push_back( elem );
-      // put elem nodes to nodeToNetgenID map
-      SMDS_ElemIteratorPtr triangleNodesIt = elem->nodesIterator();
-      while ( triangleNodesIt->more() ) {
-        const SMDS_MeshNode * node =
-          static_cast<const SMDS_MeshNode *>(triangleNodesIt->next());
-        if(aHelper->IsMedium(node))
-          continue;
+      trias.push_back( elem );
+    }
+    for ( int i = 0; i < trias.size(); ++i )
+    {
+      triangles.push_back( trias[i] );
+      for ( int iN = 0; iN < 3; ++iN )
+      {
+        const SMDS_MeshNode* node = trias[i]->GetNode( iN );
+        // put elem nodes to nodeToNetgenID map
         nodeToNetgenID.insert( make_pair( node, invalid_ID ));
       }
     }
@@ -516,11 +474,10 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh& aMesh,
   int Netgen_triangle[3];
   int Netgen_tetrahedron[4];
 
-  Ng_Init();
+  NETGENPlugin_NetgenLibWrapper ngLib;
+  Ng_Mesh * Netgen_mesh = ngLib._ngMesh;
 
-  Ng_Mesh * Netgen_mesh = Ng_NewMesh();
-
-    // set nodes and remember thier netgen IDs
+  // set nodes and remember thier netgen IDs
   
   TNodeToIDMap::iterator n_id = nodeToNetgenID.begin();
   for ( ; n_id != nodeToNetgenID.end(); ++n_id )
@@ -625,11 +582,6 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh& aMesh,
     }
   }
 
-  Ng_DeleteMesh(Netgen_mesh);
-  Ng_Exit();
-  
-  NETGENPlugin_Mesher::RemoveTmpFiles();
-  
   return (status == NG_OK);
 }
 
@@ -646,8 +598,8 @@ bool NETGENPlugin_NETGEN_3D::Evaluate(SMESH_Mesh& aMesh,
 {
   int nbtri = 0, nbqua = 0;
   double fullArea = 0.0;
-  for (TopExp_Explorer exp(aShape, TopAbs_FACE); exp.More(); exp.Next()) {
-    TopoDS_Face F = TopoDS::Face( exp.Current() );
+  for (TopExp_Explorer expF(aShape, TopAbs_FACE); expF.More(); expF.Next()) {
+    TopoDS_Face F = TopoDS::Face( expF.Current() );
     SMESH_subMesh *sm = aMesh.GetSubMesh(F);
     MapShapeNbElemsItr anIt = aResMap.find(sm);
     if( anIt==aResMap.end() ) {
@@ -669,12 +621,12 @@ bool NETGENPlugin_NETGEN_3D::Evaluate(SMESH_Mesh& aMesh,
   bool IsQuadratic = false;
   bool IsFirst = true;
   TopTools_MapOfShape tmpMap;
-  for (TopExp_Explorer exp(aShape, TopAbs_EDGE); exp.More(); exp.Next()) {
-    TopoDS_Edge E = TopoDS::Edge(exp.Current());
+  for (TopExp_Explorer expF(aShape, TopAbs_EDGE); expF.More(); expF.Next()) {
+    TopoDS_Edge E = TopoDS::Edge(expF.Current());
     if( tmpMap.Contains(E) )
       continue;
     tmpMap.Add(E);
-    SMESH_subMesh *aSubMesh = aMesh.GetSubMesh(exp.Current());
+    SMESH_subMesh *aSubMesh = aMesh.GetSubMesh(expF.Current());
     MapShapeNbElemsItr anIt = aResMap.find(aSubMesh);
     if( anIt==aResMap.end() ) {
       SMESH_ComputeErrorPtr& smError = aSubMesh->GetComputeError();
