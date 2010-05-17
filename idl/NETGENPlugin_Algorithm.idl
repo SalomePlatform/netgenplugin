@@ -35,6 +35,7 @@
  */
 module NETGENPlugin
 {
+  typedef sequence<string> string_array;
   /*!
    * NETGENPlugin_NETGEN_3D: interface of "Tetrahedron (Netgen)" algorithm
    */
@@ -90,6 +91,11 @@ module NETGENPlugin
 
     void SetNbSegPerRadius(in double value);
     double GetNbSegPerRadius();
+
+    void SetLocalSizeOnEntry(in string entry, in double localSize);
+    double GetLocalSizeOnEntry(in string entry);
+    string_array GetLocalSizeEntries();
+    void UnsetLocalSizeOnEntry(in string entry);
   };
 
   /*!

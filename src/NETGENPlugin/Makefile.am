@@ -91,6 +91,7 @@ endif
 libNETGENEngine_la_LDFLAGS  += \
 	../../idl/libSalomeIDLNETGENPLUGIN.la \
 	$(CAS_LDPATH) -lTKernel -lTKBRep -lTKShHealing -lTKSTEP -lTKXSBase -lTKIGES -lTKMesh -lTKSTL -lTKG3d -lTKTopAlgo -lTKG2d -lTKBool -lTKGeomAlgo -lTKOffset -lTKGeomBase -lTKBO \
+		      -lTKMath -lTKFillet -lTKMeshVS -lTKPrim -lTKSTEPBase -lTKSTEPAttr -lTKSTEP209 -lTKXDESTEP -lTKXDEIGES -lTKXCAF -lTKLCAF -lFWOSPlugin \
 	$(MED_LDFLAGS) -lSalomeIDLMED \
 	$(SMESH_LDFLAGS) -lSMESHimpl -lSMESHEngine -lStdMeshersEngine -lStdMeshers -lSMESHDS -lSMDS -lSMESHControls \
-	$(KERNEL_LDFLAGS) -lSalomeGenericObj -lSALOMELocalTrace -lOpUtil
+	$(KERNEL_LDFLAGS) -lSalomeGenericObj -lSalomeNS -lSALOMELocalTrace -lOpUtil

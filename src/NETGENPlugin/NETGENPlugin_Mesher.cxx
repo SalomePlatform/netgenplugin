@@ -41,6 +41,7 @@
 #include <SMESH_Mesh.hxx>
 #include <SMESH_MesherHelper.hxx>
 #include <SMESH_subMesh.hxx>
+#include <SMESH_Gen_i.hxx>
 #include <utilities.h>
 
 #include <vector>
@@ -62,9 +63,13 @@
 #include <TopTools_ListIteratorOfListOfShape.hxx>
 #include <TopTools_MapOfShape.hxx>
 #include <TopoDS.hxx>
+#include <GeomAdaptor_Curve.hxx>
+#include <GCPnts_AbscissaPoint.hxx>
 
 // Netgen include files
+#ifndef OCCGEOMETRY
 #define OCCGEOMETRY
+#endif
 #include <occgeom.hpp>
 #include <meshing.hpp>
 //#include <ngexception.hpp>
@@ -93,6 +98,11 @@ using namespace std;
 //#define DUMP_TRIANGLES
 //#define DUMP_TRIANGLES_SCRIPT "/tmp/trias.py" //!< debug addIntVerticesInSolids()
 
+TopTools_IndexedMapOfShape ShapesWithLocalSize;
+std::map<int,double> VertexId2LocalSize;
+std::map<int,double> EdgeId2LocalSize;
+std::map<int,double> FaceId2LocalSize;
+
 //=============================================================================
 /*!
  *
@@ -109,6 +119,10 @@ NETGENPlugin_Mesher::NETGENPlugin_Mesher (SMESH_Mesh* mesh,
     _simpleHyp(NULL)
 {
   defaultParameters();
+  ShapesWithLocalSize.Clear();
+  VertexId2LocalSize.clear();
+  EdgeId2LocalSize.clear();
+  FaceId2LocalSize.clear();
 }
 
 //================================================================================
@@ -139,6 +153,34 @@ void NETGENPlugin_Mesher::defaultParameters()
 
 //=============================================================================
 /*!
+ *
+ */
+//=============================================================================
+void SetLocalSize(TopoDS_Shape GeomShape, double LocalSize)
+{
+  TopAbs_ShapeEnum GeomType = GeomShape.ShapeType();
+  if (GeomType == TopAbs_COMPOUND) {
+    for (TopoDS_Iterator it (GeomShape); it.More(); it.Next()) {
+      SetLocalSize(it.Value(), LocalSize);
+    }
+    return;
+  }
+  int key;
+  if (! ShapesWithLocalSize.Contains(GeomShape))
+    key = ShapesWithLocalSize.Add(GeomShape);
+  else
+    key = ShapesWithLocalSize.FindIndex(GeomShape);
+  if (GeomType == TopAbs_VERTEX) {
+    VertexId2LocalSize[key] = LocalSize;
+  } else if (GeomType == TopAbs_EDGE) {
+    EdgeId2LocalSize[key] = LocalSize;
+  } else if (GeomType == TopAbs_FACE) {
+    FaceId2LocalSize[key] = LocalSize;
+  }
+}
+
+//=============================================================================
+/*!
  * Pass parameters to NETGEN
  */
 //=============================================================================
@@ -165,6 +207,34 @@ void NETGENPlugin_Mesher::SetParameters(const NETGENPlugin_Hypothesis* hyp)
         (hyp)->GetQuadAllowed() ? 1 : 0;
     _optimize = hyp->GetOptimize();
     _simpleHyp = NULL;
+
+    SMESH_Gen_i* smeshGen_i = SMESH_Gen_i::GetSMESHGen();
+    CORBA::Object_var anObject = smeshGen_i->GetNS()->Resolve("/myStudyManager");
+    SALOMEDS::StudyManager_var aStudyMgr = SALOMEDS::StudyManager::_narrow(anObject);
+    SALOMEDS::Study_var myStudy = aStudyMgr->GetStudyByID(hyp->GetStudyId());
+    
+    const NETGENPlugin_Hypothesis::TLocalSize localSizes = hyp->GetLocalSizesAndEntries();
+    NETGENPlugin_Hypothesis::TLocalSize::const_iterator it = localSizes.begin();
+    for (it ; it != localSizes.end() ; it++)
+      {
+        std::string entry = (*it).first;
+        double val = (*it).second;
+        // --
+        GEOM::GEOM_Object_var aGeomObj;
+        TopoDS_Shape S = TopoDS_Shape();
+        SALOMEDS::SObject_var aSObj = myStudy->FindObjectID( entry.c_str() );
+        SALOMEDS::GenericAttribute_var anAttr;
+        if (!aSObj->_is_nil() && aSObj->FindAttribute(anAttr, "AttributeIOR")) {
+          SALOMEDS::AttributeIOR_var anIOR = SALOMEDS::AttributeIOR::_narrow(anAttr);
+          CORBA::String_var aVal = anIOR->Value();
+          CORBA::Object_var obj = myStudy->ConvertIORToObject(aVal);
+          aGeomObj = GEOM::GEOM_Object::_narrow(obj);
+        }
+        if ( !aGeomObj->_is_nil() )
+          S = smeshGen_i->GeomObjectToShape( aGeomObj.in() );
+        // --
+        SetLocalSize(S, val);
+      }
   }
 }
 
@@ -291,6 +361,8 @@ void NETGENPlugin_Mesher::PrepareOCCgeometry(netgen::OCCGeometry&     occgeo,
 #ifdef NETGEN_NEW
   occgeo.face_maxh.SetSize(occgeo.fmap.Extent());
   occgeo.face_maxh = netgen::mparam.maxh;
+  occgeo.face_maxh_modified.SetSize(occgeo.fmap.Extent());
+  occgeo.face_maxh_modified = 0;
 #endif
 
 }
@@ -1357,6 +1429,24 @@ bool NETGENPlugin_Mesher::Compute()
   PrepareOCCgeometry( occgeo, _shape, *_mesh, &meshedSM, &internals );
 
   // -------------------------
+  // Local size on faces
+  // -------------------------
+  
+#ifdef NETGEN_NEW
+  if ( ! _simpleHyp )
+    {
+      for(std::map<int,double>::const_iterator it=FaceId2LocalSize.begin(); it!=FaceId2LocalSize.end(); it++)
+        {
+          int key = (*it).first;
+          double val = (*it).second;
+          const TopoDS_Shape& shape = ShapesWithLocalSize.FindKey(key);
+          int faceID = occgeo.fmap.FindIndex(shape);
+          occgeo.SetFaceMaxH(faceID, val);
+        }
+    }
+#endif
+  
+  // -------------------------
   // Generate the mesh
   // -------------------------
 
@@ -1394,6 +1484,45 @@ bool NETGENPlugin_Mesher::Compute()
     err = netgen::OCCGenerateMesh(occgeo, ngMesh, startWith, endWith, optstr);
     if (err) comment << "Error in netgen::OCCGenerateMesh() at MESHCONST_ANALYSE step";
     ngLib.setMesh(( Ng_Mesh*) ngMesh );
+
+    // --------------------------------
+    // Local size on vertices and edges
+    // --------------------------------
+    
+    if ( ! _simpleHyp )
+      {
+        for(std::map<int,double>::const_iterator it=EdgeId2LocalSize.begin(); it!=EdgeId2LocalSize.end(); it++)
+          {
+            int key = (*it).first;
+            double hi = (*it).second;
+            const TopoDS_Shape& shape = ShapesWithLocalSize.FindKey(key);
+            const TopoDS_Edge& e = TopoDS::Edge(shape);
+            Standard_Real u1, u2;
+            Handle(Geom_Curve) curve = BRep_Tool::Curve(e, u1, u2);
+            GeomAdaptor_Curve AdaptCurve(curve);
+            double length = GCPnts_AbscissaPoint::Length(AdaptCurve, u1, u2);
+            int nb = length/hi;
+            if(nb<2) nb=2;
+            Standard_Real delta = (u2-u1)/nb;
+            for(int i=0; i<nb; i++)
+              {
+                Standard_Real u = u1 + delta*i;
+                gp_Pnt p = curve->Value(u);
+                netgen::Point3d pi(p.X(), p.Y(), p.Z());
+                ngMesh->RestrictLocalH(pi, hi);
+              }
+          }
+        for(std::map<int,double>::const_iterator it=VertexId2LocalSize.begin(); it!=VertexId2LocalSize.end(); it++)
+          {
+            int key = (*it).first;
+            double hi = (*it).second;
+            const TopoDS_Shape& shape = ShapesWithLocalSize.FindKey(key);
+            const TopoDS_Vertex& v = TopoDS::Vertex(shape);
+            gp_Pnt p = BRep_Tool::Pnt(v);
+            netgen::Point3d pi(p.X(), p.Y(), p.Z());
+            ngMesh->RestrictLocalH(pi, hi);
+          }
+      }
 
     // Precompute internal edges (issue 0020676) in order to
     // add mesh on them correctly (twice) to netgen mesh

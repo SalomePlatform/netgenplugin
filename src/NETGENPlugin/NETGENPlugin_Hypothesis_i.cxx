@@ -273,6 +273,49 @@ CORBA::Double NETGENPlugin_Hypothesis_i::GetNbSegPerRadius()
 }
 
 //=============================================================================
+
+void NETGENPlugin_Hypothesis_i::SetLocalSizeOnEntry(const char* entry, CORBA::Double localSize)
+{
+  bool valueChanged = false;
+  valueChanged = ( this->GetImpl()->GetLocalSizeOnEntry(entry) != localSize );
+  if ( valueChanged )
+    this->GetImpl()->SetLocalSizeOnEntry(entry, localSize);
+  if ( valueChanged )
+    SMESH::TPythonDump() << _this() << ".SetLocalSizeOnEntry(" << entry << ", " << localSize << ")";
+}
+
+//=============================================================================
+
+CORBA::Double NETGENPlugin_Hypothesis_i::GetLocalSizeOnEntry(const char* entry)
+{
+  return this->GetImpl()->GetLocalSizeOnEntry(entry);
+}
+
+//=============================================================================
+
+NETGENPlugin::string_array* NETGENPlugin_Hypothesis_i::GetLocalSizeEntries()
+{
+  NETGENPlugin::string_array_var result = new NETGENPlugin::string_array();
+  const ::NETGENPlugin_Hypothesis::TLocalSize localSizes = this->GetImpl()->GetLocalSizesAndEntries();
+  result->length(localSizes.size());
+  ::NETGENPlugin_Hypothesis::TLocalSize::const_iterator it = localSizes.begin();
+  for (int i=0 ; it != localSizes.end() ; i++, it++)
+    {
+      string entry = (*it).first;
+      result[i] = CORBA::string_dup(entry.c_str());
+    }
+  return result._retn();
+}
+
+//=============================================================================
+
+void NETGENPlugin_Hypothesis_i::UnsetLocalSizeOnEntry(const char* entry)
+{
+  this->GetImpl()->UnsetLocalSizeOnEntry(entry);
+  SMESH::TPythonDump() << _this() << ".UnsetLocalSizeOnEntry(" << entry << ")";
+}
+
+//=============================================================================
 /*!
  *  NETGENPlugin_Hypothesis_i::GetImpl
  *
