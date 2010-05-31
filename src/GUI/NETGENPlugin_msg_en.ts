@@ -154,8 +154,12 @@
             <translation>Remove</translation>
         </message>
         <message>
-            <source>LSZ_NAME_COLUMN</source>
+            <source>LSZ_ENTRY_COLUMN</source>
             <translation>Entry</translation>
+        </message>
+        <message>
+            <source>LSZ_NAME_COLUMN</source>
+            <translation>Name</translation>
         </message>
         <message>
             <source>LSZ_LOCALSIZE_COLUMN</source>
