@@ -31,6 +31,7 @@
 #include "NETGENPlugin_Hypothesis_i.hxx"
 #include "SMESH_Gen.hxx"
 #include "SMESH_PythonDump.hxx"
+#include "GEOM_Object.hxx"
 
 #include "Utils_CorbaException.hxx"
 #include "utilities.h"
@@ -274,6 +275,15 @@ CORBA::Double NETGENPlugin_Hypothesis_i::GetNbSegPerRadius()
 
 //=============================================================================
 
+void NETGENPlugin_Hypothesis_i::SetLocalSizeOnShape(GEOM::GEOM_Object_ptr GeomObj, CORBA::Double localSize)
+{
+  string entry;
+  entry = GeomObj->GetStudyEntry();
+  SetLocalSizeOnEntry(entry.c_str(), localSize);
+}
+
+//=============================================================================
+
 void NETGENPlugin_Hypothesis_i::SetLocalSizeOnEntry(const char* entry, CORBA::Double localSize)
 {
   bool valueChanged = false;
@@ -281,7 +291,7 @@ void NETGENPlugin_Hypothesis_i::SetLocalSizeOnEntry(const char* entry, CORBA::Do
   if ( valueChanged )
     this->GetImpl()->SetLocalSizeOnEntry(entry, localSize);
   if ( valueChanged )
-    SMESH::TPythonDump() << _this() << ".SetLocalSizeOnEntry(" << entry << ", " << localSize << ")";
+    SMESH::TPythonDump() << _this() << ".SetLocalSizeOnShape(" << entry << ", " << localSize << ")";
 }
 
 //=============================================================================
