@@ -45,13 +45,17 @@
             <source>ICON_SMESH_TREE_ALGO_NETGEN_2D</source>
             <translation>mesh_tree_algo_netgen_2d.png</translation>
         </message>
+	<message>
+            <source>ICON_SMESH_TREE_ALGO_NETGEN_2D_ONLY</source>
+            <translation>mesh_tree_algo_netgen_2d.png</translation>
+        </message>
         <message>
             <source>ICON_SMESH_TREE_ALGO_NETGEN_2D3D</source>
             <translation>mesh_tree_algo_netgen_2d3d.png</translation>
         </message>
         <message>
             <source>ICON_SMESH_TREE_ALGO_NETGEN_3D</source>
-            <translation>mesh_tree_algo_tetra.png</translation>
+            <translation>mesh_tree_algo_netgen_2d3d.png</translation>
         </message>
         <message>
             <source>ICON_SMESH_TREE_HYPO_NETGEN_Parameters</source>

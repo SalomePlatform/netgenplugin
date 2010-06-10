@@ -133,5 +133,37 @@
             <source>NG_LENGTH_FROM_FACES</source>
             <translation>Length from faces</translation>
         </message>
+        <message>
+            <source>NETGEN_LOCAL_SIZE</source>
+            <translation>Local sizes</translation>
+        </message>
+        <message>
+            <source>NETGEN_LSZ_VERTEX</source>
+            <translation>On Vertex</translation>
+        </message>
+        <message>
+            <source>NETGEN_LSZ_EDGE</source>
+            <translation>On Edge</translation>
+        </message>
+        <message>
+            <source>NETGEN_LSZ_FACE</source>
+            <translation>On Sub-Face</translation>
+        </message>
+        <message>
+            <source>NETGEN_LSZ_REMOVE</source>
+            <translation>Remove</translation>
+        </message>
+        <message>
+            <source>LSZ_ENTRY_COLUMN</source>
+            <translation>Entry</translation>
+        </message>
+        <message>
+            <source>LSZ_NAME_COLUMN</source>
+            <translation>Name</translation>
+        </message>
+        <message>
+            <source>LSZ_LOCALSIZE_COLUMN</source>
+            <translation>Value</translation>
+        </message>
     </context>
 </TS>
