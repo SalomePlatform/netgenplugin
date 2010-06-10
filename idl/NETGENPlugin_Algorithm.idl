@@ -29,12 +29,14 @@
 
 #include "SALOME_Exception.idl"
 #include "SMESH_Hypothesis.idl"
+#include "GEOM_Gen.idl"
 
 /*!
  * NETGENPlugin: interfaces to NETGEN related hypotheses and algorithms
  */
 module NETGENPlugin
 {
+  typedef sequence<string> string_array;
   /*!
    * NETGENPlugin_NETGEN_3D: interface of "Tetrahedron (Netgen)" algorithm
    */
@@ -90,6 +92,12 @@ module NETGENPlugin
 
     void SetNbSegPerRadius(in double value);
     double GetNbSegPerRadius();
+
+    void SetLocalSizeOnShape(in GEOM::GEOM_Object GeomObj, in double localSize);
+    void SetLocalSizeOnEntry(in string entry, in double localSize);
+    double GetLocalSizeOnEntry(in string entry);
+    string_array GetLocalSizeEntries();
+    void UnsetLocalSizeOnEntry(in string entry);
   };
 
   /*!

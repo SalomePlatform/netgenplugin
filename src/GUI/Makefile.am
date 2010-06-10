@@ -49,6 +49,7 @@ nodist_libNETGENPluginGUI_la_SOURCES= \
 # additionnal information to compil and link file
 
 libNETGENPluginGUI_la_CPPFLAGS = \
+	$(NETGEN_INCLUDES) \
 	$(QT_INCLUDES) \
 	$(CAS_CPPFLAGS) \
 	$(PYTHON_INCLUDES) \
@@ -66,8 +67,8 @@ libNETGENPluginGUI_la_CPPFLAGS = \
 libNETGENPluginGUI_la_LDFLAGS  = \
 	../NETGENPlugin/libNETGENEngine.la \
 	${QT_MT_LIBS} \
-	${GUI_LDFLAGS} -lSalomeApp -lqtx -lsuit \
-	${SMESH_LDFLAGS} -lSMESH \
+	${GUI_LDFLAGS} -lSalomeApp -lqtx -lsuit -lSalomeObject -lLightApp \
+	${SMESH_LDFLAGS} -lSMESH -lGeomSelectionTools \
 	$(CAS_KERNEL)
 
 # resources files

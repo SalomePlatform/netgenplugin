@@ -45,10 +45,12 @@ NETGENPlugin_Hypothesis::NETGENPlugin_Hypothesis (int hypId, int studyId,
     _nbSegPerRadius(GetDefaultNbSegPerRadius()),
     _fineness      (GetDefaultFineness()),
     _secondOrder   (GetDefaultSecondOrder()),
-    _optimize      (GetDefaultOptimize())
+    _optimize      (GetDefaultOptimize()),
+    _localSize     (GetDefaultLocalSize())
 {
   _name = "NETGEN_Parameters";
   _param_algo_dim = 3;
+  _localSize.clear();
 }
 
 //=============================================================================
@@ -189,6 +191,45 @@ void NETGENPlugin_Hypothesis::SetNbSegPerRadius(double theVal)
  *  
  */
 //=============================================================================
+void NETGENPlugin_Hypothesis::SetLocalSizeOnEntry(const std::string& entry, double localSize)
+{
+  if(_localSize[entry] != localSize)
+    {
+      _localSize[entry] = localSize;
+      NotifySubMeshesHypothesisModification();
+    }
+}
+
+//=============================================================================
+/*!
+ *  
+ */
+//=============================================================================
+double NETGENPlugin_Hypothesis::GetLocalSizeOnEntry(const std::string& entry)
+{
+  TLocalSize::iterator it  = _localSize.find( entry );
+  if ( it != _localSize.end() )
+    return it->second;
+  else
+    return -1.0;
+}
+
+//=============================================================================
+/*!
+ *  
+ */
+//=============================================================================
+void NETGENPlugin_Hypothesis::UnsetLocalSizeOnEntry(const std::string& entry)
+{
+  _localSize.erase(entry);
+  NotifySubMeshesHypothesisModification();
+}
+
+//=============================================================================
+/*!
+ *  
+ */
+//=============================================================================
 ostream & NETGENPlugin_Hypothesis::SaveTo(ostream & save)
 {
   save << _maxSize << " " << _fineness;
@@ -197,6 +238,16 @@ ostream & NETGENPlugin_Hypothesis::SaveTo(ostream & save)
     save << " " << _growthRate << " " << _nbSegPerEdge << " " << _nbSegPerRadius;
 
   save << " " << (int)_secondOrder << " " << (int)_optimize;
+
+  TLocalSize::iterator it_sm  = _localSize.begin();
+  if (it_sm != _localSize.end()) {
+    save << " " << "__LOCALSIZE_BEGIN__";
+    for ( ; it_sm != _localSize.end(); ++it_sm ) {
+        save << " " << it_sm->first
+             << " " << it_sm->second << "%#"; // "%#" is a mark of value end
+    }
+    save << " " << "__LOCALSIZE_END__";
+  }
 
   return save;
 }
@@ -256,6 +307,31 @@ istream & NETGENPlugin_Hypothesis::LoadFrom(istream & load)
     _optimize = (bool) is;
   else
     load.clear(ios::badbit | load.rdstate());
+
+  std::string option_or_sm;
+  bool hasLocalSize = false;
+
+  isOK = (load >> option_or_sm);
+  if (isOK)
+    if (option_or_sm == "__LOCALSIZE_BEGIN__")
+      hasLocalSize = true;
+
+  std::string smEntry, smValue;
+  while (isOK && hasLocalSize) {
+    isOK = (load >> smEntry);
+    if (isOK) {
+      if (smEntry == "__LOCALSIZE_END__")
+        break;
+      isOK = (load >> smValue);
+    }
+    if (isOK) {
+      std::istringstream tmp(smValue);
+      double val;
+      tmp >> val;
+      _localSize[ smEntry ] = val;
+    }
+  }
+
   return load;
 }
 

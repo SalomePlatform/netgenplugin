@@ -40,6 +40,7 @@
 #include "NETGENPlugin_Hypothesis.hxx"
 
 class SMESH_Gen;
+//class GEOM_Object;
 
 // NETGENPlugin parameters hypothesis
 
@@ -75,6 +76,12 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_Hypothesis_i:
 
   void SetNbSegPerRadius(CORBA::Double theVal);
   CORBA::Double GetNbSegPerRadius();
+
+  void SetLocalSizeOnShape(GEOM::GEOM_Object_ptr GeomObj, CORBA::Double localSize);
+  void SetLocalSizeOnEntry(const char* entry, CORBA::Double localSize);
+  CORBA::Double GetLocalSizeOnEntry(const char* entry);
+  NETGENPlugin::string_array* GetLocalSizeEntries();
+  void UnsetLocalSizeOnEntry(const char* entry);
 
   // Get implementation
   ::NETGENPlugin_Hypothesis* GetImpl();

@@ -33,10 +33,14 @@
 
 #include <SMESHGUI_Hypotheses.h>
 
+#include <TopAbs_ShapeEnum.hxx>
+
 class SMESHGUI_SpinBox;
+class GeomSelectionTools;
 class QComboBox;
 class QCheckBox;
 class QLineEdit;
+class QTableWidget;
 
 typedef struct
 {
@@ -72,11 +76,18 @@ protected:
 
 protected slots:
   virtual void     onFinenessChanged();
+  virtual void     onAddLocalSizeOnVertex();
+  virtual void     onAddLocalSizeOnEdge();
+  virtual void     onAddLocalSizeOnFace();
+  virtual void     onRemoveLocalSizeOnShape();
+  virtual void     onSetLocalSize(int,int);
 
 private:
   bool readParamsFromHypo( NetgenHypothesisData& ) const;
   bool readParamsFromWidgets( NetgenHypothesisData& ) const;
   bool storeParamsToHypo( const NetgenHypothesisData& ) const;
+  GeomSelectionTools* getGeomSelectionTools();
+  void addLocalSizeOnShape(TopAbs_ShapeEnum);
 
 private:
  QLineEdit*        myName;
@@ -90,6 +101,10 @@ private:
  QCheckBox*        myAllowQuadrangles;
 
  bool myIs2D;
+
+ QTableWidget* myLocalSizeTable;
+ GeomSelectionTools* myGeomSelectionTools;
+ QMap<QString, QString> myLocalSizeMap;
 };
 
 #endif

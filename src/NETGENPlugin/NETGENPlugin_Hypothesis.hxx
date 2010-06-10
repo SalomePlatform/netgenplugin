@@ -34,6 +34,8 @@
 #include "SMESH_Hypothesis.hxx"
 #include "Utils_SALOME_Exception.hxx"
 
+#include <map>
+
 //  Parameters for work of NETGEN
 //
 
@@ -78,6 +80,13 @@ public:
   void SetNbSegPerRadius(double theVal);
   double GetNbSegPerRadius() const { return _nbSegPerRadius; }
 
+  typedef std::map<std::string, double> TLocalSize;
+  static TLocalSize GetDefaultLocalSize() { return TLocalSize(); }
+  void SetLocalSizeOnEntry(const std::string& entry, double localSize);
+  double GetLocalSizeOnEntry(const std::string& entry);
+  const TLocalSize& GetLocalSizesAndEntries() const { return _localSize; }
+  void UnsetLocalSizeOnEntry(const std::string& entry);
+
   // the default values (taken from NETGEN 4.5 sources)
 
   static double GetDefaultMaxSize();
@@ -116,6 +125,7 @@ private:
   Fineness      _fineness;
   bool          _secondOrder;
   bool          _optimize;
+  TLocalSize    _localSize;
 };
 
 #endif

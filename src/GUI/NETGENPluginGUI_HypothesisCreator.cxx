@@ -32,6 +32,7 @@
 #include <SMESHGUI_HypothesesUtils.h>
 #include <SMESHGUI.h>
 #include <SMESHGUI_SpinBox.h>
+#include <GeomSelectionTools.h>
 
 #include CORBA_SERVER_HEADER(NETGENPlugin_Algorithm)
 
@@ -39,6 +40,8 @@
 #include <SUIT_ResourceMgr.h>
 
 #include <SalomeApp_Tools.h>
+#include <LightApp_SelectionMgr.h>
+#include <SALOME_ListIteratorOfListIO.hxx>
 
 #include <QComboBox>
 #include <QLabel>
@@ -48,6 +51,9 @@
 #include <QLineEdit>
 #include <QCheckBox>
 #include <QPixmap>
+#include <QTableWidget>
+#include <QHeaderView>
+#include <QPushButton>
 
  enum Fineness
    {
@@ -59,10 +65,35 @@
      UserDefined
    };
 
+enum {
+  STD_TAB = 0,
+  LSZ_TAB
+};
+
+enum {
+  LSZ_ENTRY_COLUMN = 0,
+  LSZ_NAME_COLUMN,
+  LSZ_LOCALSIZE_COLUMN,
+  LSZ_NB_COLUMNS
+};
+
+enum {
+  LSZ_BTNS = 0,
+  LSZ_VERTEX_BTN,
+  LSZ_EDGE_BTN,
+#ifdef NETGEN_NEW
+  LSZ_FACE_BTN,
+#endif
+  LSZ_SEPARATOR2,
+  LSZ_REMOVE_BTN
+};
+
 NETGENPluginGUI_HypothesisCreator::NETGENPluginGUI_HypothesisCreator( const QString& theHypType )
 : SMESHGUI_GenericHypothesisCreator( theHypType ),
   myIs2D(false)
 {
+  myGeomSelectionTools = NULL;
+  myLocalSizeMap.clear();
 }
 
 NETGENPluginGUI_HypothesisCreator::~NETGENPluginGUI_HypothesisCreator()
@@ -92,8 +123,12 @@ QFrame* NETGENPluginGUI_HypothesisCreator::buildFrame()
   lay->setMargin( 5 );
   lay->setSpacing( 0 );
 
-  QGroupBox* GroupC1 = new QGroupBox( tr( "SMESH_ARGUMENTS" ), fr );
-  lay->addWidget( GroupC1 );
+  QTabWidget* tab = new QTabWidget( fr );
+  tab->setTabShape( QTabWidget::Rounded );
+  tab->setTabPosition( QTabWidget::North );
+  lay->addWidget( tab );
+  QWidget* GroupC1 = new QWidget();
+  tab->insertTab( STD_TAB, GroupC1, tr( "SMESH_ARGUMENTS" ) );
   
   QGridLayout* aGroupLayout = new QGridLayout( GroupC1 );
   aGroupLayout->setSpacing( 6 );
@@ -161,7 +196,49 @@ QFrame* NETGENPluginGUI_HypothesisCreator::buildFrame()
   row++;
   
   connect( myFineness, SIGNAL( activated( int ) ), this, SLOT( onFinenessChanged() ) );
+
+  QWidget* localSizeGroup = new QWidget();
+  QGridLayout* localSizeLayout = new QGridLayout(localSizeGroup);
   
+  myLocalSizeTable = new QTableWidget(0, LSZ_NB_COLUMNS, localSizeGroup);
+  localSizeLayout->addWidget(myLocalSizeTable, 1, 0, 8, 1);
+  QStringList localSizeHeaders;
+  localSizeHeaders << tr( "LSZ_ENTRY_COLUMN" )<< tr( "LSZ_NAME_COLUMN" ) << tr( "LSZ_LOCALSIZE_COLUMN" );
+  myLocalSizeTable->setHorizontalHeaderLabels(localSizeHeaders);
+  myLocalSizeTable->horizontalHeader()->hideSection(LSZ_ENTRY_COLUMN);
+  myLocalSizeTable->horizontalHeader()->setResizeMode(QHeaderView::Interactive);
+  myLocalSizeTable->resizeColumnToContents(LSZ_NAME_COLUMN);
+  myLocalSizeTable->resizeColumnToContents(LSZ_LOCALSIZE_COLUMN);
+  myLocalSizeTable->setAlternatingRowColors(true);
+  myLocalSizeTable->verticalHeader()->hide();
+  
+  QPushButton* addVertexButton = new QPushButton(tr("NETGEN_LSZ_VERTEX"), localSizeGroup);
+  localSizeLayout->addWidget(addVertexButton, LSZ_VERTEX_BTN, 1, 1, 1);
+  QPushButton* addEdgeButton = new QPushButton(tr("NETGEN_LSZ_EDGE"), localSizeGroup);
+  localSizeLayout->addWidget(addEdgeButton, LSZ_EDGE_BTN, 1, 1, 1);
+#ifdef NETGEN_NEW
+  QPushButton* addFaceButton = new QPushButton(tr("NETGEN_LSZ_FACE"), localSizeGroup);
+  localSizeLayout->addWidget(addFaceButton, LSZ_FACE_BTN, 1, 1, 1);
+#endif
+  
+  QFrame *line2 = new QFrame(localSizeGroup);
+  line2->setFrameShape(QFrame::HLine);
+  line2->setFrameShadow(QFrame::Sunken);
+  localSizeLayout->addWidget(line2, LSZ_SEPARATOR2, 1, 1, 1);
+  
+  QPushButton* removeButton = new QPushButton(tr("NETGEN_LSZ_REMOVE"), localSizeGroup);
+  localSizeLayout->addWidget(removeButton, LSZ_REMOVE_BTN, 1, 1, 1);
+  
+  connect( addVertexButton, SIGNAL(clicked()), this, SLOT(onAddLocalSizeOnVertex()));
+  connect( addEdgeButton, SIGNAL(clicked()), this, SLOT(onAddLocalSizeOnEdge()));
+#ifdef NETGEN_NEW
+  connect( addFaceButton, SIGNAL(clicked()), this, SLOT(onAddLocalSizeOnFace()));
+#endif
+  connect( removeButton, SIGNAL(clicked()), this, SLOT(onRemoveLocalSizeOnShape()));
+  connect( myLocalSizeTable, SIGNAL(cellChanged(int, int)), this, SLOT(onSetLocalSize(int, int)));
+  
+  tab->insertTab(LSZ_TAB, localSizeGroup, tr("NETGEN_LOCAL_SIZE"));
+
   return fr;
 }
 
@@ -204,6 +281,26 @@ void NETGENPluginGUI_HypothesisCreator::retrieveParams() const
   myGrowthRate->setEnabled(isCustom);
   myNbSegPerEdge->setEnabled(isCustom);
   myNbSegPerRadius->setEnabled(isCustom);
+
+  NETGENPluginGUI_HypothesisCreator* that = (NETGENPluginGUI_HypothesisCreator*)this;
+  QMapIterator<QString, QString> i(myLocalSizeMap);
+  GeomSelectionTools* geomSelectionTools = that->getGeomSelectionTools();
+  while (i.hasNext()) {
+    i.next();
+    const QString entry = i.key();
+    std::string shapeName = geomSelectionTools->getNameFromEntry(entry.toStdString());
+    const QString localSize = i.value();
+    int row = myLocalSizeTable->rowCount();
+    myLocalSizeTable->setRowCount(row+1);
+    myLocalSizeTable->setItem(row, LSZ_ENTRY_COLUMN, new QTableWidgetItem(entry));
+    myLocalSizeTable->item(row, LSZ_ENTRY_COLUMN)->setFlags(0);
+    myLocalSizeTable->setItem(row, LSZ_NAME_COLUMN, new QTableWidgetItem(QString::fromStdString(shapeName)));
+    myLocalSizeTable->item(row, LSZ_NAME_COLUMN)->setFlags(0);
+    myLocalSizeTable->setItem(row, LSZ_LOCALSIZE_COLUMN, new QTableWidgetItem(localSize));
+    myLocalSizeTable->item(row, LSZ_LOCALSIZE_COLUMN)->setFlags(Qt::ItemIsSelectable|Qt::ItemIsEditable|Qt::ItemIsEnabled);
+  }
+  myLocalSizeTable->resizeColumnToContents(LSZ_NAME_COLUMN);
+  myLocalSizeTable->resizeColumnToContents(LSZ_LOCALSIZE_COLUMN);
 }
 
 QString NETGENPluginGUI_HypothesisCreator::storeParams() const
@@ -259,6 +356,25 @@ bool NETGENPluginGUI_HypothesisCreator::readParamsFromHypo( NetgenHypothesisData
         h_data.myAllowQuadrangles = h_2d->GetQuadAllowed();
     }
   
+  NETGENPluginGUI_HypothesisCreator* that = (NETGENPluginGUI_HypothesisCreator*)this;
+  NETGENPlugin::string_array_var myEntries = h->GetLocalSizeEntries();
+  for ( int i=0 ; i<myEntries->length() ; i++ )
+    {
+      QString entry = myEntries[i].in();
+      double val = h->GetLocalSizeOnEntry(entry.toStdString().c_str());
+      std::ostringstream tmp;
+      tmp << val;
+      QString valstring = QString::fromStdString(tmp.str());
+      if (myLocalSizeMap.contains(entry))
+        {
+          if (myLocalSizeMap[entry] == "__TO_DELETE__")
+            {
+              continue;
+            }
+        }
+      that->myLocalSizeMap[entry] = valstring;
+    }
+  
   return true;
 }
 
@@ -307,7 +423,24 @@ bool NETGENPluginGUI_HypothesisCreator::storeParamsToHypo( const NetgenHypothesi
         h->SetParameters(aVariablesList.join(":").toLatin1().constData());
         h->SetParameters(aVariablesList.join(":").toLatin1().constData());
       }
-        
+
+    QMapIterator<QString,QString> i(myLocalSizeMap);
+    while (i.hasNext()) {
+      i.next();
+      const QString entry = i.key();
+      const QString localSize = i.value();
+      if (localSize == "__TO_DELETE__")
+        {
+          h->UnsetLocalSizeOnEntry(entry.toLatin1().constData());
+        }
+      else
+        {
+          std::istringstream tmp(localSize.toLatin1().constData());
+          double val;
+          tmp >> val;
+          h->SetLocalSizeOnEntry(entry.toLatin1().constData(), val);
+        }
+    }
   }
   catch(const SALOME::SALOME_Exception& ex)
   {
@@ -337,6 +470,15 @@ bool NETGENPluginGUI_HypothesisCreator::readParamsFromWidgets( NetgenHypothesisD
   if ( myIs2D )
     h_data.myAllowQuadrangles = myAllowQuadrangles->isChecked();
   
+  NETGENPluginGUI_HypothesisCreator* that = (NETGENPluginGUI_HypothesisCreator*)this;
+  int nbRows = myLocalSizeTable->rowCount();
+  for(int row=0 ; row < nbRows ; row++)
+    {
+      QString entry = myLocalSizeTable->item(row, LSZ_ENTRY_COLUMN)->text();
+      QString localSize = myLocalSizeTable->item(row, LSZ_LOCALSIZE_COLUMN)->text().trimmed();
+      that->myLocalSizeMap[entry] = localSize;
+    }
+
   return true;
 }
 
@@ -386,6 +528,127 @@ void NETGENPluginGUI_HypothesisCreator::onFinenessChanged()
       myNbSegPerEdge->setValue( aNbSegPerEdge );
       myNbSegPerRadius->setValue( aNbSegPerRadius );
     }
+}
+
+void NETGENPluginGUI_HypothesisCreator::onAddLocalSizeOnVertex()
+{
+  addLocalSizeOnShape(TopAbs_VERTEX);
+}
+
+void NETGENPluginGUI_HypothesisCreator::onAddLocalSizeOnEdge()
+{
+  addLocalSizeOnShape(TopAbs_EDGE);
+}
+
+void NETGENPluginGUI_HypothesisCreator::onAddLocalSizeOnFace()
+{
+  addLocalSizeOnShape(TopAbs_FACE);
+}
+
+void NETGENPluginGUI_HypothesisCreator::addLocalSizeOnShape(TopAbs_ShapeEnum typeShapeAsked)
+{
+  NETGENPlugin::NETGENPlugin_Hypothesis_var h = NETGENPlugin::NETGENPlugin_Hypothesis::_narrow(initParamsHypothesis());
+  GeomSelectionTools* geomSelectionTools = getGeomSelectionTools();
+  LightApp_SelectionMgr* mySel = geomSelectionTools->selectionMgr();
+  SALOME_ListIO ListSelectedObjects;
+  mySel->selectedObjects(ListSelectedObjects, NULL, false );
+  SALOME_ListIteratorOfListIO Object_It(ListSelectedObjects);
+  for (Object_It ; Object_It.More() ; Object_It.Next())
+    {
+      Handle(SALOME_InteractiveObject) anObject = Object_It.Value();
+      std::string entry, shapeName;
+      entry = geomSelectionTools->getEntryOfObject(anObject);
+      shapeName = anObject->getName();
+      TopAbs_ShapeEnum shapeType;
+      shapeType = geomSelectionTools->entryToShapeType(entry);
+      if (shapeType == TopAbs_SHAPE)
+        {
+          // E.A. if shapeType == TopAbs_SHAPE, it is NOT a TopoDS_Shape !!!
+          continue;
+        }
+      // --
+      if(shapeType != typeShapeAsked)
+        {
+          continue;
+        }
+      // --
+      myLocalSizeTable->setFocus();
+      QString shapeEntry;
+      shapeEntry = QString::fromStdString(entry);
+      if (myLocalSizeMap.contains(shapeEntry))
+        {
+          if (myLocalSizeMap[shapeEntry] != "__TO_DELETE__")
+            {
+              continue;
+            }
+        }
+      double phySize = h->GetMaxSize();
+      std::ostringstream oss;
+      oss << phySize;
+      QString localSize;
+      localSize  = QString::fromStdString(oss.str());
+      // --
+      int row = myLocalSizeTable->rowCount() ;
+      myLocalSizeTable->setRowCount(row+1);
+      myLocalSizeTable->setItem(row, LSZ_ENTRY_COLUMN, new QTableWidgetItem(shapeEntry));
+      myLocalSizeTable->item(row, LSZ_ENTRY_COLUMN )->setFlags(0);
+      myLocalSizeTable->setItem(row, LSZ_NAME_COLUMN, new QTableWidgetItem(QString::fromStdString(shapeName)));
+      myLocalSizeTable->item(row, LSZ_NAME_COLUMN )->setFlags(0);
+      myLocalSizeTable->setItem(row, LSZ_LOCALSIZE_COLUMN, new QTableWidgetItem(localSize));
+      myLocalSizeTable->item(row, LSZ_LOCALSIZE_COLUMN )->setFlags(Qt::ItemIsSelectable|Qt::ItemIsEditable|Qt::ItemIsEnabled);
+      myLocalSizeTable->resizeColumnToContents(LSZ_NAME_COLUMN);
+      myLocalSizeTable->resizeColumnToContents(LSZ_LOCALSIZE_COLUMN);
+      myLocalSizeTable->clearSelection();
+      myLocalSizeTable->scrollToItem( myLocalSizeTable->item( row, LSZ_LOCALSIZE_COLUMN ) );
+      // --
+    }
+}
+
+void NETGENPluginGUI_HypothesisCreator::onRemoveLocalSizeOnShape()
+{
+  QList<int> selectedRows;
+  QList<QTableWidgetItem*> selected = myLocalSizeTable->selectedItems();
+  QTableWidgetItem* item;
+  int row;
+  foreach(item, selected) {
+    row = item->row();
+    if (!selectedRows.contains(row))
+      selectedRows.append( row );
+  }
+  qSort( selectedRows );
+  QListIterator<int> it( selectedRows );
+  it.toBack();
+  while (it.hasPrevious())
+    {
+      row = it.previous();
+      QString entry = myLocalSizeTable->item(row,LSZ_ENTRY_COLUMN)->text();
+      if (myLocalSizeMap.contains(entry))
+        {
+          myLocalSizeMap[entry] = "__TO_DELETE__";
+        }
+      myLocalSizeTable->removeRow(row );
+    }
+  myLocalSizeTable->resizeColumnToContents(LSZ_NAME_COLUMN);
+  myLocalSizeTable->resizeColumnToContents(LSZ_LOCALSIZE_COLUMN);
+}
+
+void NETGENPluginGUI_HypothesisCreator::onSetLocalSize(int row,int col)
+{
+  if (col == LSZ_LOCALSIZE_COLUMN) {
+    QString entry = myLocalSizeTable->item(row, LSZ_ENTRY_COLUMN)->text();
+    QString localSize = myLocalSizeTable->item(row, LSZ_LOCALSIZE_COLUMN)->text().trimmed();
+    myLocalSizeMap[entry] = localSize;
+    myLocalSizeTable->resizeColumnToContents(LSZ_LOCALSIZE_COLUMN);
+  }
+}
+
+GeomSelectionTools* NETGENPluginGUI_HypothesisCreator::getGeomSelectionTools()
+{
+  _PTR(Study) aStudy = SMESH::GetActiveStudyDocument();
+  if (myGeomSelectionTools == NULL || myGeomSelectionTools->getMyStudy() != aStudy) {
+    myGeomSelectionTools = new GeomSelectionTools(aStudy);
+  }
+  return myGeomSelectionTools;
 }
 
 QString NETGENPluginGUI_HypothesisCreator::caption() const
