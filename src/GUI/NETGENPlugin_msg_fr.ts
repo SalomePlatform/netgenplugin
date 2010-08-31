@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
-<TS version="2.0" language="en_US">
+<TS version="2.0" language="fr_FR">
 <context>
     <name>@default</name>
     <message>
@@ -9,7 +9,7 @@
     </message>
     <message>
         <source>NETGEN_2D_TITLE</source>
-        <translation>Hypothesis Construction</translation>
+        <translation>Construction d&apos;une Hypothèse</translation>
     </message>
     <message>
         <source>NETGEN_3D_HYPOTHESIS</source>
@@ -17,79 +17,79 @@
     </message>
     <message>
         <source>NETGEN_3D_TITLE</source>
-        <translation>Hypothesis Construction</translation>
+        <translation>Construction d&apos;une Hypothèse</translation>
     </message>
     <message>
         <source>NETGEN_SimpleParameters_3D_HYPOTHESIS</source>
-        <translation>Netgen 3D simple parameters</translation>
+        <translation>Netgen 3D paramètres simples</translation>
     </message>
     <message>
         <source>NETGEN_SimpleParameters_3D_TITLE</source>
-        <translation>Hypothesis Construction</translation>
+        <translation>Construction d&apos;une Hypothèse</translation>
     </message>
     <message>
         <source>NETGEN_SimpleParameters_2D_HYPOTHESIS</source>
-        <translation>Netgen 2D simple parameters</translation>
+        <translation>Netgen 2D paramètres simples</translation>
     </message>
     <message>
         <source>NETGEN_SimpleParameters_2D_TITLE</source>
-        <translation>Hypothesis Construction</translation>
+        <translation>Construction d&apos;une Hypothèse</translation>
     </message>
     <message>
         <source>NETGEN_ALLOW_QUADRANGLES</source>
-        <translation>Allow Quadrangles</translation>
+        <translation>Permettre les Quadrangles</translation>
     </message>
     <message>
         <source>NETGEN_COARSE</source>
-        <translation>Coarse</translation>
+        <translation>Rugueux</translation>
     </message>
     <message>
         <source>NETGEN_CUSTOM</source>
-        <translation>Custom</translation>
+        <translation>Personnalisé</translation>
     </message>
     <message>
         <source>NETGEN_FINE</source>
-        <translation>Fine</translation>
+        <translation>Fin</translation>
     </message>
     <message>
         <source>NETGEN_FINENESS</source>
-        <translation>Fineness</translation>
+        <translation>Finesse</translation>
     </message>
     <message>
         <source>NETGEN_GROWTH_RATE</source>
-        <translation>Growth Rate</translation>
+        <translation>Taux de Croissance</translation>
     </message>
     <message>
         <source>NETGEN_MAX_SIZE</source>
-        <translation>Max. Size</translation>
+        <translation>Taille Maximale</translation>
     </message>
     <message>
         <source>NETGEN_MODERATE</source>
-        <translation>Moderate</translation>
+        <translation>Moyen</translation>
     </message>
     <message>
         <source>NETGEN_OPTIMIZE</source>
-        <translation>Optimize</translation>
+        <translation>Optimiser</translation>
     </message>
     <message>
         <source>NETGEN_SECOND_ORDER</source>
-        <translation>Second Order</translation>
+        <translation>Second Ordre</translation>
     </message>
     <message>
         <source>NETGEN_SEG_PER_EDGE</source>
-        <translation>Nb. Segs per Edge</translation>
+        <translation>Nb. Segs par Arête</translation>
     </message>
     <message>
         <source>NETGEN_SEG_PER_RADIUS</source>
-        <translation>Nb. Segs per Radius</translation>
+        <translation>Nb. Segs par Rayon</translation>
     </message>
     <message>
         <source>NETGEN_VERYCOARSE</source>
-        <translation>Very Coarse</translation>
+        <translation>Très Rugueux</translation>
     </message>
     <message>
         <source>NETGEN_VERYFINE</source>
-        <translation>Very Fine</translation>
+        <translation>Très Fin</translation>
     </message>
     <message>
         <source>NG_1D</source>
@@ -105,43 +105,43 @@
     </message>
     <message>
         <source>NG_LENGTH_FROM_EDGES</source>
-        <translation>Length from edges</translation>
+        <translation>Longueur à partir des arêtes</translation>
     </message>
     <message>
         <source>NG_LENGTH_FROM_FACES</source>
-        <translation>Length from faces</translation>
+        <translation>Longueur à partir des faces</translation>
     </message>
     <message>
         <source>NETGEN_LOCAL_SIZE</source>
-        <translation>Local sizes</translation>
+        <translation>Tailles locales</translation>
     </message>
     <message>
         <source>NETGEN_LSZ_VERTEX</source>
-        <translation>On Vertex</translation>
+        <translation>Sur un Point</translation>
     </message>
     <message>
         <source>NETGEN_LSZ_EDGE</source>
-        <translation>On Edge</translation>
+        <translation>Sur un Arête</translation>
     </message>
     <message>
         <source>NETGEN_LSZ_FACE</source>
-        <translation>On Sub-Face</translation>
+        <translation>Sur une Sous-Face</translation>
     </message>
     <message>
         <source>NETGEN_LSZ_REMOVE</source>
-        <translation>Remove</translation>
+        <translation>Supprimer</translation>
     </message>
     <message>
         <source>LSZ_ENTRY_COLUMN</source>
-        <translation>Entry</translation>
+        <translation>Entrée</translation>
     </message>
     <message>
         <source>LSZ_NAME_COLUMN</source>
-        <translation>Name</translation>
+        <translation>Nom</translation>
     </message>
     <message>
         <source>LSZ_LOCALSIZE_COLUMN</source>
-        <translation>Value</translation>
+        <translation>Valeur</translation>
     </message>
 </context>
 </TS>
