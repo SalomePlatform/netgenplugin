@@ -74,5 +74,6 @@ libNETGENPluginGUI_la_LDFLAGS  = \
 # resources files
 nodist_salomeres_DATA= \
 	NETGENPlugin_images.qm \
-	NETGENPlugin_msg_en.qm
+	NETGENPlugin_msg_en.qm \
+	NETGENPlugin_msg_fr.qm
 
