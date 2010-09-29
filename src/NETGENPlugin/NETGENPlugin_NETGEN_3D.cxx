@@ -235,7 +235,7 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
         if ( !isTraingle )
         {
           // use adaptor to convert quadrangle face into triangles
-          const list<const SMDS_FaceOfNodes*>* faces = Adaptor.GetTriangles(elem);
+          const list<const SMDS_MeshFace*>* faces = Adaptor.GetTriangles(elem);
           if(faces==0)
             return error( COMPERR_BAD_INPUT_MESH,
                           SMESH_Comment("No triangles in adaptor for element ")<<elem->GetID());
@@ -438,7 +438,7 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
     bool isTraingle = ( elem->NbCornerNodes() == 3 );
     if ( !isTraingle ) {
       // using adaptor
-      const list<const SMDS_FaceOfNodes*>* faces = Adaptor.GetTriangles(elem);
+      const list<const SMDS_MeshFace*>* faces = Adaptor.GetTriangles(elem);
       if(faces==0)
         continue; // Issue 0020682. There already can be 3d mesh
       trias.assign( faces->begin(), faces->end() );
