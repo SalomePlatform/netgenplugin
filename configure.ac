@@ -29,7 +29,7 @@
 # Reorganization for usage of autotools
 # Created from configure.in.base
 #
-AC_INIT([Salome2 Project NETGENPLUGIN module], [5.1.4], [webmaster.salome@opencascade.com], [SalomeNETGENPLUGIN])
+AC_INIT([Salome2 Project NETGENPLUGIN module], [5.1.5], [webmaster.salome@opencascade.com], [SalomeNETGENPLUGIN])
 AC_CONFIG_AUX_DIR(adm_local/unix/config_files)
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
