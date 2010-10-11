@@ -49,9 +49,9 @@ nodist_libNETGENPluginGUI_la_SOURCES= \
 # additionnal information to compil and link file
 
 libNETGENPluginGUI_la_CPPFLAGS = \
+	$(CAS_CPPFLAGS) \
 	$(NETGEN_INCLUDES) \
 	$(QT_INCLUDES) \
-	$(CAS_CPPFLAGS) \
 	$(PYTHON_INCLUDES) \
 	$(KERNEL_CXXFLAGS) \
 	$(GUI_CXXFLAGS) \
