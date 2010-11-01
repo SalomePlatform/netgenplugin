@@ -493,6 +493,10 @@ bool NETGENPlugin_Mesher::fillNgMesh(const netgen::OCCGeometry&     occgeom,
           seg.si = faceID;                   // = geom.fmap.FindIndex (face);
           seg.edgenr = ngMesh.GetNSeg() + 1; // segment id
           ngMesh.AddSegment (seg);
+
+          netgen::Point3d ngP1(p1.node->X(), p1.node->Y(), p1.node->Z());
+          netgen::Point3d ngP2(p2.node->X(), p2.node->Y(), p2.node->Z());
+          ngMesh.RestrictLocalH( netgen::Center( ngP1,ngP2), Dist(ngP1,ngP2));
 #ifdef DUMP_SEGMENTS
           cout << "Segment: " << seg.edgenr << " on SMESH face " << helper.GetMeshDS()->ShapeToIndex( face ) << endl
                << "\tface index: " << seg.si << endl
