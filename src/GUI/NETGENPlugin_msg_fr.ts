@@ -9,7 +9,7 @@
     </message>
     <message>
         <source>NETGEN_2D_TITLE</source>
-        <translation>Construction d&apos;une Hypothèse</translation>
+        <translation>Construction d&apos;une hypothèse</translation>
     </message>
     <message>
         <source>NETGEN_3D_HYPOTHESIS</source>
@@ -17,31 +17,31 @@
     </message>
     <message>
         <source>NETGEN_3D_TITLE</source>
-        <translation>Construction d&apos;une Hypothèse</translation>
+        <translation>Construction d&apos;une hypothèse</translation>
     </message>
     <message>
         <source>NETGEN_SimpleParameters_3D_HYPOTHESIS</source>
-        <translation>Netgen 3D paramètres simples</translation>
+        <translation>Netgen 3D paramètres simplifiés</translation>
     </message>
     <message>
         <source>NETGEN_SimpleParameters_3D_TITLE</source>
-        <translation>Construction d&apos;une Hypothèse</translation>
+        <translation>Construction d&apos;une hypothèse</translation>
     </message>
     <message>
         <source>NETGEN_SimpleParameters_2D_HYPOTHESIS</source>
-        <translation>Netgen 2D paramètres simples</translation>
+        <translation>Netgen 2D paramètres simplifiés</translation>
     </message>
     <message>
         <source>NETGEN_SimpleParameters_2D_TITLE</source>
-        <translation>Construction d&apos;une Hypothèse</translation>
+        <translation>Construction d&apos;une hypothèse</translation>
     </message>
     <message>
         <source>NETGEN_ALLOW_QUADRANGLES</source>
-        <translation>Permettre les Quadrangles</translation>
+        <translation>Autoriser les quadrangles</translation>
     </message>
     <message>
         <source>NETGEN_COARSE</source>
-        <translation>Rugueux</translation>
+        <translation>Grossier</translation>
     </message>
     <message>
         <source>NETGEN_CUSTOM</source>
@@ -57,11 +57,11 @@
     </message>
     <message>
         <source>NETGEN_GROWTH_RATE</source>
-        <translation>Taux de Croissance</translation>
+        <translation>Taux d&apos;accroissement</translation>
     </message>
     <message>
         <source>NETGEN_MAX_SIZE</source>
-        <translation>Taille Maximale</translation>
+        <translation>Taille maximale</translation>
     </message>
     <message>
         <source>NETGEN_MODERATE</source>
@@ -73,23 +73,23 @@
     </message>
     <message>
         <source>NETGEN_SECOND_ORDER</source>
-        <translation>Second Ordre</translation>
+        <translation>Second ordre</translation>
     </message>
     <message>
         <source>NETGEN_SEG_PER_EDGE</source>
-        <translation>Nb. Segs par Arête</translation>
+        <translation>Nb. segments par arête</translation>
     </message>
     <message>
         <source>NETGEN_SEG_PER_RADIUS</source>
-        <translation>Nb. Segs par Rayon</translation>
+        <translation>Nb. segments par rayon</translation>
     </message>
     <message>
         <source>NETGEN_VERYCOARSE</source>
-        <translation>Très Rugueux</translation>
+        <translation>Très grossier</translation>
     </message>
     <message>
         <source>NETGEN_VERYFINE</source>
-        <translation>Très Fin</translation>
+        <translation>Très fin</translation>
     </message>
     <message>
         <source>NG_1D</source>
@@ -117,15 +117,15 @@
     </message>
     <message>
         <source>NETGEN_LSZ_VERTEX</source>
-        <translation>Sur un Point</translation>
+        <translation>Sur un point</translation>
     </message>
     <message>
         <source>NETGEN_LSZ_EDGE</source>
-        <translation>Sur un Arête</translation>
+        <translation>Sur une arête</translation>
     </message>
     <message>
         <source>NETGEN_LSZ_FACE</source>
-        <translation>Sur une Sous-Face</translation>
+        <translation>Sur une sous-face</translation>
     </message>
     <message>
         <source>NETGEN_LSZ_REMOVE</source>
