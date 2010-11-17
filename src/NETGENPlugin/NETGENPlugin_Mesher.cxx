@@ -1505,7 +1505,7 @@ bool NETGENPlugin_Mesher::Compute()
             Handle(Geom_Curve) curve = BRep_Tool::Curve(e, u1, u2);
             GeomAdaptor_Curve AdaptCurve(curve);
             double length = GCPnts_AbscissaPoint::Length(AdaptCurve, u1, u2);
-            int nb = length/hi;
+            int nb = length/hi * 10;
             if(nb<2) nb=2;
             Standard_Real delta = (u2-u1)/nb;
             for(int i=0; i<nb; i++)
@@ -1514,6 +1514,9 @@ bool NETGENPlugin_Mesher::Compute()
                 gp_Pnt p = curve->Value(u);
                 netgen::Point3d pi(p.X(), p.Y(), p.Z());
                 ngMesh->RestrictLocalH(pi, hi);
+                if ( ngMesh->GetH(pi) - hi > 0.1*hi )
+                  // netgen does restriction iff oldH/newH > 1.2 (localh.cpp:136)
+                  ngMesh->RestrictLocalH(pi, ngMesh->GetH(pi)/1.201);
               }
           }
         for(std::map<int,double>::const_iterator it=VertexId2LocalSize.begin(); it!=VertexId2LocalSize.end(); it++)
@@ -1938,7 +1941,7 @@ bool NETGENPlugin_Mesher::Evaluate(MapShapeNbElems& aResMap)
       aVec[SMDSEntity_Quad_Triangle] = nbFaces;
     }
     else {
-      aVec[SMDSEntity_Node] = nbNodes;
+      aVec[SMDSEntity_Node] = Max ( nbNodes, 0  );
       aVec[SMDSEntity_Triangle] = nbFaces;
     }
     aResMap[sm].swap(aVec);
