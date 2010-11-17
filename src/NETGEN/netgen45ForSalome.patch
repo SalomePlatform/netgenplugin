@@ -1445,7 +1445,7 @@ diff -Naur --exclude=CVS netgen-4.5_orig/libsrc/stlgeom/stlgeommesh.cpp netgen-4
 diff -Naur --exclude=CVS netgen-4.5_orig/makeForSalome.sh netgen-4.5_new/makeForSalome.sh
 --- netgen-4.5_orig/makeForSalome.sh	1970-01-01 03:00:00.000000000 +0300
 +++ netgen-4.5_new/makeForSalome.sh	2010-06-23 13:19:48.000000000 +0400
-@@ -0,0 +1,31 @@
+@@ -0,0 +1,35 @@
 +#! /bin/sh
 +cp ngtcltk/ngnewdelete.* libsrc/interface/
 +
@@ -1477,3 +1477,7 @@ diff -Naur --exclude=CVS netgen-4.5_orig/makeForSalome.sh netgen-4.5_new/makeFor
 +fi
 +
 +cp libsrc/interface/nglib.h libsrc/general/*.hpp libsrc/csg/*.hpp libsrc/geom2d/*.hpp \
++   libsrc/gprim/*.hpp libsrc/linalg/*.hpp libsrc/meshing/*.hpp \
++   libsrc/occ/*.hpp libsrc/opti/*.hpp libsrc/include/mydefs.hpp \
++   libsrc/stlgeom/*.hpp libsrc/include/mystdlib.h \
++   install/include
