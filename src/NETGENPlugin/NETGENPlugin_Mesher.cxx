@@ -1505,7 +1505,7 @@ bool NETGENPlugin_Mesher::Compute()
             Handle(Geom_Curve) curve = BRep_Tool::Curve(e, u1, u2);
             GeomAdaptor_Curve AdaptCurve(curve);
             double length = GCPnts_AbscissaPoint::Length(AdaptCurve, u1, u2);
-            int nb = length/hi * 10;
+            int nb = length/hi * 20;
             if(nb<2) nb=2;
             Standard_Real delta = (u2-u1)/nb;
             for(int i=0; i<nb; i++)
