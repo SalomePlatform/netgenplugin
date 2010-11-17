@@ -624,7 +624,7 @@ diff -Naur --exclude=CVS netgen-4.5_orig/libsrc/occ/occgenmesh.cpp netgen-4.5_ne
        }
  
      //  nsubedges = int(ceil(hvalue[DIVIDEEDGESECTIONS]));
-@@ -74,7 +70,7 @@
+@@ -74,13 +70,16 @@
      ps.SetSize(nsubedges-1);
      params.SetSize(nsubedges+1);
  
@@ -633,7 +633,17 @@ diff -Naur --exclude=CVS netgen-4.5_orig/libsrc/occ/occgenmesh.cpp netgen-4.5_ne
      int i1 = 0;
      do
        {
-@@ -112,7 +108,7 @@
+ 	if (hvalue[i1]/hvalue[DIVIDEEDGESECTIONS]*nsubedges >= i)
+ 	  {
+-	    params[i] = s0+(i1/double(DIVIDEEDGESECTIONS))*(s1-s0);
++            // EAP. For nsubedges comparable to DIVIDEEDGESECTIONS (issue 0021073)
++            double d1 = i1 - (hvalue[i1]-i)/(hvalue[i1]-hvalue[i1-1]);
++            params[i] = s0+(d1/double(DIVIDEEDGESECTIONS))*(s1-s0);
++	    //params[i] = s0+(i1/double(DIVIDEEDGESECTIONS))*(s1-s0);
+ 	    pnt = c->Value(params[i]);
+ 	    ps[i-1] = MeshPoint (Point3d(pnt.X(), pnt.Y(), pnt.Z()));
+ 	    i++;
+@@ -112,7 +111,7 @@
  
    static void FindEdges (OCCGeometry & geom, Mesh & mesh)
    {
@@ -642,7 +652,7 @@ diff -Naur --exclude=CVS netgen-4.5_orig/libsrc/occ/occgenmesh.cpp netgen-4.5_ne
      multithread.task = "Edge meshing";
  
      (*testout) << "edge meshing" << endl;
-@@ -124,6 +120,7 @@
+@@ -124,6 +123,7 @@
      (*testout) << "nedges = " << nedges << endl;
  
      double eps = 1e-6 * geom.GetBoundingBox().Diam();
@@ -650,7 +660,7 @@ diff -Naur --exclude=CVS netgen-4.5_orig/libsrc/occ/occgenmesh.cpp netgen-4.5_ne
  
      for (int i = 1; i <= nvertices; i++)
        {
-@@ -133,7 +130,7 @@
+@@ -133,7 +133,7 @@
  	bool exists = 0;
  	if (merge_solids)
  	  for (PointIndex pi = 1; pi <= mesh.GetNP(); pi++)
@@ -659,7 +669,7 @@ diff -Naur --exclude=CVS netgen-4.5_orig/libsrc/occ/occgenmesh.cpp netgen-4.5_ne
  	      {
  		exists = 1;
  		break;
-@@ -163,6 +160,7 @@
+@@ -163,6 +163,7 @@
  	  {
  	    TopoDS_Face face = TopoDS::Face(exp1.Current());
  	    int facenr = geom.fmap.FindIndex(face);
@@ -667,7 +677,7 @@ diff -Naur --exclude=CVS netgen-4.5_orig/libsrc/occ/occgenmesh.cpp netgen-4.5_ne
  
  	    if (face2solid[0][facenr-1] == 0)
  	      face2solid[0][facenr-1] = solidnr;
-@@ -184,6 +182,9 @@
+@@ -184,6 +185,9 @@
      int facenr = 0;
      int edgenr = 0;
      
@@ -677,7 +687,7 @@ diff -Naur --exclude=CVS netgen-4.5_orig/libsrc/occ/occgenmesh.cpp netgen-4.5_ne
  
      (*testout) << "faces = " << geom.fmap.Extent() << endl;
      int curr = 0;
-@@ -232,6 +233,11 @@
+@@ -232,6 +236,11 @@
  		    continue;
  		  }
  
@@ -689,7 +699,7 @@ diff -Naur --exclude=CVS netgen-4.5_orig/libsrc/occ/occgenmesh.cpp netgen-4.5_ne
  		if (geom.vmap.FindIndex(TopExp::FirstVertex (edge)) == 
  		    geom.vmap.FindIndex(TopExp::LastVertex (edge)))
  		  {
-@@ -276,8 +282,8 @@
+@@ -276,8 +285,8 @@
  		    pnums.Last() = -1;
  		    for (PointIndex pi = 1; pi < first_ep; pi++)
  		      {
@@ -700,7 +710,7 @@ diff -Naur --exclude=CVS netgen-4.5_orig/libsrc/occ/occgenmesh.cpp netgen-4.5_ne
  		      }
  		  }
  		
-@@ -287,7 +293,7 @@
+@@ -287,7 +296,7 @@
  		    bool exists = 0;
  		    int j;
  		    for (j = first_ep; j <= mesh.GetNP(); j++)
@@ -709,7 +719,7 @@ diff -Naur --exclude=CVS netgen-4.5_orig/libsrc/occ/occgenmesh.cpp netgen-4.5_ne
  			{
  			  exists = 1;
  			  break;
-@@ -394,7 +400,7 @@
+@@ -394,7 +403,7 @@
      int i, j, k;
      int changed;
  
@@ -718,7 +728,7 @@ diff -Naur --exclude=CVS netgen-4.5_orig/libsrc/occ/occgenmesh.cpp netgen-4.5_ne
      multithread.task = "Surface meshing";
    
      geom.facemeshstatus = 0;
-@@ -751,7 +757,7 @@
+@@ -751,7 +760,7 @@
      multithread.task = savetask;
    }
  
@@ -727,7 +737,7 @@ diff -Naur --exclude=CVS netgen-4.5_orig/libsrc/occ/occgenmesh.cpp netgen-4.5_ne
    {
      double hret;
      kappa *= mparam.curvaturesafety;
-@@ -779,7 +785,7 @@
+@@ -779,7 +788,7 @@
        double nq = n*q;
      
        Point<3> p = p0 + 0.5*n;
@@ -736,7 +746,7 @@ diff -Naur --exclude=CVS netgen-4.5_orig/libsrc/occ/occgenmesh.cpp netgen-4.5_ne
  
        if (lambda >= 0 && lambda <= 1)
  	{
-@@ -799,55 +805,55 @@
+@@ -799,55 +808,55 @@
  
  
  
@@ -812,7 +822,7 @@ diff -Naur --exclude=CVS netgen-4.5_orig/libsrc/occ/occgenmesh.cpp netgen-4.5_ne
  
  	//(*testout) << "curvature " << curvature << endl;
  
-@@ -886,51 +892,47 @@
+@@ -886,51 +895,47 @@
  	pm1.SetX(0.5*(par0.X()+par2.X())); pm1.SetY(0.5*(par0.Y()+par2.Y()));
  	pm2.SetX(0.5*(par1.X()+par0.X())); pm2.SetY(0.5*(par1.Y()+par0.Y()));
  
@@ -879,7 +889,7 @@ diff -Naur --exclude=CVS netgen-4.5_orig/libsrc/occ/occgenmesh.cpp netgen-4.5_ne
  	  (*testout) << pnt.X() << " " << pnt.Y() << " " << pnt.Z() << endl;
  	*/
        }
-@@ -970,7 +972,7 @@
+@@ -970,7 +975,7 @@
  	if (mparam.uselocalh)
  	  {
  
@@ -888,7 +898,7 @@ diff -Naur --exclude=CVS netgen-4.5_orig/libsrc/occ/occgenmesh.cpp netgen-4.5_ne
  	    multithread.percent = 0;
  
  	    mesh->SetLocalH (bb.PMin(), bb.PMax(), mparam.grading);
-@@ -1075,7 +1077,6 @@
+@@ -1075,7 +1080,6 @@
  		if (triangulation.IsNull()) continue;
  	      
  		BRepAdaptor_Surface sf(face, Standard_True);
@@ -896,7 +906,7 @@ diff -Naur --exclude=CVS netgen-4.5_orig/libsrc/occ/occgenmesh.cpp netgen-4.5_ne
  		
  		int ntriangles = triangulation -> NbTriangles();
  		for (int j = 1; j <= ntriangles; j++)
-@@ -1096,7 +1097,7 @@
+@@ -1096,7 +1100,7 @@
  		    maxside = max (maxside, p[1].Distance(p[2]));
  		    //cout << "\rFace " << i << " pos11 ntriangles " << ntriangles << " maxside " << maxside << flush;
  
