@@ -1657,6 +1657,8 @@ bool NETGENPlugin_Mesher::Compute()
         err = 1;
       }
     }
+    mparams.uselocalh = true; // restore as it is used at surface optimization
+
     // ---------------------
     // compute surface mesh
     // ---------------------
