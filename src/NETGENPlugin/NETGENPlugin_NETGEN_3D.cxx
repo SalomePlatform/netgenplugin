@@ -235,7 +235,7 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
         if ( !isTraingle )
         {
           // use adaptor to convert quadrangle face into triangles
-          const list<const SMDS_FaceOfNodes*>* faces = Adaptor.GetTriangles(elem);
+          const list<const SMDS_MeshFace*>* faces = Adaptor.GetTriangles(elem);
           if(faces==0)
             return error( COMPERR_BAD_INPUT_MESH,
                           SMESH_Comment("No triangles in adaptor for element ")<<elem->GetID());
@@ -423,25 +423,22 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
     _quadraticMesh = true;
     
   StdMeshers_QuadToTriaAdaptor Adaptor;
-  Adaptor.Compute(aMesh);
+  if ( aMesh.NbQuadrangles() > 0 )
+    Adaptor.Compute(aMesh);
 
-  SMDS_FaceIteratorPtr fIt = MeshDS->facesIterator();
-  TIDSortedElemSet sortedFaces; //  0020279: control the "random" use when using mesh algorithms
-  while( fIt->more()) sortedFaces.insert( fIt->next() );
-
-  TIDSortedElemSet::iterator itFace = sortedFaces.begin(), fEnd = sortedFaces.end();
-  for ( ; itFace != fEnd; ++itFace )
+  SMDS_FaceIteratorPtr fIt = MeshDS->facesIterator(/*idInceasingOrder=*/true);
+  while( fIt->more())
   {
     // check element
-    const SMDS_MeshElement* elem = *itFace;
+    const SMDS_MeshElement* elem = fIt->next();
     if ( !elem )
       return error( COMPERR_BAD_INPUT_MESH, "Null element encounters");
 
     vector< const SMDS_MeshElement* > trias;
-    bool isTraingle = ( elem->NbNodes() == ( elem->IsQuadratic() ? 6 : 3 ));
+    bool isTraingle = ( elem->NbCornerNodes() == 3 );
     if ( !isTraingle ) {
       // using adaptor
-      const list<const SMDS_FaceOfNodes*>* faces = Adaptor.GetTriangles(elem);
+      const list<const SMDS_MeshFace*>* faces = Adaptor.GetTriangles(elem);
       if(faces==0)
         continue; // Issue 0020682. There already can be 3d mesh
       trias.assign( faces->begin(), faces->end() );
@@ -508,6 +505,13 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
     Ng_AddSurfaceElement(Netgen_mesh, NG_TRIG, Netgen_triangle);
   }
 
+  // vector of nodes in which node index == netgen ID
+  vector< const SMDS_MeshNode* > nodeVec ( nodeToNetgenID.size() + 1 );
+  // insert old nodes into nodeVec
+  for ( n_id = nodeToNetgenID.begin(); n_id != nodeToNetgenID.end(); ++n_id )
+    nodeVec.at( n_id->second ) = n_id->first;
+  nodeToNetgenID.clear();
+
   // -------------------------
   // Generate the volume mesh
   // -------------------------
@@ -531,11 +535,17 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
     status = NG_VOLUME_FAILURE;
   }
   catch (...) {
-    error("Bad mesh input!!!");
+    error("Exception in Ng_GenerateVolumeMesh()");
     status = NG_VOLUME_FAILURE;
   }
   if ( GetComputeError()->IsOK() ) {
-    error( status, "Bad mesh input!!!");
+    switch ( status ) {
+    case NG_SURFACE_INPUT_ERROR:error( status, "NG_SURFACE_INPUT_ERROR");
+    case NG_VOLUME_FAILURE:     error( status, "NG_VOLUME_FAILURE");
+    case NG_STL_INPUT_ERROR:    error( status, "NG_STL_INPUT_ERROR");
+    case NG_SURFACE_FAILURE:    error( status, "NG_SURFACE_FAILURE");
+    case NG_FILE_NOT_FOUND:     error( status, "NG_FILE_NOT_FOUND");
+    };
   }
 
   int Netgen_NbOfNodesNew = Ng_GetNP(Netgen_mesh);
@@ -550,25 +560,24 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
   // Feed back the SMESHDS with the generated Nodes and Volume Elements
   // -------------------------------------------------------------------
 
+  if ( status == NG_VOLUME_FAILURE )
+  {
+    SMESH_ComputeErrorPtr err = NETGENPlugin_Mesher::readErrors(nodeVec);
+    if ( err && !err->myBadElements.empty() )
+      error( err );
+  }
+
   bool isOK = ( Netgen_NbOfTetra > 0 );// get whatever built
   if ( isOK )
   {
-    // vector of nodes in which node index == netgen ID
-    vector< const SMDS_MeshNode* > nodeVec ( Netgen_NbOfNodesNew + 1 );
-    // insert old nodes into nodeVec
-    for ( n_id = nodeToNetgenID.begin(); n_id != nodeToNetgenID.end(); ++n_id ) {
-      nodeVec.at( n_id->second ) = n_id->first;
-    }
     // create and insert new nodes into nodeVec
+    nodeVec.resize( Netgen_NbOfNodesNew + 1 );
     int nodeIndex = Netgen_NbOfNodes + 1;
     
     for ( ; nodeIndex <= Netgen_NbOfNodesNew; ++nodeIndex )
     {
       Ng_GetPoint( Netgen_mesh, nodeIndex, Netgen_point );
-      SMDS_MeshNode * node = aHelper->AddNode(Netgen_point[0],
-                                              Netgen_point[1],
-                                              Netgen_point[2]);
-      nodeVec.at(nodeIndex) = node;
+      nodeVec.at(nodeIndex) = aHelper->AddNode(Netgen_point[0],Netgen_point[1],Netgen_point[2]);
     }
 
     // create tetrahedrons

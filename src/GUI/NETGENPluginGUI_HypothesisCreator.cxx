@@ -30,7 +30,6 @@
 
 #include <SMESHGUI_Utils.h>
 #include <SMESHGUI_HypothesesUtils.h>
-#include <SMESHGUI.h>
 #include <SMESHGUI_SpinBox.h>
 #include <GeomSelectionTools.h>
 
@@ -165,7 +164,7 @@ QFrame* NETGENPluginGUI_HypothesisCreator::buildFrame()
 
   aGroupLayout->addWidget( new QLabel( tr( "NETGEN_GROWTH_RATE" ), GroupC1 ), row, 0 );
   myGrowthRate = new SMESHGUI_SpinBox( GroupC1 );
-  myGrowthRate->RangeStepAndValidator( .1, 10., .1, "parametric_precision" );
+  myGrowthRate->RangeStepAndValidator( .0001, 10., .1, "parametric_precision" );
   aGroupLayout->addWidget( myGrowthRate, row, 1 );
   row++;
 

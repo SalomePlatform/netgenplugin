@@ -26,7 +26,6 @@
 #include <SMESHGUI_Utils.h>
 #include <SMESHGUI_HypothesesUtils.h>
 #include <SMESHGUI_SpinBox.h>
-#include <SMESHGUI.h>
 
 // IDL includes
 #include CORBA_SERVER_HEADER(NETGENPlugin_Algorithm)

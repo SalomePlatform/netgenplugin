@@ -49,9 +49,9 @@ nodist_libNETGENPluginGUI_la_SOURCES= \
 # additionnal information to compil and link file
 
 libNETGENPluginGUI_la_CPPFLAGS = \
+	$(CAS_CPPFLAGS) \
 	$(NETGEN_INCLUDES) \
 	$(QT_INCLUDES) \
-	$(CAS_CPPFLAGS) \
 	$(PYTHON_INCLUDES) \
 	$(KERNEL_CXXFLAGS) \
 	$(GUI_CXXFLAGS) \
@@ -74,5 +74,6 @@ libNETGENPluginGUI_la_LDFLAGS  = \
 # resources files
 nodist_salomeres_DATA= \
 	NETGENPlugin_images.qm \
-	NETGENPlugin_msg_en.qm
+	NETGENPlugin_msg_en.qm \
+	NETGENPlugin_msg_fr.qm
 

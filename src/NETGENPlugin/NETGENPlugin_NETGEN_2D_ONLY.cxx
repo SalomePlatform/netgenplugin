@@ -179,9 +179,14 @@ static TError AddSegmentsToMesh(netgen::Mesh&                    ngMesh,
   {
     StdMeshers_FaceSidePtr wire = wires[ iW ];
     if ( wire->MissVertexNode() )
-      return TError
-        (new SMESH_ComputeError(COMPERR_BAD_INPUT_MESH, "Missing nodes on vertices"));
-      
+    {
+      // Commented for issue 0020960. It worked for the case, let's wait for case where it doesn't.
+      // It seems that there is no reason for this limitation
+//       return TError
+//         (new SMESH_ComputeError(COMPERR_BAD_INPUT_MESH, "Missing nodes on vertices"));
+      if (getenv("USER") && string("eap")==getenv("USER"))
+        cout << "Warning: NETGENPlugin_NETGEN_2D_ONLY : try to work with missing nodes on vertices"<<endl;
+    }
     const vector<UVPtStruct>& uvPtVec = wire->GetUVPtStruct();
     if ( uvPtVec.size() != wire->NbPoints() )
       return TError
