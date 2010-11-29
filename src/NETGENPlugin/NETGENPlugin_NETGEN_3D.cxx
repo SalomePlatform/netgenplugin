@@ -254,7 +254,7 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
           for ( int iN = 0; iN < 3; ++iN )
           {
             const SMDS_MeshNode* node = trias[i]->GetNode( iN );
-            int shapeID = node->GetPosition()->GetShapeId();
+            int shapeID = node->getshapeId();
             if ( node->GetPosition()->GetTypeOfPosition() == SMDS_TOP_EDGE &&
                  helper.IsDegenShape( shapeID ))
             {

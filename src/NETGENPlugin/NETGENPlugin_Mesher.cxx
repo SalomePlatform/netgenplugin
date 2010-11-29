@@ -601,9 +601,9 @@ bool NETGENPlugin_Mesher::fillNgMesh(const netgen::OCCGeometry&     occgeom,
           const SMDS_MeshNode* node = f->GetNode( i ), * inFaceNode=0;
 
           // get node UV on face
-          int shapeID = node->GetPosition()->GetShapeId();
+          int shapeID = node->getshapeId();
           if ( helper.IsSeamShape( shapeID ))
-            if ( helper.IsSeamShape( f->GetNodeWrap( i+1 )->GetPosition()->GetShapeId() ))
+            if ( helper.IsSeamShape( f->GetNodeWrap( i+1 )->getshapeId() ))
               inFaceNode = f->GetNodeWrap( i-1 );
             else 
               inFaceNode = f->GetNodeWrap( i+1 );
@@ -2127,7 +2127,7 @@ NETGENPlugin_Mesher::readErrors(const vector<const SMDS_MeshNode* >& nodeVec)
          strncmp( file, badEdgeStr, badEdgeStrLen ) == 0 &&
          two[0] < nodeVec.size() && two[1] < nodeVec.size())
     {
-      err->myBadElements.push_back( new SMDS_MeshEdge( nodeVec[ two[0]], nodeVec[ two[1]] ));
+      err->myBadElements.push_back( new SMDS_LinearEdge( nodeVec[ two[0]], nodeVec[ two[1]] ));
       file += badEdgeStrLen;
     }
     else if ( strncmp( file, "Intersecting: ", 14 ) == 0 )
@@ -2355,7 +2355,7 @@ void NETGENPlugin_Internals::findBorderElements( TIDSortedElemSet & borderElems 
           {
             int nbDblNodes = 0;
             for ( int i = 0; i < nbNodes; ++i )
-              nbDblNodes += isInternalShape( f->GetNode(i)->GetPosition()->GetShapeId() );
+              nbDblNodes += isInternalShape( f->GetNode(i)->getshapeId() );
             if ( nbDblNodes )
               suspectFaces[ nbDblNodes < 2 ].push_back( f );
             nbSuspectFaces++;

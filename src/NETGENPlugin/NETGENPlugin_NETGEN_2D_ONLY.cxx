@@ -226,12 +226,12 @@ static TError AddSegmentsToMesh(netgen::Mesh&                    ngMesh,
     {
       // Add the first point of a segment
       const SMDS_MeshNode * n = uvPtVec[ i ].node;
-      const int posShapeID = n->GetPosition()->GetShapeId();
+      const int posShapeID = n->getshapeId();
       bool onVertex = ( n->GetPosition()->GetTypeOfPosition() == SMDS_TOP_VERTEX );
 
       // skip nodes on degenerated edges
       if ( helper.IsDegenShape( posShapeID ) &&
-           helper.IsDegenShape( uvPtVec[ i+1 ].node->GetPosition()->GetShapeId() ))
+           helper.IsDegenShape( uvPtVec[ i+1 ].node->getshapeId() ))
         continue;
 
       int ngID1 = ngMesh.GetNP() + 1, ngID2 = ngID1+1;
