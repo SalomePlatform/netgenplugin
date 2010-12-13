@@ -30,6 +30,7 @@
 class StdMeshers_MaxElementArea;
 class StdMeshers_LengthFromEdges;
 class StdMeshers_QuadranglePreference;
+class NETGENPlugin_Hypothesis_2D;
 
 /*!
  * \brief Mesher generating 2D elements on a geometrical face taking
@@ -55,17 +56,11 @@ public:
   virtual bool Evaluate(SMESH_Mesh& aMesh, const TopoDS_Shape& aShape,
                         MapShapeNbElems& aResMap);
 
-  /*static TError AddSegmentsToMesh(netgen::Mesh&                    ngMesh,
-                                OCCGeometry&                     geom,
-                                const TSideVector&               wires,
-                                SMESH_MesherHelper&              helper,
-                                vector< const SMDS_MeshNode* > & nodeVec); //amv*/
-
 protected:
   const StdMeshers_MaxElementArea*       _hypMaxElementArea;
   const StdMeshers_LengthFromEdges*      _hypLengthFromEdges;
   const StdMeshers_QuadranglePreference* _hypQuadranglePreference;
-  //  const NETGENPlugin_Hypothesis* _hypothesis;
+  const NETGENPlugin_Hypothesis_2D*      _hypParameters;
 };
 
 #endif
