@@ -24,6 +24,7 @@
 #include "NETGENPlugin_NETGEN_2D_ONLY.hxx"
 
 #include "NETGENPlugin_Mesher.hxx"
+#include "NETGENPlugin_Hypothesis_2D.hxx"
 
 #include "SMDS_MeshElement.hxx"
 #include "SMDS_MeshNode.hxx"
@@ -86,10 +87,12 @@ NETGENPlugin_NETGEN_2D_ONLY::NETGENPlugin_NETGEN_2D_ONLY(int hypId, int studyId,
   _compatibleHypothesis.push_back("MaxElementArea");
   _compatibleHypothesis.push_back("LengthFromEdges");
   _compatibleHypothesis.push_back("QuadranglePreference");
+  _compatibleHypothesis.push_back("NETGEN_Parameters_2D");
 
   _hypMaxElementArea = 0;
   _hypLengthFromEdges = 0;
   _hypQuadranglePreference = 0;
+  _hypParameters = 0;
 }
 
 //=============================================================================
@@ -140,21 +143,21 @@ bool NETGENPlugin_NETGEN_2D_ONLY::CheckHypothesis (SMESH_Mesh&         aMesh,
       _hypLengthFromEdges = static_cast<const StdMeshers_LengthFromEdges*> (hyp);
     else if ( hypName == "QuadranglePreference" )
       _hypQuadranglePreference = static_cast<const StdMeshers_QuadranglePreference*>(hyp);
+    else if ( hypName == "NETGEN_Parameters_2D" )
+      _hypParameters = static_cast<const NETGENPlugin_Hypothesis_2D*>(hyp);
     else {
       aStatus = HYP_INCOMPATIBLE;
       return false;
     }
   }
 
-  if ( _hypMaxElementArea && _hypLengthFromEdges ) {
+  int nbHyps = bool(_hypMaxElementArea) + bool(_hypLengthFromEdges) + bool(_hypParameters );
+  if ( nbHyps > 1 )
     aStatus = HYP_CONCURENT;
-    return false;
-  }
-
-  if ( _hypMaxElementArea || _hypLengthFromEdges || _hypQuadranglePreference)
+  else if ( nbHyps == 1)
     aStatus = HYP_OK;
 
-  return aStatus == HYP_OK;
+  return ( aStatus == HYP_OK );
 }
 
 //================================================================================
@@ -289,7 +292,12 @@ static TError AddSegmentsToMesh(netgen::Mesh&                    ngMesh,
       }
 
       ngMesh.AddSegment (seg);
-
+      {
+        netgen::Point3d ngP1(n->X(), n->Y(), n->Z());
+        n = uvPtVec[ i+1 ].node;
+        netgen::Point3d ngP2(n->X(), n->Y(), n->Z());
+        ngMesh.RestrictLocalH( netgen::Center( ngP1,ngP2), Dist(ngP1,ngP2));
+      }
 #ifdef DUMP_SEGMENTS
         cout << "Segment: " << seg.edgenr << endl
            << "\tp1: " << seg[0] << endl
@@ -377,6 +385,49 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
     return error(COMPERR_BAD_INPUT_MESH,
                  SMESH_Comment("Too few segments: ")<<wires[0]->NbSegments());
 
+  // --------------------
+  // compute edge length
+  // --------------------
+
+  NETGENPlugin_Mesher aMesher( &aMesh, aShape, /*isVolume=*/false);
+  netgen::OCCGeometry occgeo;
+  aMesher.PrepareOCCgeometry( occgeo, F, aMesh );
+  occgeo.fmap.Clear(); // face can be reversed, which is wrong in this case (issue 19978)
+  occgeo.fmap.Add( F );
+
+  if ( _hypParameters )
+  {
+    aMesher.SetParameters(_hypParameters);
+  }
+  else
+  {
+    double edgeLength = 0;
+    if (_hypLengthFromEdges || (!_hypLengthFromEdges && !_hypMaxElementArea))
+    {
+      int nbSegments = 0;
+      for ( int iW = 0; iW < nbWires; ++iW )
+      {
+        edgeLength += wires[ iW ]->Length();
+        nbSegments += wires[ iW ]->NbSegments();
+      }
+      if ( nbSegments )
+        edgeLength /= nbSegments;
+    }
+    if ( _hypMaxElementArea )
+    {
+      double maxArea = _hypMaxElementArea->GetMaxArea();
+      edgeLength = sqrt(2. * maxArea/sqrt(3.0));
+    }
+    if ( edgeLength < DBL_MIN )
+      edgeLength = occgeo.GetBoundingBox().Diam();
+
+    //cout << " edgeLength = " << edgeLength << endl;
+
+    netgen::mparam.maxh = edgeLength;
+    netgen::mparam.quad = _hypQuadranglePreference ? 1 : 0;
+    //ngMesh->SetGlobalH ( edgeLength );
+  }
+
   // -------------------------
   // Make input netgen mesh
   // -------------------------
@@ -384,45 +435,15 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
   NETGENPlugin_NetgenLibWrapper ngLib;
   netgen::Mesh * ngMesh = (netgen::Mesh*) ngLib._ngMesh;
 
-  netgen::OCCGeometry occgeo;
-  NETGENPlugin_Mesher::PrepareOCCgeometry( occgeo, F, aMesh );
-  occgeo.fmap.Clear(); // face can be reversed, which is wrong in this case (issue 19978)
-  occgeo.fmap.Add( F );
+  Box<3> bb = occgeo.GetBoundingBox();
+  bb.Increase (bb.Diam()/10);
+  ngMesh->SetLocalH (bb.PMin(), bb.PMax(), netgen::mparam.grading);
+  ngMesh->SetGlobalH (netgen::mparam.maxh);
 
   vector< const SMDS_MeshNode* > nodeVec;
   problem = AddSegmentsToMesh( *ngMesh, occgeo, wires, helper, nodeVec );
   if ( problem && !problem->IsOK() )
     return error( problem );
-
-  // --------------------
-  // compute edge length
-  // --------------------
-
-  double edgeLength = 0;
-  if (_hypLengthFromEdges || !_hypLengthFromEdges && !_hypMaxElementArea)
-  {
-    int nbSegments = 0;
-    for ( int iW = 0; iW < nbWires; ++iW )
-    {
-      edgeLength += wires[ iW ]->Length();
-      nbSegments += wires[ iW ]->NbSegments();
-    }
-    if ( nbSegments )
-      edgeLength /= nbSegments;
-  }
-  if ( _hypMaxElementArea )
-  {
-    double maxArea = _hypMaxElementArea->GetMaxArea();
-    edgeLength = sqrt(2. * maxArea/sqrt(3.0));
-  }
-  if ( edgeLength < DBL_MIN )
-    edgeLength = occgeo.GetBoundingBox().Diam();
-
-  //cout << " edgeLength = " << edgeLength << endl;
-
-  netgen::mparam.maxh = edgeLength;
-  netgen::mparam.quad = _hypQuadranglePreference ? 1 : 0;
-  //ngMesh->SetGlobalH ( edgeLength );
 
   // -------------------------
   // Generate surface mesh
@@ -438,20 +459,22 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
     OCC_CATCH_SIGNALS;
 #endif
     err = netgen::OCCGenerateMesh(occgeo, ngMesh, startWith, endWith, optstr);
+    if ( err )
+      error(SMESH_Comment("Error in netgen::OCCGenerateMesh() at ") << netgen::multithread.task);
   }
-  catch (Standard_Failure& ex) {
-    string comment = ex.DynamicType()->Name();
-    if ( ex.GetMessageString() && strlen( ex.GetMessageString() )) {
-      comment += ": ";
-      comment += ex.GetMessageString();
-    }
-    error(COMPERR_OCC_EXCEPTION, comment);
-  }
-  catch (NgException exc) {
-    error( SMESH_Comment("NgException: ") << exc.What() );
+  catch (Standard_Failure& ex)
+  {
+    SMESH_Comment str("Exception in  netgen::OCCGenerateMesh()");
+    str << " at " << netgen::multithread.task
+        << ": " << ex.DynamicType()->Name();
+    if ( ex.GetMessageString() && strlen( ex.GetMessageString() ))
+      str << ": " << ex.GetMessageString();
+    error(str);
   }
   catch (...) {
-    error(COMPERR_EXCEPTION,"Exception in netgen::OCCGenerateMesh()");
+    SMESH_Comment str("Exception in  netgen::OCCGenerateMesh()");
+    str << " at " << netgen::multithread.task;
+    error(str);
   }
 
   // ----------------------------------------------------
@@ -478,13 +501,16 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
 
   // create faces
   bool reverse = ( aShape.Orientation() == TopAbs_REVERSED );
-  for ( int i = 1; i <= nbFaces ; ++i )
+  int i,j;
+  for ( i = 1; i <= nbFaces ; ++i )
   {
     const Element2d& elem = ngMesh->SurfaceElement(i);
     vector<const SMDS_MeshNode*> nodes( elem.GetNP() );
-    for (int j=1; j <= elem.GetNP(); ++j)
+    for (j=1; j <= elem.GetNP(); ++j)
     {
       int pind = elem.PNum(j);
+      if ( pind-1 < 0 )
+        break;
       const SMDS_MeshNode* node = nodeVec.at(pind-1);
       if ( reverse )
         nodes[ nodes.size()-j ] = node;
@@ -496,11 +522,14 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
         meshDS->SetNodeOnFace((SMDS_MeshNode*)node, faceID, pgi.u, pgi.v);
       }
     }
-    SMDS_MeshFace* face = 0;
-    if ( elem.GetType() == TRIG )
-      face = helper.AddFace(nodes[0],nodes[1],nodes[2]);
-    else
-      face = helper.AddFace(nodes[0],nodes[1],nodes[2],nodes[3]);
+    if ( j > elem.GetNP() )
+    {
+      SMDS_MeshFace* face = 0;
+      if ( elem.GetType() == TRIG )
+        face = helper.AddFace(nodes[0],nodes[1],nodes[2]);
+      else
+        face = helper.AddFace(nodes[0],nodes[1],nodes[2],nodes[3]);
+    }
   }
 
   return !err;

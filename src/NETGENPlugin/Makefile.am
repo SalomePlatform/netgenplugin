@@ -39,6 +39,8 @@ salomeinclude_HEADERS = \
         NETGENPlugin_Hypothesis_i.hxx \
         NETGENPlugin_Hypothesis_2D.hxx \
         NETGENPlugin_Hypothesis_2D_i.hxx \
+	NETGENPlugin_Hypothesis_3D_i.hxx \
+	NETGENPlugin_Hypothesis_2D_ONLY_i.hxx \
 	NETGENPlugin_SimpleHypothesis_2D.hxx \
 	NETGENPlugin_SimpleHypothesis_3D.hxx \
 	NETGENPlugin_SimpleHypothesis_2D_i.hxx \
@@ -62,6 +64,8 @@ dist_libNETGENEngine_la_SOURCES = \
 	NETGENPlugin_Hypothesis_i.cxx \
 	NETGENPlugin_Hypothesis_2D.cxx \
 	NETGENPlugin_Hypothesis_2D_i.cxx \
+	NETGENPlugin_Hypothesis_3D_i.cxx \
+	NETGENPlugin_Hypothesis_2D_ONLY_i.cxx \
 	NETGENPlugin_Mesher.cxx \
 	NETGENPlugin_SimpleHypothesis_2D.cxx \
 	NETGENPlugin_SimpleHypothesis_3D.cxx \

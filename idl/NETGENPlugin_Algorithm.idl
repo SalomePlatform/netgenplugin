@@ -110,6 +110,20 @@ module NETGENPlugin
   };
 
   /*!
+   * interface of "NETGEN 2D parameters" hypothesis used by NETGENPlugin_NETGEN_2D_ONLY algoritm
+   */
+  interface NETGENPlugin_Hypothesis_2D_ONLY : NETGENPlugin_Hypothesis_2D
+  {
+  };
+
+  /*!
+   * interface of "NETGEN 3D parameters" hypothesis used by NETGENPlugin_NETGEN_3D algorithm
+   */
+  interface NETGENPlugin_Hypothesis_3D : NETGENPlugin_Hypothesis
+  {
+  };
+
+  /*!
    * NETGENPlugin_Hypothesis: interface of "NETGEN 2D simple parameters" hypothesis
    */
   interface NETGENPlugin_SimpleHypothesis_2D : SMESH::SMESH_Hypothesis

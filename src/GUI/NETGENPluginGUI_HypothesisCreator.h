@@ -101,6 +101,7 @@ private:
  QCheckBox*        myAllowQuadrangles;
 
  bool myIs2D;
+ bool myIsONLY;
 
  QTableWidget* myLocalSizeTable;
  GeomSelectionTools* myGeomSelectionTools;

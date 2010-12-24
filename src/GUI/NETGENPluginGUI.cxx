@@ -41,7 +41,8 @@ extern "C"
   SMESHGUI_GenericHypothesisCreator* GetHypothesisCreator( const QString& aHypType )
   {
     SMESHGUI_GenericHypothesisCreator* aCreator = NULL;
-    if( aHypType=="NETGEN_Parameters_2D" ||  aHypType=="NETGEN_Parameters" )
+    if( aHypType=="NETGEN_Parameters_2D" ||  aHypType=="NETGEN_Parameters" ||
+        aHypType=="NETGEN_Parameters_2D_ONLY" ||  aHypType=="NETGEN_Parameters_3D" )
       aCreator =  new NETGENPluginGUI_HypothesisCreator( aHypType );
     else if ( aHypType=="NETGEN_SimpleParameters_2D" ||
               aHypType=="NETGEN_SimpleParameters_3D" )

@@ -30,7 +30,7 @@
 //
 #include "NETGENPlugin_NETGEN_3D.hxx"
 
-#include "NETGENPlugin_Mesher.hxx"
+#include "NETGENPlugin_Hypothesis.hxx"
 
 #include "SMDS_MeshElement.hxx"
 #include "SMDS_MeshNode.hxx"
@@ -42,6 +42,7 @@
 #include "SMESH_MesherHelper.hxx"
 #include "SMESH_MeshEditor.hxx"
 #include "StdMeshers_QuadToTriaAdaptor.hxx"
+#include "StdMeshers_MaxElementVolume.hxx"
 
 #include <BRepGProp.hxx>
 #include <BRep_Tool.hxx>
@@ -69,6 +70,11 @@
 namespace nglib {
 #include <nglib.h>
 }
+namespace netgen {
+  extern int OCCGenerateMesh (OCCGeometry&, Mesh*&, int, int, char*);
+  extern MeshingParameters mparam;
+  extern volatile multithreadt multithread;
+}
 using namespace nglib;
 using namespace std;
 
@@ -86,12 +92,13 @@ NETGENPlugin_NETGEN_3D::NETGENPlugin_NETGEN_3D(int hypId, int studyId,
   _name = "NETGEN_3D";
   _shapeType = (1 << TopAbs_SHELL) | (1 << TopAbs_SOLID);// 1 bit /shape type
   _compatibleHypothesis.push_back("MaxElementVolume");
+  _compatibleHypothesis.push_back("NETGEN_Parameters");
+  _requireShape = false; // can work without shape
 
   _maxElementVolume = 0.;
 
   _hypMaxElementVolume = NULL;
-
-  _requireShape = false; // can work without shape
+  _hypParameters = NULL;
 }
 
 //=============================================================================
@@ -118,6 +125,7 @@ bool NETGENPlugin_NETGEN_3D::CheckHypothesis (SMESH_Mesh&         aMesh,
   MESSAGE("NETGENPlugin_NETGEN_3D::CheckHypothesis");
 
   _hypMaxElementVolume = NULL;
+  _hypParameters = NULL;
   _maxElementVolume = DBL_MAX;
 
   list<const SMESHDS_Hypothesis*>::const_iterator itl;
@@ -128,7 +136,6 @@ bool NETGENPlugin_NETGEN_3D::CheckHypothesis (SMESH_Mesh&         aMesh,
   if (!nbHyp)
   {
     aStatus = SMESH_Hypothesis::HYP_OK;
-    //aStatus = SMESH_Hypothesis::HYP_MISSING;
     return true;  // can work with no hypothesis
   }
 
@@ -137,20 +144,21 @@ bool NETGENPlugin_NETGEN_3D::CheckHypothesis (SMESH_Mesh&         aMesh,
 
   string hypName = theHyp->GetName();
 
-  bool isOk = false;
-
   if (hypName == "MaxElementVolume")
   {
     _hypMaxElementVolume = static_cast<const StdMeshers_MaxElementVolume*> (theHyp);
-    ASSERT(_hypMaxElementVolume);
     _maxElementVolume = _hypMaxElementVolume->GetMaxVolume();
-    isOk =true;
+    aStatus = SMESH_Hypothesis::HYP_OK;
+  }
+  else if (hypName == "NETGEN_Parameters")
+  {
+    _hypParameters = static_cast<const NETGENPlugin_Hypothesis *> (theHyp);
     aStatus = SMESH_Hypothesis::HYP_OK;
   }
   else
     aStatus = SMESH_Hypothesis::HYP_INCOMPATIBLE;
 
-  return isOk;
+  return ( aStatus == SMESH_Hypothesis::HYP_OK );
 }
 
 //=============================================================================
@@ -171,13 +179,9 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
   helper.SetElementsOnShape( true );
 
   int Netgen_NbOfNodes     = 0;
-  int Netgen_param2ndOrder = 0;
-  double Netgen_paramFine  = 1.;
-  double Netgen_paramSize  = pow( 72, 1/6. ) * pow( _maxElementVolume, 1/3. );
 
   double Netgen_point[3];
   int Netgen_triangle[3];
-  int Netgen_tetrahedron[4];
 
   NETGENPlugin_NetgenLibWrapper ngLib;
   Ng_Mesh * Netgen_mesh = ngLib._ngMesh;
@@ -313,7 +317,6 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
                                                    (netgen::Mesh&) *Netgen_mesh,
                                                    nodeVec,
                                                    internals);
-      Netgen_NbOfNodes = Ng_GetNP(Netgen_mesh);
     }
   }
 
@@ -321,42 +324,83 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
   // Generate the volume mesh
   // -------------------------
 
-  Ng_Meshing_Parameters Netgen_param;
+  return compute( aMesh, helper, nodeVec, Netgen_mesh);
+}
 
-  Netgen_param.secondorder = Netgen_param2ndOrder;
-  Netgen_param.fineness    = Netgen_paramFine;
-  Netgen_param.maxh        = Netgen_paramSize;
+//================================================================================
+/*!
+ * \brief set parameters and generate the volume mesh
+ */
+//================================================================================
 
-  Ng_Result status;
+bool NETGENPlugin_NETGEN_3D::compute(SMESH_Mesh&                     aMesh,
+                                     SMESH_MesherHelper&             helper,
+                                     vector< const SMDS_MeshNode* >& nodeVec,
+                                     Ng_Mesh *                       Netgen_mesh)
+{
+  netgen::Mesh* ngMesh = (netgen::Mesh*)Netgen_mesh;
+  int Netgen_NbOfNodes = Ng_GetNP(Netgen_mesh);
 
-  try {
+  char *optstr = 0;
+  int startWith = netgen::MESHCONST_MESHVOLUME;
+  int endWith   = netgen::MESHCONST_OPTVOLUME;
+  int err = 1;
+
+  NETGENPlugin_Mesher aMesher( &aMesh, helper.GetSubShape(), /*isVolume=*/true );
+  netgen::OCCGeometry occgeo;
+  
+  if ( _hypParameters )
+  {
+    aMesher.SetParameters( _hypParameters );
+    if ( !_hypParameters->GetOptimize() )
+      endWith = netgen::MESHCONST_MESHVOLUME;
+  }
+  else if ( _hypMaxElementVolume )
+  {
+    netgen::mparam.maxh = pow( 72, 1/6. ) * pow( _maxElementVolume, 1/3. );
+  }
+  else if ( aMesh.HasShapeToMesh() )
+  {
+    aMesher.PrepareOCCgeometry( occgeo, helper.GetSubShape(), aMesh );
+    netgen::mparam.maxh = occgeo.GetBoundingBox().Diam()/2;
+  }
+  else
+  {
+    netgen::Point3d pmin, pmax;
+    ngMesh->GetBox (pmin, pmax);
+    netgen::mparam.maxh = Dist(pmin, pmax)/2;
+  }
+
+  try
+  {
 #if (OCC_VERSION_MAJOR << 16 | OCC_VERSION_MINOR << 8 | OCC_VERSION_MAINTENANCE) > 0x060100
     OCC_CATCH_SIGNALS;
 #endif
-    status = Ng_GenerateVolumeMesh(Netgen_mesh, &Netgen_param);
+    ngMesh->CalcLocalH();
+    err = netgen::OCCGenerateMesh(occgeo, ngMesh, startWith, endWith, optstr);
+    if ( err )
+      error(SMESH_Comment("Error in netgen::OCCGenerateMesh() at ") << netgen::multithread.task);
   }
-  catch (Standard_Failure& exc) {
-    error(COMPERR_OCC_EXCEPTION, exc.GetMessageString());
-    status = NG_VOLUME_FAILURE;
+  catch (Standard_Failure& ex)
+  {
+    SMESH_Comment str("Exception in  netgen::OCCGenerateMesh()");
+    str << " at " << netgen::multithread.task
+        << ": " << ex.DynamicType()->Name();
+    if ( ex.GetMessageString() && strlen( ex.GetMessageString() ))
+      str << ": " << ex.GetMessageString();
+    error(str);
   }
-  catch (...) {
-    error("Exception in Ng_GenerateVolumeMesh()");
-    status = NG_VOLUME_FAILURE;
-  }
-  if ( GetComputeError()->IsOK() ) {
-    switch ( status ) {
-    case NG_SURFACE_INPUT_ERROR:error( status, "NG_SURFACE_INPUT_ERROR");
-    case NG_VOLUME_FAILURE:     error( status, "NG_VOLUME_FAILURE");
-    case NG_STL_INPUT_ERROR:    error( status, "NG_STL_INPUT_ERROR");
-    case NG_SURFACE_FAILURE:    error( status, "NG_SURFACE_FAILURE");
-    case NG_FILE_NOT_FOUND:     error( status, "NG_FILE_NOT_FOUND");
-    };
+  catch (...)
+  {
+    SMESH_Comment str("Exception in  netgen::OCCGenerateMesh()");
+    str << " at " << netgen::multithread.task;
+    error(str);
   }
 
   int Netgen_NbOfNodesNew = Ng_GetNP(Netgen_mesh);
   int Netgen_NbOfTetra    = Ng_GetNE(Netgen_mesh);
 
-  MESSAGE("End of Volume Mesh Generation. status=" << status <<
+  MESSAGE("End of Volume Mesh Generation. err=" << err <<
           ", nb new nodes: " << Netgen_NbOfNodesNew - Netgen_NbOfNodes <<
           ", nb tetra: " << Netgen_NbOfTetra);
 
@@ -364,16 +408,19 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
   // Feed back the SMESHDS with the generated Nodes and Volume Elements
   // -------------------------------------------------------------------
 
-  if ( status == NG_VOLUME_FAILURE )
+  if ( err )
   {
-    SMESH_ComputeErrorPtr err = NETGENPlugin_Mesher::readErrors(nodeVec);
-    if ( err && !err->myBadElements.empty() )
-      error( err );
+    SMESH_ComputeErrorPtr ce = NETGENPlugin_Mesher::readErrors(nodeVec);
+    if ( ce && !ce->myBadElements.empty() )
+      error( ce );
   }
 
   bool isOK = ( /*status == NG_OK &&*/ Netgen_NbOfTetra > 0 );// get whatever built
   if ( isOK )
   {
+    double Netgen_point[3];
+    int    Netgen_tetrahedron[4];
+
     // create and insert new nodes into nodeVec
     nodeVec.resize( Netgen_NbOfNodesNew + 1, 0 );
     int nodeIndex = Netgen_NbOfNodes + 1;
@@ -387,14 +434,20 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
     for ( int elemIndex = 1; elemIndex <= Netgen_NbOfTetra; ++elemIndex )
     {
       Ng_GetVolumeElement(Netgen_mesh, elemIndex, Netgen_tetrahedron);
-      helper.AddVolume (nodeVec.at( Netgen_tetrahedron[0] ),
-                        nodeVec.at( Netgen_tetrahedron[1] ),
-                        nodeVec.at( Netgen_tetrahedron[2] ),
-                        nodeVec.at( Netgen_tetrahedron[3] ));
+      try
+      {
+        helper.AddVolume (nodeVec.at( Netgen_tetrahedron[0] ),
+                          nodeVec.at( Netgen_tetrahedron[1] ),
+                          nodeVec.at( Netgen_tetrahedron[2] ),
+                          nodeVec.at( Netgen_tetrahedron[3] ));
+      }
+      catch (...)
+      {
+      }
     }
   }
 
-  return (status == NG_OK);
+  return !err;
 }
 
 //================================================================================
@@ -406,7 +459,7 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
 bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
                                      SMESH_MesherHelper* aHelper)
 {
-  MESSAGE("NETGENPlugin_NETGEN_3D::Compute with maxElmentsize = " << _maxElementVolume);  
+  MESSAGE("NETGENPlugin_NETGEN_3D::Compute with maxElmentsize = " << _maxElementVolume);
   const int invalid_ID = -1;
   bool _quadraticMesh = false;
   typedef map< const SMDS_MeshNode*, int, TIDCompare > TNodeToIDMap;
@@ -462,14 +515,10 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
   // Feed the Netgen with surface mesh
   // ---------------------------------
 
-  int Netgen_NbOfNodes = 0;
-  int Netgen_param2ndOrder = 0;
-  double Netgen_paramFine = 1.;
-  double Netgen_paramSize = pow( 72, 1/6. ) * pow( _maxElementVolume, 1/3. );
-  
+  int    Netgen_NbOfNodes = 0;
   double Netgen_point[3];
-  int Netgen_triangle[3];
-  int Netgen_tetrahedron[4];
+  int    Netgen_triangle[3];
+  int    Netgen_tetrahedron[4];
 
   NETGENPlugin_NetgenLibWrapper ngLib;
   Ng_Mesh * Netgen_mesh = ngLib._ngMesh;
@@ -516,84 +565,8 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
   // Generate the volume mesh
   // -------------------------
 
-  Ng_Meshing_Parameters Netgen_param;
-
-  Netgen_param.secondorder = Netgen_param2ndOrder;
-  Netgen_param.fineness = Netgen_paramFine;
-  Netgen_param.maxh = Netgen_paramSize;
-
-  Ng_Result status;
-
-  try {
-#if (OCC_VERSION_MAJOR << 16 | OCC_VERSION_MINOR << 8 | OCC_VERSION_MAINTENANCE) > 0x060100
-    OCC_CATCH_SIGNALS;
-#endif
-    status = Ng_GenerateVolumeMesh(Netgen_mesh, &Netgen_param);
-  }
-  catch (Standard_Failure& exc) {
-    error(COMPERR_OCC_EXCEPTION, exc.GetMessageString());
-    status = NG_VOLUME_FAILURE;
-  }
-  catch (...) {
-    error("Exception in Ng_GenerateVolumeMesh()");
-    status = NG_VOLUME_FAILURE;
-  }
-  if ( GetComputeError()->IsOK() ) {
-    switch ( status ) {
-    case NG_SURFACE_INPUT_ERROR:error( status, "NG_SURFACE_INPUT_ERROR");
-    case NG_VOLUME_FAILURE:     error( status, "NG_VOLUME_FAILURE");
-    case NG_STL_INPUT_ERROR:    error( status, "NG_STL_INPUT_ERROR");
-    case NG_SURFACE_FAILURE:    error( status, "NG_SURFACE_FAILURE");
-    case NG_FILE_NOT_FOUND:     error( status, "NG_FILE_NOT_FOUND");
-    };
-  }
-
-  int Netgen_NbOfNodesNew = Ng_GetNP(Netgen_mesh);
-
-  int Netgen_NbOfTetra = Ng_GetNE(Netgen_mesh);
-
-  MESSAGE("End of Volume Mesh Generation. status=" << status <<
-          ", nb new nodes: " << Netgen_NbOfNodesNew - Netgen_NbOfNodes <<
-          ", nb tetra: " << Netgen_NbOfTetra);
-
-  // -------------------------------------------------------------------
-  // Feed back the SMESHDS with the generated Nodes and Volume Elements
-  // -------------------------------------------------------------------
-
-  if ( status == NG_VOLUME_FAILURE )
-  {
-    SMESH_ComputeErrorPtr err = NETGENPlugin_Mesher::readErrors(nodeVec);
-    if ( err && !err->myBadElements.empty() )
-      error( err );
-  }
-
-  bool isOK = ( Netgen_NbOfTetra > 0 );// get whatever built
-  if ( isOK )
-  {
-    // create and insert new nodes into nodeVec
-    nodeVec.resize( Netgen_NbOfNodesNew + 1 );
-    int nodeIndex = Netgen_NbOfNodes + 1;
-    
-    for ( ; nodeIndex <= Netgen_NbOfNodesNew; ++nodeIndex )
-    {
-      Ng_GetPoint( Netgen_mesh, nodeIndex, Netgen_point );
-      nodeVec.at(nodeIndex) = aHelper->AddNode(Netgen_point[0],Netgen_point[1],Netgen_point[2]);
-    }
-
-    // create tetrahedrons
-    for ( int elemIndex = 1; elemIndex <= Netgen_NbOfTetra; ++elemIndex )
-    {
-      Ng_GetVolumeElement(Netgen_mesh, elemIndex, Netgen_tetrahedron);
-      aHelper->AddVolume (nodeVec.at( Netgen_tetrahedron[0] ),
-                          nodeVec.at( Netgen_tetrahedron[1] ),
-                          nodeVec.at( Netgen_tetrahedron[2] ),
-                          nodeVec.at( Netgen_tetrahedron[3] ));
-    }
-  }
-
-  return (status == NG_OK);
+  return compute( aMesh, *aHelper, nodeVec, Netgen_mesh);
 }
-
 
 //=============================================================================
 /*!

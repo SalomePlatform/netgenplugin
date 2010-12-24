@@ -88,11 +88,13 @@ enum {
 };
 
 NETGENPluginGUI_HypothesisCreator::NETGENPluginGUI_HypothesisCreator( const QString& theHypType )
-: SMESHGUI_GenericHypothesisCreator( theHypType ),
-  myIs2D(false)
+: SMESHGUI_GenericHypothesisCreator( theHypType )
 {
   myGeomSelectionTools = NULL;
   myLocalSizeMap.clear();
+  myIs2D = ( theHypType.startsWith("NETGEN_Parameters_2D"));
+  myIsONLY = ( theHypType == "NETGEN_Parameters_2D_ONLY" ||
+               theHypType == "NETGEN_Parameters_3D");
 }
 
 NETGENPluginGUI_HypothesisCreator::~NETGENPluginGUI_HypothesisCreator()
@@ -109,8 +111,10 @@ bool NETGENPluginGUI_HypothesisCreator::checkParams(QString& msg) const
   
   res = myMaxSize->isValid(msg,true) && res;
   res = myGrowthRate->isValid(msg,true) && res; ;
-  res = myNbSegPerEdge->isValid(msg,true) && res;
-  res = myNbSegPerRadius->isValid(msg,true) && res;
+  if ( myNbSegPerEdge )
+    res = myNbSegPerEdge->isValid(msg,true) && res;
+  if ( myNbSegPerRadius )
+    res = myNbSegPerRadius->isValid(msg,true) && res;
   return res;
 }
 
@@ -148,11 +152,15 @@ QFrame* NETGENPluginGUI_HypothesisCreator::buildFrame()
   myMaxSize->RangeStepAndValidator( 1e-07, 1e+06, 10., "length_precision" );
   aGroupLayout->addWidget( myMaxSize, row, 1 );
   row++;
-  
-  mySecondOrder = new QCheckBox( tr( "NETGEN_SECOND_ORDER" ), GroupC1 );
-  aGroupLayout->addWidget( mySecondOrder, row, 0 );
-  row++;
-  
+
+  mySecondOrder = 0;
+  if ( !myIsONLY )
+  {
+    mySecondOrder = new QCheckBox( tr( "NETGEN_SECOND_ORDER" ), GroupC1 );
+    aGroupLayout->addWidget( mySecondOrder, row, 0 );
+    row++;
+  }
+
   aGroupLayout->addWidget( new QLabel( tr( "NETGEN_FINENESS" ), GroupC1 ), row, 0 );
   myFineness = new QComboBox( GroupC1 );
   QStringList types;
@@ -168,76 +176,86 @@ QFrame* NETGENPluginGUI_HypothesisCreator::buildFrame()
   aGroupLayout->addWidget( myGrowthRate, row, 1 );
   row++;
 
-  const double VALUE_MAX = 1.0e+6;
+  myNbSegPerEdge = 0;
+  myNbSegPerRadius = 0;
+  if ( !myIsONLY )
+  {
+    const double VALUE_MAX = 1.0e+6;
 
-  aGroupLayout->addWidget( new QLabel( tr( "NETGEN_SEG_PER_EDGE" ), GroupC1 ), row, 0 );
-  myNbSegPerEdge = new SMESHGUI_SpinBox( GroupC1 );
-  myNbSegPerEdge->RangeStepAndValidator( .2, VALUE_MAX, .1, "parametric_precision" );
-  aGroupLayout->addWidget( myNbSegPerEdge, row, 1 );
-  row++;
-  
-  aGroupLayout->addWidget( new QLabel( tr( "NETGEN_SEG_PER_RADIUS" ), GroupC1 ), row, 0 );
-  myNbSegPerRadius = new SMESHGUI_SpinBox( GroupC1 );
-  myNbSegPerRadius->RangeStepAndValidator( .2, VALUE_MAX, .1, "parametric_precision" );
-  aGroupLayout->addWidget( myNbSegPerRadius, row, 1 );
-  row++;
+    aGroupLayout->addWidget( new QLabel( tr( "NETGEN_SEG_PER_EDGE" ), GroupC1 ), row, 0 );
+    myNbSegPerEdge = new SMESHGUI_SpinBox( GroupC1 );
+    myNbSegPerEdge->RangeStepAndValidator( .2, VALUE_MAX, .1, "parametric_precision" );
+    aGroupLayout->addWidget( myNbSegPerEdge, row, 1 );
+    row++;
 
-  if ( hypType()=="NETGEN_Parameters_2D" )
+    aGroupLayout->addWidget( new QLabel( tr( "NETGEN_SEG_PER_RADIUS" ), GroupC1 ), row, 0 );
+    myNbSegPerRadius = new SMESHGUI_SpinBox( GroupC1 );
+    myNbSegPerRadius->RangeStepAndValidator( .2, VALUE_MAX, .1, "parametric_precision" );
+    aGroupLayout->addWidget( myNbSegPerRadius, row, 1 );
+    row++;
+  }
+  myAllowQuadrangles = 0;
+  if ( myIs2D )
   {
     myAllowQuadrangles = new QCheckBox( tr( "NETGEN_ALLOW_QUADRANGLES" ), GroupC1 );
     aGroupLayout->addWidget( myAllowQuadrangles, row, 0 );
-    myIs2D = true;
     row++;
   }
 
-  myOptimize = new QCheckBox( tr( "NETGEN_OPTIMIZE" ), GroupC1 );
-  aGroupLayout->addWidget( myOptimize, row, 0 );
-  row++;
-  
+  myOptimize = 0;
+  if ( !myIs2D )
+  {
+    myOptimize = new QCheckBox( tr( "NETGEN_OPTIMIZE" ), GroupC1 );
+    aGroupLayout->addWidget( myOptimize, row, 0 );
+    row++;
+  }
   connect( myFineness, SIGNAL( activated( int ) ), this, SLOT( onFinenessChanged() ) );
 
-  QWidget* localSizeGroup = new QWidget();
-  QGridLayout* localSizeLayout = new QGridLayout(localSizeGroup);
-  
-  myLocalSizeTable = new QTableWidget(0, LSZ_NB_COLUMNS, localSizeGroup);
-  localSizeLayout->addWidget(myLocalSizeTable, 1, 0, 8, 1);
-  QStringList localSizeHeaders;
-  localSizeHeaders << tr( "LSZ_ENTRY_COLUMN" )<< tr( "LSZ_NAME_COLUMN" ) << tr( "LSZ_LOCALSIZE_COLUMN" );
-  myLocalSizeTable->setHorizontalHeaderLabels(localSizeHeaders);
-  myLocalSizeTable->horizontalHeader()->hideSection(LSZ_ENTRY_COLUMN);
-  myLocalSizeTable->horizontalHeader()->setResizeMode(QHeaderView::Interactive);
-  myLocalSizeTable->resizeColumnToContents(LSZ_NAME_COLUMN);
-  myLocalSizeTable->resizeColumnToContents(LSZ_LOCALSIZE_COLUMN);
-  myLocalSizeTable->setAlternatingRowColors(true);
-  myLocalSizeTable->verticalHeader()->hide();
-  
-  QPushButton* addVertexButton = new QPushButton(tr("NETGEN_LSZ_VERTEX"), localSizeGroup);
-  localSizeLayout->addWidget(addVertexButton, LSZ_VERTEX_BTN, 1, 1, 1);
-  QPushButton* addEdgeButton = new QPushButton(tr("NETGEN_LSZ_EDGE"), localSizeGroup);
-  localSizeLayout->addWidget(addEdgeButton, LSZ_EDGE_BTN, 1, 1, 1);
-#ifdef NETGEN_NEW
-  QPushButton* addFaceButton = new QPushButton(tr("NETGEN_LSZ_FACE"), localSizeGroup);
-  localSizeLayout->addWidget(addFaceButton, LSZ_FACE_BTN, 1, 1, 1);
-#endif
-  
-  QFrame *line2 = new QFrame(localSizeGroup);
-  line2->setFrameShape(QFrame::HLine);
-  line2->setFrameShadow(QFrame::Sunken);
-  localSizeLayout->addWidget(line2, LSZ_SEPARATOR2, 1, 1, 1);
-  
-  QPushButton* removeButton = new QPushButton(tr("NETGEN_LSZ_REMOVE"), localSizeGroup);
-  localSizeLayout->addWidget(removeButton, LSZ_REMOVE_BTN, 1, 1, 1);
-  
-  connect( addVertexButton, SIGNAL(clicked()), this, SLOT(onAddLocalSizeOnVertex()));
-  connect( addEdgeButton, SIGNAL(clicked()), this, SLOT(onAddLocalSizeOnEdge()));
-#ifdef NETGEN_NEW
-  connect( addFaceButton, SIGNAL(clicked()), this, SLOT(onAddLocalSizeOnFace()));
-#endif
-  connect( removeButton, SIGNAL(clicked()), this, SLOT(onRemoveLocalSizeOnShape()));
-  connect( myLocalSizeTable, SIGNAL(cellChanged(int, int)), this, SLOT(onSetLocalSize(int, int)));
-  
-  tab->insertTab(LSZ_TAB, localSizeGroup, tr("NETGEN_LOCAL_SIZE"));
+  myLocalSizeTable = 0;
+  if ( !myIsONLY )
+  {
+    QWidget* localSizeGroup = new QWidget();
+    QGridLayout* localSizeLayout = new QGridLayout(localSizeGroup);
 
+    myLocalSizeTable = new QTableWidget(0, LSZ_NB_COLUMNS, localSizeGroup);
+    localSizeLayout->addWidget(myLocalSizeTable, 1, 0, 8, 1);
+    QStringList localSizeHeaders;
+    localSizeHeaders << tr( "LSZ_ENTRY_COLUMN" )<< tr( "LSZ_NAME_COLUMN" ) << tr( "LSZ_LOCALSIZE_COLUMN" );
+    myLocalSizeTable->setHorizontalHeaderLabels(localSizeHeaders);
+    myLocalSizeTable->horizontalHeader()->hideSection(LSZ_ENTRY_COLUMN);
+    myLocalSizeTable->horizontalHeader()->setResizeMode(QHeaderView::Interactive);
+    myLocalSizeTable->resizeColumnToContents(LSZ_NAME_COLUMN);
+    myLocalSizeTable->resizeColumnToContents(LSZ_LOCALSIZE_COLUMN);
+    myLocalSizeTable->setAlternatingRowColors(true);
+    myLocalSizeTable->verticalHeader()->hide();
+
+    QPushButton* addVertexButton = new QPushButton(tr("NETGEN_LSZ_VERTEX"), localSizeGroup);
+    localSizeLayout->addWidget(addVertexButton, LSZ_VERTEX_BTN, 1, 1, 1);
+    QPushButton* addEdgeButton = new QPushButton(tr("NETGEN_LSZ_EDGE"), localSizeGroup);
+    localSizeLayout->addWidget(addEdgeButton, LSZ_EDGE_BTN, 1, 1, 1);
+#ifdef NETGEN_NEW
+    QPushButton* addFaceButton = new QPushButton(tr("NETGEN_LSZ_FACE"), localSizeGroup);
+    localSizeLayout->addWidget(addFaceButton, LSZ_FACE_BTN, 1, 1, 1);
+#endif
+
+    QFrame *line2 = new QFrame(localSizeGroup);
+    line2->setFrameShape(QFrame::HLine);
+    line2->setFrameShadow(QFrame::Sunken);
+    localSizeLayout->addWidget(line2, LSZ_SEPARATOR2, 1, 1, 1);
+
+    QPushButton* removeButton = new QPushButton(tr("NETGEN_LSZ_REMOVE"), localSizeGroup);
+    localSizeLayout->addWidget(removeButton, LSZ_REMOVE_BTN, 1, 1, 1);
+
+    connect( addVertexButton, SIGNAL(clicked()), this, SLOT(onAddLocalSizeOnVertex()));
+    connect( addEdgeButton, SIGNAL(clicked()), this, SLOT(onAddLocalSizeOnEdge()));
+#ifdef NETGEN_NEW
+    connect( addFaceButton, SIGNAL(clicked()), this, SLOT(onAddLocalSizeOnFace()));
+#endif
+    connect( removeButton, SIGNAL(clicked()), this, SLOT(onRemoveLocalSizeOnShape()));
+    connect( myLocalSizeTable, SIGNAL(cellChanged(int, int)), this, SLOT(onSetLocalSize(int, int)));
+
+    tab->insertTab(LSZ_TAB, localSizeGroup, tr("NETGEN_LOCAL_SIZE"));
+  }
   return fr;
 }
 
@@ -252,9 +270,11 @@ void NETGENPluginGUI_HypothesisCreator::retrieveParams() const
     myMaxSize->setValue( data.myMaxSize );
   else
     myMaxSize->setText( data.myMaxSizeVar );
-  
-  mySecondOrder->setChecked( data.mySecondOrder );
-  myOptimize->setChecked( data.myOptimize );
+
+  if ( mySecondOrder )
+    mySecondOrder->setChecked( data.mySecondOrder );
+  if ( myOptimize )
+    myOptimize->setChecked( data.myOptimize );
   myFineness->setCurrentIndex( data.myFineness );
 
   if(data.myGrowthRateVar.isEmpty())
@@ -262,44 +282,53 @@ void NETGENPluginGUI_HypothesisCreator::retrieveParams() const
   else
     myGrowthRate->setText( data.myGrowthRateVar );
 
-  if(data.myNbSegPerEdgeVar.isEmpty())
-    myNbSegPerEdge->setValue( data.myNbSegPerEdge );
-  else
-    myNbSegPerEdge->setText( data.myNbSegPerEdgeVar );
-  
-  if(data.myNbSegPerRadiusVar.isEmpty())
-    myNbSegPerRadius->setValue( data.myNbSegPerRadius );
-  else
-    myNbSegPerRadius->setText( data.myNbSegPerRadiusVar );
-  
-  if (myIs2D)
+  if ( myNbSegPerEdge )
+  {
+    if(data.myNbSegPerEdgeVar.isEmpty())
+      myNbSegPerEdge->setValue( data.myNbSegPerEdge );
+    else
+      myNbSegPerEdge->setText( data.myNbSegPerEdgeVar );
+  }
+  if ( myNbSegPerRadius )
+  {
+    if(data.myNbSegPerRadiusVar.isEmpty())
+      myNbSegPerRadius->setValue( data.myNbSegPerRadius );
+    else
+      myNbSegPerRadius->setText( data.myNbSegPerRadiusVar );
+  }  
+  if (myAllowQuadrangles)
     myAllowQuadrangles->setChecked( data.myAllowQuadrangles );
 
   // update widgets
   bool isCustom = (myFineness->currentIndex() == UserDefined);
   myGrowthRate->setEnabled(isCustom);
-  myNbSegPerEdge->setEnabled(isCustom);
-  myNbSegPerRadius->setEnabled(isCustom);
+  if ( myNbSegPerEdge )
+    myNbSegPerEdge->setEnabled(isCustom);
+  if ( myNbSegPerRadius )
+    myNbSegPerRadius->setEnabled(isCustom);
 
-  NETGENPluginGUI_HypothesisCreator* that = (NETGENPluginGUI_HypothesisCreator*)this;
-  QMapIterator<QString, QString> i(myLocalSizeMap);
-  GeomSelectionTools* geomSelectionTools = that->getGeomSelectionTools();
-  while (i.hasNext()) {
-    i.next();
-    const QString entry = i.key();
-    std::string shapeName = geomSelectionTools->getNameFromEntry(entry.toStdString());
-    const QString localSize = i.value();
-    int row = myLocalSizeTable->rowCount();
-    myLocalSizeTable->setRowCount(row+1);
-    myLocalSizeTable->setItem(row, LSZ_ENTRY_COLUMN, new QTableWidgetItem(entry));
-    myLocalSizeTable->item(row, LSZ_ENTRY_COLUMN)->setFlags(0);
-    myLocalSizeTable->setItem(row, LSZ_NAME_COLUMN, new QTableWidgetItem(QString::fromStdString(shapeName)));
-    myLocalSizeTable->item(row, LSZ_NAME_COLUMN)->setFlags(0);
-    myLocalSizeTable->setItem(row, LSZ_LOCALSIZE_COLUMN, new QTableWidgetItem(localSize));
-    myLocalSizeTable->item(row, LSZ_LOCALSIZE_COLUMN)->setFlags(Qt::ItemIsSelectable|Qt::ItemIsEditable|Qt::ItemIsEnabled);
+  if ( myLocalSizeTable )
+  {
+    NETGENPluginGUI_HypothesisCreator* that = (NETGENPluginGUI_HypothesisCreator*)this;
+    QMapIterator<QString, QString> i(myLocalSizeMap);
+    GeomSelectionTools* geomSelectionTools = that->getGeomSelectionTools();
+    while (i.hasNext()) {
+      i.next();
+      const QString entry = i.key();
+      std::string shapeName = geomSelectionTools->getNameFromEntry(entry.toStdString());
+      const QString localSize = i.value();
+      int row = myLocalSizeTable->rowCount();
+      myLocalSizeTable->setRowCount(row+1);
+      myLocalSizeTable->setItem(row, LSZ_ENTRY_COLUMN, new QTableWidgetItem(entry));
+      myLocalSizeTable->item(row, LSZ_ENTRY_COLUMN)->setFlags(0);
+      myLocalSizeTable->setItem(row, LSZ_NAME_COLUMN, new QTableWidgetItem(QString::fromStdString(shapeName)));
+      myLocalSizeTable->item(row, LSZ_NAME_COLUMN)->setFlags(0);
+      myLocalSizeTable->setItem(row, LSZ_LOCALSIZE_COLUMN, new QTableWidgetItem(localSize));
+      myLocalSizeTable->item(row, LSZ_LOCALSIZE_COLUMN)->setFlags(Qt::ItemIsSelectable|Qt::ItemIsEditable|Qt::ItemIsEnabled);
+    }
+    myLocalSizeTable->resizeColumnToContents(LSZ_NAME_COLUMN);
+    myLocalSizeTable->resizeColumnToContents(LSZ_LOCALSIZE_COLUMN);
   }
-  myLocalSizeTable->resizeColumnToContents(LSZ_NAME_COLUMN);
-  myLocalSizeTable->resizeColumnToContents(LSZ_LOCALSIZE_COLUMN);
 }
 
 QString NETGENPluginGUI_HypothesisCreator::storeParams() const
@@ -454,30 +483,38 @@ bool NETGENPluginGUI_HypothesisCreator::readParamsFromWidgets( NetgenHypothesisD
   h_data.myName           = myName ? myName->text() : "";
   h_data.myMaxSize        = myMaxSize->value();
   h_data.myMaxSizeVar     = myMaxSize->text();
-  h_data.mySecondOrder    = mySecondOrder->isChecked();
-  h_data.myOptimize       = myOptimize->isChecked();
+  if ( mySecondOrder )
+    h_data.mySecondOrder  = mySecondOrder->isChecked();
+  if ( myOptimize )
+    h_data.myOptimize     = myOptimize->isChecked();
   h_data.myFineness       = myFineness->currentIndex();
   h_data.myGrowthRate     = myGrowthRate->value();
-  h_data.myNbSegPerEdge   = myNbSegPerEdge->value();
-  h_data.myNbSegPerRadius = myNbSegPerRadius->value();
+  if ( myNbSegPerEdge )
+    h_data.myNbSegPerEdge = myNbSegPerEdge->value();
+  if ( myNbSegPerRadius )
+    h_data.myNbSegPerRadius = myNbSegPerRadius->value();
 
-  h_data.myGrowthRateVar     = myGrowthRate->text();
-  h_data.myNbSegPerEdgeVar   = myNbSegPerEdge->text();
-  h_data.myNbSegPerRadiusVar = myNbSegPerRadius->text();
+  h_data.myGrowthRateVar  = myGrowthRate->text();
+  if ( myNbSegPerEdge )
+    h_data.myNbSegPerEdgeVar = myNbSegPerEdge->text();
+  if ( myNbSegPerRadius )
+    h_data.myNbSegPerRadiusVar = myNbSegPerRadius->text();
 
   
-  if ( myIs2D )
+  if ( myAllowQuadrangles )
     h_data.myAllowQuadrangles = myAllowQuadrangles->isChecked();
-  
-  NETGENPluginGUI_HypothesisCreator* that = (NETGENPluginGUI_HypothesisCreator*)this;
-  int nbRows = myLocalSizeTable->rowCount();
-  for(int row=0 ; row < nbRows ; row++)
+
+  if ( myLocalSizeTable )
+  {
+    NETGENPluginGUI_HypothesisCreator* that = (NETGENPluginGUI_HypothesisCreator*)this;
+    int nbRows = myLocalSizeTable->rowCount();
+    for(int row=0 ; row < nbRows ; row++)
     {
       QString entry = myLocalSizeTable->item(row, LSZ_ENTRY_COLUMN)->text();
       QString localSize = myLocalSizeTable->item(row, LSZ_LOCALSIZE_COLUMN)->text().trimmed();
       that->myLocalSizeMap[entry] = localSize;
     }
-
+  }
   return true;
 }
 
@@ -486,8 +523,10 @@ void NETGENPluginGUI_HypothesisCreator::onFinenessChanged()
   bool isCustom = (myFineness->currentIndex() == UserDefined);
   
   myGrowthRate->setEnabled(isCustom);
-  myNbSegPerEdge->setEnabled(isCustom);
-  myNbSegPerRadius->setEnabled(isCustom);
+  if ( myNbSegPerEdge )
+    myNbSegPerEdge->setEnabled(isCustom);
+  if ( myNbSegPerRadius )
+    myNbSegPerRadius->setEnabled(isCustom);
 
   if (!isCustom)
     {
@@ -524,8 +563,10 @@ void NETGENPluginGUI_HypothesisCreator::onFinenessChanged()
         }
       
       myGrowthRate->setValue( aGrowthRate );
-      myNbSegPerEdge->setValue( aNbSegPerEdge );
-      myNbSegPerRadius->setValue( aNbSegPerRadius );
+      if ( myNbSegPerEdge )
+        myNbSegPerEdge->setValue( aNbSegPerEdge );
+      if ( myNbSegPerRadius )
+        myNbSegPerRadius->setValue( aNbSegPerRadius );
     }
 }
 
@@ -645,6 +686,7 @@ GeomSelectionTools* NETGENPluginGUI_HypothesisCreator::getGeomSelectionTools()
 {
   _PTR(Study) aStudy = SMESH::GetActiveStudyDocument();
   if (myGeomSelectionTools == NULL || myGeomSelectionTools->getMyStudy() != aStudy) {
+    delete myGeomSelectionTools;
     myGeomSelectionTools = new GeomSelectionTools(aStudy);
   }
   return myGeomSelectionTools;
