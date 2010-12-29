@@ -1857,6 +1857,13 @@ bool NETGENPlugin_Mesher::Compute()
   if ( !comment.empty() )
     error->myComment = comment;
 
+  // SetIsAlwaysComputed( true ) to sub-meshes of degenerated EDGEs
+  TopLoc_Location loc; double f,l;
+  for (int i = 1; i <= occgeo.emap.Extent(); i++)
+    if ( BRep_Tool::Curve(TopoDS::Edge( occgeo.emap( i )), loc, f,l).IsNull() )
+      if ( SMESH_subMesh* sm = _mesh->GetSubMeshContaining( occgeo.emap( i )))
+        sm->SetIsAlwaysComputed( true );
+
   // set bad compute error to subshapes of all failed subshapes shapes
   if ( !error->IsOK() && err )
   {
