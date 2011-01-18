@@ -32,13 +32,11 @@
 #define _NETGENPlugin_NETGEN_3D_HXX_
 
 #include "NETGENPlugin_Defs.hxx"
-#include "NETGENPlugin_Mesher.hxx"
 
 #include "SMESH_3D_Algo.hxx"
-#include "SMESH_Mesh.hxx"
 #include "Utils_SALOME_Exception.hxx"
 
-class NETGENPlugin_Hypothesis;
+class StdMeshers_ViscousLayers;
 class StdMeshers_MaxElementVolume;
 
 class NETGENPLUGIN_EXPORT NETGENPlugin_NETGEN_3D: public SMESH_3D_Algo
@@ -62,16 +60,10 @@ public:
                         MapShapeNbElems& aResMap);
 
 protected:
-
-  bool compute(SMESH_Mesh&                     mesh,
-               SMESH_MesherHelper&             helper,
-               vector< const SMDS_MeshNode* >& nodeVec,
-               nglib::Ng_Mesh*                 ngMesh);
-
   double _maxElementVolume;
 
   const StdMeshers_MaxElementVolume* _hypMaxElementVolume;
-  const NETGENPlugin_Hypothesis*     _hypParameters;
+  const StdMeshers_ViscousLayers*    _viscousLayersHyp;
 };
 
 #endif

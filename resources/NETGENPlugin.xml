@@ -63,6 +63,7 @@
                label-id="Tetrahedron (Netgen)"
                icon-id="mesh_algo_tetra.png"
                hypos="MaxElementVolume,NETGEN_Parameters_3D"
+               opt-hypos="ViscousLayers"
 	       need-geom="false"
                input="TRIA,QUAD"
                dim="3"/>
