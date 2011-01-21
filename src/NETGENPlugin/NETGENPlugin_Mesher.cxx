@@ -1416,17 +1416,28 @@ namespace
     const int nb = 1000;
     Standard_Real u1, u2;
     Handle(Geom_Curve) curve = BRep_Tool::Curve(edge, u1, u2);
-    Standard_Real delta = (u2-u1)/nb;
-    for(int i=0; i<nb; i++)
+    if ( curve.IsNull() )
     {
-      Standard_Real u = u1 + delta*i;
-      gp_Pnt p = curve->Value(u);
+      TopoDS_Iterator vIt( edge );
+      if ( !vIt.More() ) return;
+      gp_Pnt p = BRep_Tool::Pnt( TopoDS::Vertex( vIt.Value() ));
       netgen::Point3d pi(p.X(), p.Y(), p.Z());
       mesh.RestrictLocalH(pi, size);
-      double resultSize = mesh.GetH(pi);
-      if ( resultSize - size > 0.1*size )
-        // netgen does restriction iff oldH/newH > 1.2 (localh.cpp:136)
-        mesh.RestrictLocalH(pi, resultSize/1.201);
+    }
+    else
+    {
+      Standard_Real delta = (u2-u1)/nb;
+      for(int i=0; i<nb; i++)
+      {
+        Standard_Real u = u1 + delta*i;
+        gp_Pnt p = curve->Value(u);
+        netgen::Point3d pi(p.X(), p.Y(), p.Z());
+        mesh.RestrictLocalH(pi, size);
+        double resultSize = mesh.GetH(pi);
+        if ( resultSize - size > 0.1*size )
+          // netgen does restriction iff oldH/newH > 1.2 (localh.cpp:136)
+          mesh.RestrictLocalH(pi, resultSize/1.201);
+      }
     }
   }
 
