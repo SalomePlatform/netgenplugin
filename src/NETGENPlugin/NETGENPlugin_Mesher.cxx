@@ -1965,12 +1965,17 @@ bool NETGENPlugin_Mesher::Compute()
   if ( !comment.empty() )
     error->myComment = comment;
 
-  // SetIsAlwaysComputed( true ) to sub-meshes of degenerated EDGEs
-  TopLoc_Location loc; double f,l;
-  for (int i = 1; i <= occgeo.emap.Extent(); i++)
-    if ( BRep_Tool::Curve(TopoDS::Edge( occgeo.emap( i )), loc, f,l).IsNull() )
-      if ( SMESH_subMesh* sm = _mesh->GetSubMeshContaining( occgeo.emap( i )))
-        sm->SetIsAlwaysComputed( true );
+  // SetIsAlwaysComputed( true ) to empty sub-meshes, which
+  // appear if the geometry contains coincident sub-shape due
+  // to bool merge_solids = 1; in netgen/libsrc/occ/occgenmesh.cpp
+  const int nbMaps = 2;
+  const TopTools_IndexedMapOfShape* geoMaps[nbMaps] =
+    { & occgeo.vmap, & occgeo.emap/*, & occgeo.fmap*/ };
+  for ( int iMap = 0; iMap < nbMaps; ++iMap )
+    for (int i = 1; i <= geoMaps[iMap]->Extent(); i++)
+      if ( SMESH_subMesh* sm = _mesh->GetSubMeshContaining( geoMaps[iMap]->FindKey(i)))
+        if ( !sm->IsMeshComputed() )
+          sm->SetIsAlwaysComputed( true );
 
   // set bad compute error to subshapes of all failed subshapes shapes
   if ( !error->IsOK() && err )
