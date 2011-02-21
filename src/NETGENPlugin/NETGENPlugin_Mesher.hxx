@@ -183,7 +183,7 @@ public:
   void getInternalEdges( TopTools_IndexedMapOfShape&  fmap,
                          TopTools_IndexedMapOfShape&  emap,
                          TopTools_IndexedMapOfShape&  vmap,
-                         std::list< SMESH_subMesh* >& smToPrecompute);
+                         std::list< SMESH_subMesh* > smToPrecompute[]);
   // vertices
   bool hasInternalVertexInFace() const { return !_f2v.empty(); }
   const std::map<int,std::list<int> >& getFacesWithVertices() const { return _f2v; }
