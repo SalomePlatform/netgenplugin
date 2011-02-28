@@ -66,7 +66,9 @@
   Netgen include files
 */
 
+#ifndef OCCGEOMETRY
 #define OCCGEOMETRY
+#endif
 #include <occgeom.hpp>
 namespace nglib {
 #include <nglib.h>
