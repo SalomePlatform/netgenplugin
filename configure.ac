@@ -367,7 +367,7 @@ echo Summary
 echo ---------------------------------------------
 echo
 
-AM_CONDITIONAL(CMAKE_BUILD, 0)
+AM_CONDITIONAL(CMAKE_BUILD, false)
 #AM_CONDITIONAL( USE_GFORTRAN, [test "$F77" = "gfortran"])
 
 echo Configure
