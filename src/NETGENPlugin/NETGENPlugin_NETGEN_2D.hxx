@@ -53,6 +53,10 @@ public:
   virtual bool Compute(SMESH_Mesh& aMesh,
                        const TopoDS_Shape& aShape);
 
+#ifdef WITH_SMESH_CANCEL_COMPUTE
+  virtual void CancelCompute();
+#endif
+
   virtual bool Evaluate(SMESH_Mesh& aMesh, const TopoDS_Shape& aShape,
                         MapShapeNbElems& aResMap);
 

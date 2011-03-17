@@ -1661,6 +1661,10 @@ bool NETGENPlugin_Mesher::Compute()
     {
       OCC_CATCH_SIGNALS;
       err = netgen::OCCGenerateMesh(occgeo, ngMesh, startWith, endWith, optstr);
+#ifdef WITH_SMESH_CANCEL_COMPUTE
+      if(netgen::multithread.terminate)
+        return false;
+#endif
       comment << text(err);
     }
     catch (Standard_Failure& ex)
@@ -1726,6 +1730,10 @@ bool NETGENPlugin_Mesher::Compute()
       {
         OCC_CATCH_SIGNALS;
         netgen::OCCGenerateMesh(occgeo, tmpNgMesh, startWith, endWith, optstr);
+#ifdef WITH_SMESH_CANCEL_COMPUTE
+        if(netgen::multithread.terminate)
+          return false;
+#endif
         // compute mesh on internal edges
         endWith = netgen::MESHCONST_MESHEDGES;
         err = netgen::OCCGenerateMesh(intOccgeo, tmpNgMesh, startWith, endWith, optstr);
@@ -1760,6 +1768,10 @@ bool NETGENPlugin_Mesher::Compute()
       {
         OCC_CATCH_SIGNALS;
         err = netgen::OCCGenerateMesh(occgeo, ngMesh, startWith, endWith, optstr);
+#ifdef WITH_SMESH_CANCEL_COMPUTE
+        if(netgen::multithread.terminate)
+          return false;
+#endif
         comment << text(err);
       }
       catch (Standard_Failure& ex)
@@ -1825,6 +1837,10 @@ bool NETGENPlugin_Mesher::Compute()
       {
         OCC_CATCH_SIGNALS;
         err = netgen::OCCGenerateMesh(occgeo, ngMesh, startWith, endWith, optstr);
+#ifdef WITH_SMESH_CANCEL_COMPUTE
+        if(netgen::multithread.terminate)
+          return false;
+#endif
         comment << text (err);
       }
       catch (Standard_Failure& ex)
@@ -1887,6 +1903,10 @@ bool NETGENPlugin_Mesher::Compute()
       {
         OCC_CATCH_SIGNALS;
         err = netgen::OCCGenerateMesh(occgeo, ngMesh, startWith, endWith, optstr);
+#ifdef WITH_SMESH_CANCEL_COMPUTE
+        if(netgen::multithread.terminate)
+          return false;
+#endif
         comment << text(err);
       }
       catch (Standard_Failure& ex)
@@ -1907,6 +1927,10 @@ bool NETGENPlugin_Mesher::Compute()
         {
           OCC_CATCH_SIGNALS;
           err = netgen::OCCGenerateMesh(occgeo, ngMesh, startWith, endWith, optstr);
+#ifdef WITH_SMESH_CANCEL_COMPUTE
+          if(netgen::multithread.terminate)
+            return false;
+#endif
           comment << text(err);
         }
         catch (Standard_Failure& ex)
@@ -2062,6 +2086,10 @@ bool NETGENPlugin_Mesher::Evaluate(MapShapeNbElems& aResMap)
   int startWith = netgen::MESHCONST_ANALYSE;
   int endWith   = netgen::MESHCONST_MESHEDGES;
   int err = netgen::OCCGenerateMesh(occgeo, ngMesh, startWith, endWith, optstr);
+#ifdef WITH_SMESH_CANCEL_COMPUTE
+  if(netgen::multithread.terminate)
+    return false;
+#endif
   ngLib.setMesh(( Ng_Mesh*) ngMesh );
   if (err) {
     if ( SMESH_subMesh* sm = _mesh->GetSubMeshContaining( _shape ))

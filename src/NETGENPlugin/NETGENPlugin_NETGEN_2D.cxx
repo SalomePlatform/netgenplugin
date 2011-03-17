@@ -41,6 +41,13 @@
 
 #include <list>
 
+#ifdef WITH_SMESH_CANCEL_COMPUTE
+namespace nglib {
+#include <nglib.h>
+}
+#include <meshing.hpp>
+#endif
+
 using namespace std;
 
 //=============================================================================
@@ -122,6 +129,9 @@ bool NETGENPlugin_NETGEN_2D::CheckHypothesis
 bool NETGENPlugin_NETGEN_2D::Compute(SMESH_Mesh&         aMesh,
                                      const TopoDS_Shape& aShape)
 {
+#ifdef WITH_SMESH_CANCEL_COMPUTE
+  netgen::multithread.terminate = 0;
+#endif
   //SMESHDS_Mesh* meshDS = aMesh.GetMeshDS();
 
   NETGENPlugin_Mesher mesher(&aMesh, aShape, false);
@@ -131,6 +141,12 @@ bool NETGENPlugin_NETGEN_2D::Compute(SMESH_Mesh&         aMesh,
   return mesher.Compute();
 }
 
+#ifdef WITH_SMESH_CANCEL_COMPUTE
+void NETGENPlugin_NETGEN_2D::CancelCompute()
+{
+  netgen::multithread.terminate = 1;
+}
+#endif
 
 //=============================================================================
 /*!

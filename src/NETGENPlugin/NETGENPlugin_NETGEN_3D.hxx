@@ -57,6 +57,10 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_NETGEN_3D: public SMESH_3D_Algo
   virtual bool Compute(SMESH_Mesh& aMesh,
                        SMESH_MesherHelper* aHelper);
 
+#ifdef WITH_SMESH_CANCEL_COMPUTE
+  virtual void CancelCompute();
+#endif
+
   virtual bool Evaluate(SMESH_Mesh& aMesh,
                         const TopoDS_Shape& aShape,
                         MapShapeNbElems& aResMap);

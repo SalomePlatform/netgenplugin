@@ -362,6 +362,9 @@ static TError AddSegmentsToMesh(netgen::Mesh&                    ngMesh,
 bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
                                           const TopoDS_Shape& aShape)
 {
+#ifdef WITH_SMESH_CANCEL_COMPUTE
+  netgen::multithread.terminate = 0;
+#endif
   MESSAGE("NETGENPlugin_NETGEN_2D_ONLY::Compute()");
 
   SMESHDS_Mesh* meshDS = aMesh.GetMeshDS();
@@ -461,6 +464,10 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
     OCC_CATCH_SIGNALS;
 #endif
     err = netgen::OCCGenerateMesh(occgeo, ngMesh, startWith, endWith, optstr);
+#ifdef WITH_SMESH_CANCEL_COMPUTE
+    if(netgen::multithread.terminate)
+      return false;
+#endif
     if ( err )
       error(SMESH_Comment("Error in netgen::OCCGenerateMesh() at ") << netgen::multithread.task);
   }
@@ -537,6 +544,12 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
   return !err;
 }
 
+#ifdef WITH_SMESH_CANCEL_COMPUTE
+void NETGENPlugin_NETGEN_2D_ONLY::CancelCompute()
+{
+  netgen::multithread.terminate = 1;
+}
+#endif
 
 //=============================================================================
 /*!
