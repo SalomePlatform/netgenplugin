@@ -972,7 +972,7 @@ diff -Naur --exclude=CVS netgen-4.5_orig/libsrc/occ/occgeom.cpp netgen-4.5_new/l
      BRepTools::Clean (shape);
      //WriteOCC_STL("test.stl");
 -    BRepMesh_IncrementalMesh::BRepMesh_IncrementalMesh (shape, vispar.occdeflection, true);
-+    BRepMesh_IncrementalMesh::BRepMesh_IncrementalMesh (shape, vispar_occdeflection, true);
++    BRepMesh_IncrementalMesh (shape, vispar_occdeflection, true);
      cout << "done" << endl;
  
  
