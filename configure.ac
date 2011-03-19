@@ -398,6 +398,9 @@ else
    AC_SUBST(SETX) SETX="set -x"
 fi
 
+dnl Build with SMESH cancel compute feature
+AC_DEFINE(WITH_SMESH_CANCEL_COMPUTE)
+
 dnl copy shells and utilities contained in the bin directory
 dnl excluding .in files (treated in AC-OUTPUT below) and CVS
 dnl directory
