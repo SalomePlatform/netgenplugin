@@ -83,12 +83,15 @@ NETGENPluginGUI_SimpleCreator::~NETGENPluginGUI_SimpleCreator()
 bool NETGENPluginGUI_SimpleCreator::checkParams(QString& msg) const
 {
   bool result = true;
-  result = myNbSeg->isValid(msg,true) && result;
-  result = myLength->isValid(msg,true) && result;
-  result = myArea->isValid(msg,true) && result;
-  if (myVolume)
+  if ( myNbSeg->isEnabled() )
+    result = myNbSeg->isValid(msg,true) && result;
+  if ( myLength->isEnabled() )
+    result = myLength->isValid(msg,true) && result;
+  if ( myArea->isEnabled() )
+    result = myArea->isValid(msg,true) && result;
+  if (myVolume && myVolume->isEnabled() )
     result = myVolume->isValid(msg,true) && result;
-  
+
   return result;
 }
 
