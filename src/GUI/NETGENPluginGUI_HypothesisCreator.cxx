@@ -143,6 +143,7 @@ QFrame* NETGENPluginGUI_HypothesisCreator::buildFrame()
   {
     aGroupLayout->addWidget( new QLabel( tr( "SMESH_NAME" ), GroupC1 ), row, 0 );
     myName = new QLineEdit( GroupC1 );
+    myName->setMinimumWidth(160);
     aGroupLayout->addWidget( myName, row, 1 );
     row++;
   }
