@@ -84,9 +84,9 @@ using namespace nglib;
 using namespace std;
 
 #ifdef _DEBUG_
-#define nodeVec_ACCESS(index) (SMDS_MeshNode*) nodeVec.at((index))
+#define nodeVec_ACCESS(index) ((SMDS_MeshNode*) nodeVec.at((index)))
 #else
-#define nodeVec_ACCESS(index) (SMDS_MeshNode*) nodeVec[index]
+#define nodeVec_ACCESS(index) ((SMDS_MeshNode*) nodeVec[index])
 #endif
 
 #ifdef NETGEN_NEW
@@ -1294,8 +1294,6 @@ int NETGENPlugin_Mesher::FillSMesh(const netgen::OCCGeometry&          occgeo,
 
   SMESHDS_Mesh* meshDS = sMesh.GetMeshDS();
 
-  // map of nodes assigned to submeshes
-  NCollection_Map<int> pindMap;
   // create and insert nodes into nodeVec
   nodeVec.resize( nbNod + 1 );
   int i, nbInitNod = initState._nbNodes;
@@ -1320,30 +1318,20 @@ int NETGENPlugin_Mesher::FillSMesh(const netgen::OCCGeometry&          occgeo,
           node = const_cast<SMDS_MeshNode*>( SMESH_Algo::VertexNode( aVert, meshDS ));
       }
     }
-    if (node) // node found on vertex
-      pindMap.Add(i);
-    else
+    if (!node) // node not found on vertex
     {
       node = meshDS->AddNode( NGPOINT_COORDS( ngPoint ));
       if (!aVert.IsNull())
-      {
-        // point on vertex
         meshDS->SetNodeOnVertex(node, aVert);
-        pindMap.Add(i);
-      }
     }
     nodeVec[i] = node;
   }
 
   // create mesh segments along geometric edges
-  NCollection_Map<Link> linkMap;
   int nbInitSeg = initState._nbSegments;
   for (i = nbInitSeg+1; i <= nbSeg; ++i )
   {
     const netgen::Segment& seg = ngMesh.LineSegment(i);
-    Link link(seg[0], seg[1]);
-    if (!linkMap.Add(link))
-      continue;
     TopoDS_Edge aEdge;
 #ifdef NETGEN_NEW
     int pinds[3] = { seg.pnums[0], seg.pnums[1], seg.pnums[2] };
@@ -1355,7 +1343,8 @@ int NETGENPlugin_Mesher::FillSMesh(const netgen::OCCGeometry&          occgeo,
     for (int j=0; j < 3; ++j)
     {
       int pind = pinds[j];
-      if (pind <= 0) continue;
+      if (pind <= 0 || !nodeVec_ACCESS(pind))
+        break;
       ++nbp;
       double param;
       if (j < 2)
@@ -1369,31 +1358,46 @@ int NETGENPlugin_Mesher::FillSMesh(const netgen::OCCGeometry&          occgeo,
         param = seg.epgeominfo[j].dist;
         param2 += param;
       }
-      else
+      else // middle point
+      {
         param = param2 * 0.5;
-      if (pind <= nbInitNod || pindMap.Contains(pind))
-        continue;
-      if (!aEdge.IsNull())
+      }
+      if (!aEdge.IsNull() && nodeVec_ACCESS(pind)->getshapeId() < 1)
       {
         meshDS->SetNodeOnEdge(nodeVec_ACCESS(pind), aEdge, param);
-        pindMap.Add(pind);
       }
     }
-    SMDS_MeshEdge* edge;
-    if (nbp < 3) // second order ?
-      edge = meshDS->AddEdge(nodeVec_ACCESS(pinds[0]), nodeVec_ACCESS(pinds[1]));
-    else
-      edge = meshDS->AddEdge(nodeVec_ACCESS(pinds[0]), nodeVec_ACCESS(pinds[1]),
-                             nodeVec_ACCESS(pinds[2]));
-    if (!edge)
+    if ( nbp > 1 )
     {
-      if ( !comment.size() ) comment << "Cannot create a mesh edge";
-      MESSAGE("Cannot create a mesh edge");
-      nbSeg = nbFac = nbVol = 0;
-      break;
+      SMDS_MeshEdge* edge = 0;
+      if (nbp == 2) // second order ?
+      {
+        if ( meshDS->FindEdge( nodeVec_ACCESS(pinds[0]), nodeVec_ACCESS(pinds[1])))
+          continue;
+        edge = meshDS->AddEdge(nodeVec_ACCESS(pinds[0]), nodeVec_ACCESS(pinds[1]));
+      }
+      else
+      {
+        if ( meshDS->FindEdge( nodeVec_ACCESS(pinds[0]), nodeVec_ACCESS(pinds[1]),
+                               nodeVec_ACCESS(pinds[2])))
+          continue;
+        edge = meshDS->AddEdge(nodeVec_ACCESS(pinds[0]), nodeVec_ACCESS(pinds[1]),
+                               nodeVec_ACCESS(pinds[2]));
+      }
+      if (!edge)
+      {
+        if ( comment.empty() ) comment << "Cannot create a mesh edge";
+        MESSAGE("Cannot create a mesh edge");
+        nbSeg = nbFac = nbVol = 0;
+        break;
+      }
+      if ( !aEdge.IsNull() && edge->getshapeId() < 1 )
+        meshDS->SetMeshElementOnShape(edge, aEdge);
     }
-    if (!aEdge.IsNull())
-      meshDS->SetMeshElementOnShape(edge, aEdge);
+    else if ( comment.empty() )
+    {
+      comment << "Invalid netgen segment #" << i;
+    }
   }
 
   // create mesh faces along geometric faces
@@ -1409,16 +1413,23 @@ int NETGENPlugin_Mesher::FillSMesh(const netgen::OCCGeometry&          occgeo,
     for (int j=1; j <= elem.GetNP(); ++j)
     {
       int pind = elem.PNum(j);
-      SMDS_MeshNode* node = nodeVec_ACCESS(pind);
-      nodes.push_back(node);
-      if (pind <= nbInitNod || pindMap.Contains(pind))
-        continue;
-      if (!aFace.IsNull())
+      if ( pind < 1 || pind >= nodeVec.size() )
+        break;
+      if ( SMDS_MeshNode* node = nodeVec_ACCESS(pind))
       {
-        const netgen::PointGeomInfo& pgi = elem.GeomInfoPi(j);
-        meshDS->SetNodeOnFace(node, aFace, pgi.u, pgi.v);
-        pindMap.Add(pind);
+        nodes.push_back(node);
+        if (!aFace.IsNull() && node->getshapeId() < 1)
+        {
+          const netgen::PointGeomInfo& pgi = elem.GeomInfoPi(j);
+          meshDS->SetNodeOnFace(node, aFace, pgi.u, pgi.v);
+        }
       }
+    }
+    if ( nodes.size() != elem.GetNP() )
+    {
+      if ( comment.empty() )
+        comment << "Invalid netgen 2d element #" << i;
+      continue; // bad node ids
     }
     SMDS_MeshFace* face = NULL;
     switch (elem.GetType())
@@ -1442,7 +1453,7 @@ int NETGENPlugin_Mesher::FillSMesh(const netgen::OCCGeometry&          occgeo,
     }
     if (!face)
     {
-      if ( !comment.size() ) comment << "Cannot create a mesh face";
+      if ( comment.empty() ) comment << "Cannot create a mesh face";
       MESSAGE("Cannot create a mesh face");
       nbSeg = nbFac = nbVol = 0;
       break;
@@ -1452,7 +1463,7 @@ int NETGENPlugin_Mesher::FillSMesh(const netgen::OCCGeometry&          occgeo,
   }
 
   // create tetrahedra
-  for (i = 1; i <= nbVol/* && isOK*/; ++i)
+  for (i = 1; i <= nbVol; ++i)
   {
     const netgen::Element& elem = ngMesh.VolumeElement(i);      
     int aSolidInd = elem.GetIndex();
@@ -1463,16 +1474,20 @@ int NETGENPlugin_Mesher::FillSMesh(const netgen::OCCGeometry&          occgeo,
     for (int j=1; j <= elem.GetNP(); ++j)
     {
       int pind = elem.PNum(j);
-      SMDS_MeshNode* node = nodeVec_ACCESS(pind);
-      nodes.push_back(node);
-      if (pind <= nbInitNod || pindMap.Contains(pind))
-        continue;
-      if (!aSolid.IsNull())
+      if ( pind < 1 || pind >= nodeVec.size() )
+        break;
+      if ( SMDS_MeshNode* node = nodeVec_ACCESS(pind) )
       {
-        // point in solid
-        meshDS->SetNodeInVolume(node, aSolid);
-        pindMap.Add(pind);
+        nodes.push_back(node);
+        if ( !aSolid.IsNull() && node->getshapeId() < 1 )
+          meshDS->SetNodeInVolume(node, aSolid);
       }
+    }
+    if ( nodes.size() != elem.GetNP() )
+    {
+      if ( comment.empty() )
+        comment << "Invalid netgen 3d element #" << i;
+      continue;
     }
     SMDS_MeshVolume* vol = NULL;
     switch (elem.GetType())
@@ -1490,7 +1505,7 @@ int NETGENPlugin_Mesher::FillSMesh(const netgen::OCCGeometry&          occgeo,
     }
     if (!vol)
     {
-      if ( !comment.size() ) comment << "Cannot create a mesh volume";
+      if ( comment.empty() ) comment << "Cannot create a mesh volume";
       MESSAGE("Cannot create a mesh volume");
       nbSeg = nbFac = nbVol = 0;
       break;
@@ -1756,7 +1771,8 @@ bool NETGENPlugin_Mesher::Compute()
     if ( !err )
     {
       _faceDescriptors.clear();
-      err = ! ( fillNgMesh(occgeo, *ngMesh, nodeVec, meshedSM[ MeshDim_1D ]));
+      err = ! ( fillNgMesh(occgeo, *ngMesh, nodeVec, meshedSM[ MeshDim_0D ]) &&
+                fillNgMesh(occgeo, *ngMesh, nodeVec, meshedSM[ MeshDim_1D ]));
     }
     initState = NETGENPlugin_ngMeshInfo(ngMesh);
 
