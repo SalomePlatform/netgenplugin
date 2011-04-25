@@ -169,7 +169,7 @@ bool NETGENPlugin_NETGEN_2D_ONLY::CheckHypothesis (SMESH_Mesh&         aMesh,
  */
 //================================================================================
 
-static TError AddSegmentsToMesh(netgen::Mesh&                    ngMesh,
+static TError addSegmentsToMesh(netgen::Mesh&                    ngMesh,
                                 OCCGeometry&                     geom,
                                 const TSideVector&               wires,
                                 SMESH_MesherHelper&              helper,
@@ -224,6 +224,11 @@ static TError AddSegmentsToMesh(netgen::Mesh&                    ngMesh,
     StdMeshers_FaceSidePtr wire = wires[ iW ];
     const vector<UVPtStruct>& uvPtVec = wire->GetUVPtStruct();
     const int nbSegments = wire->NbPoints() - 1;
+
+    // compute length of every segment
+    vector<double> segLen( nbSegments );
+    for ( int i = 0; i < nbSegments; ++i )
+      segLen[i] = SMESH_TNodeXYZ( uvPtVec[ i ].node ).Distance( uvPtVec[ i+1 ].node );
 
     int edgeID = 1, posID = -2;
     bool isInternalWire = false;
@@ -295,10 +300,16 @@ static TError AddSegmentsToMesh(netgen::Mesh&                    ngMesh,
 
       ngMesh.AddSegment (seg);
       {
+        // restrict size of elements near the segment
         netgen::Point3d ngP1(n->X(), n->Y(), n->Z());
         n = uvPtVec[ i+1 ].node;
         netgen::Point3d ngP2(n->X(), n->Y(), n->Z());
-        ngMesh.RestrictLocalH( netgen::Center( ngP1,ngP2), Dist(ngP1,ngP2));
+        // get an average size of adjacent segments to avoid sharp change of
+        // element size (regression on issue 0020452, note 0010898)
+        int iPrev = SMESH_MesherHelper::WrapIndex( i-1, nbSegments );
+        int iNext = SMESH_MesherHelper::WrapIndex( i+1, nbSegments );
+        double avgH = ( segLen[ iPrev ] + segLen[ i ] + segLen[ iNext ]) / 3;
+        ngMesh.RestrictLocalH( netgen::Center( ngP1,ngP2), avgH );
       }
 #ifdef DUMP_SEGMENTS
         cout << "Segment: " << seg.edgenr << endl
@@ -426,11 +437,9 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
     if ( edgeLength < DBL_MIN )
       edgeLength = occgeo.GetBoundingBox().Diam();
 
-    //cout << " edgeLength = " << edgeLength << endl;
-
     netgen::mparam.maxh = edgeLength;
     netgen::mparam.quad = _hypQuadranglePreference ? 1 : 0;
-    //ngMesh->SetGlobalH ( edgeLength );
+    netgen::mparam.grading = 0.7; // very coarse mesh by default
   }
 
   // -------------------------
@@ -446,7 +455,7 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
   ngMesh->SetGlobalH (netgen::mparam.maxh);
 
   vector< const SMDS_MeshNode* > nodeVec;
-  problem = AddSegmentsToMesh( *ngMesh, occgeo, wires, helper, nodeVec );
+  problem = addSegmentsToMesh( *ngMesh, occgeo, wires, helper, nodeVec );
   if ( problem && !problem->IsOK() )
     return error( problem );
 
