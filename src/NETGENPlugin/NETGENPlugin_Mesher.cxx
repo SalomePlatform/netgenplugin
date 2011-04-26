@@ -1738,6 +1738,10 @@ bool NETGENPlugin_Mesher::Compute()
       internals.getInternalEdges( intOccgeo.fmap, intOccgeo.emap, intOccgeo.vmap, meshedSM );
       intOccgeo.boundingbox = occgeo.boundingbox;
       intOccgeo.shape = occgeo.shape;
+#ifdef NETGEN_NEW
+      intOccgeo.face_maxh.SetSize(intOccgeo.fmap.Extent());
+      intOccgeo.face_maxh = netgen::mparam.maxh;
+#endif
 
       // let netgen compute element size by the main geometry in temporary mesh
       netgen::Mesh *tmpNgMesh = NULL;
