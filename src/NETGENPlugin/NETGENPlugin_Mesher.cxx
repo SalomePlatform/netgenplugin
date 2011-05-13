@@ -438,7 +438,9 @@ namespace
       --eItBack;
       bool connected = TopExp::CommonVertex( *ePrev, *eItBack, vCommon );
       bool computed  = helper.GetMesh()->GetSubMesh( *eItBack )->IsMeshComputed();
-      if ( !connected || !computed )
+      bool orientOK  = (( ePrev  ->Orientation() < TopAbs_INTERNAL ) ==
+                        ( eItBack->Orientation() < TopAbs_INTERNAL )    );
+      if ( !connected || !computed || !orientOK)
       {
         // move edges from head to tail
         while ( edges.begin() != eItBack )
@@ -453,7 +455,9 @@ namespace
     {
       bool connected = TopExp::CommonVertex( *ePrev, *eItFwd, vCommon );
       bool computed  = helper.GetMesh()->GetSubMesh( *eItFwd )->IsMeshComputed();
-      if ( !connected || !computed )
+      bool orientOK  = (( ePrev ->Orientation() < TopAbs_INTERNAL ) ==
+                        ( eItFwd->Orientation() < TopAbs_INTERNAL )    );
+      if ( !connected || !computed || !orientOK )
       {
         edges.erase( eItFwd, edges.end() );
         break;
