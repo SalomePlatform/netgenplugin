@@ -468,7 +468,7 @@ namespace
     {
       // assure that the 1st vertex is meshed
       TopoDS_Edge eLast = edges.back();
-      while ( !SMESH_Algo::VertexNode( TopExp::FirstVertex( edges.front(), 1), helper.GetMeshDS())
+      while ( !SMESH_Algo::VertexNode( SMESH_MesherHelper::IthVertex( 0, edges.front()), helper.GetMeshDS())
               &&
               edges.front() != eLast )
         edges.splice( edges.end(), edges, edges.begin() );
