@@ -422,6 +422,15 @@ namespace
         break;
     if ( eItFwd == edges.end()) return list< TopoDS_Edge>();
 
+    if ( eItFwd->Orientation() >= TopAbs_INTERNAL )
+    {
+      // connected INTERNAL edges returned from GetOrderedEdges() are wrongly oriented
+      // so treat each INTERNAL edge separately
+      TopoDS_Edge e = *eItFwd;
+      edges.clear();
+      edges.push_back( e );
+      return edges;
+    }
     // find not computed or not connected EDGEs around <edge>
 
     list< TopoDS_Edge >::iterator eItBack = eItFwd, ePrev;
@@ -547,7 +556,7 @@ bool NETGENPlugin_Mesher::fillNgMesh(const netgen::OCCGeometry&     occgeom,
             eNotSeam = *eIt;
         }
         TopAbs_Orientation fOri = helper.GetSubShapeOri( face, eNotSeam );
-        bool isForwad = ( fOri == eNotSeam.Orientation() );
+        bool isForwad = ( fOri == eNotSeam.Orientation() || fOri >= TopAbs_INTERNAL );
 
         // get all nodes from connected <edges>
         bool isQuad   = smDS->NbElements() ? smDS->GetElements()->next()->IsQuadratic() : false;
@@ -555,10 +564,11 @@ bool NETGENPlugin_Mesher::fillNgMesh(const netgen::OCCGeometry&     occgeom,
         const vector<UVPtStruct>& points = fSide.GetUVPtStruct();
         int i, nbSeg = fSide.NbSegments();
 
+        // remembre EDGEs of fSide to treat only once
         for ( int iE = 0; iE < fSide.NbEdges(); ++iE )
           visitedEdgeSM2Faces[ helper.GetMesh()->GetSubMesh( fSide.Edge(iE )) ].insert( faceID );
 
-//         double otherSeamParam = 0;
+        double otherSeamParam = 0;
         bool isSeam = false;
 
         // add segments
@@ -570,15 +580,12 @@ bool NETGENPlugin_Mesher::fillNgMesh(const netgen::OCCGeometry&     occgeom,
           const UVPtStruct& p1 = points[ i ];
           const UVPtStruct& p2 = points[ i+1 ];
 
-//           if ( helper.HasSeam() &&
-//                p1.node->getshapeId() != p2.node->getshapeId() &&
-//                p2.node->GetPosition()->GetTypeOfPosition() == SMDS_TOP_EDGE )
-//           {
-//             isSeam = helper.IsRealSeam( p2.node->getshapeId() );
-//             if ( isSeam )
-//               otherSeamParam = helper.GetOtherParam( helper.GetPeriodicIndex() == 1 ? p2.u : p2.v );
-//           }
-
+          if ( p1.node->GetPosition()->GetTypeOfPosition() == SMDS_TOP_VERTEX ) //an EDGE begins
+          {
+            isSeam = helper.IsRealSeam( p1.node->getshapeId() );
+            if ( isSeam )
+              otherSeamParam = helper.GetOtherParam( helper.GetPeriodicIndex() & 1 ? p2.u : p2.v );
+          }
           netgen::Segment seg;
           // ng node ids
           seg[0] = prevNgId;
@@ -592,6 +599,9 @@ bool NETGENPlugin_Mesher::fillNgMesh(const netgen::OCCGeometry&     occgeom,
           seg.epgeominfo[ 1 ].u = p2.u;
           seg.epgeominfo[ 1 ].v = p2.v;
 
+          //geomEdge = fSide.Edge( fSide.EdgeIndex( 0.5 * ( p1.normParam + p2.normParam )));
+          //seg.epgeominfo[ 0 ].edgenr = seg.epgeominfo[ 1 ].edgenr = occgeom.emap.FindIndex( geomEdge );
+
           //seg.epgeominfo[ iEnd ].edgenr = edgeID; //  = geom.emap.FindIndex(edge);
           seg.si = faceID;                   // = geom.fmap.FindIndex (face);
           seg.edgenr = ngMesh.GetNSeg() + 1; // segment id
@@ -600,6 +610,7 @@ bool NETGENPlugin_Mesher::fillNgMesh(const netgen::OCCGeometry&     occgeom,
           netgen::Point3d ngP1(p1.node->X(), p1.node->Y(), p1.node->Z());
           netgen::Point3d ngP2(p2.node->X(), p2.node->Y(), p2.node->Z());
           ngMesh.RestrictLocalH( netgen::Center( ngP1,ngP2), Dist(ngP1,ngP2));
+
 #ifdef DUMP_SEGMENTS
           cout << "Segment: " << seg.edgenr << " on SMESH face " << helper.GetMeshDS()->ShapeToIndex( face ) << endl
                << "\tface index: " << seg.si << endl
@@ -614,19 +625,25 @@ bool NETGENPlugin_Mesher::fillNgMesh(const netgen::OCCGeometry&     occgeom,
 #endif
           if ( isSeam )
           {
-//             if ( helper.GetPeriodicIndex() == 1 ) {
-//               seg.epgeominfo[ 0 ].u = otherSeamParam;
-//               seg.epgeominfo[ 1 ].u = otherSeamParam;
-//               swap (seg.epgeominfo[0].v, seg.epgeominfo[1].v);
-//             } else {
-//               seg.epgeominfo[ 0 ].v = otherSeamParam;
-//               seg.epgeominfo[ 1 ].v = otherSeamParam;
-//               swap (seg.epgeominfo[0].u, seg.epgeominfo[1].u);
-//             }
-//             swap (seg[0], seg[1]);
-//             swap (seg.epgeominfo[0].dist, seg.epgeominfo[1].dist);
-//             seg.edgenr = ngMesh.GetNSeg() + 1; // segment id
-//             ngMesh.AddSegment (seg);
+            if ( helper.GetPeriodicIndex() && 1 ) {
+              seg.epgeominfo[ 0 ].u = otherSeamParam;
+              seg.epgeominfo[ 1 ].u = otherSeamParam;
+              swap (seg.epgeominfo[0].v, seg.epgeominfo[1].v);
+            } else {
+              seg.epgeominfo[ 0 ].v = otherSeamParam;
+              seg.epgeominfo[ 1 ].v = otherSeamParam;
+              swap (seg.epgeominfo[0].u, seg.epgeominfo[1].u);
+            }
+            swap (seg[0], seg[1]);
+            swap (seg.epgeominfo[0].dist, seg.epgeominfo[1].dist);
+            seg.edgenr = ngMesh.GetNSeg() + 1; // segment id
+            ngMesh.AddSegment (seg);
+#ifdef DUMP_SEGMENTS
+            cout << "Segment: " << seg.edgenr << endl
+                 << "\t is SEAM (reverse) of the previous. "
+                 << " Other " << (helper.GetPeriodicIndex() && 1 ? "U" : "V")
+                 << " = " << otherSeamParam << endl;
+#endif
           }
           else if ( fOri == TopAbs_INTERNAL )
           {
