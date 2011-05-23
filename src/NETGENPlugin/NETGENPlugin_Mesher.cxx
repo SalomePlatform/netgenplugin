@@ -582,9 +582,14 @@ bool NETGENPlugin_Mesher::fillNgMesh(const netgen::OCCGeometry&     occgeom,
 
           if ( p1.node->GetPosition()->GetTypeOfPosition() == SMDS_TOP_VERTEX ) //an EDGE begins
           {
-            isSeam = helper.IsRealSeam( p1.node->getshapeId() );
-            if ( isSeam )
-              otherSeamParam = helper.GetOtherParam( helper.GetPeriodicIndex() & 1 ? p2.u : p2.v );
+            isSeam = false;
+            if ( helper.IsRealSeam( p1.node->getshapeId() ))
+            {
+              geomEdge = fSide.Edge( fSide.EdgeIndex( 0.5 * ( p1.normParam + p2.normParam )));
+              isSeam = helper.IsRealSeam( geomEdge );
+              if ( isSeam )
+                otherSeamParam = helper.GetOtherParam( helper.GetPeriodicIndex() & 1 ? p2.u : p2.v );
+            }
           }
           netgen::Segment seg;
           // ng node ids
