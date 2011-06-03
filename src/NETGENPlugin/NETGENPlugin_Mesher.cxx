@@ -368,6 +368,42 @@ void NETGENPlugin_Mesher::PrepareOCCgeometry(netgen::OCCGeometry&     occgeo,
   occgeo.face_maxh_modified = 0;
 #endif
 
+  // { // set netgen::mparam.minh
+
+//     TopLoc_Location loc;
+//     int i1, i2, i3;
+//     const int* pi[4] = { &i1, &i2, &i3, &i1 };
+//     double maxh = 1e100;
+//     for ( int i = 0; i < occgeo.fmap.Extent(); ++i )
+//     {
+//       Handle(Poly_Triangulation) triangulation =
+//         BRep_Tool::Triangulation ( TopoDS::Face( occgeo.fmap(i+1) ), loc);
+//       if ( triangulation.IsNull() ) continue;
+//       const TColgp_Array1OfPnt&   points = triangulation->Nodes();
+//       const Poly_Array1OfTriangle& trias = triangulation->Triangles();
+//       for ( int iT = trias.Lower(); iT <= trias.Upper(); ++iT )
+//       {
+//         trias(iT).Get( i1, i2, i3 );
+//         for ( int j = 0; j < 3; ++j )
+//         {
+//           double dist2 = points(*pi[j]).SquareDistance( points( *pi[j+1] ));
+//           if ( dist2 < maxh )
+//             maxh = dist2;
+//         }
+//       }
+//     }
+//     maxh = sqrt( maxh );
+//     if ( maxh > 0.5 * occgeo.boundingbox.Diam() ) // no or too rough triangulation
+//     {
+//       netgen::mparam.minh = occgeo.boundingbox.Diam()*1e-24;
+//       cout << "DEFAULT mparams.minh = " <<netgen::mparam.minh << endl;
+//     }
+//     else
+//     {
+//       netgen::mparam.minh = maxh * 2;
+//       cout << "TRIANGULATION mparams.minh = " <<netgen::mparam.minh << endl;
+//     }
+//   }
 }
 
 namespace
@@ -404,10 +440,11 @@ namespace
    */
   //================================================================================
 
-  list< TopoDS_Edge > getConnectedEdges( const TopoDS_Edge&            edge,
-                                         const TopoDS_Face&            face,
-                                         const set< SMESH_subMesh* > & computedSM,
-                                         const SMESH_MesherHelper&     helper )
+  list< TopoDS_Edge > getConnectedEdges( const TopoDS_Edge&                 edge,
+                                         const TopoDS_Face&                 face,
+                                         const set< SMESH_subMesh* > &      computedSM,
+                                         const SMESH_MesherHelper&          helper,
+                                         map< SMESH_subMesh*, set< int > >& addedEdgeSM2Faces)
   {
     // get ordered EDGEs
     TopoDS_Vertex v1;
@@ -431,47 +468,58 @@ namespace
       edges.push_back( e );
       return edges;
     }
-    // find not computed or not connected EDGEs around <edge>
+
+    // get all computed EDGEs connected to <edge>
 
     list< TopoDS_Edge >::iterator eItBack = eItFwd, ePrev;
     TopoDS_Vertex vCommon;
+    TopTools_MapOfShape eAdded; // map used not to add a seam edge twice to <edges>
+    eAdded.Add( edge );
 
-    // put edges after <edge> at <edges> head
-    while ( edges.back() != *eItFwd )
-      edges.splice( edges.begin(), edges, --edges.end() );
+    // put edges before <edge> to <edges> back
+    while ( edges.begin() != eItFwd )
+      edges.splice( edges.end(), edges, edges.begin() );
 
+    // search forward
+    ePrev = eItFwd;
+    while ( ++eItFwd != edges.end() )
+    {
+      SMESH_subMesh* sm = helper.GetMesh()->GetSubMesh( *eItFwd );
+
+      bool connected = TopExp::CommonVertex( *ePrev, *eItFwd, vCommon );
+      bool computed  = sm->IsMeshComputed();
+      bool added     = addedEdgeSM2Faces[ sm ].count( helper.GetSubShapeID() );
+      bool doubled   = !eAdded.Add( *eItFwd );
+      bool orientOK  = (( ePrev ->Orientation() < TopAbs_INTERNAL ) ==
+                        ( eItFwd->Orientation() < TopAbs_INTERNAL )    );
+      if ( !connected || !computed || !orientOK || added || doubled )
+      {
+        // stop advancement; move edges from tail to head
+        while ( edges.back() != *ePrev )
+          edges.splice( edges.begin(), edges, --edges.end() );
+        break;
+      }
+      ePrev = eItFwd;
+    }
     // search backward
     while ( eItBack != edges.begin() )
     {
       ePrev = eItBack;
       --eItBack;
+      SMESH_subMesh* sm = helper.GetMesh()->GetSubMesh( *eItBack );
+
       bool connected = TopExp::CommonVertex( *ePrev, *eItBack, vCommon );
-      bool computed  = helper.GetMesh()->GetSubMesh( *eItBack )->IsMeshComputed();
+      bool computed  = sm->IsMeshComputed();
+      bool added     = addedEdgeSM2Faces[ sm ].count( helper.GetSubShapeID() );
+      bool doubled   = !eAdded.Add( *eItBack );
       bool orientOK  = (( ePrev  ->Orientation() < TopAbs_INTERNAL ) ==
                         ( eItBack->Orientation() < TopAbs_INTERNAL )    );
-      if ( !connected || !computed || !orientOK)
+      if ( !connected || !computed || !orientOK || added || doubled)
       {
-        // move edges from head to tail
-        while ( edges.begin() != eItBack )
-          edges.splice( edges.end(), edges, edges.begin() );
-        edges.erase( eItBack );
+        // stop advancement
+        edges.erase( edges.begin(), ePrev );
         break;
       }
-    }
-    // search forward
-    ePrev = eItFwd;
-    while ( ++eItFwd != edges.end() )
-    {
-      bool connected = TopExp::CommonVertex( *ePrev, *eItFwd, vCommon );
-      bool computed  = helper.GetMesh()->GetSubMesh( *eItFwd )->IsMeshComputed();
-      bool orientOK  = (( ePrev ->Orientation() < TopAbs_INTERNAL ) ==
-                        ( eItFwd->Orientation() < TopAbs_INTERNAL )    );
-      if ( !connected || !computed || !orientOK )
-      {
-        edges.erase( eItFwd, edges.end() );
-        break;
-      }
-      ePrev = eItFwd;
     }
     if ( edges.front() != edges.back() )
     {
@@ -508,7 +556,7 @@ bool NETGENPlugin_Mesher::fillNgMesh(const netgen::OCCGeometry&     occgeom,
 
   SMESH_MesherHelper helper (*_mesh);
 
-  int faceID = occgeom.fmap.Extent();
+  int faceNgID = occgeom.fmap.Extent();
 
   list< SMESH_subMesh* >::const_iterator smIt, smEnd = meshedSM.end();
   for ( smIt = meshedSM.begin(); smIt != smEnd; ++smIt )
@@ -532,19 +580,24 @@ bool NETGENPlugin_Mesher::fillNgMesh(const netgen::OCCGeometry&     occgeom,
       PShapeIteratorPtr fIt = helper.GetAncestors( geomEdge, *sm->GetFather(), TopAbs_FACE );
       while ( const TopoDS_Shape * anc = fIt->next() )
       {
-        int faceID = occgeom.fmap.FindIndex( *anc );
-        if ( faceID < 1 )
+        faceNgID = occgeom.fmap.FindIndex( *anc );
+        if ( faceNgID < 1 )
           continue; // meshed face
-        if ( visitedEdgeSM2Faces[ sm ].count( faceID ))
+
+        int faceSMDSId = helper.GetMeshDS()->ShapeToIndex( *anc );
+        if ( visitedEdgeSM2Faces[ sm ].count( faceSMDSId ))
           continue; // already treated EDGE
 
-        TopoDS_Face face = TopoDS::Face( occgeom.fmap( faceID ));
+        TopoDS_Face face = TopoDS::Face( occgeom.fmap( faceNgID ));
         if ( face.Orientation() >= TopAbs_INTERNAL )
           face.Orientation( TopAbs_FORWARD ); // issue 0020676
 
         // get all meshed EDGEs of the FACE connected to geomEdge (issue 0021140)
         helper.SetSubShape( face );
-        list< TopoDS_Edge > edges = getConnectedEdges( geomEdge, face, computedSM, helper );
+        list< TopoDS_Edge > edges = getConnectedEdges( geomEdge, face, computedSM, helper,
+                                                       visitedEdgeSM2Faces );
+        if ( edges.empty() )
+          continue; // wrong ancestor?
 
         // find out orientation of <edges> within <face>
         TopoDS_Edge eNotSeam = edges.front();
@@ -564,9 +617,9 @@ bool NETGENPlugin_Mesher::fillNgMesh(const netgen::OCCGeometry&     occgeom,
         const vector<UVPtStruct>& points = fSide.GetUVPtStruct();
         int i, nbSeg = fSide.NbSegments();
 
-        // remembre EDGEs of fSide to treat only once
+        // remember EDGEs of fSide to treat only once
         for ( int iE = 0; iE < fSide.NbEdges(); ++iE )
-          visitedEdgeSM2Faces[ helper.GetMesh()->GetSubMesh( fSide.Edge(iE )) ].insert( faceID );
+          visitedEdgeSM2Faces[ helper.GetMesh()->GetSubMesh( fSide.Edge(iE )) ].insert(faceSMDSId);
 
         double otherSeamParam = 0;
         bool isSeam = false;
@@ -585,10 +638,12 @@ bool NETGENPlugin_Mesher::fillNgMesh(const netgen::OCCGeometry&     occgeom,
             isSeam = false;
             if ( helper.IsRealSeam( p1.node->getshapeId() ))
             {
-              geomEdge = fSide.Edge( fSide.EdgeIndex( 0.5 * ( p1.normParam + p2.normParam )));
-              isSeam = helper.IsRealSeam( geomEdge );
+              TopoDS_Edge e = fSide.Edge( fSide.EdgeIndex( 0.5 * ( p1.normParam + p2.normParam )));
+              isSeam = helper.IsRealSeam( e );
               if ( isSeam )
+              {
                 otherSeamParam = helper.GetOtherParam( helper.GetPeriodicIndex() & 1 ? p2.u : p2.v );
+              }
             }
           }
           netgen::Segment seg;
@@ -608,7 +663,7 @@ bool NETGENPlugin_Mesher::fillNgMesh(const netgen::OCCGeometry&     occgeom,
           //seg.epgeominfo[ 0 ].edgenr = seg.epgeominfo[ 1 ].edgenr = occgeom.emap.FindIndex( geomEdge );
 
           //seg.epgeominfo[ iEnd ].edgenr = edgeID; //  = geom.emap.FindIndex(edge);
-          seg.si = faceID;                   // = geom.fmap.FindIndex (face);
+          seg.si = faceNgID;                   // = geom.fmap.FindIndex (face);
           seg.edgenr = ngMesh.GetNSeg() + 1; // segment id
           ngMesh.AddSegment (seg);
 
@@ -681,11 +736,11 @@ bool NETGENPlugin_Mesher::fillNgMesh(const netgen::OCCGeometry&     occgeom,
         if ( solidID1 && id != solidID1 ) solidID2 = id;
         else                              solidID1 = id;
       }
-      faceID++;
-      //_faceDescriptors[ faceID ].first  = solidID1;
-      //_faceDescriptors[ faceID ].second = solidID2;
+      faceNgID++;
+      //_faceDescriptors[ faceNgID ].first  = solidID1;
+      //_faceDescriptors[ faceNgID ].second = solidID2;
       // Add ng face descriptors of meshed faces
-      ngMesh.AddFaceDescriptor (netgen::FaceDescriptor(faceID, solidID1, solidID2, 0));
+      ngMesh.AddFaceDescriptor (netgen::FaceDescriptor(faceNgID, solidID1, solidID2, 0));
 
       // Orient the face correctly in solidID1 (issue 0020206)
       bool reverse = false;
@@ -700,7 +755,7 @@ bool NETGENPlugin_Mesher::fillNgMesh(const netgen::OCCGeometry&     occgeom,
       // Add surface elements
 
       netgen::Element2d tri(3);
-      tri.SetIndex ( faceID );
+      tri.SetIndex ( faceNgID );
 
 
 #ifdef DUMP_TRIANGLES
@@ -1657,8 +1712,8 @@ bool NETGENPlugin_Mesher::Compute()
           int key = (*it).first;
           double val = (*it).second;
           const TopoDS_Shape& shape = ShapesWithLocalSize.FindKey(key);
-          int faceID = occgeo.fmap.FindIndex(shape);
-          occgeo.SetFaceMaxH(faceID, val);
+          int faceNgID = occgeo.fmap.FindIndex(shape);
+          occgeo.SetFaceMaxH(faceNgID, val);
         }
     }
 #endif
