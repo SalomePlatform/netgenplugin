@@ -267,7 +267,19 @@ diff -Naur netgen-4.9.13_orig/libsrc/occ/occgenmesh.cpp netgen-4.9.13_new/libsrc
        }
  
        //  nsubedges = int(ceil(hvalue[DIVIDEEDGESECTIONS]));
-@@ -323,6 +324,7 @@
+@@ -279,7 +280,10 @@
+       {
+          if (hvalue[i1]/hvalue[DIVIDEEDGESECTIONS]*nsubedges >= i)
+          {
+-            params[i] = s0+(i1/double(DIVIDEEDGESECTIONS))*(s1-s0);
++            // For nsubedges comparable to DIVIDEEDGESECTIONS (SALOME issue 0021073)
++            //params[i] = s0+(i1/double(DIVIDEEDGESECTIONS))*(s1-s0);
++            double d1 = i1 - (hvalue[i1] - i*hvalue[DIVIDEEDGESECTIONS]/nsubedges)/(hvalue[i1]-hvalue[i1-1]);
++            params[i] = s0+(d1/double(DIVIDEEDGESECTIONS))*(s1-s0);
+             pnt = c->Value(params[i]);
+             ps[i-1] = MeshPoint (Point3d(pnt.X(), pnt.Y(), pnt.Z()));
+             i++;
+@@ -323,6 +327,7 @@
        (*testout) << "nedges = " << nedges << endl;
  
        double eps = 1e-6 * geom.GetBoundingBox().Diam();
@@ -275,7 +287,7 @@ diff -Naur netgen-4.9.13_orig/libsrc/occ/occgenmesh.cpp netgen-4.9.13_new/libsrc
  
        for (int i = 1; i <= nvertices; i++)
        {
-@@ -332,7 +334,7 @@
+@@ -332,7 +337,7 @@
           bool exists = 0;
           if (merge_solids)
              for (PointIndex pi = 1; pi <= mesh.GetNP(); pi++)
@@ -284,52 +296,52 @@ diff -Naur netgen-4.9.13_orig/libsrc/occ/occgenmesh.cpp netgen-4.9.13_new/libsrc
                 {
                    exists = 1;
                    break;
-@@ -362,6 +364,7 @@
+@@ -362,6 +367,7 @@
           {
              TopoDS_Face face = TopoDS::Face(exp1.Current());
              int facenr = geom.fmap.FindIndex(face);
-+            if ( facenr < 1 ) continue; // support of sub-meshes
++            if ( facenr < 1 ) continue; // support of SALOME sub-meshes
  
              if (face2solid[0][facenr-1] == 0)
                 face2solid[0][facenr-1] = solidnr;
-@@ -381,6 +384,7 @@
+@@ -381,6 +387,7 @@
        int facenr = 0;
        int edgenr = 0;
  
-+      edgenr = mesh.GetNSeg(); // support of sub-meshes
++      edgenr = mesh.GetNSeg(); // support of SALOME sub-meshes
  
        (*testout) << "faces = " << geom.fmap.Extent() << endl;
        int curr = 0;
-@@ -442,6 +446,8 @@
+@@ -442,6 +449,8 @@
                    //(*testout) << "ignoring degenerated edge" << endl;
                    continue;
                 }
 +               if ( geom.emap.FindIndex(edge) < 1 )
-+                 continue; // support sub-meshes
++                 continue; // support SALOME sub-meshes
  
                 if (geom.vmap.FindIndex(TopExp::FirstVertex (edge)) ==
                    geom.vmap.FindIndex(TopExp::LastVertex (edge)))
-@@ -486,8 +492,8 @@
+@@ -479,6 +488,8 @@
+                }
+                else
+                {
++                  const double tol = std::max( BRep_Tool::Tolerance( TopExp::FirstVertex (edge)),
++                                               BRep_Tool::Tolerance( TopExp::LastVertex (edge)));
+                   Point<3> fp = occ2ng (BRep_Tool::Pnt (TopExp::FirstVertex (edge)));
+                   Point<3> lp = occ2ng (BRep_Tool::Pnt (TopExp::LastVertex (edge)));
+ 
+@@ -486,8 +497,8 @@
                    pnums.Last() = -1;
                    for (PointIndex pi = 1; pi < first_ep; pi++)
                    {
 -                     if (Dist2 (mesh[pi], fp) < eps*eps) pnums[0] = pi;
 -                     if (Dist2 (mesh[pi], lp) < eps*eps) pnums.Last() = pi;
-+                     if (Dist2 (mesh[pi], fp) < eps2) pnums[0] = pi;
-+                     if (Dist2 (mesh[pi], lp) < eps2) pnums.Last() = pi;
++                     if (Dist2 (mesh[pi], fp) < 2*tol*tol) pnums[0] = pi;
++                     if (Dist2 (mesh[pi], lp) < 2*tol*tol) pnums.Last() = pi;
                    }
                 }
  
-@@ -497,7 +503,7 @@
-                   bool exists = 0;
-                   int j;
-                   for (j = first_ep; j <= mesh.GetNP(); j++)
--                     if ((mesh.Point(j)-Point<3>(mp[i-1])).Length() < eps)
-+                     if ((mesh.Point(j)-Point<3>(mp[i-1])).Length() < eps2)
-                      {
-                         exists = 1;
-                         break;
-@@ -633,7 +639,7 @@
+@@ -633,7 +644,7 @@
           }
  
           (*testout) << "mesh face " << k << endl;
@@ -338,7 +350,7 @@ diff -Naur netgen-4.9.13_orig/libsrc/occ/occgenmesh.cpp netgen-4.9.13_new/libsrc
           geom.facemeshstatus[k-1] = -1;
  
  
-@@ -901,7 +907,7 @@
+@@ -901,7 +912,7 @@
           //      if (k != 36) continue;
  
           //      (*testout) << "optimize face " << k << endl;
@@ -347,7 +359,7 @@ diff -Naur netgen-4.9.13_orig/libsrc/occ/occgenmesh.cpp netgen-4.9.13_new/libsrc
  
           FaceDescriptor & fd = mesh.GetFaceDescriptor(k);
  
-@@ -1229,7 +1235,7 @@
+@@ -1229,7 +1240,7 @@
                    mindist = min (mindist, line.Dist(lines[num]));
                 }
  
@@ -356,7 +368,7 @@ diff -Naur netgen-4.9.13_orig/libsrc/occ/occgenmesh.cpp netgen-4.9.13_new/libsrc
  
                 if (mindist < 1e-3)
                 {
-@@ -1456,3 +1462,4 @@
+@@ -1456,3 +1467,4 @@
  }
  
  #endif
