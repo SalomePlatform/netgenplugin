@@ -36,7 +36,6 @@
 #include "StdMeshers_FaceSide.hxx"
 #include "StdMeshers_MaxElementArea.hxx"
 #include "StdMeshers_LengthFromEdges.hxx"
-#include "StdMeshers_QuadranglePreference.hxx"
 
 #include <Precision.hxx>
 #include <Standard_ErrorHandler.hxx>
@@ -143,8 +142,6 @@ bool NETGENPlugin_NETGEN_2D_ONLY::CheckHypothesis (SMESH_Mesh&         aMesh,
       _hypMaxElementArea = static_cast<const StdMeshers_MaxElementArea*> (hyp);
     else if ( hypName == "LengthFromEdges" )
       _hypLengthFromEdges = static_cast<const StdMeshers_LengthFromEdges*> (hyp);
-    else if ( hypName == "QuadranglePreference" )
-      _hypQuadranglePreference = static_cast<const StdMeshers_QuadranglePreference*>(hyp);
     else if ( hypName == "NETGEN_Parameters_2D" )
       _hypParameters = static_cast<const NETGENPlugin_Hypothesis_2D*>(hyp);
     else {
