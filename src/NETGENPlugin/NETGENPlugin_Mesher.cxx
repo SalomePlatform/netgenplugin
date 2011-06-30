@@ -1659,11 +1659,23 @@ namespace
 
   std::string text(Standard_Failure& ex)
   {
-    SMESH_Comment str("Exception in  netgen::OCCGenerateMesh()");
+    SMESH_Comment str("Exception in netgen::OCCGenerateMesh()");
     str << " at " << netgen::multithread.task
         << ": " << ex.DynamicType()->Name();
     if ( ex.GetMessageString() && strlen( ex.GetMessageString() ))
       str << ": " << ex.GetMessageString();
+    return str;
+  }
+  //================================================================================
+  /*!
+   * \brief Convert exception into text
+   */
+  //================================================================================
+
+  std::string text(netgen::NgException& ex)
+  {
+    SMESH_Comment str("NgException");
+    str << " at " << netgen::multithread.task << ": " << ex.What();
     return str;
   }
 }
@@ -1947,12 +1959,12 @@ bool NETGENPlugin_Mesher::Compute()
       catch (Standard_Failure& ex)
       {
         comment << text(ex);
-        err = 1;
+        //err = 1; -- try to make volumes anyway
       }
       catch (netgen::NgException exc)
       {
-        error->myName = err = COMPERR_ALGO_FAILED;
-        comment << exc.What();
+        comment << text(exc);
+        //err = 1; -- try to make volumes anyway
       }
     }
     // ---------------------
@@ -2008,17 +2020,20 @@ bool NETGENPlugin_Mesher::Compute()
         if(netgen::multithread.terminate)
           return false;
 #endif
-        comment << text(err);
+        if ( comment.empty() ) // do not overwrite a previos error
+          comment << text(err);
       }
       catch (Standard_Failure& ex)
       {
-        comment << text(ex);
+        if ( comment.empty() ) // do not overwrite a previos error
+          comment << text(ex);
         err = 1;
       }
       catch (netgen::NgException exc)
       {
-        error->myName = err = COMPERR_ALGO_FAILED;
-        comment << exc.What();
+        if ( comment.empty() ) // do not overwrite a previos error
+          comment << text(exc);
+        err = 1;
       }
       // Let netgen optimize 3D mesh
       if ( !err && _optimize )
@@ -2032,17 +2047,18 @@ bool NETGENPlugin_Mesher::Compute()
           if(netgen::multithread.terminate)
             return false;
 #endif
-          comment << text(err);
+          if ( comment.empty() ) // do not overwrite a previos error
+            comment << text(err);
         }
         catch (Standard_Failure& ex)
         {
-          comment << text(ex);
-          err = 1;
+          if ( comment.empty() ) // do not overwrite a previos error
+            comment << text(ex);
         }
         catch (netgen::NgException exc)
         {
-          error->myName = err = COMPERR_ALGO_FAILED;
-          comment << exc.What();
+          if ( comment.empty() ) // do not overwrite a previos error
+            comment << text(exc);
         }
       }
     }
@@ -2056,13 +2072,13 @@ bool NETGENPlugin_Mesher::Compute()
       }
       catch (Standard_Failure& ex)
       {
-        comment << "Exception in netgen at passing to 2nd order ";
-        err = 1;
+        if ( comment.empty() ) // do not overwrite a previos error
+          comment << "Exception in netgen at passing to 2nd order ";
       }
       catch (netgen::NgException exc)
       {
-        error->myName = err = COMPERR_ALGO_FAILED;
-        comment << exc.What();
+        if ( comment.empty() ) // do not overwrite a previos error
+          comment << exc.What();
       }
     }
   }
@@ -2078,10 +2094,7 @@ bool NETGENPlugin_Mesher::Compute()
           ", nb faces: "    << nbFac <<
           ", nb volumes: "  << nbVol);
 
-  // ------------------------------------------------------------
   // Feed back the SMESHDS with the generated Nodes and Elements
-  // ------------------------------------------------------------
-
   if ( true /*isOK*/ ) // get whatever built
     FillSMesh( occgeo, *ngMesh, initState, *_mesh, nodeVec, comment ); //!< 
 
@@ -2106,14 +2119,13 @@ bool NETGENPlugin_Mesher::Compute()
         if ( !sm->IsMeshComputed() )
           sm->SetIsAlwaysComputed( true );
 
-  // set bad compute error to subshapes of all failed subshapes shapes
-  if ( !error->IsOK() && err )
+  // set bad compute error to subshapes of all failed sub-shapes
+  if ( !error->IsOK() )
   {
-    bool pb2D = false;
+    bool pb2D = false, pb3D = false;
     for (int i = 1; i <= occgeo.fmap.Extent(); i++) {
       int status = occgeo.facemeshstatus[i-1];
       if (status == 1 ) continue;
-      pb2D = true;
       if ( SMESH_subMesh* sm = _mesh->GetSubMeshContaining( occgeo.fmap( i ))) {
         SMESH_ComputeErrorPtr& smError = sm->GetComputeError();
         if ( !smError || smError->IsOK() ) {
@@ -2121,7 +2133,10 @@ bool NETGENPlugin_Mesher::Compute()
             smError.reset( new SMESH_ComputeError( *error ));
           else
             smError.reset( new SMESH_ComputeError( COMPERR_ALGO_FAILED, "Ignored" ));
+          if ( SMESH_Algo::GetMeshError( sm ) == SMESH_Algo::MEr_OK )
+            smError->myName = COMPERR_WARNING;
         }
+        pb2D = pb2D || smError->IsKO();
       }
     }
     if ( !pb2D ) // all faces are OK
@@ -2137,11 +2152,18 @@ bool NETGENPlugin_Mesher::Compute()
           }
           SMESH_ComputeErrorPtr& smError = sm->GetComputeError();
           if ( !smComputed && ( !smError || smError->IsOK() ))
+          {
             smError.reset( new SMESH_ComputeError( *error ));
+            if ( SMESH_Algo::GetMeshError( sm ) == SMESH_Algo::MEr_OK )
+              smError->myName = COMPERR_WARNING;
+          }
+          pb3D = pb3D || ( smError && smError->IsKO() );
         }
+    if ( !pb2D && !pb3D )
+      err = 0; // no fatal errors, only warnings
   }
 
-  return error->IsOK();
+  return !err;
 }
 
 //=============================================================================
