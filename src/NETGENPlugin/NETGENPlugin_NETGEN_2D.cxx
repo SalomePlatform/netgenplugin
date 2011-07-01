@@ -25,7 +25,6 @@
 // Author : Michael Sazonov (OCN)
 // Date   : 20/03/2006
 // Project   : SALOME
-// $Header$
 //=============================================================================
 //
 #include "NETGENPlugin_NETGEN_2D.hxx"
@@ -132,10 +131,8 @@ bool NETGENPlugin_NETGEN_2D::Compute(SMESH_Mesh&         aMesh,
 #ifdef WITH_SMESH_CANCEL_COMPUTE
   netgen::multithread.terminate = 0;
 #endif
-  //SMESHDS_Mesh* meshDS = aMesh.GetMeshDS();
 
   NETGENPlugin_Mesher mesher(&aMesh, aShape, false);
-//   NETGENPlugin_Mesher mesher(meshDS, aShape, false);
   mesher.SetParameters(dynamic_cast<const NETGENPlugin_Hypothesis*>(_hypothesis));
   mesher.SetParameters(dynamic_cast<const NETGENPlugin_SimpleHypothesis_2D*>(_hypothesis));
   return mesher.Compute();

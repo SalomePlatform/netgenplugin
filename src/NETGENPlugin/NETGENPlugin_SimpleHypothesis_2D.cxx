@@ -47,7 +47,8 @@ NETGENPlugin_SimpleHypothesis_2D::NETGENPlugin_SimpleHypothesis_2D (int         
   : SMESH_Hypothesis(hypId, studyId, gen),
     _nbSegments ((int)NETGENPlugin_Hypothesis::GetDefaultNbSegPerEdge()),
     _segmentLength(0),
-    _area       (0.)
+    _area         (0.),
+    _allowQuad    (false)
 {
   _name = "NETGEN_SimpleParameters_2D";
   _param_algo_dim = 2;
@@ -118,6 +119,30 @@ void NETGENPlugin_SimpleHypothesis_2D::SetMaxElementArea(double area)
   }
 }
 
+//=======================================================================
+//function : SetAllowQuadrangles
+//purpose  : Enables/disables generation of quadrangular faces
+//=======================================================================
+
+void NETGENPlugin_SimpleHypothesis_2D::SetAllowQuadrangles(bool toAllow)
+{
+  if ( _allowQuad != toAllow )
+  {
+    _allowQuad = toAllow;
+    NotifySubMeshesHypothesisModification();
+  }
+}
+
+//=======================================================================
+//function : GetAllowQuadrangles
+//purpose  : Returns true if generation of quadrangular faces is enabled
+//=======================================================================
+
+bool NETGENPlugin_SimpleHypothesis_2D::GetAllowQuadrangles() const
+{
+  return _allowQuad;
+}
+
 //=============================================================================
 /*!
  *  
@@ -125,7 +150,7 @@ void NETGENPlugin_SimpleHypothesis_2D::SetMaxElementArea(double area)
 //=============================================================================
 ostream & NETGENPlugin_SimpleHypothesis_2D::SaveTo(ostream & save)
 {
-  save << _nbSegments << " " << _segmentLength << " " << _area;
+  save << _nbSegments << " " << _segmentLength << " " << _area << " " << _allowQuad;
 
   return save;
 }
@@ -157,6 +182,8 @@ istream & NETGENPlugin_SimpleHypothesis_2D::LoadFrom(istream & load)
     _area = val;
   else
     load.clear(ios::badbit | load.rdstate());
+
+  load >> _allowQuad;
 
   return load;
 }

@@ -62,6 +62,8 @@ class NETGENPLUGIN_EXPORT  NETGENPlugin_SimpleHypothesis_2D_i:
   void SetMaxElementArea(CORBA::Double area);
   CORBA::Double GetMaxElementArea();
 
+  void SetAllowQuadrangles(CORBA::Boolean toAllow);
+  CORBA::Boolean GetAllowQuadrangles();
 
   // Get implementation
   ::NETGENPlugin_SimpleHypothesis_2D* GetImpl();

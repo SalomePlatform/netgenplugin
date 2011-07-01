@@ -67,6 +67,7 @@ private:
 
   QCheckBox*        myLenFromEdgesCheckBox;
   SMESHGUI_SpinBox* myArea;
+  QCheckBox*        myAllowQuadCheckBox;
 
   QCheckBox*        myLenFromFacesCheckBox;
   SMESHGUI_SpinBox* myVolume;

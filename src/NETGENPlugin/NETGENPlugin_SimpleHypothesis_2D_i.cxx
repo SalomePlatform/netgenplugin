@@ -161,11 +161,36 @@ void NETGENPlugin_SimpleHypothesis_2D_i::SetMaxElementArea(CORBA::Double area)
  *  NETGENPlugin_SimpleHypothesis_2D_i::GetMaxElementArea()
  */
 //=============================================================================
+
 CORBA::Double NETGENPlugin_SimpleHypothesis_2D_i::GetMaxElementArea()
 {
   MESSAGE("NETGENPlugin_SimpleHypothesis_2D_i::GetMaxElementArea");
   ASSERT(myBaseImpl);
   return this->GetImpl()->GetMaxElementArea();
+}
+
+//=============================================================================
+/*!
+ * Enables/disables generation of quadrangular faces
+ */
+//=============================================================================
+
+void NETGENPlugin_SimpleHypothesis_2D_i::SetAllowQuadrangles(CORBA::Boolean toAllow)
+{
+  ASSERT(myBaseImpl);
+  SMESH::TPythonDump() << _this() << ".SetAllowQuadrangles( " << toAllow << " )";
+  this->GetImpl()->SetAllowQuadrangles(toAllow);
+}
+
+//=============================================================================
+/*!
+ * Returns true if generation of quadrangular faces is enabled
+ */
+//=============================================================================
+
+CORBA::Boolean NETGENPlugin_SimpleHypothesis_2D_i::GetAllowQuadrangles()
+{
+  return this->GetImpl()->GetAllowQuadrangles();
 }
 //=============================================================================
 /*!
@@ -181,9 +206,9 @@ CORBA::Double NETGENPlugin_SimpleHypothesis_2D_i::GetMaxElementArea()
 //================================================================================
 /*!
  * \brief Verify whether hypothesis supports given entity type 
-  * \param type - dimension (see SMESH::Dimension enumeration)
-  * \retval CORBA::Boolean - TRUE if dimension is supported, FALSE otherwise
- * 
+ * \param type - dimension (see SMESH::Dimension enumeration)
+ * \retval CORBA::Boolean - TRUE if dimension is supported, FALSE otherwise
+ *
  * Verify whether hypothesis supports given entity type (see SMESH::Dimension enumeration)
  */
 //================================================================================  

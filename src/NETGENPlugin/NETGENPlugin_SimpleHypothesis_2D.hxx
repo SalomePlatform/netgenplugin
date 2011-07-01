@@ -78,6 +78,15 @@ public:
    */
   double GetMaxElementArea() const { return _area; }
 
+  /*!
+   * Enables/disables generation of quadrangular faces
+   */
+  void SetAllowQuadrangles(bool toAllow);
+  /*!
+   * Returns true if generation of quadrangular faces is enabled
+   */
+  bool GetAllowQuadrangles() const;
+
   // Persistence
   virtual ostream & SaveTo(ostream & save);
   virtual istream & LoadFrom(istream & load);
@@ -99,6 +108,7 @@ public:
 private:
   int    _nbSegments;
   double _segmentLength, _area;
+  bool   _allowQuad;
 };
 
 #endif

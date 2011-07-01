@@ -162,6 +162,15 @@ module NETGENPlugin
      * Can be zero in case of LengthFromEdges()
      */
     double GetMaxElementArea();
+
+    /*!
+     * Enables/disables generation of quadrangular faces
+     */
+    void SetAllowQuadrangles(in boolean toAllow);
+    /*!
+     * Returns true if generation of quadrangular faces is enabled
+     */
+    boolean GetAllowQuadrangles();
   };
 
   /*!

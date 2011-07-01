@@ -29,7 +29,6 @@
 
 class StdMeshers_MaxElementArea;
 class StdMeshers_LengthFromEdges;
-class StdMeshers_QuadranglePreference;
 class NETGENPlugin_Hypothesis_2D;
 
 /*!
@@ -63,7 +62,7 @@ public:
 protected:
   const StdMeshers_MaxElementArea*       _hypMaxElementArea;
   const StdMeshers_LengthFromEdges*      _hypLengthFromEdges;
-  const StdMeshers_QuadranglePreference* _hypQuadranglePreference;
+  const SMESHDS_Hypothesis*              _hypQuadranglePreference;
   const NETGENPlugin_Hypothesis_2D*      _hypParameters;
 };
 

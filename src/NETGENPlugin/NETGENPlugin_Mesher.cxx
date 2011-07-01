@@ -1916,7 +1916,7 @@ bool NETGENPlugin_Mesher::Compute()
               if( visitedEdges.Add(exp.Current()) )
                 edgeLength += SMESH_Algo::EdgeLength( TopoDS::Edge( exp.Current() ));
             // we have to multiply length by 2 since for each TopoDS_Edge there
-            // are double set of NETGEN edges or, in other words, we have to
+            // are double set of NETGEN edges, in other words, we have to
             // divide ngMesh->GetNSeg() by 2.
             mparams.maxh = 2*edgeLength / ngMesh->GetNSeg();
           }
@@ -1925,6 +1925,7 @@ bool NETGENPlugin_Mesher::Compute()
           }
           mparams.grading = 0.2; // slow size growth
         }
+        mparams.quad = _simpleHyp->GetAllowQuadrangles();
         mparams.maxh = min( mparams.maxh, occgeo.boundingbox.Diam()/2 );
         ngMesh->SetGlobalH (mparams.maxh);
         netgen::Box<3> bb = occgeo.GetBoundingBox();
