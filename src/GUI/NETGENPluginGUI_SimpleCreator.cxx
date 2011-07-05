@@ -185,12 +185,16 @@ QFrame* NETGENPluginGUI_SimpleCreator::buildFrame()
   dimRow++;
 
   // * allow quadrangles
-  myAllowQuadCheckBox = new QCheckBox( tr( "NETGEN_ALLOW_QUADRANGLES" ), dimGroup );
-  dimLay->addWidget( myAllowQuadCheckBox, dimRow, 0, 1, 2 );
-  dimRow++;
+  const bool is3D = ( hypType()=="NETGEN_SimpleParameters_3D" );
+  if ( !is3D )
+  {
+    myAllowQuadCheckBox = new QCheckBox( tr( "NETGEN_ALLOW_QUADRANGLES" ), dimGroup );
+    dimLay->addWidget( myAllowQuadCheckBox, dimRow, 0, 1, 2 );
+    dimRow++;
+  }
 
   // 3D params group
-  if ( hypType()=="NETGEN_SimpleParameters_3D" )
+  if ( is3D )
   {
     dimGroup = new QGroupBox( tr( "NG_3D" ), argGroup );
     argLay->addWidget( dimGroup, argRow, 0, 1, 2 );
@@ -289,7 +293,8 @@ void NETGENPluginGUI_SimpleCreator::retrieveParams() const
     myLenFromEdgesCheckBox->setChecked( true );
     myArea->setEnabled( false );
   }
-  myAllowQuadCheckBox->setChecked( h->GetAllowQuadrangles() );
+  if ( myAllowQuadCheckBox )
+    myAllowQuadCheckBox->setChecked( h->GetAllowQuadrangles() );
 
   // 3D
   if ( myVolume ) {
@@ -349,7 +354,8 @@ QString NETGENPluginGUI_SimpleCreator::storeParams() const
       valStr += "; lenFromEdges";
       aVariablesList.append(QString());
     }
-    h->SetAllowQuadrangles( myAllowQuadCheckBox->isChecked() );
+    if ( myAllowQuadCheckBox )
+      h->SetAllowQuadrangles( myAllowQuadCheckBox->isChecked() );
 
     h->SetParameters(aVariablesList.join(":").toLatin1().constData());
 
