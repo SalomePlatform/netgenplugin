@@ -101,6 +101,35 @@ CORBA::Double NETGENPlugin_Hypothesis_i::GetMaxSize()
 
 //=============================================================================
 /*!
+ *  NETGENPlugin_Hypothesis_i::SetMinSize
+ *
+ *  Set MinSize
+ */
+//=============================================================================
+void NETGENPlugin_Hypothesis_i::SetMinSize (CORBA::Double theValue)
+{
+  MESSAGE("NETGENPlugin_Hypothesis_i::SetMinSize");
+  ASSERT(myBaseImpl);
+  this->GetImpl()->SetMinSize(theValue);
+  SMESH::TPythonDump() << _this() << ".SetMinSize( " << theValue << " )";
+}
+
+//=============================================================================
+/*!
+ *  NETGENPlugin_Hypothesis_i::GetMinSize
+ *
+ *  Get MinSize
+ */
+//=============================================================================
+CORBA::Double NETGENPlugin_Hypothesis_i::GetMinSize()
+{
+  MESSAGE("NETGENPlugin_Hypothesis_i::GetMinSize");
+  ASSERT(myBaseImpl);
+  return this->GetImpl()->GetMinSize();
+}
+
+//=============================================================================
+/*!
  *  NETGENPlugin_Hypothesis_i::SetSecondOrder
  *
  *  Set SecondOrder flag

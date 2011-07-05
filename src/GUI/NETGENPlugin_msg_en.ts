@@ -64,6 +64,10 @@
         <translation>Max. Size</translation>
     </message>
     <message>
+        <source>NETGEN_MIN_SIZE</source>
+        <translation>Min. Size</translation>
+    </message>
+    <message>
         <source>NETGEN_MODERATE</source>
         <translation>Moderate</translation>
     </message>

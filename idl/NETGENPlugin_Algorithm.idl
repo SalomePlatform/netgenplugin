@@ -75,6 +75,9 @@ module NETGENPlugin
     void SetMaxSize(in double value);
     double GetMaxSize();
 
+    void SetMinSize(in double value);
+    double GetMinSize();
+
     void SetSecondOrder(in boolean value);
     boolean GetSecondOrder();
 

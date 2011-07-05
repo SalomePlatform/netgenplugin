@@ -25,7 +25,6 @@
 // Author    : Michael Sazonov (OCN)
 // Date      : 03/04/2006
 // Project   : SALOME
-// $Header$
 //=============================================================================
 //
 #ifndef _NETGENPlugin_Hypothesis_i_HXX_
@@ -58,6 +57,9 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_Hypothesis_i:
 
   void SetMaxSize(CORBA::Double theSize);
   CORBA::Double GetMaxSize();
+
+  void SetMinSize(CORBA::Double theSize);
+  CORBA::Double GetMinSize();
 
   void SetSecondOrder(CORBA::Boolean theVal);
   CORBA::Boolean GetSecondOrder();

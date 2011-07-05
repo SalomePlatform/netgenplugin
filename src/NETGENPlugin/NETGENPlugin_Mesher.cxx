@@ -49,6 +49,9 @@
 #include <limits>
 
 #include <BRep_Tool.hxx>
+#include <Bnd_B3d.hxx>
+#include <GCPnts_AbscissaPoint.hxx>
+#include <GeomAdaptor_Curve.hxx>
 #include <NCollection_Map.hxx>
 #include <OSD_File.hxx>
 #include <OSD_Path.hxx>
@@ -64,8 +67,6 @@
 #include <TopTools_ListIteratorOfListOfShape.hxx>
 #include <TopTools_MapOfShape.hxx>
 #include <TopoDS.hxx>
-#include <GeomAdaptor_Curve.hxx>
-#include <GCPnts_AbscissaPoint.hxx>
 
 // Netgen include files
 #ifndef OCCGEOMETRY
@@ -138,6 +139,7 @@ void NETGENPlugin_Mesher::defaultParameters()
   netgen::MeshingParameters& mparams = netgen::mparam;
   // maximal mesh edge size
   mparams.maxh = NETGENPlugin_Hypothesis::GetDefaultMaxSize();
+  mparams.maxh = 0;
   // minimal number of segments per edge
   mparams.segmentsperedge = NETGENPlugin_Hypothesis::GetDefaultNbSegPerEdge();
   // rate of growth of size between elements
@@ -276,136 +278,6 @@ Standard_Boolean IsEqual(const Link& aLink1, const Link& aLink2)
           aLink1.n1 == aLink2.n2 && aLink1.n2 == aLink2.n1);
 }
 
-//================================================================================
-/*!
- * \brief Initialize netgen::OCCGeometry with OCCT shape
- */
-//================================================================================
-
-void NETGENPlugin_Mesher::PrepareOCCgeometry(netgen::OCCGeometry&     occgeo,
-                                             const TopoDS_Shape&      shape,
-                                             SMESH_Mesh&              mesh,
-                                             list< SMESH_subMesh* > * meshedSM,
-                                             NETGENPlugin_Internals*  intern)
-{
-  BRepTools::Clean (shape);
-  try {
-#if (OCC_VERSION_MAJOR << 16 | OCC_VERSION_MINOR << 8 | OCC_VERSION_MAINTENANCE) > 0x060100
-    OCC_CATCH_SIGNALS;
-#endif
-    BRepMesh_IncrementalMesh e(shape, 0.01, true);
-  } catch (Standard_Failure) {
-  }
-  Bnd_Box bb;
-  BRepBndLib::Add (shape, bb);
-  double x1,y1,z1,x2,y2,z2;
-  bb.Get (x1,y1,z1,x2,y2,z2);
-  MESSAGE("shape bounding box:\n" <<
-          "(" << x1 << " " << y1 << " " << z1 << ") " <<
-          "(" << x2 << " " << y2 << " " << z2 << ")");
-  netgen::Point<3> p1 = netgen::Point<3> (x1,y1,z1);
-  netgen::Point<3> p2 = netgen::Point<3> (x2,y2,z2);
-  occgeo.boundingbox = netgen::Box<3> (p1,p2);
-
-  occgeo.shape = shape;
-  occgeo.changed = 1;
-
-  // fill maps of shapes of occgeo with not yet meshed subshapes
-
-  // get root submeshes
-  list< SMESH_subMesh* > rootSM;
-  if ( SMESH_subMesh* sm = mesh.GetSubMeshContaining( shape )) {
-    rootSM.push_back( sm );
-  }
-  else {
-    for ( TopoDS_Iterator it( shape ); it.More(); it.Next() )
-      rootSM.push_back( mesh.GetSubMesh( it.Value() ));
-  }
-
-  // add subshapes of empty submeshes
-  list< SMESH_subMesh* >::iterator rootIt = rootSM.begin(), rootEnd = rootSM.end();
-  for ( ; rootIt != rootEnd; ++rootIt ) {
-    SMESH_subMesh * root = *rootIt;
-    SMESH_subMeshIteratorPtr smIt = root->getDependsOnIterator(/*includeSelf=*/true,
-                                                               /*complexShapeFirst=*/true);
-    // to find a right orientation of subshapes (PAL20462)
-    TopTools_IndexedMapOfShape subShapes;
-    TopExp::MapShapes(root->GetSubShape(), subShapes);
-    while ( smIt->more() )
-    {
-      SMESH_subMesh* sm = smIt->next();
-      TopoDS_Shape shape = sm->GetSubShape();
-      if ( intern && intern->isShapeToPrecompute( shape ))
-        continue;
-      if ( !meshedSM || sm->IsEmpty() )
-      {
-        if ( shape.ShapeType() != TopAbs_VERTEX )
-          shape = subShapes( subShapes.FindIndex( shape ));// shape -> index -> oriented shape
-        if ( shape.Orientation() >= TopAbs_INTERNAL )
-          shape.Orientation( TopAbs_FORWARD ); // isuue 0020676
-        switch ( shape.ShapeType() ) {
-        case TopAbs_FACE  : occgeo.fmap.Add( shape ); break;
-        case TopAbs_EDGE  : occgeo.emap.Add( shape ); break;
-        case TopAbs_VERTEX: occgeo.vmap.Add( shape ); break;
-        case TopAbs_SOLID :occgeo.somap.Add( shape ); break;
-        default:;
-        }
-      }
-      // collect submeshes of meshed shapes
-      else if (meshedSM)
-      {
-        const int dim = SMESH_Gen::GetShapeDim( shape );
-        meshedSM[ dim ].push_back( sm );
-      }
-    }
-  }
-  occgeo.facemeshstatus.SetSize (occgeo.fmap.Extent());
-  occgeo.facemeshstatus = 0;
-#ifdef NETGEN_NEW
-  occgeo.face_maxh.SetSize(occgeo.fmap.Extent());
-  occgeo.face_maxh = netgen::mparam.maxh;
-  occgeo.face_maxh_modified.SetSize(occgeo.fmap.Extent());
-  occgeo.face_maxh_modified = 0;
-#endif
-
-  // { // set netgen::mparam.minh
-
-//     TopLoc_Location loc;
-//     int i1, i2, i3;
-//     const int* pi[4] = { &i1, &i2, &i3, &i1 };
-//     double maxh = 1e100;
-//     for ( int i = 0; i < occgeo.fmap.Extent(); ++i )
-//     {
-//       Handle(Poly_Triangulation) triangulation =
-//         BRep_Tool::Triangulation ( TopoDS::Face( occgeo.fmap(i+1) ), loc);
-//       if ( triangulation.IsNull() ) continue;
-//       const TColgp_Array1OfPnt&   points = triangulation->Nodes();
-//       const Poly_Array1OfTriangle& trias = triangulation->Triangles();
-//       for ( int iT = trias.Lower(); iT <= trias.Upper(); ++iT )
-//       {
-//         trias(iT).Get( i1, i2, i3 );
-//         for ( int j = 0; j < 3; ++j )
-//         {
-//           double dist2 = points(*pi[j]).SquareDistance( points( *pi[j+1] ));
-//           if ( dist2 < maxh )
-//             maxh = dist2;
-//         }
-//       }
-//     }
-//     maxh = sqrt( maxh );
-//     if ( maxh > 0.5 * occgeo.boundingbox.Diam() ) // no or too rough triangulation
-//     {
-//       netgen::mparam.minh = occgeo.boundingbox.Diam()*1e-24;
-//       cout << "DEFAULT mparams.minh = " <<netgen::mparam.minh << endl;
-//     }
-//     else
-//     {
-//       netgen::mparam.minh = maxh * 2;
-//       cout << "TRIANGULATION mparams.minh = " <<netgen::mparam.minh << endl;
-//     }
-//   }
-}
-
 namespace
 {
   //================================================================================
@@ -532,6 +404,179 @@ namespace
     }
     return edges;
   }
+
+  //================================================================================
+  /*!
+   * \brief Make triangulation of a shape precise enough
+   */
+  //================================================================================
+
+  void updateTriangulation( const TopoDS_Shape& shape )
+  {
+    static set< Poly_Triangulation* > updated;
+
+    TopLoc_Location loc;
+    TopExp_Explorer fExp( shape, TopAbs_FACE );
+    for ( ; fExp.More(); fExp.Next() )
+    {
+      Handle(Poly_Triangulation) triangulation =
+        BRep_Tool::Triangulation ( TopoDS::Face( fExp.Current() ), loc);
+      if ( triangulation.IsNull() ||
+           updated.insert( triangulation.operator->() ).second )
+      {
+        BRepTools::Clean (shape);
+        try {
+#if (OCC_VERSION_MAJOR << 16 | OCC_VERSION_MINOR << 8 | OCC_VERSION_MAINTENANCE) > 0x060100
+          OCC_CATCH_SIGNALS;
+#endif
+          BRepMesh_IncrementalMesh e(shape, 0.01, true);
+        }
+        catch (Standard_Failure)
+        {
+          updated.erase( triangulation.operator->() );
+        }
+      }
+    }
+  }
+}
+
+//================================================================================
+/*!
+ * \brief Initialize netgen::OCCGeometry with OCCT shape
+ */
+//================================================================================
+
+void NETGENPlugin_Mesher::PrepareOCCgeometry(netgen::OCCGeometry&     occgeo,
+                                             const TopoDS_Shape&      shape,
+                                             SMESH_Mesh&              mesh,
+                                             list< SMESH_subMesh* > * meshedSM,
+                                             NETGENPlugin_Internals*  intern)
+{
+  updateTriangulation( shape );
+
+  Bnd_Box bb;
+  BRepBndLib::Add (shape, bb);
+  double x1,y1,z1,x2,y2,z2;
+  bb.Get (x1,y1,z1,x2,y2,z2);
+  MESSAGE("shape bounding box:\n" <<
+          "(" << x1 << " " << y1 << " " << z1 << ") " <<
+          "(" << x2 << " " << y2 << " " << z2 << ")");
+  netgen::Point<3> p1 = netgen::Point<3> (x1,y1,z1);
+  netgen::Point<3> p2 = netgen::Point<3> (x2,y2,z2);
+  occgeo.boundingbox = netgen::Box<3> (p1,p2);
+
+  occgeo.shape = shape;
+  occgeo.changed = 1;
+
+  // fill maps of shapes of occgeo with not yet meshed subshapes
+
+  // get root submeshes
+  list< SMESH_subMesh* > rootSM;
+  if ( SMESH_subMesh* sm = mesh.GetSubMeshContaining( shape )) {
+    rootSM.push_back( sm );
+  }
+  else {
+    for ( TopoDS_Iterator it( shape ); it.More(); it.Next() )
+      rootSM.push_back( mesh.GetSubMesh( it.Value() ));
+  }
+
+  // add subshapes of empty submeshes
+  list< SMESH_subMesh* >::iterator rootIt = rootSM.begin(), rootEnd = rootSM.end();
+  for ( ; rootIt != rootEnd; ++rootIt ) {
+    SMESH_subMesh * root = *rootIt;
+    SMESH_subMeshIteratorPtr smIt = root->getDependsOnIterator(/*includeSelf=*/true,
+                                                               /*complexShapeFirst=*/true);
+    // to find a right orientation of subshapes (PAL20462)
+    TopTools_IndexedMapOfShape subShapes;
+    TopExp::MapShapes(root->GetSubShape(), subShapes);
+    while ( smIt->more() )
+    {
+      SMESH_subMesh* sm = smIt->next();
+      TopoDS_Shape shape = sm->GetSubShape();
+      if ( intern && intern->isShapeToPrecompute( shape ))
+        continue;
+      if ( !meshedSM || sm->IsEmpty() )
+      {
+        if ( shape.ShapeType() != TopAbs_VERTEX )
+          shape = subShapes( subShapes.FindIndex( shape ));// shape -> index -> oriented shape
+        if ( shape.Orientation() >= TopAbs_INTERNAL )
+          shape.Orientation( TopAbs_FORWARD ); // isuue 0020676
+        switch ( shape.ShapeType() ) {
+        case TopAbs_FACE  : occgeo.fmap.Add( shape ); break;
+        case TopAbs_EDGE  : occgeo.emap.Add( shape ); break;
+        case TopAbs_VERTEX: occgeo.vmap.Add( shape ); break;
+        case TopAbs_SOLID :occgeo.somap.Add( shape ); break;
+        default:;
+        }
+      }
+      // collect submeshes of meshed shapes
+      else if (meshedSM)
+      {
+        const int dim = SMESH_Gen::GetShapeDim( shape );
+        meshedSM[ dim ].push_back( sm );
+      }
+    }
+  }
+  occgeo.facemeshstatus.SetSize (occgeo.fmap.Extent());
+  occgeo.facemeshstatus = 0;
+#ifdef NETGEN_NEW
+  occgeo.face_maxh.SetSize(occgeo.fmap.Extent());
+  occgeo.face_maxh = netgen::mparam.maxh;
+  occgeo.face_maxh_modified.SetSize(occgeo.fmap.Extent());
+  occgeo.face_maxh_modified = 0;
+#endif
+}
+
+//================================================================================
+/*!
+ * \brief Return a default min size value suitable for the given geometry.
+ */
+//================================================================================
+
+double NETGENPlugin_Mesher::GetDefaultMinSize(const TopoDS_Shape& geom,
+                                              const double        maxSize)
+{
+  updateTriangulation( geom );
+
+  TopLoc_Location loc;
+  int i1, i2, i3;
+  const int* pi[4] = { &i1, &i2, &i3, &i1 };
+  double minh = 1e100;
+  Bnd_B3d bb;
+  TopExp_Explorer fExp( geom, TopAbs_FACE );
+  for ( ; fExp.More(); fExp.Next() )
+  {
+    Handle(Poly_Triangulation) triangulation =
+      BRep_Tool::Triangulation ( TopoDS::Face( fExp.Current() ), loc);
+    if ( triangulation.IsNull() ) continue;
+    const TColgp_Array1OfPnt&   points = triangulation->Nodes();
+    const Poly_Array1OfTriangle& trias = triangulation->Triangles();
+    for ( int iT = trias.Lower(); iT <= trias.Upper(); ++iT )
+    {
+      trias(iT).Get( i1, i2, i3 );
+      for ( int j = 0; j < 3; ++j )
+      {
+        double dist2 = points(*pi[j]).SquareDistance( points( *pi[j+1] ));
+        if ( dist2 < minh )
+          minh = dist2;
+        bb.Add( points(*pi[j]));
+      }
+    }
+  }
+  if ( minh > 0.25 * bb.SquareExtent() ) // simple geometry, rough triangulation
+  {
+    minh = 1e-3 * sqrt( bb.SquareExtent());
+    //cout << "BND BOX minh = " <<minh << endl;
+  }
+  else
+  {
+    minh = 3 * sqrt( minh ); // triangulation for visualization is rather fine
+    //cout << "TRIANGULATION minh = " <<minh << endl;
+  }
+  if ( minh > 0.5 * maxSize )
+    minh = maxSize / 3.;
+
+  return minh;
 }
 
 //================================================================================
@@ -1761,6 +1806,9 @@ bool NETGENPlugin_Mesher::Compute()
         mparams.maxh = _simpleHyp->GetLocalLength();
     }
 
+    if ( _simpleHyp || mparams.minh == 0.0 )
+      mparams.minh = GetDefaultMinSize( _shape, mparams.maxh );
+
     // Let netgen create ngMesh and calculate element size on not meshed shapes
     char *optstr = 0;
     int startWith = netgen::MESHCONST_ANALYSE;
@@ -2195,6 +2243,7 @@ bool NETGENPlugin_Mesher::Evaluate(MapShapeNbElems& aResMap)
       // nb of segments
       mparams.segmentsperedge = nbSeg + 0.1;
       mparams.maxh = occgeo.boundingbox.Diam();
+      mparams.minh = GetDefaultMinSize( _shape, mparams.maxh );
       mparams.grading = 0.01;
     }
     else {

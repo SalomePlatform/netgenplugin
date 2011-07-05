@@ -44,11 +44,11 @@ class QTableWidget;
 
 typedef struct
 {
-  double              myMaxSize, myGrowthRate, myNbSegPerEdge, myNbSegPerRadius;
+  double              myMaxSize, myMinSize, myGrowthRate, myNbSegPerEdge, myNbSegPerRadius;
   int                 myFineness;
   bool                mySecondOrder, myAllowQuadrangles, myOptimize;
   QString             myName;
-  QString             myMaxSizeVar, myGrowthRateVar, myNbSegPerEdgeVar, myNbSegPerRadiusVar;
+  QString             myMaxSizeVar, myMinSizeVar, myGrowthRateVar, myNbSegPerEdgeVar, myNbSegPerRadiusVar;
 } NetgenHypothesisData;
 
 /*!
@@ -92,6 +92,7 @@ private:
 private:
  QLineEdit*        myName;
  SMESHGUI_SpinBox* myMaxSize;
+ SMESHGUI_SpinBox* myMinSize;
  QCheckBox*        mySecondOrder;
  QCheckBox*        myOptimize;
  QComboBox*        myFineness;

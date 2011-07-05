@@ -374,6 +374,11 @@ bool NETGENPlugin_NETGEN_3D::compute(SMESH_Mesh&                     aMesh,
     netgen::mparam.maxh = Dist(pmin, pmax)/2;
   }
 
+  if ( !_hypParameters && aMesh.HasShapeToMesh() )
+  {
+    netgen::mparam.minh = aMesher.GetDefaultMinSize( helper.GetSubShape(), netgen::mparam.maxh );
+  }
+
   try
   {
 #if (OCC_VERSION_MAJOR << 16 | OCC_VERSION_MINOR << 8 | OCC_VERSION_MAINTENANCE) > 0x060100

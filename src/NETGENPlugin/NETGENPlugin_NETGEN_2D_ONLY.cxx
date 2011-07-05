@@ -444,6 +444,7 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
       edgeLength = occgeo.GetBoundingBox().Diam();
 
     netgen::mparam.maxh = edgeLength;
+    netgen::mparam.minh = aMesher.GetDefaultMinSize( aShape, netgen::mparam.maxh );
     netgen::mparam.quad = _hypQuadranglePreference ? 1 : 0;
     netgen::mparam.grading = 0.7; // very coarse mesh by default
   }

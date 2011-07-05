@@ -50,6 +50,9 @@ public:
   void SetMaxSize(double theSize);
   double GetMaxSize() const { return _maxSize; }
 
+  void SetMinSize(double theSize);
+  double GetMinSize() const { return _minSize; }
+
   void SetSecondOrder(bool theVal);
   bool GetSecondOrder() const { return _secondOrder; }
 
@@ -118,7 +121,7 @@ public:
   virtual bool SetParametersByDefaults(const TDefaults& dflts, const SMESH_Mesh* theMesh=0);
 
 private:
-  double        _maxSize;
+  double        _maxSize, _minSize;
   double        _growthRate;
   double        _nbSegPerEdge;
   double        _nbSegPerRadius;

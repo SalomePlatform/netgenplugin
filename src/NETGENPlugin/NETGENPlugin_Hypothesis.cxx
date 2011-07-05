@@ -27,6 +27,10 @@
 // Project   : SALOME
 //
 #include "NETGENPlugin_Hypothesis.hxx"
+
+#include "NETGENPlugin_Mesher.hxx"
+#include "SMESH_Mesh.hxx"
+
 #include <utilities.h>
 
 using namespace std;
@@ -40,6 +44,7 @@ NETGENPlugin_Hypothesis::NETGENPlugin_Hypothesis (int hypId, int studyId,
                                                   SMESH_Gen * gen)
   : SMESH_Hypothesis(hypId, studyId, gen),
     _maxSize       (GetDefaultMaxSize()),
+    _minSize       (0),
     _growthRate    (GetDefaultGrowthRate()),
     _nbSegPerEdge  (GetDefaultNbSegPerEdge()),
     _nbSegPerRadius(GetDefaultNbSegPerRadius()),
@@ -63,6 +68,20 @@ void NETGENPlugin_Hypothesis::SetMaxSize(double theSize)
   if (theSize != _maxSize)
   {
     _maxSize = theSize;
+    NotifySubMeshesHypothesisModification();
+  }
+}
+
+//=============================================================================
+/*!
+ *  
+ */
+//=============================================================================
+void NETGENPlugin_Hypothesis::SetMinSize(double theSize)
+{
+  if (theSize != _minSize)
+  {
+    _minSize = theSize;
     NotifySubMeshesHypothesisModification();
   }
 }
@@ -248,6 +267,7 @@ ostream & NETGENPlugin_Hypothesis::SaveTo(ostream & save)
     }
     save << " " << "__LOCALSIZE_END__";
   }
+  save << " " << _minSize;
 
   return save;
 }
@@ -332,6 +352,9 @@ istream & NETGENPlugin_Hypothesis::LoadFrom(istream & load)
     }
   }
 
+  if ( !hasLocalSize && !option_or_sm.empty() )
+    _minSize = atof( option_or_sm.c_str() );
+
   return load;
 }
 
@@ -378,10 +401,16 @@ bool NETGENPlugin_Hypothesis::SetParametersByMesh(const SMESH_Mesh*   theMesh,
 //================================================================================
 
 bool NETGENPlugin_Hypothesis::SetParametersByDefaults(const TDefaults&  dflts,
-                                                      const SMESH_Mesh* /*theMesh*/)
+                                                      const SMESH_Mesh* theMesh)
 {
   _nbSegPerEdge = dflts._nbSegments;
   _maxSize      = dflts._elemLength;
+
+  if ( dflts._shape && !dflts._shape->IsNull() )
+    _minSize    = NETGENPlugin_Mesher::GetDefaultMinSize( *dflts._shape, _maxSize );
+  else if ( theMesh && theMesh->HasShapeToMesh() )
+    _minSize    = NETGENPlugin_Mesher::GetDefaultMinSize( theMesh->GetShapeToMesh(), _maxSize );
+
   return _nbSegPerEdge && _maxSize > 0;
 }
 

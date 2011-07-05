@@ -110,6 +110,7 @@ bool NETGENPluginGUI_HypothesisCreator::checkParams(QString& msg) const
   storeParamsToHypo( data_old );
   
   res = myMaxSize->isValid(msg,true) && res;
+  res = myMinSize->isValid(msg,true) && res;
   res = myGrowthRate->isValid(msg,true) && res; ;
   if ( myNbSegPerEdge )
     res = myNbSegPerEdge->isValid(msg,true) && res;
@@ -152,6 +153,12 @@ QFrame* NETGENPluginGUI_HypothesisCreator::buildFrame()
   myMaxSize = new SMESHGUI_SpinBox( GroupC1 );
   myMaxSize->RangeStepAndValidator( 1e-07, 1e+06, 10., "length_precision" );
   aGroupLayout->addWidget( myMaxSize, row, 1 );
+  row++;
+
+  aGroupLayout->addWidget( new QLabel( tr( "NETGEN_MIN_SIZE" ), GroupC1 ), row, 0 );
+  myMinSize = new SMESHGUI_SpinBox( GroupC1 );
+  myMinSize->RangeStepAndValidator( 0.0, 1e+06, 10., "length_precision" );
+  aGroupLayout->addWidget( myMinSize, row, 1 );
   row++;
 
   mySecondOrder = 0;
@@ -272,6 +279,11 @@ void NETGENPluginGUI_HypothesisCreator::retrieveParams() const
   else
     myMaxSize->setText( data.myMaxSizeVar );
 
+  if(data.myMinSizeVar.isEmpty())
+    myMinSize->setValue( data.myMinSize );
+  else
+    myMinSize->setText( data.myMinSizeVar );
+
   if ( mySecondOrder )
     mySecondOrder->setChecked( data.mySecondOrder );
   if ( myOptimize )
@@ -339,6 +351,7 @@ QString NETGENPluginGUI_HypothesisCreator::storeParams() const
   storeParamsToHypo( data );
   
   QString valStr = tr("NETGEN_MAX_SIZE") + " = " + QString::number( data.myMaxSize ) + "; ";
+  valStr += tr("NETGEN_MIN_SIZE") + " = " + QString::number( data.myMinSize ) + "; ";
   if ( data.mySecondOrder )
     valStr +=  tr("NETGEN_SECOND_ORDER") + "; ";
   if ( data.myOptimize )
@@ -375,6 +388,8 @@ bool NETGENPluginGUI_HypothesisCreator::readParamsFromHypo( NetgenHypothesisData
   h_data.myNbSegPerEdgeVar  = (aParameters->length() > 2) ? QString(aParameters[2].in()) : QString("");
   h_data.myNbSegPerRadius = h->GetNbSegPerRadius();
   h_data.myNbSegPerRadiusVar = (aParameters->length() > 3) ? QString(aParameters[3].in()) : QString("");
+  h_data.myMinSize = h->GetMinSize();
+  h_data.myMinSizeVar = (aParameters->length() > 4) ? QString(aParameters[4].in()) : QString("");
 
   if ( myIs2D )
     {
@@ -435,6 +450,8 @@ bool NETGENPluginGUI_HypothesisCreator::storeParamsToHypo( const NetgenHypothesi
         aVariablesList.append(h_data.myNbSegPerEdgeVar);
         aVariablesList.append(h_data.myNbSegPerRadiusVar);
       }
+    h->SetMinSize( h_data.myMinSize );
+    aVariablesList.append(h_data.myMinSizeVar);
     
     if ( myIs2D )
       {
@@ -452,6 +469,7 @@ bool NETGENPluginGUI_HypothesisCreator::storeParamsToHypo( const NetgenHypothesi
         h->SetParameters(aVariablesList.join(":").toLatin1().constData());
         h->SetParameters(aVariablesList.join(":").toLatin1().constData());
       }
+    h->SetParameters(aVariablesList.join(":").toLatin1().constData());
 
     QMapIterator<QString,QString> i(myLocalSizeMap);
     while (i.hasNext()) {
@@ -484,6 +502,8 @@ bool NETGENPluginGUI_HypothesisCreator::readParamsFromWidgets( NetgenHypothesisD
   h_data.myName           = myName ? myName->text() : "";
   h_data.myMaxSize        = myMaxSize->value();
   h_data.myMaxSizeVar     = myMaxSize->text();
+  h_data.myMinSize        = myMinSize->value();
+  h_data.myMinSizeVar     = myMinSize->text();
   if ( mySecondOrder )
     h_data.mySecondOrder  = mySecondOrder->isChecked();
   if ( myOptimize )

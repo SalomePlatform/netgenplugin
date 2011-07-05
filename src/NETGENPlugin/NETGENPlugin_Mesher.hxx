@@ -94,6 +94,9 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_Mesher
                                  std::list< SMESH_subMesh* > * meshedSM=0,
                                  NETGENPlugin_Internals*       internalShapes=0);
 
+  static double GetDefaultMinSize(const TopoDS_Shape& shape,
+                                  const double        maxSize);
+
   static int FillSMesh(const netgen::OCCGeometry&          occgeom,
                        const netgen::Mesh&                 ngMesh,
                        const NETGENPlugin_ngMeshInfo&      initState,
