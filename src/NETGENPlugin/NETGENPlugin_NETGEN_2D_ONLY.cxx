@@ -36,6 +36,7 @@
 #include "StdMeshers_FaceSide.hxx"
 #include "StdMeshers_MaxElementArea.hxx"
 #include "StdMeshers_LengthFromEdges.hxx"
+#include "StdMeshers_QuadranglePreference.hxx"
 
 #include <Precision.hxx>
 #include <Standard_ErrorHandler.hxx>
@@ -87,14 +88,7 @@ NETGENPlugin_NETGEN_2D_ONLY::NETGENPlugin_NETGEN_2D_ONLY(int hypId, int studyId,
 
   _compatibleHypothesis.push_back("MaxElementArea");
   _compatibleHypothesis.push_back("LengthFromEdges");
-  //_compatibleHypothesis.push_back("QuadranglePreference");
-  _compatibleHypothesis.push_back("QuadrangleParams"); /* QuadranglePreference was removed and
-                                                          it is converted into QuadrangleParams
-                                                          at reading an old study; so we use
-                                                          QuadrangleParams insead of
-                                                          QuadranglePreference for backward
-                                                          compatibility
-                                                        */
+  _compatibleHypothesis.push_back("QuadranglePreference");
   _compatibleHypothesis.push_back("NETGEN_Parameters_2D");
 
   _hypMaxElementArea = 0;
@@ -149,10 +143,10 @@ bool NETGENPlugin_NETGEN_2D_ONLY::CheckHypothesis (SMESH_Mesh&         aMesh,
       _hypMaxElementArea = static_cast<const StdMeshers_MaxElementArea*> (hyp);
     else if ( hypName == "LengthFromEdges" )
       _hypLengthFromEdges = static_cast<const StdMeshers_LengthFromEdges*> (hyp);
+    else if ( hypName == "QuadranglePreference" )
+      _hypQuadranglePreference = static_cast<const StdMeshers_QuadranglePreference*>(hyp);
     else if ( hypName == "NETGEN_Parameters_2D" )
       _hypParameters = static_cast<const NETGENPlugin_Hypothesis_2D*>(hyp);
-    else if ( hypName == "QuadrangleParams" )
-      _hypQuadranglePreference = hyp;
     else {
       aStatus = HYP_INCOMPATIBLE;
       return false;
