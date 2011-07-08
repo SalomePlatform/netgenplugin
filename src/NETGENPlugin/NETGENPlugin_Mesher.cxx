@@ -138,8 +138,8 @@ void NETGENPlugin_Mesher::defaultParameters()
 {
   netgen::MeshingParameters& mparams = netgen::mparam;
   // maximal mesh edge size
-  mparams.maxh = NETGENPlugin_Hypothesis::GetDefaultMaxSize();
-  mparams.maxh = 0;
+  mparams.maxh = 0;//NETGENPlugin_Hypothesis::GetDefaultMaxSize();
+  mparams.minh = 0;
   // minimal number of segments per edge
   mparams.segmentsperedge = NETGENPlugin_Hypothesis::GetDefaultNbSegPerEdge();
   // rate of growth of size between elements
@@ -520,8 +520,6 @@ void NETGENPlugin_Mesher::PrepareOCCgeometry(netgen::OCCGeometry&     occgeo,
   occgeo.facemeshstatus.SetSize (occgeo.fmap.Extent());
   occgeo.facemeshstatus = 0;
 #ifdef NETGEN_NEW
-  occgeo.face_maxh.SetSize(occgeo.fmap.Extent());
-  occgeo.face_maxh = netgen::mparam.maxh;
   occgeo.face_maxh_modified.SetSize(occgeo.fmap.Extent());
   occgeo.face_maxh_modified = 0;
 #endif
@@ -1806,8 +1804,14 @@ bool NETGENPlugin_Mesher::Compute()
         mparams.maxh = _simpleHyp->GetLocalLength();
     }
 
+    if ( mparams.maxh == 0.0 )
+      mparams.maxh = occgeo.boundingbox.Diam();
     if ( _simpleHyp || mparams.minh == 0.0 )
       mparams.minh = GetDefaultMinSize( _shape, mparams.maxh );
+#ifdef NETGEN_NEW
+    occgeo.face_maxh.SetSize(occgeo.fmap.Extent());
+    occgeo.face_maxh = mparams.maxh;
+#endif
 
     // Let netgen create ngMesh and calculate element size on not meshed shapes
     char *optstr = 0;
