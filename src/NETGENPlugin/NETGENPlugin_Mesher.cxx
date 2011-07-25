@@ -522,6 +522,8 @@ void NETGENPlugin_Mesher::PrepareOCCgeometry(netgen::OCCGeometry&     occgeo,
 #ifdef NETGEN_NEW
   occgeo.face_maxh_modified.SetSize(occgeo.fmap.Extent());
   occgeo.face_maxh_modified = 0;
+  occgeo.face_maxh.SetSize(occgeo.fmap.Extent());
+  occgeo.face_maxh = netgen::mparam.maxh;
 #endif
 }
 
@@ -1809,7 +1811,6 @@ bool NETGENPlugin_Mesher::Compute()
     if ( _simpleHyp || mparams.minh == 0.0 )
       mparams.minh = GetDefaultMinSize( _shape, mparams.maxh );
 #ifdef NETGEN_NEW
-    occgeo.face_maxh.SetSize(occgeo.fmap.Extent());
     occgeo.face_maxh = mparams.maxh;
 #endif
 
