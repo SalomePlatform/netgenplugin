@@ -210,13 +210,10 @@ QFrame* NETGENPluginGUI_HypothesisCreator::buildFrame()
     row++;
   }
 
-  myOptimize = 0;
-  if ( !myIs2D )
-  {
-    myOptimize = new QCheckBox( tr( "NETGEN_OPTIMIZE" ), GroupC1 );
-    aGroupLayout->addWidget( myOptimize, row, 0 );
-    row++;
-  }
+  myOptimize = new QCheckBox( tr( "NETGEN_OPTIMIZE" ), GroupC1 );
+  aGroupLayout->addWidget( myOptimize, row, 0 );
+  row++;
+
   connect( myFineness, SIGNAL( activated( int ) ), this, SLOT( onFinenessChanged() ) );
 
   myLocalSizeTable = 0;
