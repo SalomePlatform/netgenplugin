@@ -1,6 +1,6 @@
 diff -Naur netgen-4.9.13_orig/libsrc/meshing/meshtype.cpp netgen-4.9.13_new/libsrc/meshing/meshtype.cpp
 --- netgen-4.9.13_orig/libsrc/meshing/meshtype.cpp	2009-09-13 14:28:38.000000000 +0400
-+++ netgen-4.9.13_new/libsrc/meshing/meshtype.cpp	2011-06-03 17:54:39.000000000 +0400
++++ netgen-4.9.13_new/libsrc/meshing/meshtype.cpp	2011-08-10 16:57:34.000000000 +0400
 @@ -1,4 +1,5 @@
  #include <mystdlib.h>
 +#include <float.h> // to get DBL_MIN defined
@@ -101,7 +101,7 @@ diff -Naur netgen-4.9.13_orig/libsrc/meshing/meshtype.cpp netgen-4.9.13_new/libs
      blockfill = 1;
 diff -Naur netgen-4.9.13_orig/libsrc/meshing/meshtype.hpp netgen-4.9.13_new/libsrc/meshing/meshtype.hpp
 --- netgen-4.9.13_orig/libsrc/meshing/meshtype.hpp	2009-11-09 13:50:43.000000000 +0300
-+++ netgen-4.9.13_new/libsrc/meshing/meshtype.hpp	2011-06-03 17:56:43.000000000 +0400
++++ netgen-4.9.13_new/libsrc/meshing/meshtype.hpp	2011-08-10 16:57:34.000000000 +0400
 @@ -12,6 +12,7 @@
      Classes for NETGEN
  */
@@ -112,7 +112,7 @@ diff -Naur netgen-4.9.13_orig/libsrc/meshing/meshtype.hpp netgen-4.9.13_new/libs
    SEGMENT = 1, SEGMENT3 = 2,
 diff -Naur netgen-4.9.13_orig/libsrc/meshing/smoothing2.cpp netgen-4.9.13_new/libsrc/meshing/smoothing2.cpp
 --- netgen-4.9.13_orig/libsrc/meshing/smoothing2.cpp	2009-11-09 13:47:09.000000000 +0300
-+++ netgen-4.9.13_new/libsrc/meshing/smoothing2.cpp	2011-06-03 18:04:35.000000000 +0400
++++ netgen-4.9.13_new/libsrc/meshing/smoothing2.cpp	2011-08-10 16:57:34.000000000 +0400
 @@ -302,7 +302,8 @@
      vgrad = 0;
      badness = 0;
@@ -164,7 +164,7 @@ diff -Naur netgen-4.9.13_orig/libsrc/meshing/smoothing2.cpp netgen-4.9.13_new/li
  
 diff -Naur netgen-4.9.13_orig/libsrc/occ/occconstruction.cpp netgen-4.9.13_new/libsrc/occ/occconstruction.cpp
 --- netgen-4.9.13_orig/libsrc/occ/occconstruction.cpp	2009-08-24 06:32:47.000000000 +0400
-+++ netgen-4.9.13_new/libsrc/occ/occconstruction.cpp	2011-04-20 13:20:56.000000000 +0400
++++ netgen-4.9.13_new/libsrc/occ/occconstruction.cpp	2011-08-10 16:57:34.000000000 +0400
 @@ -28,7 +28,7 @@
  #include <BRepAlgoAPI_Common.hxx>
  #include <BRepAlgoAPI_Fuse.hxx>
@@ -176,7 +176,7 @@ diff -Naur netgen-4.9.13_orig/libsrc/occ/occconstruction.cpp netgen-4.9.13_new/l
  #include <ShapeFix_Shape.hxx>
 diff -Naur netgen-4.9.13_orig/libsrc/occ/occgenmesh.cpp netgen-4.9.13_new/libsrc/occ/occgenmesh.cpp
 --- netgen-4.9.13_orig/libsrc/occ/occgenmesh.cpp	2010-03-16 09:30:07.000000000 +0300
-+++ netgen-4.9.13_new/libsrc/occ/occgenmesh.cpp	2011-06-28 12:04:32.000000000 +0400
++++ netgen-4.9.13_new/libsrc/occ/occgenmesh.cpp	2011-08-10 16:57:34.000000000 +0400
 @@ -15,6 +15,8 @@
  
  #define DIVIDEEDGESECTIONS 1000
@@ -408,7 +408,7 @@ diff -Naur netgen-4.9.13_orig/libsrc/occ/occgenmesh.cpp netgen-4.9.13_new/libsrc
 +
 diff -Naur netgen-4.9.13_orig/libsrc/occ/occgeom.cpp netgen-4.9.13_new/libsrc/occ/occgeom.cpp
 --- netgen-4.9.13_orig/libsrc/occ/occgeom.cpp	2010-03-05 16:16:21.000000000 +0300
-+++ netgen-4.9.13_new/libsrc/occ/occgeom.cpp	2011-06-03 19:32:06.000000000 +0400
++++ netgen-4.9.13_new/libsrc/occ/occgeom.cpp	2011-08-10 16:57:34.000000000 +0400
 @@ -8,6 +8,8 @@
  #include "ShapeAnalysis_CheckSmallFace.hxx"
  #include "ShapeAnalysis_DataMapOfShapeListOfReal.hxx"
@@ -627,7 +627,7 @@ diff -Naur netgen-4.9.13_orig/libsrc/occ/occgeom.cpp netgen-4.9.13_new/libsrc/oc
     }
 diff -Naur netgen-4.9.13_orig/libsrc/occ/occgeom.hpp netgen-4.9.13_new/libsrc/occ/occgeom.hpp
 --- netgen-4.9.13_orig/libsrc/occ/occgeom.hpp	2010-01-14 19:56:19.000000000 +0300
-+++ netgen-4.9.13_new/libsrc/occ/occgeom.hpp	2011-06-28 11:07:52.000000000 +0400
++++ netgen-4.9.13_new/libsrc/occ/occgeom.hpp	2011-08-10 16:57:34.000000000 +0400
 @@ -15,8 +15,8 @@
  #include "Geom_Curve.hxx"
  #include "Geom2d_Curve.hxx"
@@ -707,7 +707,7 @@ diff -Naur netgen-4.9.13_orig/libsrc/occ/occgeom.hpp netgen-4.9.13_new/libsrc/oc
           cout << "OCCGeometry::GetSurface using PLANESPACE" << endl;
 diff -Naur netgen-4.9.13_orig/libsrc/occ/occmeshsurf.cpp netgen-4.9.13_new/libsrc/occ/occmeshsurf.cpp
 --- netgen-4.9.13_orig/libsrc/occ/occmeshsurf.cpp	2009-08-24 06:32:47.000000000 +0400
-+++ netgen-4.9.13_new/libsrc/occ/occmeshsurf.cpp	2011-06-03 19:55:14.000000000 +0400
++++ netgen-4.9.13_new/libsrc/occ/occmeshsurf.cpp	2011-08-10 16:57:34.000000000 +0400
 @@ -6,6 +6,7 @@
  #include <meshing.hpp>
  #include <GeomLProp_SLProps.hxx>
@@ -814,9 +814,100 @@ diff -Naur netgen-4.9.13_orig/libsrc/occ/occmeshsurf.cpp netgen-4.9.13_new/libsr
  
  
  
+diff -Naur netgen-4.9.13_orig/libsrc/occ/Partition_Inter3d.cxx netgen-4.9.13_new/libsrc/occ/Partition_Inter3d.cxx
+--- netgen-4.9.13_orig/libsrc/occ/Partition_Inter3d.cxx	2009-08-24 06:12:24.000000000 +0400
++++ netgen-4.9.13_new/libsrc/occ/Partition_Inter3d.cxx	2011-08-10 16:57:40.000000000 +0400
+@@ -86,6 +86,9 @@
+ #include <TopOpeBRepTool_OutCurveType.hxx>
+ #include <TopOpeBRep_DSFiller.hxx>
+ #include <TopTools_DataMapIteratorOfDataMapOfShapeShape.hxx>
++
++#include <Standard_Version.hxx>
++
+ #include <stdio.h>
+ 
+ //=======================================================================
+@@ -243,7 +246,12 @@
+       Standard_Integer i, nbExt = anExtPS.NbExt();
+       Extrema_POnSurf aPOnSurf;
+       for (i = 1; i <= nbExt; ++i )
++#if (OCC_VERSION_MAJOR << 16 | OCC_VERSION_MINOR << 8 | OCC_VERSION_MAINTENANCE) > 0x060400
++// porting to OCCT6.5.1
++        if (anExtPS.SquareDistance( i ) <= TolE * TolE) {
++#else
+         if (anExtPS.Value( i ) <= TolE) {
++#endif
+           aPOnSurf = anExtPS.Point( i );
+           break;
+         }
+diff -Naur netgen-4.9.13_orig/libsrc/occ/Partition_Loop2d.cxx netgen-4.9.13_new/libsrc/occ/Partition_Loop2d.cxx
+--- netgen-4.9.13_orig/libsrc/occ/Partition_Loop2d.cxx	2009-08-24 06:12:24.000000000 +0400
++++ netgen-4.9.13_new/libsrc/occ/Partition_Loop2d.cxx	2011-08-10 16:57:40.000000000 +0400
+@@ -22,7 +22,6 @@
+ #include <BRepAdaptor_Surface.hxx>
+ #include <BRepAlgo_AsDes.hxx>
+ #include <BRepAlgo_FaceRestrictor.hxx>
+-#include <BRepOffset_DataMapOfShapeReal.hxx>
+ #include <BRepTopAdaptor_FClass2d.hxx>
+ #include <BRep_Builder.hxx>
+ #include <BRep_Tool.hxx>
+@@ -51,6 +50,15 @@
+ #include <gp_Pnt.hxx>
+ #include <gp_Pnt2d.hxx>
+ 
++#include <Standard_Version.hxx>
++
++#if (OCC_VERSION_MAJOR << 16 | OCC_VERSION_MINOR << 8 | OCC_VERSION_MAINTENANCE) > 0x060400
++// porting to OCCT6.5.1
++#include <TopTools_DataMapOfShapeReal.hxx>
++#else
++#include <BRepOffset_DataMapOfShapeReal.hxx>
++#endif
++
+ //=======================================================================
+ //function : Partition_Loop2d
+ //purpose  :
+@@ -519,7 +527,12 @@
+     DC.Initialize( DegEdge, F );
+ 
+   // avoid intersecting twice the same edge
++#if (OCC_VERSION_MAJOR << 16 | OCC_VERSION_MINOR << 8 | OCC_VERSION_MAINTENANCE) > 0x060400
++// porting to OCCT6.5.1
++  TopTools_DataMapOfShapeReal EUMap ( EdgesList.Extent() );
++#else
+   BRepOffset_DataMapOfShapeReal EUMap ( EdgesList.Extent() );
++#endif
+ 
+   Standard_Real U, f, l;
+   BRep_Tool::Range (DegEdge, f, l);
+diff -Naur netgen-4.9.13_orig/libsrc/occ/Partition_Spliter.cxx netgen-4.9.13_new/libsrc/occ/Partition_Spliter.cxx
+--- netgen-4.9.13_orig/libsrc/occ/Partition_Spliter.cxx	2009-08-24 06:12:24.000000000 +0400
++++ netgen-4.9.13_new/libsrc/occ/Partition_Spliter.cxx	2011-08-10 16:57:40.000000000 +0400
+@@ -79,6 +79,8 @@
+ #include <GeomAdaptor_Curve.hxx>
+ #include <TopOpeBRepTool_CurveTool.hxx>
+ 
++#include <Standard_Version.hxx>
++
+ #ifdef DEB
+ //# define PART_PERF
+ #endif
+@@ -1169,7 +1171,12 @@
+           for (; j<=nbj && ok; ++j) {
+             if (Extrema.IsMin(j)) {
+ 	      hasMin = Standard_True;
++#if (OCC_VERSION_MAJOR << 16 | OCC_VERSION_MINOR << 8 | OCC_VERSION_MAINTENANCE) > 0x060400
++// porting to OCCT6.5.1
++              ok = Extrema.SquareDistance(j) <= tol * tol;
++#else
+               ok = Extrema.Value(j) <= tol;
++#endif
+ 	    }
+           }
+         }
 diff -Naur netgen-4.9.13_orig/libsrc/occ/utilities.h netgen-4.9.13_new/libsrc/occ/utilities.h
 --- netgen-4.9.13_orig/libsrc/occ/utilities.h	2009-08-24 06:12:24.000000000 +0400
-+++ netgen-4.9.13_new/libsrc/occ/utilities.h	2011-04-20 13:20:56.000000000 +0400
++++ netgen-4.9.13_new/libsrc/occ/utilities.h	2011-08-10 16:57:34.000000000 +0400
 @@ -33,6 +33,7 @@
  
  #include <string>
@@ -827,7 +918,7 @@ diff -Naur netgen-4.9.13_orig/libsrc/occ/utilities.h netgen-4.9.13_new/libsrc/oc
  
 diff -Naur netgen-4.9.13_orig/libsrc/stlgeom/stlgeommesh.cpp netgen-4.9.13_new/libsrc/stlgeom/stlgeommesh.cpp
 --- netgen-4.9.13_orig/libsrc/stlgeom/stlgeommesh.cpp	2009-08-10 15:40:51.000000000 +0400
-+++ netgen-4.9.13_new/libsrc/stlgeom/stlgeommesh.cpp	2011-06-03 19:57:16.000000000 +0400
++++ netgen-4.9.13_new/libsrc/stlgeom/stlgeommesh.cpp	2011-08-10 16:57:34.000000000 +0400
 @@ -1435,7 +1435,8 @@
  
  	  if (!optstring || strlen(optstring) == 0)
@@ -858,8 +949,9 @@ diff -Naur netgen-4.9.13_orig/libsrc/stlgeom/stlgeommesh.cpp netgen-4.9.13_new/l
  	    }
  	  else
  	    {
+diff -Naur netgen-4.9.13_orig/nglib/nglib.h netgen-4.9.13_new/nglib/nglib.h
 --- netgen-4.9.13_orig/nglib/nglib.h	2010-05-18 15:20:25.000000000 +0400
-+++ netgen-4.9.13_new/nglib/nglib.h	2010-05-31 13:02:19.000000000 +0400
++++ netgen-4.9.13_new/nglib/nglib.h	2011-08-10 16:57:34.000000000 +0400
 @@ -24,7 +24,7 @@
  // Philippose - 14.02.2009
  // Modifications for creating a DLL in Windows
