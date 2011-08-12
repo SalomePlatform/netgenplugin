@@ -99,5 +99,5 @@ libNETGENEngine_la_LDFLAGS  += \
 		      -lTKMath -lTKFillet -lTKMeshVS -lTKPrim -lTKSTEPBase -lTKSTEPAttr -lTKSTEP209 -lTKXDESTEP -lTKXDEIGES -lTKXCAF -lTKLCAF -lFWOSPlugin \
 	$(GEOM_LDFLAGS) -lGEOMbasic \
 	$(MED_LDFLAGS) -lSalomeIDLMED \
-	$(SMESH_LDFLAGS) -lSMESHimpl -lSMESHEngine -lStdMeshersEngine -lStdMeshers -lSMESHDS -lSMDS -lSMESHControls \
+	$(SMESH_LDFLAGS) -lSMESHimpl -lSMESHEngine -lSMESHUtils -lStdMeshersEngine -lStdMeshers -lSMESHDS -lSMDS -lSMESHControls \
 	$(KERNEL_LDFLAGS) -lSalomeGenericObj -lSalomeNS -lSALOMELocalTrace -lOpUtil
