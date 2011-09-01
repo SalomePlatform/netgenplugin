@@ -64,6 +64,10 @@
         <translation>Taille maximale</translation>
     </message>
     <message>
+        <source>NETGEN_MIN_SIZE</source>
+        <translation>Taille minimale</translation>
+    </message>
+    <message>
         <source>NETGEN_MODERATE</source>
         <translation>Moyen</translation>
     </message>
