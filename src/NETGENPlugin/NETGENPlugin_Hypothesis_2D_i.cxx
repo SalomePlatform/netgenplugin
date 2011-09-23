@@ -25,7 +25,6 @@
 // Author    : Michael Sazonov (OCN)
 // Date      : 03/04/2006
 // Project   : SALOME
-// $Header$
 //=============================================================================
 //
 #include "NETGENPlugin_Hypothesis_2D_i.hxx"
@@ -81,10 +80,13 @@ NETGENPlugin_Hypothesis_2D_i::~NETGENPlugin_Hypothesis_2D_i()
 //=============================================================================
 void NETGENPlugin_Hypothesis_2D_i::SetQuadAllowed (CORBA::Boolean theValue)
 {
-  MESSAGE("NETGENPlugin_Hypothesis_2D_i::SetQuadAllowed");
-  ASSERT(myBaseImpl);
-  this->GetImpl()->SetQuadAllowed(theValue);
-  SMESH::TPythonDump() << _this() << ".SetQuadAllowed( " << theValue << " )";
+  if ( NETGENPlugin_Hypothesis_i::isToSetParameter( GetQuadAllowed(),
+                                                    theValue,
+                                                    METH_SetQuadAllowed ))
+  {
+    this->GetImpl()->SetQuadAllowed(theValue);
+    SMESH::TPythonDump() << _this() << ".SetQuadAllowed( " << theValue << " )";
+  }
 }
 
 //=============================================================================
@@ -96,8 +98,6 @@ void NETGENPlugin_Hypothesis_2D_i::SetQuadAllowed (CORBA::Boolean theValue)
 //=============================================================================
 CORBA::Boolean NETGENPlugin_Hypothesis_2D_i::GetQuadAllowed()
 {
-  MESSAGE("NETGENPlugin_Hypothesis_2D_i::GetQuadAllowed");
-  ASSERT(myBaseImpl);
   return this->GetImpl()->GetQuadAllowed();
 }
 
@@ -110,7 +110,6 @@ CORBA::Boolean NETGENPlugin_Hypothesis_2D_i::GetQuadAllowed()
 //=============================================================================
 ::NETGENPlugin_Hypothesis_2D* NETGENPlugin_Hypothesis_2D_i::GetImpl()
 {
-  MESSAGE("NETGENPlugin_Hypothesis_2D_i::GetImpl");
   return (::NETGENPlugin_Hypothesis_2D*)myBaseImpl;
 }
 

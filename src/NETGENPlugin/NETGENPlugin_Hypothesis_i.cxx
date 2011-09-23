@@ -25,7 +25,6 @@
 // Author    : Michael Sazonov (OCN)
 // Date      : 03/04/2006
 // Project   : SALOME
-// $Header$
 //=============================================================================
 //
 #include "NETGENPlugin_Hypothesis_i.hxx"
@@ -40,6 +39,20 @@ using namespace std;
 
 //=============================================================================
 /*!
+ *  Specialization of isToSetParameter<T> for double
+ */
+//=============================================================================
+
+template<>
+bool NETGENPlugin_Hypothesis_i::isToSetParameter<double>(double curValue,
+                                                         double newValue,
+                                                         /*SettingMethod*/int meth)
+{
+  return isToSetParameter(true, (fabs(curValue - newValue) < 1e-20), meth);
+}
+
+//=============================================================================
+/*!
  *  NETGENPlugin_Hypothesis_i::NETGENPlugin_Hypothesis_i
  *
  *  Constructor
@@ -50,7 +63,8 @@ NETGENPlugin_Hypothesis_i (PortableServer::POA_ptr thePOA,
                            int                     theStudyId,
                            ::SMESH_Gen*            theGenImpl)
   : SALOME::GenericObj_i( thePOA ), 
-    SMESH_Hypothesis_i( thePOA )
+    SMESH_Hypothesis_i( thePOA ),
+    mySetMethodFlags(0)
 {
   MESSAGE( "NETGENPlugin_Hypothesis_i::NETGENPlugin_Hypothesis_i" );
   myBaseImpl = new ::NETGENPlugin_Hypothesis (theGenImpl->GetANewId(),
@@ -79,10 +93,11 @@ NETGENPlugin_Hypothesis_i::~NETGENPlugin_Hypothesis_i()
 //=============================================================================
 void NETGENPlugin_Hypothesis_i::SetMaxSize (CORBA::Double theValue)
 {
-  MESSAGE("NETGENPlugin_Hypothesis_i::SetMaxSize");
-  ASSERT(myBaseImpl);
-  this->GetImpl()->SetMaxSize(theValue);
-  SMESH::TPythonDump() << _this() << ".SetMaxSize( " << theValue << " )";
+  if ( isToSetParameter( GetMaxSize(), theValue, METH_SetMaxSize ))
+  {
+    this->GetImpl()->SetMaxSize(theValue);
+    SMESH::TPythonDump() << _this() << ".SetMaxSize( " << theValue << " )";
+  }
 }
 
 //=============================================================================
@@ -94,8 +109,6 @@ void NETGENPlugin_Hypothesis_i::SetMaxSize (CORBA::Double theValue)
 //=============================================================================
 CORBA::Double NETGENPlugin_Hypothesis_i::GetMaxSize()
 {
-  MESSAGE("NETGENPlugin_Hypothesis_i::GetMaxSize");
-  ASSERT(myBaseImpl);
   return this->GetImpl()->GetMaxSize();
 }
 
@@ -108,10 +121,11 @@ CORBA::Double NETGENPlugin_Hypothesis_i::GetMaxSize()
 //=============================================================================
 void NETGENPlugin_Hypothesis_i::SetMinSize (CORBA::Double theValue)
 {
-  MESSAGE("NETGENPlugin_Hypothesis_i::SetMinSize");
-  ASSERT(myBaseImpl);
-  this->GetImpl()->SetMinSize(theValue);
-  SMESH::TPythonDump() << _this() << ".SetMinSize( " << theValue << " )";
+  if ( isToSetParameter( GetMinSize(), theValue, METH_SetMinSize ))
+  {
+    this->GetImpl()->SetMinSize(theValue);
+    SMESH::TPythonDump() << _this() << ".SetMinSize( " << theValue << " )";
+  }
 }
 
 //=============================================================================
@@ -123,8 +137,6 @@ void NETGENPlugin_Hypothesis_i::SetMinSize (CORBA::Double theValue)
 //=============================================================================
 CORBA::Double NETGENPlugin_Hypothesis_i::GetMinSize()
 {
-  MESSAGE("NETGENPlugin_Hypothesis_i::GetMinSize");
-  ASSERT(myBaseImpl);
   return this->GetImpl()->GetMinSize();
 }
 
@@ -137,10 +149,11 @@ CORBA::Double NETGENPlugin_Hypothesis_i::GetMinSize()
 //=============================================================================
 void NETGENPlugin_Hypothesis_i::SetSecondOrder (CORBA::Boolean theValue)
 {
-  MESSAGE("NETGENPlugin_Hypothesis_i::SetSecondOrder");
-  ASSERT(myBaseImpl);
-  this->GetImpl()->SetSecondOrder(theValue);
-  SMESH::TPythonDump() << _this() << ".SetSecondOrder( " << theValue << " )";
+  if ( isToSetParameter( GetSecondOrder(), theValue, METH_SetSecondOrder ))
+  {
+    this->GetImpl()->SetSecondOrder(theValue);
+    SMESH::TPythonDump() << _this() << ".SetSecondOrder( " << theValue << " )";
+  }
 }
 
 //=============================================================================
@@ -152,8 +165,6 @@ void NETGENPlugin_Hypothesis_i::SetSecondOrder (CORBA::Boolean theValue)
 //=============================================================================
 CORBA::Boolean NETGENPlugin_Hypothesis_i::GetSecondOrder()
 {
-  MESSAGE("NETGENPlugin_Hypothesis_i::GetSecondOrder");
-  ASSERT(myBaseImpl);
   return this->GetImpl()->GetSecondOrder();
 }
 
@@ -166,10 +177,11 @@ CORBA::Boolean NETGENPlugin_Hypothesis_i::GetSecondOrder()
 //=============================================================================
 void NETGENPlugin_Hypothesis_i::SetOptimize (CORBA::Boolean theValue)
 {
-  MESSAGE("NETGENPlugin_Hypothesis_i::SetOptimize");
-  ASSERT(myBaseImpl);
-  this->GetImpl()->SetOptimize(theValue);
-  SMESH::TPythonDump() << _this() << ".SetOptimize( " << theValue << " )";
+  if ( isToSetParameter( GetOptimize(), theValue, METH_SetOptimize ))
+  {
+    this->GetImpl()->SetOptimize(theValue);
+    SMESH::TPythonDump() << _this() << ".SetOptimize( " << theValue << " )";
+  }
 }
 
 //=============================================================================
@@ -181,8 +193,6 @@ void NETGENPlugin_Hypothesis_i::SetOptimize (CORBA::Boolean theValue)
 //=============================================================================
 CORBA::Boolean NETGENPlugin_Hypothesis_i::GetOptimize()
 {
-  MESSAGE("NETGENPlugin_Hypothesis_i::GetOptimize");
-  ASSERT(myBaseImpl);
   return this->GetImpl()->GetOptimize();
 }
 
@@ -195,10 +205,11 @@ CORBA::Boolean NETGENPlugin_Hypothesis_i::GetOptimize()
 //=============================================================================
 void NETGENPlugin_Hypothesis_i::SetFineness (CORBA::Long theValue)
 {
-  MESSAGE("NETGENPlugin_Hypothesis_i::SetFineness");
-  ASSERT(myBaseImpl);
-  this->GetImpl()->SetFineness((::NETGENPlugin_Hypothesis::Fineness)theValue);
-  SMESH::TPythonDump() << _this() << ".SetFineness( " << theValue << " )";
+  if ( isToSetParameter( GetFineness(), theValue, METH_SetFineness ))
+  {
+    this->GetImpl()->SetFineness((::NETGENPlugin_Hypothesis::Fineness)theValue);
+    SMESH::TPythonDump() << _this() << ".SetFineness( " << theValue << " )";
+  }
 }
 
 //=============================================================================
@@ -210,8 +221,6 @@ void NETGENPlugin_Hypothesis_i::SetFineness (CORBA::Long theValue)
 //=============================================================================
 CORBA::Long NETGENPlugin_Hypothesis_i::GetFineness()
 {
-  MESSAGE("NETGENPlugin_Hypothesis_i::GetFineness");
-  ASSERT(myBaseImpl);
   return this->GetImpl()->GetFineness();
 }
 
@@ -224,10 +233,11 @@ CORBA::Long NETGENPlugin_Hypothesis_i::GetFineness()
 //=============================================================================
 void NETGENPlugin_Hypothesis_i::SetGrowthRate (CORBA::Double theValue)
 {
-  MESSAGE("NETGENPlugin_Hypothesis_i::SetGrowthRate");
-  ASSERT(myBaseImpl);
-  this->GetImpl()->SetGrowthRate(theValue);
-  SMESH::TPythonDump() << _this() << ".SetGrowthRate( " << theValue << " )";
+  if ( isToSetParameter( GetGrowthRate(), theValue, METH_SetGrowthRate ))
+  {
+    this->GetImpl()->SetGrowthRate(theValue);
+    SMESH::TPythonDump() << _this() << ".SetGrowthRate( " << theValue << " )";
+  }
 }
 
 //=============================================================================
@@ -239,8 +249,6 @@ void NETGENPlugin_Hypothesis_i::SetGrowthRate (CORBA::Double theValue)
 //=============================================================================
 CORBA::Double NETGENPlugin_Hypothesis_i::GetGrowthRate()
 {
-  MESSAGE("NETGENPlugin_Hypothesis_i::GetGrowthRate");
-  ASSERT(myBaseImpl);
   return this->GetImpl()->GetGrowthRate();
 }
 
@@ -253,10 +261,11 @@ CORBA::Double NETGENPlugin_Hypothesis_i::GetGrowthRate()
 //=============================================================================
 void NETGENPlugin_Hypothesis_i::SetNbSegPerEdge (CORBA::Double theValue)
 {
-  MESSAGE("NETGENPlugin_Hypothesis_i::SetNbSegPerEdge");
-  ASSERT(myBaseImpl);
-  this->GetImpl()->SetNbSegPerEdge(theValue);
-  SMESH::TPythonDump() << _this() << ".SetNbSegPerEdge( " << theValue << " )";
+  if ( isToSetParameter( GetNbSegPerEdge(), theValue, METH_SetNbSegPerEdge ))
+  {
+    this->GetImpl()->SetNbSegPerEdge(theValue);
+    SMESH::TPythonDump() << _this() << ".SetNbSegPerEdge( " << theValue << " )";
+  }
 }
 
 //=============================================================================
@@ -268,8 +277,6 @@ void NETGENPlugin_Hypothesis_i::SetNbSegPerEdge (CORBA::Double theValue)
 //=============================================================================
 CORBA::Double NETGENPlugin_Hypothesis_i::GetNbSegPerEdge()
 {
-  MESSAGE("NETGENPlugin_Hypothesis_i::GetNbSegPerEdge");
-  ASSERT(myBaseImpl);
   return this->GetImpl()->GetNbSegPerEdge();
 }
 
@@ -282,10 +289,11 @@ CORBA::Double NETGENPlugin_Hypothesis_i::GetNbSegPerEdge()
 //=============================================================================
 void NETGENPlugin_Hypothesis_i::SetNbSegPerRadius (CORBA::Double theValue)
 {
-  MESSAGE("NETGENPlugin_Hypothesis_i::SetNbSegPerRadius");
-  ASSERT(myBaseImpl);
-  this->GetImpl()->SetNbSegPerRadius(theValue);
-  SMESH::TPythonDump() << _this() << ".SetNbSegPerRadius( " << theValue << " )";
+  if ( isToSetParameter( GetNbSegPerRadius(), theValue, METH_SetNbSegPerRadius ))
+  {
+    this->GetImpl()->SetNbSegPerRadius(theValue);
+    SMESH::TPythonDump() << _this() << ".SetNbSegPerRadius( " << theValue << " )";
+  }
 }
 
 //=============================================================================
@@ -297,14 +305,13 @@ void NETGENPlugin_Hypothesis_i::SetNbSegPerRadius (CORBA::Double theValue)
 //=============================================================================
 CORBA::Double NETGENPlugin_Hypothesis_i::GetNbSegPerRadius()
 {
-  MESSAGE("NETGENPlugin_Hypothesis_i::GetNbSegPerRadius");
-  ASSERT(myBaseImpl);
   return this->GetImpl()->GetNbSegPerRadius();
 }
 
 //=============================================================================
 
-void NETGENPlugin_Hypothesis_i::SetLocalSizeOnShape(GEOM::GEOM_Object_ptr GeomObj, CORBA::Double localSize)
+void NETGENPlugin_Hypothesis_i::SetLocalSizeOnShape(GEOM::GEOM_Object_ptr GeomObj,
+                                                    CORBA::Double         localSize)
 {
   string entry;
   entry = GeomObj->GetStudyEntry();
@@ -313,14 +320,15 @@ void NETGENPlugin_Hypothesis_i::SetLocalSizeOnShape(GEOM::GEOM_Object_ptr GeomOb
 
 //=============================================================================
 
-void NETGENPlugin_Hypothesis_i::SetLocalSizeOnEntry(const char* entry, CORBA::Double localSize)
+void NETGENPlugin_Hypothesis_i::SetLocalSizeOnEntry(const char*   entry,
+                                                    CORBA::Double localSize)
 {
-  bool valueChanged = false;
-  valueChanged = ( this->GetImpl()->GetLocalSizeOnEntry(entry) != localSize );
-  if ( valueChanged )
+  if ( isToSetParameter( GetLocalSizeOnEntry(entry), localSize, METH_SetLocalSizeOnEntry ))
+  {
     this->GetImpl()->SetLocalSizeOnEntry(entry, localSize);
-  if ( valueChanged )
-    SMESH::TPythonDump() << _this() << ".SetLocalSizeOnShape(" << entry << ", " << localSize << ")";
+    SMESH::TPythonDump()
+      << _this() << ".SetLocalSizeOnShape(" << entry << ", " << localSize << ")";
+  }
 }
 
 //=============================================================================
@@ -335,7 +343,8 @@ CORBA::Double NETGENPlugin_Hypothesis_i::GetLocalSizeOnEntry(const char* entry)
 NETGENPlugin::string_array* NETGENPlugin_Hypothesis_i::GetLocalSizeEntries()
 {
   NETGENPlugin::string_array_var result = new NETGENPlugin::string_array();
-  const ::NETGENPlugin_Hypothesis::TLocalSize localSizes = this->GetImpl()->GetLocalSizesAndEntries();
+  const ::NETGENPlugin_Hypothesis::TLocalSize localSizes =
+    this->GetImpl()->GetLocalSizesAndEntries();
   result->length(localSizes.size());
   ::NETGENPlugin_Hypothesis::TLocalSize::const_iterator it = localSizes.begin();
   for (int i=0 ; it != localSizes.end() ; i++, it++)
@@ -363,7 +372,6 @@ void NETGENPlugin_Hypothesis_i::UnsetLocalSizeOnEntry(const char* entry)
 //=============================================================================
 ::NETGENPlugin_Hypothesis* NETGENPlugin_Hypothesis_i::GetImpl()
 {
-  MESSAGE("NETGENPlugin_Hypothesis_i::GetImpl");
   return (::NETGENPlugin_Hypothesis*)myBaseImpl;
 }
 

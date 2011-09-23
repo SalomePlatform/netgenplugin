@@ -90,6 +90,38 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_Hypothesis_i:
   
   // Verify whether hypothesis supports given entity type 
   CORBA::Boolean IsDimSupported( SMESH::Dimension type );
+
+ protected:
+
+  // to remember whether a parameter is already set (issue 0021364)
+  enum SettingMethod
+  {
+    METH_SetMaxSize          = 1,
+    METH_SetMinSize          = 2,
+    METH_SetSecondOrder      = 4,
+    METH_SetOptimize         = 8,
+    METH_SetFineness         = 16,
+    METH_SetGrowthRate       = 32,
+    METH_SetNbSegPerEdge     = 64,
+    METH_SetNbSegPerRadius   = 128,
+    METH_SetLocalSizeOnEntry = 256,
+    METH_LAST                = METH_SetLocalSizeOnEntry
+  };
+  int mySetMethodFlags;
+
+  // Return true if a parameter is not yet set, else return true if a parameter changes.
+  // PythonDumping depends on the result of this function.
+  // Checking only change of a parameter is not enough because then the default values are
+  // not dumped and if the defaults will change then the behaviour of scripts
+  // created without dump of the default parameters will also change what is not good.
+  template<typename T>
+    bool isToSetParameter(T curValue, T newValue, /*SettingMethod*/int meth)
+  {
+    if ( mySetMethodFlags & meth ) // already set, check if a value is changing
+      return ( curValue != newValue );
+    else
+      return ( mySetMethodFlags |= meth ); // == return true
+  }
 };
 
 #endif

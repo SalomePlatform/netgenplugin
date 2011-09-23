@@ -25,7 +25,6 @@
 // Author    : Michael Sazonov (OCN)
 // Date      : 03/04/2006
 // Project   : SALOME
-// $Header$
 //=============================================================================
 //
 #ifndef _NETGENPlugin_Hypothesis_2D_i_HXX_
@@ -63,6 +62,15 @@ class NETGENPLUGIN_EXPORT  NETGENPlugin_Hypothesis_2D_i:
   
   // Verify whether hypothesis supports given entity type 
   CORBA::Boolean IsDimSupported( SMESH::Dimension type );
+
+ protected:
+
+  // to remember whether a parameter is already set (issue 0021364)
+  enum SettingMethod
+  {
+    METH_SetQuadAllowed = NETGENPlugin_Hypothesis_i::METH_LAST * 2,
+    METH_LAST           = METH_SetQuadAllowed
+  };
 };
 
 #endif
