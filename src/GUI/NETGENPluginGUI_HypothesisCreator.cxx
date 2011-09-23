@@ -24,7 +24,6 @@
 //  File   : NETGENPluginGUI_HypothesisCreator.cxx
 //  Author : Michael Zorin
 //  Module : NETGENPlugin
-//  $Header: 
 //
 #include "NETGENPluginGUI_HypothesisCreator.h"
 
@@ -54,15 +53,15 @@
 #include <QHeaderView>
 #include <QPushButton>
 
- enum Fineness
-   {
-     VeryCoarse,
-     Coarse,
-     Moderate,
-     Fine,
-     VeryFine,
-     UserDefined
-   };
+enum Fineness
+  {
+    VeryCoarse,
+    Coarse,
+    Moderate,
+    Fine,
+    VeryFine,
+    UserDefined
+  };
 
 enum {
   STD_TAB = 0,
@@ -88,7 +87,7 @@ enum {
 };
 
 NETGENPluginGUI_HypothesisCreator::NETGENPluginGUI_HypothesisCreator( const QString& theHypType )
-: SMESHGUI_GenericHypothesisCreator( theHypType )
+  : SMESHGUI_GenericHypothesisCreator( theHypType )
 {
   myGeomSelectionTools = NULL;
   myLocalSizeMap.clear();
@@ -107,7 +106,7 @@ bool NETGENPluginGUI_HypothesisCreator::checkParams(QString& msg) const
   readParamsFromHypo( data_old );
   readParamsFromWidgets( data_new );
   bool res = storeParamsToHypo( data_new );
-  storeParamsToHypo( data_old );
+  //storeParamsToHypo( data_old ); -- issue 0021364: Dump of netgen parameters has duplicate lines
   
   res = myMaxSize->isValid(msg,true) && res;
   res = myMinSize->isValid(msg,true) && res;
@@ -116,6 +115,10 @@ bool NETGENPluginGUI_HypothesisCreator::checkParams(QString& msg) const
     res = myNbSegPerEdge->isValid(msg,true) && res;
   if ( myNbSegPerRadius )
     res = myNbSegPerRadius->isValid(msg,true) && res;
+
+  if ( !res ) //  -- issue 0021364: Dump of netgen parameters has duplicate lines
+    storeParamsToHypo( data_old );
+
   return res;
 }
 
