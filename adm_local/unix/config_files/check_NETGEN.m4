@@ -106,8 +106,8 @@ if test "x$NETGEN_HOME" != "x"; then
 
     AC_MSG_CHECKING(for Netgen libraries)
 
-    LDFLAGS_old="$LDFLAGS"
-    LDFLAGS="-L. -lNETGEN $CAS_LDPATH -lTKernel -lTKMath -lTKG3d -lTKBRep -lTKShHealing -lTKSTEP -lTKXSBase -lTKIGES -lTKSTL -lTKTopAlgo $LDFLAGS"
+    LIBS_old="$LIBS"
+    LIBS="-L. -lNETGEN $CAS_LDPATH -lTKernel -lTKMath -lTKG3d -lTKBRep -lTKShHealing -lTKSTEP -lTKXSBase -lTKIGES -lTKSTL -lTKTopAlgo $LIBS"
 
     AC_TRY_COMPILE(#include <iostream>
 #include <fstream>
@@ -153,8 +153,8 @@ namespace nglib {
 
     else
 
-      LDFLAGS_old="$LDFLAGS"
-      LDFLAGS="-L${NETGEN_LIBS_DIR} -lnglib $CAS_LDPATH -lTKernel -lTKMath -lTKG3d -lTKBRep -lTKShHealing -lTKSTEP -lTKXSBase -lTKIGES -lTKSTL -lTKTopAlgo -lTKGeomBase $LDFLAGS"
+      LIBS_old="$LIBS"
+      LIBS="-L${NETGEN_LIBS_DIR} -lnglib $CAS_LDPATH -lTKernel -lTKMath -lTKG3d -lTKBRep -lTKShHealing -lTKSTEP -lTKXSBase -lTKIGES -lTKSTL -lTKTopAlgo -lTKGeomBase $LIBS"
 
       AC_MSG_CHECKING(for official Netgen libraries)
       AC_CACHE_VAL(salome_cv_netgen_lib,[
@@ -227,7 +227,7 @@ namespace nglib {
 
     fi
 
-    LDFLAGS="$LDFLAGS_old"
+    LIBS="$LIBS_old"
   fi
 
   CPPFLAGS="$CPPFLAGS_old"
