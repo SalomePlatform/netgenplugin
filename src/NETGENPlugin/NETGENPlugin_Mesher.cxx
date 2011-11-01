@@ -860,9 +860,23 @@ bool NETGENPlugin_Mesher::fillNgMesh(const netgen::OCCGeometry&     occgeom,
 
     case TopAbs_VERTEX: { // VERTEX
       // --------------------------
-      SMDS_NodeIteratorPtr nodeIt = smDS->GetNodes();
-      if ( nodeIt->more() )
-        ngNodeId( nodeIt->next(), ngMesh, nodeNgIdMap );
+      // issue 21405. Add node only if a VERTEX is shared by a not meshed EDGE,
+      // else netgen removes a free node and nodeVector becomes invalid
+      PShapeIteratorPtr ansIt = helper.GetAncestors( sm->GetSubShape(),
+                                                     *sm->GetFather(),
+                                                     TopAbs_EDGE );
+      bool toAdd = false;
+      while ( const TopoDS_Shape* e = ansIt->next() )
+      {
+        SMESH_subMesh* eSub = helper.GetMesh()->GetSubMesh( *e );
+        if (( toAdd = eSub->IsEmpty() )) break;
+      }
+      if ( toAdd )
+      {
+        SMDS_NodeIteratorPtr nodeIt = smDS->GetNodes();
+        if ( nodeIt->more() )
+          ngNodeId( nodeIt->next(), ngMesh, nodeNgIdMap );
+      }
       break;
     }
     default:;
