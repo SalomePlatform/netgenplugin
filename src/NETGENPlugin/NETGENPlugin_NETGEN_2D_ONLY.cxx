@@ -292,8 +292,8 @@ static TError addSegmentsToMesh(netgen::Mesh&                    ngMesh,
           edgeID = geom.emap.FindIndex( edge );
           posID  = posShapeID;
           isInternalWire = ( edge.Orientation() == TopAbs_INTERNAL );
-          if ( onVertex ) // param on curve is different on each of two edges
-            seg.epgeominfo[ iEnd ].dist = helper.GetNodeU( edge, pnt.node );
+          // if ( onVertex ) // param on curve is different on each of two edges
+          //   seg.epgeominfo[ iEnd ].dist = helper.GetNodeU( edge, pnt.node );
         }
         seg.epgeominfo[ iEnd ].edgenr = edgeID; //  = geom.emap.FindIndex(edge);
       }
