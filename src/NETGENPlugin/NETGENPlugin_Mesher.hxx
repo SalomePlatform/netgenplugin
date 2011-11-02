@@ -97,6 +97,8 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_Mesher
   static double GetDefaultMinSize(const TopoDS_Shape& shape,
                                   const double        maxSize);
 
+  static void RestrictLocalSize(netgen::Mesh& ngMesh, const gp_XYZ& p, const double  size);
+
   static int FillSMesh(const netgen::OCCGeometry&          occgeom,
                        const netgen::Mesh&                 ngMesh,
                        const NETGENPlugin_ngMeshInfo&      initState,

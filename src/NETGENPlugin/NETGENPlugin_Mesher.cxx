@@ -581,6 +581,23 @@ double NETGENPlugin_Mesher::GetDefaultMinSize(const TopoDS_Shape& geom,
 
 //================================================================================
 /*!
+ * \brief Restrict size of elements at a given point
+ */
+//================================================================================
+
+void NETGENPlugin_Mesher::RestrictLocalSize(netgen::Mesh& ngMesh, const gp_XYZ& p, const double size)
+{
+  if ( netgen::mparam.minh > size )
+  {
+    ngMesh.SetMinimalH( size );
+    netgen::mparam.minh = size;
+  }
+  netgen::Point3d pi(p.X(), p.Y(), p.Z());
+  ngMesh.RestrictLocalH( pi, size );
+}
+
+//================================================================================
+/*!
  * \brief fill ngMesh with nodes and elements of computed submeshes
  */
 //================================================================================
@@ -712,9 +729,8 @@ bool NETGENPlugin_Mesher::fillNgMesh(const netgen::OCCGeometry&     occgeom,
           seg.edgenr = ngMesh.GetNSeg() + 1; // segment id
           ngMesh.AddSegment (seg);
 
-          netgen::Point3d ngP1(p1.node->X(), p1.node->Y(), p1.node->Z());
-          netgen::Point3d ngP2(p2.node->X(), p2.node->Y(), p2.node->Z());
-          ngMesh.RestrictLocalH( netgen::Center( ngP1,ngP2), Dist(ngP1,ngP2));
+          SMESH_TNodeXYZ np1( p1.node ), np2( p2.node );
+          RestrictLocalSize( ngMesh, 0.5*(np1+np2), (np1-np2).Modulus() );
 
 #ifdef DUMP_SEGMENTS
           cout << "Segment: " << seg.edgenr << " on SMESH face " << helper.GetMeshDS()->ShapeToIndex( face ) << endl
@@ -1676,8 +1692,7 @@ namespace
       TopoDS_Iterator vIt( edge );
       if ( !vIt.More() ) return;
       gp_Pnt p = BRep_Tool::Pnt( TopoDS::Vertex( vIt.Value() ));
-      netgen::Point3d pi(p.X(), p.Y(), p.Z());
-      mesh.RestrictLocalH(pi, size);
+      NETGENPlugin_Mesher::RestrictLocalSize( mesh, p.XYZ(), size );
     }
     else
     {
@@ -1686,12 +1701,12 @@ namespace
       {
         Standard_Real u = u1 + delta*i;
         gp_Pnt p = curve->Value(u);
+        NETGENPlugin_Mesher::RestrictLocalSize( mesh, p.XYZ(), size );
         netgen::Point3d pi(p.X(), p.Y(), p.Z());
-        mesh.RestrictLocalH(pi, size);
         double resultSize = mesh.GetH(pi);
         if ( resultSize - size > 0.1*size )
           // netgen does restriction iff oldH/newH > 1.2 (localh.cpp:136)
-          mesh.RestrictLocalH(pi, resultSize/1.201);
+          NETGENPlugin_Mesher::RestrictLocalSize( mesh, p.XYZ(), resultSize/1.201 );
       }
     }
   }
@@ -1884,8 +1899,7 @@ bool NETGENPlugin_Mesher::Compute()
         const TopoDS_Shape& shape = ShapesWithLocalSize.FindKey(key);
         const TopoDS_Vertex& v = TopoDS::Vertex(shape);
         gp_Pnt p = BRep_Tool::Pnt(v);
-        netgen::Point3d pi(p.X(), p.Y(), p.Z());
-        ngMesh->RestrictLocalH(pi, hi);
+        NETGENPlugin_Mesher::RestrictLocalSize( *ngMesh, p.XYZ(), hi );
       }
     }
 
