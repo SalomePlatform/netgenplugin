@@ -301,15 +301,14 @@ static TError addSegmentsToMesh(netgen::Mesh&                    ngMesh,
       ngMesh.AddSegment (seg);
       {
         // restrict size of elements near the segment
-        netgen::Point3d ngP1(n->X(), n->Y(), n->Z());
-        n = uvPtVec[ i+1 ].node;
-        netgen::Point3d ngP2(n->X(), n->Y(), n->Z());
+        SMESH_TNodeXYZ np1( n ), np2( uvPtVec[ i+1 ].node );
         // get an average size of adjacent segments to avoid sharp change of
         // element size (regression on issue 0020452, note 0010898)
         int iPrev = SMESH_MesherHelper::WrapIndex( i-1, nbSegments );
         int iNext = SMESH_MesherHelper::WrapIndex( i+1, nbSegments );
         double avgH = ( segLen[ iPrev ] + segLen[ i ] + segLen[ iNext ]) / 3;
-        ngMesh.RestrictLocalH( netgen::Center( ngP1,ngP2), avgH );
+
+        NETGENPlugin_Mesher::RestrictLocalSize( ngMesh, 0.5*(np1+np2), avgH );
       }
 #ifdef DUMP_SEGMENTS
         cout << "Segment: " << seg.edgenr << endl
