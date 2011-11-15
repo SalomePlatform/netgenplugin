@@ -413,30 +413,33 @@ namespace
 
   void updateTriangulation( const TopoDS_Shape& shape )
   {
-    static set< Poly_Triangulation* > updated;
+    // static set< Poly_Triangulation* > updated;
 
-    TopLoc_Location loc;
-    TopExp_Explorer fExp( shape, TopAbs_FACE );
-    for ( ; fExp.More(); fExp.Next() )
-    {
-      Handle(Poly_Triangulation) triangulation =
-        BRep_Tool::Triangulation ( TopoDS::Face( fExp.Current() ), loc);
-      if ( triangulation.IsNull() ||
-           updated.insert( triangulation.operator->() ).second )
-      {
-        BRepTools::Clean (shape);
+    // TopLoc_Location loc;
+    // TopExp_Explorer fExp( shape, TopAbs_FACE );
+    // for ( ; fExp.More(); fExp.Next() )
+    // {
+    //   Handle(Poly_Triangulation) triangulation =
+    //     BRep_Tool::Triangulation ( TopoDS::Face( fExp.Current() ), loc);
+    //   if ( triangulation.IsNull() ||
+    //        updated.insert( triangulation.operator->() ).second )
+    //   {
+    //     BRepTools::Clean (shape);
         try {
 #if (OCC_VERSION_MAJOR << 16 | OCC_VERSION_MINOR << 8 | OCC_VERSION_MAINTENANCE) > 0x060100
           OCC_CATCH_SIGNALS;
 #endif
           BRepMesh_IncrementalMesh e(shape, 0.01, true);
+
         }
         catch (Standard_Failure)
         {
-          updated.erase( triangulation.operator->() );
         }
-      }
-    }
+  //       updated.erase( triangulation.operator->() );
+  //       triangulation = BRep_Tool::Triangulation ( TopoDS::Face( fExp.Current() ), loc);
+  //       updated.insert( triangulation.operator->() );
+  //     }
+  //   }
   }
 }
 
@@ -549,6 +552,7 @@ double NETGENPlugin_Mesher::GetDefaultMinSize(const TopoDS_Shape& geom,
     Handle(Poly_Triangulation) triangulation =
       BRep_Tool::Triangulation ( TopoDS::Face( fExp.Current() ), loc);
     if ( triangulation.IsNull() ) continue;
+    const double fTol = BRep_Tool::Tolerance( TopoDS::Face( fExp.Current() ));
     const TColgp_Array1OfPnt&   points = triangulation->Nodes();
     const Poly_Array1OfTriangle& trias = triangulation->Triangles();
     for ( int iT = trias.Lower(); iT <= trias.Upper(); ++iT )
@@ -557,7 +561,7 @@ double NETGENPlugin_Mesher::GetDefaultMinSize(const TopoDS_Shape& geom,
       for ( int j = 0; j < 3; ++j )
       {
         double dist2 = points(*pi[j]).SquareDistance( points( *pi[j+1] ));
-        if ( dist2 < minh )
+        if ( dist2 < minh && fTol*fTol < dist2 )
           minh = dist2;
         bb.Add( points(*pi[j]));
       }
