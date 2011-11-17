@@ -196,6 +196,8 @@ void NETGENPlugin_Mesher::SetParameters(const NETGENPlugin_Hypothesis* hyp)
     // Initialize global NETGEN parameters:
     // maximal mesh segment size
     mparams.maxh = hyp->GetMaxSize();
+    // maximal mesh element linear size
+    mparams.minh = hyp->GetMinSize();
     // minimal number of segments per edge
     mparams.segmentsperedge = hyp->GetNbSegPerEdge();
     // rate of growth of size between elements
