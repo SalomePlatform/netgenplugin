@@ -333,11 +333,24 @@ diff -Naur netgen-4.9.13_orig/libsrc/occ/occgenmesh.cpp netgen-4.9.13_new/libsrc
  
                 if (geom.vmap.FindIndex(TopExp::FirstVertex (edge)) ==
                    geom.vmap.FindIndex(TopExp::LastVertex (edge)))
-@@ -481,13 +499,45 @@
+@@ -479,15 +497,64 @@
+                }
+                else
                 {
-                   Point<3> fp = occ2ng (BRep_Tool::Pnt (TopExp::FirstVertex (edge)));
-                   Point<3> lp = occ2ng (BRep_Tool::Pnt (TopExp::LastVertex (edge)));
+-                  Point<3> fp = occ2ng (BRep_Tool::Pnt (TopExp::FirstVertex (edge)));
+-                  Point<3> lp = occ2ng (BRep_Tool::Pnt (TopExp::LastVertex (edge)));
++                 TopoDS_Iterator vIt( edge, false );
++                 TopoDS_Vertex v1 = TopoDS::Vertex( vIt.Value() ); vIt.Next();
++                 TopoDS_Vertex v2 = TopoDS::Vertex( vIt.Value() );
++                 if ( v1.Orientation() == TopAbs_REVERSED )
++                   std::swap( v1, v2 );
++                 const bool isClosedEdge = v1.IsSame( v2 );
++                 
++                  Point<3> fp = occ2ng (BRep_Tool::Pnt (v1));
++                  Point<3> lp = occ2ng (BRep_Tool::Pnt (v2));
 +                  double tol2 = std::min( eps*eps, 1e-6 * Dist2( fp, lp ));
++                  if ( isClosedEdge )
++                    tol2 = BRep_Tool::Tolerance( v1 ) * BRep_Tool::Tolerance( v1 );
  
                    pnums[0] = -1;
                    pnums.Last() = -1;
@@ -348,40 +361,48 @@ diff -Naur netgen-4.9.13_orig/libsrc/occ/occgenmesh.cpp netgen-4.9.13_new/libsrc
 +                    if (Dist2 (mesh[pi], fp) < tol2) pnums[0] = pi;
 +                    if (Dist2 (mesh[pi], lp) < tol2) pnums.Last() = pi;
 +                  }
-+                  if ( pnums[0] == pnums.Last() )
-+                    pnums[0] = -1;
++                  if (( isClosedEdge && pnums[0] != pnums.Last() ) ||
++                      ( !isClosedEdge && pnums[0] == pnums.Last() ))
++                    pnums[0] = pnums.Last() = -1;
 +                  if ( pnums[0] == -1 || pnums.Last() == -1 )
 +                  {
 +                    // take into account a possible large gap between a vertex and an edge curve
-+                    // and a large vertex tolerance covering the whole edge
++                    // end and a large vertex tolerance covering the whole edge
 +                    if ( pnums[0] == -1 )
 +                    {
-+                      double tol = BRep_Tool::Tolerance( TopExp::FirstVertex (edge));
++                      double tol = BRep_Tool::Tolerance( v1 );
 +                      for (PointIndex pi = 1; pi < first_ep; pi++)
 +                        if (pi != pnums.Last() && Dist2 (mesh[pi], fp) < 2*tol*tol)
 +                          pnums[0] = pi;
 +
 +                      if ( pnums[0] == -1 )
-+                        pnums[0] = geom.vmap.FindIndex (TopExp::FirstVertex (edge));
++                        pnums[0] = first_ep-1- nvertices + geom.vmap.FindIndex ( v1 );
 +                    }
-+                    if ( pnums.Last() == -1 )
++                    if ( isClosedEdge )
 +                    {
-+                      double tol = BRep_Tool::Tolerance( TopExp::LastVertex (edge));
-+                      for (PointIndex pi = 1; pi < first_ep; pi++)
-+                        if (pi != pnums[0] && Dist2 (mesh[pi], lp) < 2*tol*tol)
-+                          pnums.Last() = pi;
-+
-+                      if ( pnums.Last() == -1 )
-+                        pnums.Last() = geom.vmap.FindIndex (TopExp::LastVertex (edge));
++                      pnums.Last() = pnums[0];
 +                    }
++                    else
++                    {
++                      if ( pnums.Last() == -1 )
++                      {
++                        double tol = BRep_Tool::Tolerance( v2 );
++                        for (PointIndex pi = 1; pi < first_ep; pi++)
++                          if (pi != pnums[0] && Dist2 (mesh[pi], lp) < 2*tol*tol)
++                            pnums.Last() = pi;
 +
-+                    if ( Dist2( fp, mesh[PointIndex(pnums[0])]) >
-+                         Dist2( lp, mesh[PointIndex(pnums.Last())]))
++                        if ( pnums.Last() == -1 )
++                          pnums.Last() = first_ep-1-nvertices + geom.vmap.FindIndex ( v2 );
++                      }
++
++                      if ( Dist2( fp, mesh[PointIndex(pnums[0])]) >
++                           Dist2( lp, mesh[PointIndex(pnums.Last())]))
 +                      std::swap( pnums[0], pnums.Last() );
++                    }
                    }
                 }
  
-@@ -633,7 +683,8 @@
+@@ -633,7 +700,8 @@
           }
  
           (*testout) << "mesh face " << k << endl;
@@ -391,7 +412,7 @@ diff -Naur netgen-4.9.13_orig/libsrc/occ/occgenmesh.cpp netgen-4.9.13_new/libsrc
           geom.facemeshstatus[k-1] = -1;
  
  
-@@ -901,7 +952,8 @@
+@@ -901,7 +969,8 @@
           //      if (k != 36) continue;
  
           //      (*testout) << "optimize face " << k << endl;
@@ -401,7 +422,7 @@ diff -Naur netgen-4.9.13_orig/libsrc/occ/occgenmesh.cpp netgen-4.9.13_new/libsrc
  
           FaceDescriptor & fd = mesh.GetFaceDescriptor(k);
  
-@@ -1456,3 +1508,4 @@
+@@ -1456,3 +1525,4 @@
  }
  
  #endif
