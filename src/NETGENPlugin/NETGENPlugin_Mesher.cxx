@@ -614,9 +614,8 @@ bool NETGENPlugin_Mesher::fillNgMesh(const netgen::OCCGeometry&     occgeom,
                                      const list< SMESH_subMesh* > & meshedSM)
 {
   TNode2IdMap nodeNgIdMap;
-  if ( !nodeVec.empty() )
-    for ( int i = 1; i < nodeVec.size(); ++i )
-      nodeNgIdMap.insert( make_pair( nodeVec[i], i ));
+  for ( int i = 1; i < nodeVec.size(); ++i )
+    nodeNgIdMap.insert( make_pair( nodeVec[i], i ));
 
   TopTools_MapOfShape visitedShapes;
   map< SMESH_subMesh*, set< int > > visitedEdgeSM2Faces;
@@ -882,7 +881,7 @@ bool NETGENPlugin_Mesher::fillNgMesh(const netgen::OCCGeometry&     occgeom,
 
     case TopAbs_VERTEX: { // VERTEX
       // --------------------------
-      // issue 21405. Add node only if a VERTEX is shared by a not meshed EDGE,
+      // issue 0021405. Add node only if a VERTEX is shared by a not meshed EDGE,
       // else netgen removes a free node and nodeVector becomes invalid
       PShapeIteratorPtr ansIt = helper.GetAncestors( sm->GetSubShape(),
                                                      *sm->GetFather(),
