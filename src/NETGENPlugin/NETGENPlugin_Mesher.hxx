@@ -136,6 +136,7 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_Mesher
   const TopoDS_Shape&  _shape;
   bool                 _isVolume;
   bool                 _optimize;
+  int                  _fineness;
 
   const NETGENPlugin_SimpleHypothesis_2D * _simpleHyp;
   std::map< int, std::pair<int,int> >      _faceDescriptors;

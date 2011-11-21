@@ -119,6 +119,7 @@ NETGENPlugin_Mesher::NETGENPlugin_Mesher (SMESH_Mesh* mesh,
     _shape   (aShape),
     _isVolume(isVolume),
     _optimize(true),
+    _fineness(NETGENPlugin_Hypothesis::GetDefaultFineness()),
     _simpleHyp(NULL)
 {
   defaultParameters();
@@ -153,6 +154,7 @@ void NETGENPlugin_Mesher::defaultParameters()
     mparams.quad = 0;
   else
     mparams.quad = NETGENPlugin_Hypothesis_2D::GetDefaultQuadAllowed() ? 1 : 0;
+  _fineness = NETGENPlugin_Hypothesis::GetDefaultFineness();
 }
 
 //=============================================================================
@@ -212,6 +214,7 @@ void NETGENPlugin_Mesher::SetParameters(const NETGENPlugin_Hypothesis* hyp)
       mparams.quad = static_cast<const NETGENPlugin_Hypothesis_2D*>
         (hyp)->GetQuadAllowed() ? 1 : 0;
     _optimize = hyp->GetOptimize();
+    _fineness = hyp->GetFineness();
     _simpleHyp = NULL;
 
     SMESH_Gen_i* smeshGen_i = SMESH_Gen_i::GetSMESHGen();
@@ -1842,7 +1845,7 @@ bool NETGENPlugin_Mesher::Compute()
 
     if ( mparams.maxh == 0.0 )
       mparams.maxh = occgeo.boundingbox.Diam();
-    if ( _simpleHyp || mparams.minh == 0.0 )
+    if ( _simpleHyp || ( mparams.minh == 0.0 && _fineness != NETGENPlugin_Hypothesis::UserDefined))
       mparams.minh = GetDefaultMinSize( _shape, mparams.maxh );
 #ifdef NETGEN_NEW
     occgeo.face_maxh = mparams.maxh;
