@@ -119,6 +119,7 @@ NETGENPlugin_Mesher::NETGENPlugin_Mesher (SMESH_Mesh* mesh,
     _shape   (aShape),
     _isVolume(isVolume),
     _optimize(true),
+    _fineness(NETGENPlugin_Hypothesis::GetDefaultFineness()),
     _simpleHyp(NULL)
 {
   defaultParameters();
@@ -153,6 +154,7 @@ void NETGENPlugin_Mesher::defaultParameters()
     mparams.quad = 0;
   else
     mparams.quad = NETGENPlugin_Hypothesis_2D::GetDefaultQuadAllowed() ? 1 : 0;
+  _fineness = NETGENPlugin_Hypothesis::GetDefaultFineness();
 }
 
 //=============================================================================
@@ -196,6 +198,8 @@ void NETGENPlugin_Mesher::SetParameters(const NETGENPlugin_Hypothesis* hyp)
     // Initialize global NETGEN parameters:
     // maximal mesh segment size
     mparams.maxh = hyp->GetMaxSize();
+    // maximal mesh element linear size
+    mparams.minh = hyp->GetMinSize();
     // minimal number of segments per edge
     mparams.segmentsperedge = hyp->GetNbSegPerEdge();
     // rate of growth of size between elements
@@ -210,6 +214,7 @@ void NETGENPlugin_Mesher::SetParameters(const NETGENPlugin_Hypothesis* hyp)
       mparams.quad = static_cast<const NETGENPlugin_Hypothesis_2D*>
         (hyp)->GetQuadAllowed() ? 1 : 0;
     _optimize = hyp->GetOptimize();
+    _fineness = hyp->GetFineness();
     _simpleHyp = NULL;
 
     SMESH_Gen_i* smeshGen_i = SMESH_Gen_i::GetSMESHGen();
@@ -413,30 +418,33 @@ namespace
 
   void updateTriangulation( const TopoDS_Shape& shape )
   {
-    static set< Poly_Triangulation* > updated;
+    // static set< Poly_Triangulation* > updated;
 
-    TopLoc_Location loc;
-    TopExp_Explorer fExp( shape, TopAbs_FACE );
-    for ( ; fExp.More(); fExp.Next() )
-    {
-      Handle(Poly_Triangulation) triangulation =
-        BRep_Tool::Triangulation ( TopoDS::Face( fExp.Current() ), loc);
-      if ( triangulation.IsNull() ||
-           updated.insert( triangulation.operator->() ).second )
-      {
-        BRepTools::Clean (shape);
+    // TopLoc_Location loc;
+    // TopExp_Explorer fExp( shape, TopAbs_FACE );
+    // for ( ; fExp.More(); fExp.Next() )
+    // {
+    //   Handle(Poly_Triangulation) triangulation =
+    //     BRep_Tool::Triangulation ( TopoDS::Face( fExp.Current() ), loc);
+    //   if ( triangulation.IsNull() ||
+    //        updated.insert( triangulation.operator->() ).second )
+    //   {
+    //     BRepTools::Clean (shape);
         try {
 #if (OCC_VERSION_MAJOR << 16 | OCC_VERSION_MINOR << 8 | OCC_VERSION_MAINTENANCE) > 0x060100
           OCC_CATCH_SIGNALS;
 #endif
           BRepMesh_IncrementalMesh e(shape, 0.01, true);
+
         }
         catch (Standard_Failure)
         {
-          updated.erase( triangulation.operator->() );
         }
-      }
-    }
+  //       updated.erase( triangulation.operator->() );
+  //       triangulation = BRep_Tool::Triangulation ( TopoDS::Face( fExp.Current() ), loc);
+  //       updated.insert( triangulation.operator->() );
+  //     }
+  //   }
   }
 }
 
@@ -549,6 +557,7 @@ double NETGENPlugin_Mesher::GetDefaultMinSize(const TopoDS_Shape& geom,
     Handle(Poly_Triangulation) triangulation =
       BRep_Tool::Triangulation ( TopoDS::Face( fExp.Current() ), loc);
     if ( triangulation.IsNull() ) continue;
+    const double fTol = BRep_Tool::Tolerance( TopoDS::Face( fExp.Current() ));
     const TColgp_Array1OfPnt&   points = triangulation->Nodes();
     const Poly_Array1OfTriangle& trias = triangulation->Triangles();
     for ( int iT = trias.Lower(); iT <= trias.Upper(); ++iT )
@@ -557,7 +566,7 @@ double NETGENPlugin_Mesher::GetDefaultMinSize(const TopoDS_Shape& geom,
       for ( int j = 0; j < 3; ++j )
       {
         double dist2 = points(*pi[j]).SquareDistance( points( *pi[j+1] ));
-        if ( dist2 < minh )
+        if ( dist2 < minh && fTol*fTol < dist2 )
           minh = dist2;
         bb.Add( points(*pi[j]));
       }
@@ -581,6 +590,23 @@ double NETGENPlugin_Mesher::GetDefaultMinSize(const TopoDS_Shape& geom,
 
 //================================================================================
 /*!
+ * \brief Restrict size of elements at a given point
+ */
+//================================================================================
+
+void NETGENPlugin_Mesher::RestrictLocalSize(netgen::Mesh& ngMesh, const gp_XYZ& p, const double size)
+{
+  if ( netgen::mparam.minh > size )
+  {
+    ngMesh.SetMinimalH( size );
+    netgen::mparam.minh = size;
+  }
+  netgen::Point3d pi(p.X(), p.Y(), p.Z());
+  ngMesh.RestrictLocalH( pi, size );
+}
+
+//================================================================================
+/*!
  * \brief fill ngMesh with nodes and elements of computed submeshes
  */
 //================================================================================
@@ -591,9 +617,8 @@ bool NETGENPlugin_Mesher::fillNgMesh(const netgen::OCCGeometry&     occgeom,
                                      const list< SMESH_subMesh* > & meshedSM)
 {
   TNode2IdMap nodeNgIdMap;
-  if ( !nodeVec.empty() )
-    for ( int i = 1; i < nodeVec.size(); ++i )
-      nodeNgIdMap.insert( make_pair( nodeVec[i], i ));
+  for ( int i = 1; i < nodeVec.size(); ++i )
+    nodeNgIdMap.insert( make_pair( nodeVec[i], i ));
 
   TopTools_MapOfShape visitedShapes;
   map< SMESH_subMesh*, set< int > > visitedEdgeSM2Faces;
@@ -712,9 +737,8 @@ bool NETGENPlugin_Mesher::fillNgMesh(const netgen::OCCGeometry&     occgeom,
           seg.edgenr = ngMesh.GetNSeg() + 1; // segment id
           ngMesh.AddSegment (seg);
 
-          netgen::Point3d ngP1(p1.node->X(), p1.node->Y(), p1.node->Z());
-          netgen::Point3d ngP2(p2.node->X(), p2.node->Y(), p2.node->Z());
-          ngMesh.RestrictLocalH( netgen::Center( ngP1,ngP2), Dist(ngP1,ngP2));
+          SMESH_TNodeXYZ np1( p1.node ), np2( p2.node );
+          RestrictLocalSize( ngMesh, 0.5*(np1+np2), (np1-np2).Modulus() );
 
 #ifdef DUMP_SEGMENTS
           cout << "Segment: " << seg.edgenr << " on SMESH face " << helper.GetMeshDS()->ShapeToIndex( face ) << endl
@@ -860,9 +884,23 @@ bool NETGENPlugin_Mesher::fillNgMesh(const netgen::OCCGeometry&     occgeom,
 
     case TopAbs_VERTEX: { // VERTEX
       // --------------------------
-      SMDS_NodeIteratorPtr nodeIt = smDS->GetNodes();
-      if ( nodeIt->more() )
-        ngNodeId( nodeIt->next(), ngMesh, nodeNgIdMap );
+      // issue 0021405. Add node only if a VERTEX is shared by a not meshed EDGE,
+      // else netgen removes a free node and nodeVector becomes invalid
+      PShapeIteratorPtr ansIt = helper.GetAncestors( sm->GetSubShape(),
+                                                     *sm->GetFather(),
+                                                     TopAbs_EDGE );
+      bool toAdd = false;
+      while ( const TopoDS_Shape* e = ansIt->next() )
+      {
+        SMESH_subMesh* eSub = helper.GetMesh()->GetSubMesh( *e );
+        if (( toAdd = eSub->IsEmpty() )) break;
+      }
+      if ( toAdd )
+      {
+        SMDS_NodeIteratorPtr nodeIt = smDS->GetNodes();
+        if ( nodeIt->more() )
+          ngNodeId( nodeIt->next(), ngMesh, nodeNgIdMap );
+      }
       break;
     }
     default:;
@@ -1662,8 +1700,7 @@ namespace
       TopoDS_Iterator vIt( edge );
       if ( !vIt.More() ) return;
       gp_Pnt p = BRep_Tool::Pnt( TopoDS::Vertex( vIt.Value() ));
-      netgen::Point3d pi(p.X(), p.Y(), p.Z());
-      mesh.RestrictLocalH(pi, size);
+      NETGENPlugin_Mesher::RestrictLocalSize( mesh, p.XYZ(), size );
     }
     else
     {
@@ -1672,12 +1709,12 @@ namespace
       {
         Standard_Real u = u1 + delta*i;
         gp_Pnt p = curve->Value(u);
+        NETGENPlugin_Mesher::RestrictLocalSize( mesh, p.XYZ(), size );
         netgen::Point3d pi(p.X(), p.Y(), p.Z());
-        mesh.RestrictLocalH(pi, size);
         double resultSize = mesh.GetH(pi);
         if ( resultSize - size > 0.1*size )
           // netgen does restriction iff oldH/newH > 1.2 (localh.cpp:136)
-          mesh.RestrictLocalH(pi, resultSize/1.201);
+          NETGENPlugin_Mesher::RestrictLocalSize( mesh, p.XYZ(), resultSize/1.201 );
       }
     }
   }
@@ -1808,7 +1845,7 @@ bool NETGENPlugin_Mesher::Compute()
 
     if ( mparams.maxh == 0.0 )
       mparams.maxh = occgeo.boundingbox.Diam();
-    if ( _simpleHyp || mparams.minh == 0.0 )
+    if ( _simpleHyp || ( mparams.minh == 0.0 && _fineness != NETGENPlugin_Hypothesis::UserDefined))
       mparams.minh = GetDefaultMinSize( _shape, mparams.maxh );
 #ifdef NETGEN_NEW
     occgeo.face_maxh = mparams.maxh;
@@ -1870,8 +1907,7 @@ bool NETGENPlugin_Mesher::Compute()
         const TopoDS_Shape& shape = ShapesWithLocalSize.FindKey(key);
         const TopoDS_Vertex& v = TopoDS::Vertex(shape);
         gp_Pnt p = BRep_Tool::Pnt(v);
-        netgen::Point3d pi(p.X(), p.Y(), p.Z());
-        ngMesh->RestrictLocalH(pi, hi);
+        NETGENPlugin_Mesher::RestrictLocalSize( *ngMesh, p.XYZ(), hi );
       }
     }
 

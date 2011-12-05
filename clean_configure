@@ -24,10 +24,5 @@ find . -name "*.pyc" -print -exec rm {} \;
 #exit
 # ==================== ON SORT AVANT
 
-find bin -name Makefile.in | xargs rm -f
-find doc -name Makefile.in | xargs rm -f
-find idl -name Makefile.in | xargs rm -f
-find resources -name Makefile.in | xargs rm -f
-find salome_adm -name Makefile.in | xargs rm -f
-find src -name Makefile.in | xargs rm -f
-rm -f Makefile.in
+find . -name Makefile.in | xargs rm -f
+( cd adm_local/unix/config_files && rm -f config.* depcomp install-sh ltmain.sh missing py-compile )
