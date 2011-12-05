@@ -65,6 +65,7 @@ libNETGENPluginGUI_la_CPPFLAGS = \
 	-I$(top_builddir)/idl
 
 libNETGENPluginGUI_la_LDFLAGS  = \
+	../../idl/libSalomeIDLNETGENPLUGIN.la \
 	../NETGENPlugin/libNETGENEngine.la \
 	${QT_MT_LIBS} \
 	${GUI_LDFLAGS} -lSalomeApp -lqtx -lsuit -lSalomeObject -lLightApp \
