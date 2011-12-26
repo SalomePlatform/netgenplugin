@@ -18,7 +18,6 @@
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 //
 // See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
-//
 
 //  NETGENPlugin : C++ implementation
 // File      : NETGENPlugin_Mesher.cxx
@@ -26,7 +25,7 @@
 // Date      : 31/03/2006
 // Project   : SALOME
 //=============================================================================
-//
+
 #include "NETGENPlugin_Mesher.hxx"
 #include "NETGENPlugin_Hypothesis_2D.hxx"
 #include "NETGENPlugin_SimpleHypothesis_3D.hxx"
@@ -1355,9 +1354,9 @@ void NETGENPlugin_Mesher::addIntVerticesInSolids(const netgen::OCCGeometry&     
         angle2ID.insert( make_pair( v2p1.Angle( v2p ), closeFace[j]));
       }
       // get node with angle of 60 degrees or greater
-      map< double, int >::iterator angle_id = angle2ID.lower_bound( 60*PI180 );
+      map< double, int >::iterator angle_id = angle2ID.lower_bound( 60. * M_PI / 180. );
       if ( angle_id == angle2ID.end() ) angle_id = --angle2ID.end();
-      const double minAngle = 30 * PI180;
+      const double minAngle = 30. * M_PI / 180.;
       const double angle = angle_id->first;
       bool angleOK = ( angle > minAngle );
 
