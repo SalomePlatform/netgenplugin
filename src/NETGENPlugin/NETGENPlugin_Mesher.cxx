@@ -1794,24 +1794,6 @@ bool NETGENPlugin_Mesher::Compute()
   PrepareOCCgeometry( occgeo, _shape, *_mesh, meshedSM, &internals );
 
   // -------------------------
-  // Local size on faces
-  // -------------------------
-  
-#ifdef NETGEN_NEW
-  if ( ! _simpleHyp )
-    {
-      for(std::map<int,double>::const_iterator it=FaceId2LocalSize.begin(); it!=FaceId2LocalSize.end(); it++)
-        {
-          int key = (*it).first;
-          double val = (*it).second;
-          const TopoDS_Shape& shape = ShapesWithLocalSize.FindKey(key);
-          int faceNgID = occgeo.fmap.FindIndex(shape);
-          occgeo.SetFaceMaxH(faceNgID, val);
-        }
-    }
-#endif
-  
-  // -------------------------
   // Generate the mesh
   // -------------------------
 
@@ -1846,8 +1828,19 @@ bool NETGENPlugin_Mesher::Compute()
       mparams.maxh = occgeo.boundingbox.Diam();
     if ( _simpleHyp || ( mparams.minh == 0.0 && _fineness != NETGENPlugin_Hypothesis::UserDefined))
       mparams.minh = GetDefaultMinSize( _shape, mparams.maxh );
+
 #ifdef NETGEN_NEW
+    // Local size on faces
     occgeo.face_maxh = mparams.maxh;
+    for(map<int,double>::const_iterator it=FaceId2LocalSize.begin();
+        it!=FaceId2LocalSize.end(); it++)
+    {
+      int key = (*it).first;
+      double val = (*it).second;
+      const TopoDS_Shape& shape = ShapesWithLocalSize.FindKey(key);
+      int faceNgID = occgeo.fmap.FindIndex(shape);
+      occgeo.SetFaceMaxH(faceNgID, val);
+    }
 #endif
 
     // Let netgen create ngMesh and calculate element size on not meshed shapes
