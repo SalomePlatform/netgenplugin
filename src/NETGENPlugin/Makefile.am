@@ -101,3 +101,6 @@ libNETGENEngine_la_LDFLAGS  += \
 	$(MED_LDFLAGS) -lSalomeIDLMED \
 	$(SMESH_LDFLAGS) -lSMESHimpl -lSMESHEngine -lSMESHUtils -lStdMeshersEngine -lStdMeshers -lSMESHDS -lSMDS -lSMESHControls \
 	$(KERNEL_LDFLAGS) -lSalomeGenericObj -lSalomeNS -lSALOMELocalTrace -lOpUtil
+
+# Scripts to be installed.
+dist_salomescript_DATA= NETGENPluginDC.py
