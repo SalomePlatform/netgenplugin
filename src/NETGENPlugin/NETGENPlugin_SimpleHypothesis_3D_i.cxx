@@ -92,7 +92,7 @@ void NETGENPlugin_SimpleHypothesis_3D_i::SetMaxElementVolume(CORBA::Double value
   MESSAGE("NETGENPlugin_SimpleHypothesis_3D_i::SetMaxElementVolume");
   ASSERT(myBaseImpl);
   this->GetImpl()->SetMaxElementVolume(value);
-  SMESH::TPythonDump() << _this() << ".SetMaxElementVolume( " << value << " )";
+  SMESH::TPythonDump() << _this() << ".SetMaxElementVolume( " << SMESH::TVar(value) << " )";
 }
 
 

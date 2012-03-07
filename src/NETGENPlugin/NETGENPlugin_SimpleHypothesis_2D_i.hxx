@@ -66,10 +66,21 @@ class NETGENPLUGIN_EXPORT  NETGENPlugin_SimpleHypothesis_2D_i:
   CORBA::Boolean GetAllowQuadrangles();
 
   // Get implementation
-  ::NETGENPlugin_SimpleHypothesis_2D* GetImpl();
+  ::NETGENPlugin_SimpleHypothesis_2D* GetImpl() const;
   
   // Verify whether hypothesis supports given entity type 
   CORBA::Boolean IsDimSupported( SMESH::Dimension type );
+
+ public:
+  // method intended to remove explicit treatment of Netgen hypotheses from
+  // SMESH_NoteBook to assure backward compatibility after implemeneting
+  // issue 0021308: Remove hard-coded dependency of the external mesh plugins
+  virtual int getParamIndex(const TCollection_AsciiString& method, int nbVars) const;
+
+  // method used to convert variable parameters stored in an old study
+  // into myMethod2VarParams. It should return a method name for an index of
+  // variable parameters. Index is countered from zero
+  virtual std::string getMethodOfParameter(const int paramIndex, int nbVars) const;
 };
 
 #endif

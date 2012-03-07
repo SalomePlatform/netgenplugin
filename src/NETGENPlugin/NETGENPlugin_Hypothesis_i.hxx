@@ -122,6 +122,17 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_Hypothesis_i:
     else
       return ( mySetMethodFlags |= meth ); // == return true
   }
+
+ public:
+  // method intended to remove explicit treatment of Netgen hypotheses from
+  // SMESH_NoteBook to assure backward compatibility after implemeneting
+  // issue 0021308: Remove hard-coded dependency of the external mesh plugins
+  virtual int getParamIndex(const TCollection_AsciiString& method, int nbVars) const;
+
+  // method used to convert variable parameters stored in an old study
+  // into myMethod2VarParams. It should return a method name for an index of
+  // variable parameters. Index is countered from zero
+  virtual std::string getMethodOfParameter(const int paramIndex, int nbVars) const;
 };
 
 #endif

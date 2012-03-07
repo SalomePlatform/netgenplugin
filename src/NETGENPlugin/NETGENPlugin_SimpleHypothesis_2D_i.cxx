@@ -32,6 +32,8 @@
 #include <Utils_CorbaException.hxx>
 #include <utilities.h>
 
+#include <TCollection_AsciiString.hxx>
+
 using namespace std;
 
 //=============================================================================
@@ -82,7 +84,7 @@ void NETGENPlugin_SimpleHypothesis_2D_i::SetNumberOfSegments(CORBA::Short nb)
   catch (SALOME_Exception& S_ex) {
     THROW_SALOME_CORBA_EXCEPTION( S_ex.what(), SALOME::BAD_PARAM );
   }
-  SMESH::TPythonDump() << _this() << ".SetNumberOfSegments( " << nb << " )";
+  SMESH::TPythonDump() << _this() << ".SetNumberOfSegments( " << SMESH::TVar(nb) << " )";
 }
 
 //=============================================================================
@@ -113,7 +115,7 @@ void NETGENPlugin_SimpleHypothesis_2D_i::SetLocalLength(CORBA::Double segmentLen
   catch (SALOME_Exception& S_ex) {
     THROW_SALOME_CORBA_EXCEPTION( S_ex.what(), SALOME::BAD_PARAM );
   }
-  SMESH::TPythonDump() << _this() << ".SetLocalLength( " << segmentLength << " )";
+  SMESH::TPythonDump() << _this() << ".SetLocalLength( " << SMESH::TVar(segmentLength) << " )";
 }
 
 //================================================================================
@@ -152,7 +154,7 @@ void NETGENPlugin_SimpleHypothesis_2D_i::SetMaxElementArea(CORBA::Double area)
   MESSAGE("NETGENPlugin_SimpleHypothesis_2D_i::SetMaxElementArea");
   ASSERT(myBaseImpl);
   this->GetImpl()->SetMaxElementArea(area);
-  SMESH::TPythonDump() << _this() << ".SetMaxElementArea( " << area << " )";
+  SMESH::TPythonDump() << _this() << ".SetMaxElementArea( " << SMESH::TVar(area) << " )";
 }
 
 
@@ -197,7 +199,7 @@ CORBA::Boolean NETGENPlugin_SimpleHypothesis_2D_i::GetAllowQuadrangles()
  *  NETGENPlugin_SimpleHypothesis_2D_i::GetImpl
  */
 //=============================================================================
-::NETGENPlugin_SimpleHypothesis_2D* NETGENPlugin_SimpleHypothesis_2D_i::GetImpl()
+::NETGENPlugin_SimpleHypothesis_2D* NETGENPlugin_SimpleHypothesis_2D_i::GetImpl() const
 {
   MESSAGE("NETGENPlugin_SimpleHypothesis_2D_i::GetImpl");
   return (::NETGENPlugin_SimpleHypothesis_2D*)myBaseImpl;
@@ -215,4 +217,42 @@ CORBA::Boolean NETGENPlugin_SimpleHypothesis_2D_i::GetAllowQuadrangles()
 CORBA::Boolean NETGENPlugin_SimpleHypothesis_2D_i::IsDimSupported( SMESH::Dimension type )
 {
   return type == SMESH::DIM_2D;
+}
+
+//================================================================================
+/*!
+ * \brief method intended to remove explicit treatment of Netgen hypotheses from SMESH_NoteBook
+ */
+//================================================================================
+
+int NETGENPlugin_SimpleHypothesis_2D_i::getParamIndex(const TCollection_AsciiString& method,
+                                                      int nbVars) const
+{
+  if ( method == "SetLocalLength"      ) return 0;
+  if ( method == "SetNumberOfSegments" ) return 0;
+  if ( method == "SetMaxElementArea"   ) return 1;
+  if ( method == "LengthFromEdges"     ) return 10; // just to go to the next state
+  if ( method == "SetMaxElementVolume" ) return 2;
+  if ( method == "LengthFromFaces"     ) return 10; // just to go to the next state
+
+  return SMESH_Hypothesis_i::getParamIndex( method, nbVars ); // return default value
+}
+
+//================================================================================
+/*!
+ * \brief Method used to convert variable parameters stored in an old study
+ * into myMethod2VarParams. It should return a method name for an index of
+ * variable parameters. Index is countered from zero
+ */
+//================================================================================
+
+std::string NETGENPlugin_SimpleHypothesis_2D_i::getMethodOfParameter(const int paramIndex,
+                                                                     int nbVars) const
+{
+  switch ( paramIndex ) {
+  case 0: return GetImpl()->GetNumberOfSegments() ? "SetNumberOfSegments" : "SetLocalLength";
+  case 1: return "SetMaxElementArea";
+  case 2: return "SetMaxElementVolume";
+  }
+  return "";
 }
