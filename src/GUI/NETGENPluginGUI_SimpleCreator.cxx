@@ -263,7 +263,7 @@ void NETGENPluginGUI_SimpleCreator::retrieveParams() const
   if ( nbSeg ) {
     myLength->setEnabled( false );
     myNbSeg->setEnabled( true );
-    aPrm = (aParameters->length() > 0) ? QString(aParameters[0].in()) : QString("");
+    aPrm = getVariableName("SetNumberOfSegments");
     if(aPrm.isEmpty())
       myNbSeg->setValue( nbSeg );
     else
@@ -272,7 +272,7 @@ void NETGENPluginGUI_SimpleCreator::retrieveParams() const
   else {
     myNbSeg->setEnabled( false );
     myLength->setEnabled( true );
-    aPrm = (aParameters->length() > 0) ? QString(aParameters[0].in()) : QString("");
+    aPrm = getVariableName("SetLocalLength");
     if(aPrm.isEmpty())
       myLength->setValue( h->GetLocalLength() );
     else
@@ -283,7 +283,7 @@ void NETGENPluginGUI_SimpleCreator::retrieveParams() const
   if ( double area = h->GetMaxElementArea() ) {
     myLenFromEdgesCheckBox->setChecked( false );
     myArea->setEnabled( true );
-    aPrm = (aParameters->length() > 1) ? QString(aParameters[1].in()) : QString("");
+    aPrm = getVariableName("SetMaxElementArea");
     if(aPrm.isEmpty()) 
       myArea->setValue( area );
     else
@@ -302,7 +302,7 @@ void NETGENPluginGUI_SimpleCreator::retrieveParams() const
     if ( double volume = (double) h->GetMaxElementVolume() ) {
       myLenFromFacesCheckBox->setChecked( false );
       myVolume->setEnabled( true );
-      aPrm = (aParameters->length() > 2) ? QString(aParameters[2].in()) : QString("");
+      aPrm = getVariableName("SetMaxElementVolume");
       if(aPrm.isEmpty())
         myVolume->setValue( volume );
       else
@@ -329,51 +329,43 @@ QString NETGENPluginGUI_SimpleCreator::storeParams() const
     
 
     // 1D
-    QStringList aVariablesList;
     if ( myNbSeg->isEnabled() ) {
+      h->SetVarParameter( myNbSeg->text().toLatin1().constData(), "SetNumberOfSegments");
       h->SetNumberOfSegments( myNbSeg->value() );
       valStr += "nbSeg=" + myNbSeg->text();
-      aVariablesList.append(myNbSeg->text());
     }
     else {
+      h->SetVarParameter( myLength->text().toLatin1().constData(), "SetLocalLength");
       h->SetLocalLength( myLength->value() );
       valStr += "len=" + myLength->text();
-      aVariablesList.append(myLength->text());
     }
     
-    h->SetParameters(aVariablesList.join(":").toLatin1().constData());
-
     // 2D
     if ( myArea->isEnabled() ) {
+      h->SetVarParameter( myArea->text().toLatin1().constData(), "SetMaxElementArea");
       h->SetMaxElementArea( myArea->value() );
       valStr += "; area=" + myArea->text();
-      aVariablesList.append(myArea->text());
     }
     else {
       h->LengthFromEdges();
       valStr += "; lenFromEdges";
-      aVariablesList.append(QString());
     }
     if ( myAllowQuadCheckBox )
       h->SetAllowQuadrangles( myAllowQuadCheckBox->isChecked() );
-
-    h->SetParameters(aVariablesList.join(":").toLatin1().constData());
 
     // 3D
     if ( myVolume ) {
       NETGENPlugin_SimpleHypothesis_3D_var h =
         NETGENPlugin_SimpleHypothesis_3D::_narrow( hypothesis() );
       if ( myVolume->isEnabled() ) {
+        h->SetVarParameter( myVolume->text().toLatin1().constData(), "SetMaxElementVolume");
         h->SetMaxElementVolume( myVolume->value() );
         valStr += "; vol=" + myVolume->text();
-        aVariablesList.append( myVolume->text());
       }
       else {
         h->LengthFromFaces();
         valStr += "; lenFromFaces";
-        aVariablesList.append(QString());
       }
-      h->SetParameters(aVariablesList.join(":").toLatin1().constData());
     }
   }
   catch(const SALOME::SALOME_Exception& ex)

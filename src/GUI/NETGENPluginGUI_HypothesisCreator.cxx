@@ -374,22 +374,20 @@ bool NETGENPluginGUI_HypothesisCreator::readParamsFromHypo( NetgenHypothesisData
   HypothesisData* data = SMESH::GetHypothesisData( hypType() );
   h_data.myName = isCreation() && data ? data->Label : "";
 
-  SMESH::ListOfParameters_var aParameters = h->GetLastParameters();
-
   h_data.myMaxSize = h->GetMaxSize();
-  h_data.myMaxSizeVar = (aParameters->length() > 0) ? QString(aParameters[0].in()) : QString("");
+  h_data.myMaxSizeVar = getVariableName("SetMaxSize");
   h_data.mySecondOrder = h->GetSecondOrder();
   h_data.myOptimize = h->GetOptimize();
 
   h_data.myFineness = (int) h->GetFineness();
   h_data.myGrowthRate = h->GetGrowthRate();
-  h_data.myGrowthRateVar = (aParameters->length() > 1) ? QString(aParameters[1].in()) : QString("");
+  h_data.myGrowthRateVar = getVariableName("SetGrowthRate");
   h_data.myNbSegPerEdge = h->GetNbSegPerEdge();
-  h_data.myNbSegPerEdgeVar  = (aParameters->length() > 2) ? QString(aParameters[2].in()) : QString("");
+  h_data.myNbSegPerEdgeVar  = getVariableName("SetNbSegPerEdge");
   h_data.myNbSegPerRadius = h->GetNbSegPerRadius();
-  h_data.myNbSegPerRadiusVar = (aParameters->length() > 3) ? QString(aParameters[3].in()) : QString("");
+  h_data.myNbSegPerRadiusVar = getVariableName("SetNbSegPerRadius");
   h_data.myMinSize = h->GetMinSize();
-  h_data.myMinSizeVar = (aParameters->length() > 4) ? QString(aParameters[4].in()) : QString("");
+  h_data.myMinSizeVar = getVariableName("SetMinSize");
 
   if ( myIs2D )
     {
@@ -418,7 +416,7 @@ bool NETGENPluginGUI_HypothesisCreator::readParamsFromHypo( NetgenHypothesisData
         }
       that->myLocalSizeMap[entry] = valstring;
     }
-  
+
   return true;
 }
 
@@ -432,9 +430,8 @@ bool NETGENPluginGUI_HypothesisCreator::storeParamsToHypo( const NetgenHypothesi
   {
     if( isCreation() )
       SMESH::SetName( SMESH::FindSObject( h ), h_data.myName.toLatin1().data() );
-    QStringList aVariablesList;
+    h->SetVarParameter( h_data.myMaxSizeVar.toLatin1().constData(), "SetMaxSize");
     h->SetMaxSize( h_data.myMaxSize );
-    aVariablesList.append(h_data.myMaxSizeVar);
     h->SetSecondOrder( h_data.mySecondOrder );
     h->SetOptimize( h_data.myOptimize );
     int fineness = h_data.myFineness;
@@ -442,16 +439,15 @@ bool NETGENPluginGUI_HypothesisCreator::storeParamsToHypo( const NetgenHypothesi
 
     if( fineness==UserDefined )
       {
+        h->SetVarParameter( h_data.myGrowthRateVar.toLatin1().constData(), "SetGrowthRate");
         h->SetGrowthRate( h_data.myGrowthRate );
+        h->SetVarParameter( h_data.myNbSegPerEdgeVar.toLatin1().constData(), "SetNbSegPerEdge");
         h->SetNbSegPerEdge( h_data.myNbSegPerEdge );
+        h->SetVarParameter( h_data.myNbSegPerRadiusVar.toLatin1().constData(), "SetNbSegPerRadius");
         h->SetNbSegPerRadius( h_data.myNbSegPerRadius );
-        
-        aVariablesList.append(h_data.myGrowthRateVar);
-        aVariablesList.append(h_data.myNbSegPerEdgeVar);
-        aVariablesList.append(h_data.myNbSegPerRadiusVar);
       }
+    h->SetVarParameter( h_data.myMinSizeVar.toLatin1().constData(), "SetMinSize");
     h->SetMinSize( h_data.myMinSize );
-    aVariablesList.append(h_data.myMinSizeVar);
     
     if ( myIs2D )
       {
@@ -461,15 +457,6 @@ bool NETGENPluginGUI_HypothesisCreator::storeParamsToHypo( const NetgenHypothesi
         if ( !h_2d->_is_nil() )
           h_2d->SetQuadAllowed( h_data.myAllowQuadrangles );
       }
-
-    h->SetParameters(aVariablesList.join(":").toLatin1().constData());
-    if( fineness==UserDefined )
-      {
-        h->SetParameters(aVariablesList.join(":").toLatin1().constData());
-        h->SetParameters(aVariablesList.join(":").toLatin1().constData());
-        h->SetParameters(aVariablesList.join(":").toLatin1().constData());
-      }
-    h->SetParameters(aVariablesList.join(":").toLatin1().constData());
 
     QMapIterator<QString,QString> i(myLocalSizeMap);
     while (i.hasNext()) {
