@@ -313,6 +313,7 @@ class NETGEN_1D2D_Algorithm_2(NETGEN_1D2D_Algorithm):
 
     ## Private constructor.
     def __init__(self, mesh, geom=0):
+        self.algoType = NETGEN_1D2D
         NETGEN_1D2D_Algorithm.__init__(self,mesh, geom)
 
 
