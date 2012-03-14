@@ -2458,7 +2458,11 @@ bool NETGENPlugin_Mesher::Evaluate(MapShapeNbElems& aResMap)
 
 void NETGENPlugin_Mesher::RemoveTmpFiles()
 {
-  SMESH_File("test.out").remove();
+  if ( SMESH_File("test.out").remove() && netgen::testout)
+  {
+    delete netgen::testout;
+    netgen::testout = 0;
+  }
   SMESH_File("problemfaces").remove();
   SMESH_File("occmesh.rep").remove();
 }
