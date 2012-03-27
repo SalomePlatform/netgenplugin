@@ -50,7 +50,6 @@ Custom     = 5
 
 ## Base of all NETGEN algorithms.
 #
-#  @ingroup l3_algos_basic
 class NETGEN_Algorithm(Mesh_Algorithm):
 
     def __init__(self, mesh, geom=0):
@@ -61,14 +60,12 @@ class NETGEN_Algorithm(Mesh_Algorithm):
 
     ## Sets MaxSize
     #
-    #  @ingroup l3_hypos_netgen
     def SetMaxSize(self, theSize):
         if self.Parameters():
             self.params.SetMaxSize(theSize)
 
     ## Sets MinSize
     #
-    #  @ingroup l3_hypos_netgen
     def SetMinSize(self, theSize):
         if self.Parameters():
             self.params.SetMinSize(theSize)
@@ -76,7 +73,6 @@ class NETGEN_Algorithm(Mesh_Algorithm):
 
     ## Sets Optimize flag
     #
-    #  @ingroup l3_hypos_netgen
     def SetOptimize(self, theVal):
         if self.Parameters():
             self.params.SetOptimize(theVal)
@@ -85,21 +81,18 @@ class NETGEN_Algorithm(Mesh_Algorithm):
     #  @param theFineness is:
     #  VeryCoarse, Coarse, Moderate, Fine, VeryFine or Custom
     #
-    #  @ingroup l3_hypos_netgen
     def SetFineness(self, theFineness):
         if self.Parameters():
             self.params.SetFineness(theFineness)
 
     ## Sets GrowthRate
     #
-    #  @ingroup l3_hypos_netgen
     def SetGrowthRate(self, theRate):
         if self.Parameters():
             self.params.SetGrowthRate(theRate)
 
     ## Defines hypothesis having several parameters
     #
-    #  @ingroup l3_hypos_netgen
     def Parameters(self, which=SOLE):
         if self.algoType == NETGEN_1D2D:
             if which == SIMPLE:
@@ -129,7 +122,6 @@ class NETGEN_Algorithm(Mesh_Algorithm):
 ## Defines a tetrahedron 1D-2D-3D algorithm
 #  It is created by calling Mesh.Triangle( NETGEN_1D2D3D, geom=0 )
 #
-#  @ingroup l3_algos_basic
 class NETGEN_1D2D3D_Algorithm(NETGEN_Algorithm):
 
     meshMethod = "Tetrahedron"
@@ -141,21 +133,18 @@ class NETGEN_1D2D3D_Algorithm(NETGEN_Algorithm):
 
     ## Sets SecondOrder flag
     #
-    #  @ingroup l3_hypos_netgen
     def SetSecondOrder(self, theVal):
         if self.Parameters():
             self.params.SetSecondOrder(theVal)
 
     ## Sets NbSegPerEdge
     #
-    #  @ingroup l3_hypos_netgen
     def SetNbSegPerEdge(self, theVal):
         if self.Parameters():
             self.params.SetNbSegPerEdge(theVal)
 
     ## Sets NbSegPerRadius
     #
-    #  @ingroup l3_hypos_netgen
     def SetNbSegPerRadius(self, theVal):
         if self.Parameters():
             self.params.SetNbSegPerRadius(theVal)
@@ -163,37 +152,31 @@ class NETGEN_1D2D3D_Algorithm(NETGEN_Algorithm):
 
     ## Sets number of segments overriding the value set by SetLocalLength()
     #
-    #  @ingroup l3_hypos_netgen
     def SetNumberOfSegments(self, theVal):
         self.Parameters(SIMPLE).SetNumberOfSegments(theVal)
 
     ## Sets number of segments overriding the value set by SetNumberOfSegments()
     #
-    #  @ingroup l3_hypos_netgen
     def SetLocalLength(self, theVal):
         self.Parameters(SIMPLE).SetLocalLength(theVal)
 
     ## Defines "MaxElementArea" parameter of NETGEN_SimpleParameters_3D hypothesis.
     #  Overrides value set by LengthFromEdges()
-    #  @ingroup l3_hypos_netgen
     def MaxElementArea(self, area):
         self.Parameters(SIMPLE).SetMaxElementArea(area)
 
     ## Defines "LengthFromEdges" parameter of NETGEN_SimpleParameters_3D hypothesis
     #  Overrides value set by MaxElementArea()
-    #  @ingroup l3_hypos_netgen
     def LengthFromEdges(self):
         self.Parameters(SIMPLE).LengthFromEdges()
 
     ## Defines "LengthFromFaces" parameter of NETGEN_SimpleParameters_3D hypothesis
     #  Overrides value set by MaxElementVolume()
-    #  @ingroup l3_hypos_netgen
     def LengthFromFaces(self):
         self.Parameters(SIMPLE).LengthFromFaces()
 
     ## Defines "MaxElementVolume" parameter of NETGEN_SimpleParameters_3D hypothesis
     #  Overrides value set by LengthFromFaces()
-    #  @ingroup l3_hypos_netgen
     def MaxElementVolume(self, vol):
         self.Parameters(SIMPLE).SetMaxElementVolume(vol)
 
@@ -201,7 +184,6 @@ class NETGEN_1D2D3D_Algorithm(NETGEN_Algorithm):
 ## Triangle NETGEN 1D-2D algorithm. 
 #  It is created by calling Mesh.Triangle( NETGEN_1D2D, geom=0 )
 #
-#  @ingroup l3_algos_basic
 class NETGEN_1D2D_Algorithm(NETGEN_1D2D3D_Algorithm):
 
     meshMethod = "Triangle"
@@ -212,7 +194,6 @@ class NETGEN_1D2D_Algorithm(NETGEN_1D2D3D_Algorithm):
         NETGEN_1D2D3D_Algorithm.__init__(self, mesh, geom)
 
     ## Sets QuadAllowed flag.
-    #  @ingroup l3_hypos_netgen
     def SetQuadAllowed(self, toAllow=True):
         if self.Parameters():
             self.params.SetQuadAllowed(toAllow)
@@ -222,7 +203,6 @@ class NETGEN_1D2D_Algorithm(NETGEN_1D2D3D_Algorithm):
 ## Triangle NETGEN 2D algorithm
 #  It is created by calling Mesh.Triangle( NETGEN_2D, geom=0 )
 #
-#  @ingroup l3_algos_basic
 class NETGEN_2D_Only_Algorithm(NETGEN_Algorithm):
 
     meshMethod = "Triangle"
@@ -237,7 +217,6 @@ class NETGEN_2D_Only_Algorithm(NETGEN_Algorithm):
     #  @param UseExisting if ==true - searches for an  existing hypothesis created with the
     #                     same parameters, else (default) - creates a new one
     #
-    #  @ingroup l3_hypos_2dhyps
     def MaxElementArea(self, area, UseExisting=0):
         compFun = lambda hyp, args: IsEqual(hyp.GetMaxElementArea(), args[0])
         hyp = self.Hypothesis("MaxElementArea", [area], UseExisting=UseExisting,
@@ -248,13 +227,11 @@ class NETGEN_2D_Only_Algorithm(NETGEN_Algorithm):
     ## Defines "LengthFromEdges" hypothesis to build triangles
     #  based on the length of the edges taken from the wire
     #
-    #  @ingroup l3_hypos_2dhyps
     def LengthFromEdges(self):
         hyp = self.Hypothesis("LengthFromEdges", UseExisting=1, CompareMethod=self.CompareEqualHyp)
         return hyp
 
     ## Sets QuadAllowed flag.
-    #  @ingroup l3_hypos_netgen
     def SetQuadAllowed(self, toAllow=True):
         if not self.params:
             # use simple hyps
@@ -282,7 +259,6 @@ class NETGEN_2D_Only_Algorithm(NETGEN_Algorithm):
 ## Defines a tetrahedron 3D algorithm
 #  It is created by calling Mesh.Tetrahedron()
 #
-#  @ingroup l3_algos_basic
 class NETGEN_3D_Algorithm(NETGEN_Algorithm):
 
     meshMethod = "Tetrahedron"
@@ -297,7 +273,6 @@ class NETGEN_3D_Algorithm(NETGEN_Algorithm):
     #  @param vol for the maximum volume of each tetrahedron
     #  @param UseExisting if ==true - searches for the existing hypothesis created with
     #                   the same parameters, else (default) - creates a new one
-    #  @ingroup l3_hypos_maxvol
     def MaxElementVolume(self, vol, UseExisting=0):
         compFun = lambda hyp, args: IsEqual(hyp.GetMaxElementVolume(), args[0])
         hyp = self.Hypothesis("MaxElementVolume", [vol], UseExisting=UseExisting,

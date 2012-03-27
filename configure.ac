@@ -440,6 +440,14 @@ AC_OUTPUT([ \
   bin/VERSION \
   bin/Makefile \
   NETGENPLUGIN_version.h \
+  doc/Makefile \
+  doc/salome/Makefile \
+  doc/salome/gui/Makefile \
+  doc/salome/gui/NETGENPLUGIN/Makefile \
+  doc/salome/gui/NETGENPLUGIN/doxyfile \
+  doc/salome/gui/NETGENPLUGIN/doxyfile_py \
+  doc/salome/gui/NETGENPLUGIN/static/header.html \
+  doc/salome/gui/NETGENPLUGIN/static/header_py.html \
   src/Makefile \
   src/GUI/Makefile \
   src/NETGEN/Makefile \
