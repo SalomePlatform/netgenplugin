@@ -1,0 +1,20 @@
+/*!
+
+\mainpage Introduction to NETGENPLUGIN
+
+\b NETGENPLUGIN plugin is destined for:
+- Meshing 1D, 2D and 3D geometric entities.
+  - Faces are split into triangular elements.
+  - Volumes are split into tetrahedral (pyramidal) elements.
+- Generating 3D meshes from 2D meshes, working without geometrical objects.
+
+To manage parameters of the NETGENPLUGIN use \subpage netgen_2d_3d_hypo_page and \subpage additional_hypo_page.
+
+Also all NETGENPLUGIN functionalities are accessible via
+\subpage netgenplugin_python_interface_page "NETGENPLUGIN Python interface".
+
+\image html image1.png "Example of a triangular 2D mesh"
+
+\image html image2.gif "Example of a tetrahedral 3D mesh"
+
+*/
