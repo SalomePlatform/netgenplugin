@@ -1,6 +1,6 @@
 /*!
 
-\page netgenplugin_python_intarface_page Python Interface
+\page netgenplugin_python_interface_page Python Interface
 
 Python package \ref NETGENPluginDC "NETGENPlugin" defines several classes, destined for creation of the 2D and 3D meshes.
 
