@@ -17,7 +17,7 @@
 # See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
 #
 
-from smesh import Mesh_Algorithm, AssureGeomPublished, ParseParameters
+from smesh import Mesh_Algorithm, AssureGeomPublished, ParseParameters, IsEqual
 
 # import NETGENPlugin module if possible
 noNETGENPlugin = 0
