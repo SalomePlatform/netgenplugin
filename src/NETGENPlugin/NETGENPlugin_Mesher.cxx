@@ -1861,8 +1861,6 @@ bool NETGENPlugin_Mesher::Compute()
     catch (Standard_Failure& ex)
     {
       comment << text(ex);
-      if ( !ngMesh )
-        return false;
     }
     err = 0; //- MESHCONST_ANALYSE isn't so important step
     if ( !ngMesh )
