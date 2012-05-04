@@ -1863,8 +1863,10 @@ bool NETGENPlugin_Mesher::Compute()
       comment << text(ex);
       if ( !ngMesh )
         return false;
-      err = 1;
     }
+    err = 0; //- MESHCONST_ANALYSE isn't so important step
+    if ( !ngMesh )
+      return false;
     ngLib.setMesh(( Ng_Mesh*) ngMesh );
 
     if ( _simpleHyp )
