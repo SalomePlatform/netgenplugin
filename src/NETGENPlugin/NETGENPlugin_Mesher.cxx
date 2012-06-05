@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2011  CEA/DEN, EDF R&D, OPEN CASCADE
+// Copyright (C) 2007-2012  CEA/DEN, EDF R&D, OPEN CASCADE
 //
 // Copyright (C) 2003-2007  OPEN CASCADE, EADS/CCR, LIP6, CEA/DEN,
 // CEDRAT, EDF R&D, LEG, PRINCIPIA R&D, BUREAU VERITAS
@@ -18,6 +18,7 @@
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 //
 // See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
+//
 
 //  NETGENPlugin : C++ implementation
 // File      : NETGENPlugin_Mesher.cxx
@@ -1860,10 +1861,10 @@ bool NETGENPlugin_Mesher::Compute()
     catch (Standard_Failure& ex)
     {
       comment << text(ex);
-      if ( !ngMesh )
-        return false;
-      err = 1;
     }
+    err = 0; //- MESHCONST_ANALYSE isn't so important step
+    if ( !ngMesh )
+      return false;
     ngLib.setMesh(( Ng_Mesh*) ngMesh );
 
     if ( _simpleHyp )
