@@ -64,7 +64,10 @@ namespace netgen {
 struct NETGENPlugin_ngMeshInfo
 {
   int _nbNodes, _nbSegments, _nbFaces, _nbVolumes;
+  char* _copyOfLocalH;
   NETGENPlugin_ngMeshInfo( netgen::Mesh* ngMesh=0);
+  void transferLocalH( netgen::Mesh* fromMesh, netgen::Mesh* toMesh );
+  void restoreLocalH ( netgen::Mesh* ngMesh);
 };
 
 //=============================================================================
@@ -171,7 +174,7 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_Internals
   std::map<int,std::list<int> > _f2v;//!<faces with internal vertices
   // 3D
   std::set<int>     _intShapes;
-  std::set<int>     _borderFaces; //!< non-intrnal faces sharing the internal edge
+  std::set<int>     _borderFaces; //!< non-internal faces sharing the internal edge
   std::map<int,std::list<int> > _s2v;//!<solids with internal vertices
 
 public:
