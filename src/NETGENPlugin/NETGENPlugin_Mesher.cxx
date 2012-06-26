@@ -77,6 +77,7 @@
 //#include <ngexception.hpp>
 namespace netgen {
   extern int OCCGenerateMesh (OCCGeometry&, Mesh*&, int, int, char*);
+  //extern void OCCSetLocalMeshSize(OCCGeometry & geom, Mesh & mesh);
   extern MeshingParameters mparam;
   extern volatile multithreadt multithread;
 }
@@ -1833,15 +1834,6 @@ bool NETGENPlugin_Mesher::Compute()
 #ifdef NETGEN_NEW
     // Local size on faces
     occgeo.face_maxh = mparams.maxh;
-    for(map<int,double>::const_iterator it=FaceId2LocalSize.begin();
-        it!=FaceId2LocalSize.end(); it++)
-    {
-      int key = (*it).first;
-      double val = (*it).second;
-      const TopoDS_Shape& shape = ShapesWithLocalSize.FindKey(key);
-      int faceNgID = occgeo.fmap.FindIndex(shape);
-      occgeo.SetFaceMaxH(faceNgID, val);
-    }
 #endif
 
     // Let netgen create ngMesh and calculate element size on not meshed shapes
@@ -1902,6 +1894,17 @@ bool NETGENPlugin_Mesher::Compute()
         gp_Pnt p = BRep_Tool::Pnt(v);
         NETGENPlugin_Mesher::RestrictLocalSize( *ngMesh, p.XYZ(), hi );
       }
+      for(map<int,double>::const_iterator it=FaceId2LocalSize.begin();
+          it!=FaceId2LocalSize.end(); it++)
+      {
+        int key = (*it).first;
+        double val = (*it).second;
+        const TopoDS_Shape& shape = ShapesWithLocalSize.FindKey(key);
+        int faceNgID = occgeo.fmap.FindIndex(shape);
+        occgeo.SetFaceMaxH(faceNgID, val);
+        for ( TopExp_Explorer edgeExp( shape, TopAbs_EDGE ); edgeExp.More(); edgeExp.Next() )
+          setLocalSize( TopoDS::Edge( edgeExp.Current() ), val, *ngMesh );
+      }
     }
 
     // Precompute internal edges (issue 0020676) in order to
@@ -1917,19 +1920,24 @@ bool NETGENPlugin_Mesher::Compute()
       intOccgeo.face_maxh.SetSize(intOccgeo.fmap.Extent());
       intOccgeo.face_maxh = netgen::mparam.maxh;
 #endif
-
-      // let netgen compute element size by the main geometry in temporary mesh
       netgen::Mesh *tmpNgMesh = NULL;
       try
       {
         OCC_CATCH_SIGNALS;
-        netgen::OCCGenerateMesh(occgeo, tmpNgMesh, startWith, endWith, optstr);
+        // compute local H on internal shapes in the main mesh
+        //OCCSetLocalMeshSize(intOccgeo, *ngMesh); it deletes ngMesh->localH
+
+        // let netgen create a temporary mesh
+        netgen::OCCGenerateMesh(intOccgeo, tmpNgMesh, startWith, endWith, optstr);
 #ifdef WITH_SMESH_CANCEL_COMPUTE
         if(netgen::multithread.terminate)
           return false;
 #endif
+        // copy LocalH from the main to temporary mesh
+        initState.transferLocalH( ngMesh, tmpNgMesh );
+
         // compute mesh on internal edges
-        endWith = netgen::MESHCONST_MESHEDGES;
+        startWith = endWith = netgen::MESHCONST_MESHEDGES;
         err = netgen::OCCGenerateMesh(intOccgeo, tmpNgMesh, startWith, endWith, optstr);
         comment << text(err);
       }
@@ -1938,6 +1946,8 @@ bool NETGENPlugin_Mesher::Compute()
         comment << text(ex);
         err = 1;
       }
+      initState.restoreLocalH( tmpNgMesh );
+
       // fill SMESH by netgen mesh
       vector< const SMDS_MeshNode* > tmpNodeVec;
       FillSMesh( intOccgeo, *tmpNgMesh, initState, *_mesh, tmpNodeVec, comment );
@@ -2539,7 +2549,8 @@ NETGENPlugin_Mesher::readErrors(const vector<const SMDS_MeshNode* >& nodeVec)
  */
 //================================================================================
 
-NETGENPlugin_ngMeshInfo::NETGENPlugin_ngMeshInfo( netgen::Mesh* ngMesh)
+NETGENPlugin_ngMeshInfo::NETGENPlugin_ngMeshInfo( netgen::Mesh* ngMesh):
+  _copyOfLocalH(0)
 {
   if ( ngMesh )
   {
@@ -2551,6 +2562,42 @@ NETGENPlugin_ngMeshInfo::NETGENPlugin_ngMeshInfo( netgen::Mesh* ngMesh)
   else
   {
     _nbNodes = _nbSegments = _nbFaces = _nbVolumes = 0;
+  }
+}
+
+//================================================================================
+/*!
+ * \brief Copy LocalH member from one netgen mesh to another
+ */
+//================================================================================
+
+void NETGENPlugin_ngMeshInfo::transferLocalH( netgen::Mesh* fromMesh,
+                                              netgen::Mesh* toMesh )
+{
+  if ( !fromMesh->LocalHFunctionGenerated() ) return;
+  if ( !toMesh->LocalHFunctionGenerated() )
+    toMesh->CalcLocalH();
+
+  const size_t size = sizeof( netgen::LocalH );
+  _copyOfLocalH = new char[ size ];
+  memcpy( (void*)_copyOfLocalH, (void*)&toMesh->LocalHFunction(), size );
+  memcpy( (void*)&toMesh->LocalHFunction(), (void*)&fromMesh->LocalHFunction(), size );
+}
+
+//================================================================================
+/*!
+ * \brief Restore LocalH member of a netgen mesh
+ */
+//================================================================================
+
+void NETGENPlugin_ngMeshInfo::restoreLocalH( netgen::Mesh* toMesh )
+{
+  if ( _copyOfLocalH )
+  {
+    const size_t size = sizeof( netgen::LocalH );
+    memcpy( (void*)&toMesh->LocalHFunction(), (void*)_copyOfLocalH, size );
+    delete [] _copyOfLocalH;
+    _copyOfLocalH = 0;
   }
 }
 
