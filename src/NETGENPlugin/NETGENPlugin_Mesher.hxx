@@ -30,9 +30,11 @@
 #define _NETGENPlugin_Mesher_HXX_
 
 #include "NETGENPlugin_Defs.hxx"
-#include "StdMeshers_FaceSide.hxx"
-#include "SMDS_MeshElement.hxx"
-#include "SMESH_Algo.hxx"
+
+#include <StdMeshers_FaceSide.hxx>
+#include <SMDS_MeshElement.hxx>
+#include <SMESH_Algo.hxx>
+#include <SMESH_ProxyMesh.hxx>
 
 namespace nglib {
 #include <nglib.h>
@@ -103,16 +105,17 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_Mesher
   static void RestrictLocalSize(netgen::Mesh& ngMesh, const gp_XYZ& p, const double  size);
 
   static int FillSMesh(const netgen::OCCGeometry&          occgeom,
-                       const netgen::Mesh&                 ngMesh,
+                       netgen::Mesh&                       ngMesh,
                        const NETGENPlugin_ngMeshInfo&      initState,
                        SMESH_Mesh&                         sMesh,
                        std::vector<const SMDS_MeshNode*>&  nodeVec,
                        SMESH_Comment&                      comment);
 
-  bool fillNgMesh(const netgen::OCCGeometry&          occgeom,
+  bool fillNgMesh(netgen::OCCGeometry&                occgeom,
                   netgen::Mesh&                       ngMesh,
                   std::vector<const SMDS_MeshNode*>&  nodeVec,
-                  const std::list< SMESH_subMesh* > & meshedSM);
+                  const std::list< SMESH_subMesh* > & meshedSM,
+                  SMESH_ProxyMesh::Ptr                proxyMesh=SMESH_ProxyMesh::Ptr());
 
   static void fixIntFaces(const netgen::OCCGeometry& occgeom,
                           netgen::Mesh&              ngMesh,
@@ -133,6 +136,10 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_Mesher
   static void RemoveTmpFiles();
 
   static SMESH_ComputeErrorPtr readErrors(const std::vector< const SMDS_MeshNode* >& nodeVec);
+
+
+  static void toPython( const netgen::Mesh* ngMesh,
+                        const std::string&  pyFile); // debug
 
  private:
   SMESH_Mesh*          _mesh;

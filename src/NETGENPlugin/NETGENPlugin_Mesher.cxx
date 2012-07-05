@@ -43,28 +43,21 @@
 #include <SMESH_Mesh.hxx>
 #include <SMESH_MesherHelper.hxx>
 #include <SMESH_subMesh.hxx>
+#include <StdMeshers_QuadToTriaAdaptor.hxx>
+
 #include <utilities.h>
 
-#include <vector>
-#include <limits>
-
+#include <BRepBuilderAPI_Copy.hxx>
 #include <BRep_Tool.hxx>
 #include <Bnd_B3d.hxx>
-#include <GCPnts_AbscissaPoint.hxx>
-#include <GeomAdaptor_Curve.hxx>
 #include <NCollection_Map.hxx>
-#include <OSD_File.hxx>
-#include <OSD_Path.hxx>
 #include <Standard_ErrorHandler.hxx>
-#include <Standard_ProgramError.hxx>
-#include <TCollection_AsciiString.hxx>
 #include <TopExp.hxx>
 #include <TopExp_Explorer.hxx>
 #include <TopTools_DataMapIteratorOfDataMapOfShapeInteger.hxx>
 #include <TopTools_DataMapIteratorOfDataMapOfShapeShape.hxx>
 #include <TopTools_DataMapOfShapeInteger.hxx>
 #include <TopTools_DataMapOfShapeShape.hxx>
-#include <TopTools_ListIteratorOfListOfShape.hxx>
 #include <TopTools_MapOfShape.hxx>
 #include <TopoDS.hxx>
 
@@ -81,6 +74,9 @@ namespace netgen {
   extern MeshingParameters mparam;
   extern volatile multithreadt multithread;
 }
+
+#include <vector>
+#include <limits>
 
 using namespace nglib;
 using namespace std;
@@ -211,7 +207,7 @@ void NETGENPlugin_Mesher::SetParameters(const NETGENPlugin_Hypothesis* hyp)
     mparams.secondorder = hyp->GetSecondOrder() ? 1 : 0;
     // quad-dominated surface meshing
     // only triangles are allowed for volumic mesh
-    if (!_isVolume)
+    //if (!_isVolume)
       mparams.quad = static_cast<const NETGENPlugin_Hypothesis_2D*>
         (hyp)->GetQuadAllowed() ? 1 : 0;
     _optimize = hyp->GetOptimize();
@@ -612,10 +608,11 @@ void NETGENPlugin_Mesher::RestrictLocalSize(netgen::Mesh& ngMesh, const gp_XYZ& 
  */
 //================================================================================
 
-bool NETGENPlugin_Mesher::fillNgMesh(const netgen::OCCGeometry&     occgeom,
+bool NETGENPlugin_Mesher::fillNgMesh(netgen::OCCGeometry&           occgeom,
                                      netgen::Mesh&                  ngMesh,
                                      vector<const SMDS_MeshNode*>&  nodeVec,
-                                     const list< SMESH_subMesh* > & meshedSM)
+                                     const list< SMESH_subMesh* > & meshedSM,
+                                     SMESH_ProxyMesh::Ptr           proxyMesh)
 {
   TNode2IdMap nodeNgIdMap;
   for ( int i = 1; i < nodeVec.size(); ++i )
@@ -627,7 +624,7 @@ bool NETGENPlugin_Mesher::fillNgMesh(const netgen::OCCGeometry&     occgeom,
 
   SMESH_MesherHelper helper (*_mesh);
 
-  int faceNgID = occgeom.fmap.Extent();
+  int faceNgID = ngMesh.GetNFD();
 
   list< SMESH_subMesh* >::const_iterator smIt, smEnd = meshedSM.end();
   for ( smIt = meshedSM.begin(); smIt != smEnd; ++smIt )
@@ -636,7 +633,7 @@ bool NETGENPlugin_Mesher::fillNgMesh(const netgen::OCCGeometry&     occgeom,
     if ( !visitedShapes.Add( sm->GetSubShape() ))
       continue;
 
-    SMESHDS_SubMesh * smDS = sm->GetSubMeshDS();
+    const SMESHDS_SubMesh * smDS = sm->GetSubMeshDS();
     if ( !smDS ) continue;
 
     switch ( sm->GetSubShape().ShapeType() )
@@ -799,18 +796,37 @@ bool NETGENPlugin_Mesher::fillNgMesh(const netgen::OCCGeometry&     occgeom,
 
       // Find solids the geomFace bounds
       int solidID1 = 0, solidID2 = 0;
-      PShapeIteratorPtr solidIt = helper.GetAncestors( geomFace, *sm->GetFather(), TopAbs_SOLID);
-      while ( const TopoDS_Shape * solid = solidIt->next() )
+      StdMeshers_QuadToTriaAdaptor* quadAdaptor =
+        dynamic_cast<StdMeshers_QuadToTriaAdaptor*>( proxyMesh.get() );
+      if ( quadAdaptor )
       {
-        int id = occgeom.somap.FindIndex ( *solid );
-        if ( solidID1 && id != solidID1 ) solidID2 = id;
-        else                              solidID1 = id;
+        solidID1 = occgeom.somap.FindIndex( quadAdaptor->GetShape() );
       }
-      faceNgID++;
-      //_faceDescriptors[ faceNgID ].first  = solidID1;
-      //_faceDescriptors[ faceNgID ].second = solidID2;
+      else
+      {  
+        PShapeIteratorPtr solidIt = helper.GetAncestors( geomFace, *sm->GetFather(), TopAbs_SOLID);
+        while ( const TopoDS_Shape * solid = solidIt->next() )
+        {
+          int id = occgeom.somap.FindIndex ( *solid );
+          if ( solidID1 && id != solidID1 ) solidID2 = id;
+          else                              solidID1 = id;
+        }
+      }
       // Add ng face descriptors of meshed faces
+      faceNgID++;
       ngMesh.AddFaceDescriptor (netgen::FaceDescriptor(faceNgID, solidID1, solidID2, 0));
+
+      // if second oreder is required, even already meshed faces must be passed to NETGEN
+      int fID = occgeom.fmap.Add( geomFace );
+      while ( fID < faceNgID ) // geomFace is already in occgeom.fmap, add a copy
+        fID = occgeom.fmap.Add( BRepBuilderAPI_Copy( geomFace, /*copyGeom=*/false ));
+      // Problem with the second order in a quadrangular mesh remains.
+      // 1) All quadrangles geberated by NETGEN are moved to an inexistent face
+      //    by FillSMesh() (find AddFaceDescriptor)
+      // 2) Temporary triangles generated by StdMeshers_QuadToTriaAdaptor
+      //    are on faces where quadrangles were.
+      // Due to these 2 points, wrong geom faces are used while conversion to qudratic
+      // of the mentioned above quadrangles and triangles
 
       // Orient the face correctly in solidID1 (issue 0020206)
       bool reverse = false;
@@ -830,8 +846,11 @@ bool NETGENPlugin_Mesher::fillNgMesh(const netgen::OCCGeometry&     occgeom,
 
 #ifdef DUMP_TRIANGLES
       cout << "SMESH face " << helper.GetMeshDS()->ShapeToIndex( geomFace )
-           << " internal="<<isInternalFace<< " border="<<isBorderFace << endl;
+           << " internal="<<isInternalFace << endl;
 #endif
+      if ( proxyMesh )
+        smDS = proxyMesh->GetSubMesh( geomFace );
+
       SMDS_ElemIteratorPtr faces = smDS->GetElements();
       while ( faces->more() )
       {
@@ -1446,7 +1465,7 @@ void NETGENPlugin_Mesher::addIntVerticesInSolids(const netgen::OCCGeometry&     
 //================================================================================
 
 int NETGENPlugin_Mesher::FillSMesh(const netgen::OCCGeometry&          occgeo,
-                                   const netgen::Mesh&                 ngMesh,
+                                   netgen::Mesh&                       ngMesh,
                                    const NETGENPlugin_ngMeshInfo&      initState,
                                    SMESH_Mesh&                         sMesh,
                                    std::vector<const SMDS_MeshNode*>&  nodeVec,
@@ -1459,7 +1478,10 @@ int NETGENPlugin_Mesher::FillSMesh(const netgen::OCCGeometry&          occgeo,
 
   SMESHDS_Mesh* meshDS = sMesh.GetMeshDS();
 
-  // create and insert nodes into nodeVec
+  // -------------------------------------
+  // Create and insert nodes into nodeVec
+  // -------------------------------------
+
   nodeVec.resize( nbNod + 1 );
   int i, nbInitNod = initState._nbNodes;
   for (i = nbInitNod+1; i <= nbNod; ++i )
@@ -1492,7 +1514,10 @@ int NETGENPlugin_Mesher::FillSMesh(const netgen::OCCGeometry&          occgeo,
     nodeVec[i] = node;
   }
 
-  // create mesh segments along geometric edges
+  // -------------------------------------------
+  // Create mesh segments along geometric edges
+  // -------------------------------------------
+
   int nbInitSeg = initState._nbSegments;
   for (i = nbInitSeg+1; i <= nbSeg; ++i )
   {
@@ -1565,8 +1590,17 @@ int NETGENPlugin_Mesher::FillSMesh(const netgen::OCCGeometry&          occgeo,
     }
   }
 
-  // create mesh faces along geometric faces
+  // ----------------------------------------
+  // Create mesh faces along geometric faces
+  // ----------------------------------------
+
   int nbInitFac = initState._nbFaces;
+  int quadFaceID = ngMesh.GetNFD() + 1;
+  if ( nbInitFac < nbFac )
+    // add a faces descriptor to exclude qudrangle elements generated by NETGEN
+    // from computation of 3D mesh
+    ngMesh.AddFaceDescriptor (netgen::FaceDescriptor(quadFaceID, /*solid1=*/0, /*solid2=*/0, 0));
+
   for (i = nbInitFac+1; i <= nbFac; ++i )
   {
     const netgen::Element2d& elem = ngMesh.SurfaceElement(i);
@@ -1604,6 +1638,8 @@ int NETGENPlugin_Mesher::FillSMesh(const netgen::OCCGeometry&          occgeo,
       break;
     case netgen::QUAD:
       face = meshDS->AddFace(nodes[0],nodes[1],nodes[2],nodes[3]);
+      // exclude qudrangle elements from computation of 3D mesh
+      const_cast< netgen::Element2d& >( elem ).SetIndex( quadFaceID );
       break;
     case netgen::TRIG6:
       face = meshDS->AddFace(nodes[0],nodes[1],nodes[2],nodes[5],nodes[3],nodes[4]);
@@ -1611,6 +1647,8 @@ int NETGENPlugin_Mesher::FillSMesh(const netgen::OCCGeometry&          occgeo,
     case netgen::QUAD8:
       face = meshDS->AddFace(nodes[0],nodes[1],nodes[2],nodes[3],
                              nodes[4],nodes[7],nodes[5],nodes[6]);
+      // exclude qudrangle elements from computation of 3D mesh
+      const_cast< netgen::Element2d& >( elem ).SetIndex( quadFaceID );
       break;
     default:
       MESSAGE("NETGEN created a face of unexpected type, ignoring");
@@ -1627,7 +1665,10 @@ int NETGENPlugin_Mesher::FillSMesh(const netgen::OCCGeometry&          occgeo,
       meshDS->SetMeshElementOnShape(face, aFace);
   }
 
-  // create tetrahedra
+  // ------------------
+  // Create tetrahedra
+  // ------------------
+
   for (i = 1; i <= nbVol; ++i)
   {
     const netgen::Element& elem = ngMesh.VolumeElement(i);      
@@ -1859,6 +1900,8 @@ bool NETGENPlugin_Mesher::Compute()
       return false;
     ngLib.setMesh(( Ng_Mesh*) ngMesh );
 
+    ngMesh->ClearFaceDescriptors(); // we make descriptors our-self
+
     if ( _simpleHyp )
     {
       // Pass 1D simple parameters to NETGEN
@@ -2063,14 +2106,38 @@ bool NETGENPlugin_Mesher::Compute()
     // ---------------------
     // generate volume mesh
     // ---------------------
-      // Fill ngMesh with nodes and faces of computed 2D submeshes
-    if ( !err && _isVolume && !meshedSM[ MeshDim_2D ].empty() )
+    // Fill ngMesh with nodes and faces of computed 2D submeshes
+    if ( !err && _isVolume && ( !meshedSM[ MeshDim_2D ].empty() || mparams.quad ))
     {
       // load SMESH with computed segments and faces
       FillSMesh( occgeo, *ngMesh, initState, *_mesh, nodeVec, comment );
-      // fill ng mesh
+
+      // compute pyramids on quadrangles
+      SMESH_ProxyMesh::Ptr proxyMesh;
+      if ( _mesh->NbQuadrangles() > 0 )
+        for ( int iS = 1; iS <= occgeo.somap.Extent(); ++iS )
+        {
+          StdMeshers_QuadToTriaAdaptor* Adaptor = new StdMeshers_QuadToTriaAdaptor;
+          proxyMesh.reset( Adaptor );
+
+          int nbPyrams = _mesh->NbPyramids();
+          Adaptor->Compute( *_mesh, occgeo.somap(iS) );
+          if ( nbPyrams != _mesh->NbPyramids() )
+          {
+            list< SMESH_subMesh* > quadFaceSM;
+            for (TopExp_Explorer face(occgeo.somap(iS), TopAbs_FACE); face.More(); face.Next())
+              if ( Adaptor->GetProxySubMesh( face.Current() ))
+              {
+                quadFaceSM.push_back( _mesh->GetSubMesh( face.Current() ));
+                meshedSM[ MeshDim_2D ].remove( quadFaceSM.back() );
+              }
+            fillNgMesh(occgeo, *ngMesh, nodeVec, quadFaceSM, proxyMesh);
+          }
+        }
+      // fill ngMesh with faces of sub-meshes
       err = ! ( fillNgMesh(occgeo, *ngMesh, nodeVec, meshedSM[ MeshDim_2D ]));
       initState = NETGENPlugin_ngMeshInfo(ngMesh);
+      //toPython( ngMesh, "/tmp/ngPython.py");
     }
     if (!err && _isVolume)
     {
@@ -2236,7 +2303,7 @@ bool NETGENPlugin_Mesher::Compute()
       for (int i = 1; i <= occgeo.somap.Extent(); i++)
         if ( SMESH_subMesh* sm = _mesh->GetSubMeshContaining( occgeo.somap( i )))
         {
-          bool smComputed = !sm->IsEmpty();
+          bool smComputed = nbVol && !sm->IsEmpty();
           if ( smComputed && internals.hasInternalVertexInSolid( sm->GetId() ))
           {
             int nbIntV = internals.getSolidsWithVertices().find( sm->GetId() )->second.size();
@@ -2247,7 +2314,7 @@ bool NETGENPlugin_Mesher::Compute()
           if ( !smComputed && ( !smError || smError->IsOK() ))
           {
             smError.reset( new SMESH_ComputeError( *error ));
-            if ( SMESH_Algo::GetMeshError( sm ) == SMESH_Algo::MEr_OK )
+            if ( nbVol && SMESH_Algo::GetMeshError( sm ) == SMESH_Algo::MEr_OK )
               smError->myName = COMPERR_WARNING;
           }
           pb3D = pb3D || ( smError && smError->IsKO() );
@@ -2541,6 +2608,75 @@ NETGENPlugin_Mesher::readErrors(const vector<const SMDS_MeshNode* >& nodeVec)
     }
   }
   return err;
+}
+
+//================================================================================
+/*!
+ * \brief Write a python script creating an equivalent SALOME mesh.
+ * This is useful to see what mesh is passed as input for the next step of mesh
+ * generation (of mesh of higher dimension)
+ */
+//================================================================================
+
+void NETGENPlugin_Mesher::toPython( const netgen::Mesh* ngMesh,
+                                    const std::string&  pyFile)
+{
+  ofstream outfile(pyFile.c_str(), ios::out);
+  if ( !outfile ) return;
+
+  outfile << "import smesh, SMESH" << endl
+          << "mesh = smesh.Mesh()" << endl << endl;
+
+  using namespace netgen;
+  PointIndex pi;
+  for (pi = PointIndex::BASE; 
+       pi < ngMesh->GetNP()+PointIndex::BASE; pi++)
+  {
+    outfile << "mesh.AddNode( ";
+    outfile << (*ngMesh)[pi](0) << ", ";
+    outfile << (*ngMesh)[pi](1) << ", ";
+    outfile << (*ngMesh)[pi](2) << ")" << endl;
+  }
+
+  int nbDom = ngMesh->GetNDomains();
+  for ( int i = 0; i < nbDom; ++i )
+    outfile<< "grp" << i+1 << " = mesh.CreateEmptyGroup( SMESH.FACE, 'domain"<< i+1 << "')"<< endl;
+
+  SurfaceElementIndex sei;
+  for (sei = 0; sei < ngMesh->GetNSE(); sei++)
+  {
+    outfile << "mesh.AddFace([ ";
+    Element2d sel = (*ngMesh)[sei];
+    for (int j = 0; j < sel.GetNP(); j++)
+      outfile << sel[j] << ( j+1 < sel.GetNP() ? ", " : " ])");
+    outfile << endl;
+
+    if ((*ngMesh)[sei].GetIndex())
+    {
+      if ( int dom1 = ngMesh->GetFaceDescriptor((*ngMesh)[sei].GetIndex ()).DomainIn())
+        outfile << "grp"<< dom1 <<".Add([ " << (int)sei+1 << " ])" << endl;
+      if ( int dom2 = ngMesh->GetFaceDescriptor((*ngMesh)[sei].GetIndex ()).DomainOut())
+        outfile << "grp"<< dom2 <<".Add([ " << (int)sei+1 << " ])" << endl;
+    }
+  }
+
+  for (ElementIndex ei = 0; ei < ngMesh->GetNE(); ei++)
+  {
+    Element el = (*ngMesh)[ei];
+    outfile << "mesh.AddVolume([ ";
+    for (int j = 0; j < el.GetNP(); j++)
+      outfile << el[j] << ( j+1 < el.GetNP() ? ", " : " ])");
+    outfile << endl;
+  }
+
+  for (int i = 1; i <= ngMesh->GetNSeg(); i++)
+  {
+    const Segment & seg = ngMesh->LineSegment (i);
+    outfile << "mesh.AddEdge([ "
+            << seg[0] << ", "
+            << seg[1] << " ])" << endl;
+  }
+  cout << "Write " << pyFile << endl;
 }
 
 //================================================================================
