@@ -206,10 +206,9 @@ void NETGENPlugin_Mesher::SetParameters(const NETGENPlugin_Hypothesis* hyp)
     // create elements of second order
     mparams.secondorder = hyp->GetSecondOrder() ? 1 : 0;
     // quad-dominated surface meshing
-    // only triangles are allowed for volumic mesh
+    // only triangles are allowed for volumic mesh (before realizing IMP 0021676)
     //if (!_isVolume)
-      mparams.quad = static_cast<const NETGENPlugin_Hypothesis_2D*>
-        (hyp)->GetQuadAllowed() ? 1 : 0;
+      mparams.quad = hyp->GetQuadAllowed() ? 1 : 0;
     _optimize = hyp->GetOptimize();
     _fineness = hyp->GetFineness();
     _simpleHyp = NULL;
@@ -1823,6 +1822,7 @@ bool NETGENPlugin_Mesher::Compute()
           " elements per radius = " << mparams.curvaturesafety << "\n"
           " second order = " << mparams.secondorder << "\n"
           " quad allowed = " << mparams.quad);
+  cout << " quad allowed = " << mparams.quad<<endl;
 
   SMESH_ComputeErrorPtr error = SMESH_ComputeError::New();
   
