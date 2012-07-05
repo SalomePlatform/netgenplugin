@@ -90,6 +90,9 @@ public:
   const TLocalSize& GetLocalSizesAndEntries() const { return _localSize; }
   void UnsetLocalSizeOnEntry(const std::string& entry);
 
+  void SetQuadAllowed(bool theVal);
+  bool GetQuadAllowed() const { return _quadAllowed; }
+
   // the default values (taken from NETGEN 4.5 sources)
 
   static double GetDefaultMaxSize();
@@ -99,6 +102,7 @@ public:
   static double GetDefaultNbSegPerRadius();
   static bool GetDefaultSecondOrder();
   static bool GetDefaultOptimize();
+  static bool GetDefaultQuadAllowed();
 
   // Persistence
   virtual ostream & SaveTo(ostream & save);
@@ -129,6 +133,7 @@ private:
   bool          _secondOrder;
   bool          _optimize;
   TLocalSize    _localSize;
+  bool          _quadAllowed;
 };
 
 #endif

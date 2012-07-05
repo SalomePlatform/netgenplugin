@@ -25,7 +25,6 @@
 // Author    : Michael Sazonov (OCN)
 // Date      : 27/03/2006
 // Project   : SALOME
-// $Header$
 //=============================================================================
 //
 #ifndef _NETGENPlugin_Hypothesis_2D_HXX_

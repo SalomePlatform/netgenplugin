@@ -364,6 +364,26 @@ void NETGENPlugin_Hypothesis_i::UnsetLocalSizeOnEntry(const char* entry)
 }
 
 //=============================================================================
+
+void NETGENPlugin_Hypothesis_i::SetQuadAllowed (CORBA::Boolean theValue)
+{
+  if ( NETGENPlugin_Hypothesis_i::isToSetParameter( GetQuadAllowed(),
+                                                    theValue,
+                                                    METH_SetQuadAllowed ))
+  {
+    this->GetImpl()->SetQuadAllowed(theValue);
+    SMESH::TPythonDump() << _this() << ".SetQuadAllowed( " << theValue << " )";
+  }
+}
+
+//=============================================================================
+
+CORBA::Boolean NETGENPlugin_Hypothesis_i::GetQuadAllowed()
+{
+  return this->GetImpl()->GetQuadAllowed();
+}
+
+//=============================================================================
 /*!
  *  NETGENPlugin_Hypothesis_i::GetImpl
  *

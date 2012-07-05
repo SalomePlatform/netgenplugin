@@ -85,6 +85,9 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_Hypothesis_i:
   NETGENPlugin::string_array* GetLocalSizeEntries();
   void UnsetLocalSizeOnEntry(const char* entry);
 
+  void SetQuadAllowed(CORBA::Boolean theVal);
+  CORBA::Boolean GetQuadAllowed();
+
   // Get implementation
   ::NETGENPlugin_Hypothesis* GetImpl();
   
@@ -105,7 +108,8 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_Hypothesis_i:
     METH_SetNbSegPerEdge     = 64,
     METH_SetNbSegPerRadius   = 128,
     METH_SetLocalSizeOnEntry = 256,
-    METH_LAST                = METH_SetLocalSizeOnEntry
+    METH_SetQuadAllowed      = METH_SetLocalSizeOnEntry * 2,
+    METH_LAST                = METH_SetQuadAllowed
   };
   int mySetMethodFlags;
 

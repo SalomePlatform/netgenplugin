@@ -22,7 +22,6 @@
 
 //  File   : NETGENPlugin_Algorithm.idl
 //  Author : Julia DOROVSKIKH
-//  $Header$
 //
 #ifndef _SMESH_NETGENALGORITHM_IDL_
 #define _SMESH_NETGENALGORITHM_IDL_
@@ -96,6 +95,9 @@ module NETGENPlugin
     void SetNbSegPerRadius(in double value);
     double GetNbSegPerRadius();
 
+    void SetQuadAllowed(in boolean value);
+    boolean GetQuadAllowed();
+
     void SetLocalSizeOnShape(in GEOM::GEOM_Object GeomObj, in double localSize);
     void SetLocalSizeOnEntry(in string entry, in double localSize);
     double GetLocalSizeOnEntry(in string entry);
@@ -108,8 +110,6 @@ module NETGENPlugin
    */
   interface NETGENPlugin_Hypothesis_2D : NETGENPlugin_Hypothesis
   {
-    void SetQuadAllowed(in boolean value);
-    boolean GetQuadAllowed();
   };
 
   /*!

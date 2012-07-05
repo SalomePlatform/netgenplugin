@@ -51,7 +51,8 @@ NETGENPlugin_Hypothesis::NETGENPlugin_Hypothesis (int hypId, int studyId,
     _fineness      (GetDefaultFineness()),
     _secondOrder   (GetDefaultSecondOrder()),
     _optimize      (GetDefaultOptimize()),
-    _localSize     (GetDefaultLocalSize())
+    _localSize     (GetDefaultLocalSize()),
+    _quadAllowed   (GetDefaultQuadAllowed())
 {
   _name = "NETGEN_Parameters";
   _param_algo_dim = 3;
@@ -249,6 +250,30 @@ void NETGENPlugin_Hypothesis::UnsetLocalSizeOnEntry(const std::string& entry)
  *  
  */
 //=============================================================================
+void NETGENPlugin_Hypothesis::SetQuadAllowed(bool theVal)
+{
+  if (theVal != _quadAllowed)
+  {
+    _quadAllowed = theVal;
+    NotifySubMeshesHypothesisModification();
+  }
+}
+
+//=============================================================================
+/*!
+ *  
+ */
+//=============================================================================
+bool NETGENPlugin_Hypothesis::GetDefaultQuadAllowed()
+{
+  return false;
+}
+
+//=============================================================================
+/*!
+ *  
+ */
+//=============================================================================
 ostream & NETGENPlugin_Hypothesis::SaveTo(ostream & save)
 {
   save << _maxSize << " " << _fineness;
@@ -268,6 +293,7 @@ ostream & NETGENPlugin_Hypothesis::SaveTo(ostream & save)
     save << " " << "__LOCALSIZE_END__";
   }
   save << " " << _minSize;
+  save << " " << _quadAllowed;
 
   return save;
 }
@@ -354,6 +380,10 @@ istream & NETGENPlugin_Hypothesis::LoadFrom(istream & load)
 
   if ( !hasLocalSize && !option_or_sm.empty() )
     _minSize = atof( option_or_sm.c_str() );
+
+  isOK = ( load >> _quadAllowed );
+  if ( !isOK )
+    _quadAllowed = GetDefaultQuadAllowed();
 
   return load;
 }

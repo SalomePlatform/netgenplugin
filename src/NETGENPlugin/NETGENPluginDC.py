@@ -148,6 +148,11 @@ class NETGEN_1D2D3D_Algorithm(NETGEN_Algorithm):
         if self.Parameters():
             self.params.SetNbSegPerRadius(theVal)
 
+    ## Sets QuadAllowed flag.
+    def SetQuadAllowed(self, toAllow=True):
+        if self.Parameters():
+            self.params.SetQuadAllowed(toAllow)
+
 
     ## Sets number of segments overriding the value set by SetLocalLength()
     #
@@ -191,11 +196,6 @@ class NETGEN_1D2D_Algorithm(NETGEN_1D2D3D_Algorithm):
     ## Private constructor.
     def __init__(self, mesh, geom=0):
         NETGEN_1D2D3D_Algorithm.__init__(self, mesh, geom)
-
-    ## Sets QuadAllowed flag.
-    def SetQuadAllowed(self, toAllow=True):
-        if self.Parameters():
-            self.params.SetQuadAllowed(toAllow)
 
 
 

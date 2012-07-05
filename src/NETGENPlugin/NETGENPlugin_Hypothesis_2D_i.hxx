@@ -54,9 +54,6 @@ class NETGENPLUGIN_EXPORT  NETGENPlugin_Hypothesis_2D_i:
   // Destructor
   virtual ~NETGENPlugin_Hypothesis_2D_i();
 
-  void SetQuadAllowed(CORBA::Boolean theVal);
-  CORBA::Boolean GetQuadAllowed();
-
   // Get implementation
   ::NETGENPlugin_Hypothesis_2D* GetImpl();
   
@@ -66,11 +63,11 @@ class NETGENPLUGIN_EXPORT  NETGENPlugin_Hypothesis_2D_i:
  protected:
 
   // to remember whether a parameter is already set (issue 0021364)
-  enum SettingMethod
-  {
-    METH_SetQuadAllowed = NETGENPlugin_Hypothesis_i::METH_LAST * 2,
-    METH_LAST           = METH_SetQuadAllowed
-  };
+  // enum SettingMethod
+  // {
+  //   METH_SetQuadAllowed = NETGENPlugin_Hypothesis_i::METH_LAST * 2,
+  //   METH_LAST           = METH_SetQuadAllowed
+  // };
 };
 
 #endif

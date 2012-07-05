@@ -78,16 +78,16 @@ NETGENPlugin_Hypothesis_2D_i::~NETGENPlugin_Hypothesis_2D_i()
  *  Set QuadAllowed flag
  */
 //=============================================================================
-void NETGENPlugin_Hypothesis_2D_i::SetQuadAllowed (CORBA::Boolean theValue)
-{
-  if ( NETGENPlugin_Hypothesis_i::isToSetParameter( GetQuadAllowed(),
-                                                    theValue,
-                                                    METH_SetQuadAllowed ))
-  {
-    this->GetImpl()->SetQuadAllowed(theValue);
-    SMESH::TPythonDump() << _this() << ".SetQuadAllowed( " << theValue << " )";
-  }
-}
+// void NETGENPlugin_Hypothesis_2D_i::SetQuadAllowed (CORBA::Boolean theValue)
+// {
+//   if ( NETGENPlugin_Hypothesis_i::isToSetParameter( GetQuadAllowed(),
+//                                                     theValue,
+//                                                     METH_SetQuadAllowed ))
+//   {
+//     this->GetImpl()->SetQuadAllowed(theValue);
+//     SMESH::TPythonDump() << _this() << ".SetQuadAllowed( " << theValue << " )";
+//   }
+// }
 
 //=============================================================================
 /*!
@@ -96,10 +96,10 @@ void NETGENPlugin_Hypothesis_2D_i::SetQuadAllowed (CORBA::Boolean theValue)
  *  Get QuadAllowed flag
  */
 //=============================================================================
-CORBA::Boolean NETGENPlugin_Hypothesis_2D_i::GetQuadAllowed()
-{
-  return this->GetImpl()->GetQuadAllowed();
-}
+// CORBA::Boolean NETGENPlugin_Hypothesis_2D_i::GetQuadAllowed()
+// {
+//   return this->GetImpl()->GetQuadAllowed();
+// }
 
 //=============================================================================
 /*!
