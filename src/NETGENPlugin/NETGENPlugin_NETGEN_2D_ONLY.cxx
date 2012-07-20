@@ -559,6 +559,7 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
 #ifdef WITH_SMESH_CANCEL_COMPUTE
 void NETGENPlugin_NETGEN_2D_ONLY::CancelCompute()
 {
+  SMESH_Algo::CancelCompute();
   netgen::multithread.terminate = 1;
 }
 #endif

@@ -141,6 +141,7 @@ bool NETGENPlugin_NETGEN_2D::Compute(SMESH_Mesh&         aMesh,
 #ifdef WITH_SMESH_CANCEL_COMPUTE
 void NETGENPlugin_NETGEN_2D::CancelCompute()
 {
+  SMESH_Algo::CancelCompute();
   netgen::multithread.terminate = 1;
 }
 #endif
