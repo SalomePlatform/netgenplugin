@@ -211,6 +211,11 @@ class NETGEN_2D_Only_Algorithm(NETGEN_Algorithm):
     def __init__(self, mesh, geom=0):
         NETGEN_Algorithm.__init__(self, mesh, geom)
 
+    ## Sets QuadAllowed flag.
+    def SetQuadAllowed(self, toAllow=True):
+        if self.Parameters():
+            self.params.SetQuadAllowed(toAllow)
+
     ## Defines "MaxElementArea" hypothesis basing on the definition of the maximum area of each triangle
     #  @param area for the maximum area of each triangle
     #  @param UseExisting if ==true - searches for an  existing hypothesis created with the
