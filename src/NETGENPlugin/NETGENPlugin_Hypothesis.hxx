@@ -1,24 +1,25 @@
-//  Copyright (C) 2007-2008  CEA/DEN, EDF R&D, OPEN CASCADE
+// Copyright (C) 2007-2012  CEA/DEN, EDF R&D, OPEN CASCADE
 //
-//  Copyright (C) 2003-2007  OPEN CASCADE, EADS/CCR, LIP6, CEA/DEN,
-//  CEDRAT, EDF R&D, LEG, PRINCIPIA R&D, BUREAU VERITAS
+// Copyright (C) 2003-2007  OPEN CASCADE, EADS/CCR, LIP6, CEA/DEN,
+// CEDRAT, EDF R&D, LEG, PRINCIPIA R&D, BUREAU VERITAS
 //
-//  This library is free software; you can redistribute it and/or
-//  modify it under the terms of the GNU Lesser General Public
-//  License as published by the Free Software Foundation; either
-//  version 2.1 of the License.
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 2.1 of the License.
 //
-//  This library is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-//  Lesser General Public License for more details.
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
 //
-//  You should have received a copy of the GNU Lesser General Public
-//  License along with this library; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 //
-//  See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
+// See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
 //
+
 //  NETGENPlugin : C++ implementation
 // File      : NETGENPlugin_Hypothesis.hxx
 // Author    : Michael Sazonov (OCN)
@@ -33,6 +34,8 @@
 #include "SMESH_Hypothesis.hxx"
 #include "Utils_SALOME_Exception.hxx"
 
+#include <map>
+
 //  Parameters for work of NETGEN
 //
 
@@ -46,6 +49,9 @@ public:
 
   void SetMaxSize(double theSize);
   double GetMaxSize() const { return _maxSize; }
+
+  void SetMinSize(double theSize);
+  double GetMinSize() const { return _minSize; }
 
   void SetSecondOrder(bool theVal);
   bool GetSecondOrder() const { return _secondOrder; }
@@ -77,6 +83,16 @@ public:
   void SetNbSegPerRadius(double theVal);
   double GetNbSegPerRadius() const { return _nbSegPerRadius; }
 
+  typedef std::map<std::string, double> TLocalSize;
+  static TLocalSize GetDefaultLocalSize() { return TLocalSize(); }
+  void SetLocalSizeOnEntry(const std::string& entry, double localSize);
+  double GetLocalSizeOnEntry(const std::string& entry);
+  const TLocalSize& GetLocalSizesAndEntries() const { return _localSize; }
+  void UnsetLocalSizeOnEntry(const std::string& entry);
+
+  void SetQuadAllowed(bool theVal);
+  bool GetQuadAllowed() const { return _quadAllowed; }
+
   // the default values (taken from NETGEN 4.5 sources)
 
   static double GetDefaultMaxSize();
@@ -86,6 +102,7 @@ public:
   static double GetDefaultNbSegPerRadius();
   static bool GetDefaultSecondOrder();
   static bool GetDefaultOptimize();
+  static bool GetDefaultQuadAllowed();
 
   // Persistence
   virtual ostream & SaveTo(ostream & save);
@@ -108,13 +125,15 @@ public:
   virtual bool SetParametersByDefaults(const TDefaults& dflts, const SMESH_Mesh* theMesh=0);
 
 private:
-  double        _maxSize;
+  double        _maxSize, _minSize;
   double        _growthRate;
   double        _nbSegPerEdge;
   double        _nbSegPerRadius;
   Fineness      _fineness;
   bool          _secondOrder;
   bool          _optimize;
+  TLocalSize    _localSize;
+  bool          _quadAllowed;
 };
 
 #endif

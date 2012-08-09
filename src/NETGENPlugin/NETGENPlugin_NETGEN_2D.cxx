@@ -1,30 +1,30 @@
-//  Copyright (C) 2007-2008  CEA/DEN, EDF R&D, OPEN CASCADE
+// Copyright (C) 2007-2012  CEA/DEN, EDF R&D, OPEN CASCADE
 //
-//  Copyright (C) 2003-2007  OPEN CASCADE, EADS/CCR, LIP6, CEA/DEN,
-//  CEDRAT, EDF R&D, LEG, PRINCIPIA R&D, BUREAU VERITAS
+// Copyright (C) 2003-2007  OPEN CASCADE, EADS/CCR, LIP6, CEA/DEN,
+// CEDRAT, EDF R&D, LEG, PRINCIPIA R&D, BUREAU VERITAS
 //
-//  This library is free software; you can redistribute it and/or
-//  modify it under the terms of the GNU Lesser General Public
-//  License as published by the Free Software Foundation; either
-//  version 2.1 of the License.
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 2.1 of the License.
 //
-//  This library is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-//  Lesser General Public License for more details.
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
 //
-//  You should have received a copy of the GNU Lesser General Public
-//  License along with this library; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 //
-//  See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
+// See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
 //
+
 //  NETGENPlugin : C++ implementation
 // File   : NETGENPlugin_NETGEN_2D.cxx
 // Author : Michael Sazonov (OCN)
 // Date   : 20/03/2006
 // Project   : SALOME
-// $Header$
 //=============================================================================
 //
 #include "NETGENPlugin_NETGEN_2D.hxx"
@@ -39,6 +39,13 @@
 #include <utilities.h>
 
 #include <list>
+
+#ifdef WITH_SMESH_CANCEL_COMPUTE
+namespace nglib {
+#include <nglib.h>
+}
+#include <meshing.hpp>
+#endif
 
 using namespace std;
 
@@ -57,7 +64,7 @@ NETGENPlugin_NETGEN_2D::NETGENPlugin_NETGEN_2D(int hypId, int studyId,
   _shapeType = (1 << TopAbs_FACE); // 1 bit /shape type
   _compatibleHypothesis.push_back("NETGEN_Parameters_2D");
   _compatibleHypothesis.push_back("NETGEN_SimpleParameters_2D");
-  _requireDescretBoundary = false;
+  _requireDiscreteBoundary = false;
   _onlyUnaryInput = false;
   _hypothesis = NULL;
   _supportSubmeshes = true;
@@ -121,11 +128,37 @@ bool NETGENPlugin_NETGEN_2D::CheckHypothesis
 bool NETGENPlugin_NETGEN_2D::Compute(SMESH_Mesh&         aMesh,
                                      const TopoDS_Shape& aShape)
 {
-  //SMESHDS_Mesh* meshDS = aMesh.GetMeshDS();
+#ifdef WITH_SMESH_CANCEL_COMPUTE
+  netgen::multithread.terminate = 0;
+#endif
 
   NETGENPlugin_Mesher mesher(&aMesh, aShape, false);
-//   NETGENPlugin_Mesher mesher(meshDS, aShape, false);
   mesher.SetParameters(dynamic_cast<const NETGENPlugin_Hypothesis*>(_hypothesis));
   mesher.SetParameters(dynamic_cast<const NETGENPlugin_SimpleHypothesis_2D*>(_hypothesis));
   return mesher.Compute();
+}
+
+#ifdef WITH_SMESH_CANCEL_COMPUTE
+void NETGENPlugin_NETGEN_2D::CancelCompute()
+{
+  SMESH_Algo::CancelCompute();
+  netgen::multithread.terminate = 1;
+}
+#endif
+
+//=============================================================================
+/*!
+ *
+ */
+//=============================================================================
+
+bool NETGENPlugin_NETGEN_2D::Evaluate(SMESH_Mesh&         aMesh,
+                                      const TopoDS_Shape& aShape,
+                                      MapShapeNbElems& aResMap)
+{
+
+  NETGENPlugin_Mesher mesher(&aMesh, aShape, false);
+  mesher.SetParameters(dynamic_cast<const NETGENPlugin_Hypothesis*>(_hypothesis));
+  mesher.SetParameters(dynamic_cast<const NETGENPlugin_SimpleHypothesis_2D*>(_hypothesis));
+  return mesher.Evaluate(aResMap);
 }

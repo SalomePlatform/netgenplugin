@@ -1,24 +1,22 @@
-//  Copyright (C) 2007-2008  CEA/DEN, EDF R&D, OPEN CASCADE
+// Copyright (C) 2007-2012  CEA/DEN, EDF R&D, OPEN CASCADE
 //
-//  Copyright (C) 2003-2007  OPEN CASCADE, EADS/CCR, LIP6, CEA/DEN,
-//  CEDRAT, EDF R&D, LEG, PRINCIPIA R&D, BUREAU VERITAS
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 2.1 of the License.
 //
-//  This library is free software; you can redistribute it and/or
-//  modify it under the terms of the GNU Lesser General Public
-//  License as published by the Free Software Foundation; either
-//  version 2.1 of the License.
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
 //
-//  This library is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-//  Lesser General Public License for more details.
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 //
-//  You should have received a copy of the GNU Lesser General Public
-//  License along with this library; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
+// See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
 //
-//  See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
-//
+
 // File   : NETGENPluginGUI_SimpleCreator.cxx
 // Author : Open CASCADE S.A.S.
 // SMESH includes
@@ -28,7 +26,6 @@
 #include <SMESHGUI_Utils.h>
 #include <SMESHGUI_HypothesesUtils.h>
 #include <SMESHGUI_SpinBox.h>
-#include <SMESHGUI.h>
 
 // IDL includes
 #include CORBA_SERVER_HEADER(NETGENPlugin_Algorithm)
@@ -74,6 +71,7 @@ NETGENPluginGUI_SimpleCreator::NETGENPluginGUI_SimpleCreator(const QString& theH
   myLengthRadioBut(0),
   myLenFromEdgesCheckBox(0),
   myArea(0),
+  myAllowQuadCheckBox(0),
   myLenFromFacesCheckBox(0),
   myVolume(0)
 {
@@ -86,12 +84,15 @@ NETGENPluginGUI_SimpleCreator::~NETGENPluginGUI_SimpleCreator()
 bool NETGENPluginGUI_SimpleCreator::checkParams(QString& msg) const
 {
   bool result = true;
-  result = myNbSeg->isValid(msg,true) && result;
-  result = myLength->isValid(msg,true) && result;
-  result = myArea->isValid(msg,true) && result;
-  if (myVolume)
+  if ( myNbSeg->isEnabled() )
+    result = myNbSeg->isValid(msg,true) && result;
+  if ( myLength->isEnabled() )
+    result = myLength->isValid(msg,true) && result;
+  if ( myArea->isEnabled() )
+    result = myArea->isValid(msg,true) && result;
+  if (myVolume && myVolume->isEnabled() )
     result = myVolume->isValid(msg,true) && result;
-  
+
   return result;
 }
 
@@ -151,7 +152,7 @@ QFrame* NETGENPluginGUI_SimpleCreator::buildFrame()
   // * local length
   myLengthRadioBut = new QRadioButton( tr( "SMESH_LOCAL_LENGTH_HYPOTHESIS" ), dimGroup );
   myLength = new SMESHGUI_SpinBox( dimGroup );
-  myLength->RangeStepAndValidator( VALUE_SMALL, VALUE_MAX, 0.1, 6 );
+  myLength->RangeStepAndValidator( VALUE_SMALL, VALUE_MAX, 0.1, "length_precision" );
   myLength->setValue( 1. );
   dimLay->addWidget( myLengthRadioBut, dimRow, 0 );
   dimLay->addWidget( myLength, dimRow, 1 );
@@ -178,13 +179,22 @@ QFrame* NETGENPluginGUI_SimpleCreator::buildFrame()
   // * max area
   dimLay->addWidget( new QLabel( tr( "SMESH_MAX_ELEMENT_AREA_HYPOTHESIS" ), dimGroup), dimRow, 0);
   myArea = new SMESHGUI_SpinBox( dimGroup );
-  myArea->RangeStepAndValidator( VALUE_SMALL_2, VALUE_MAX_2, 0.1, 6 );
+  myArea->RangeStepAndValidator( VALUE_SMALL_2, VALUE_MAX_2, 0.1, "area_precision" );
   myArea->setValue( 1. );
   dimLay->addWidget( myArea, dimRow, 1 );
   dimRow++;
 
+  // * allow quadrangles
+  const bool is3D = ( hypType()=="NETGEN_SimpleParameters_3D" );
+  if ( !is3D )
+  {
+    myAllowQuadCheckBox = new QCheckBox( tr( "NETGEN_ALLOW_QUADRANGLES" ), dimGroup );
+    dimLay->addWidget( myAllowQuadCheckBox, dimRow, 0, 1, 2 );
+    dimRow++;
+  }
+
   // 3D params group
-  if ( hypType()=="NETGEN_SimpleParameters_3D" )
+  if ( is3D )
   {
     dimGroup = new QGroupBox( tr( "NG_3D" ), argGroup );
     argLay->addWidget( dimGroup, argRow, 0, 1, 2 );
@@ -205,7 +215,7 @@ QFrame* NETGENPluginGUI_SimpleCreator::buildFrame()
     // * max volume
     dimLay->addWidget(new QLabel( tr("SMESH_MAX_ELEMENT_VOLUME_HYPOTHESIS"), dimGroup), dimRow, 0);
     myVolume = new SMESHGUI_SpinBox( dimGroup );
-    myVolume->RangeStepAndValidator( VALUE_SMALL_3, VALUE_MAX_3, 0.1, 6 );
+    myVolume->RangeStepAndValidator( VALUE_SMALL_3, VALUE_MAX_3, 0.1, "volume_precision" );
     myVolume->setValue( 1. );
     dimLay->addWidget( myVolume, dimRow, 1 );
     dimRow++;
@@ -225,20 +235,18 @@ void NETGENPluginGUI_SimpleCreator::retrieveParams() const
   if ( isCreation() )
     myName->setText( hypName() );
 
-  // set default real values
+  // Set default values
 
   NETGENPlugin_SimpleHypothesis_2D_var h =
     NETGENPlugin_SimpleHypothesis_2D::_narrow( initParamsHypothesis( hasInitParamsHypothesis() ));
 
-  if ( double len = h->GetLocalLength() )
+  int dfltNbSeg = (int) h->GetNumberOfSegments();
+  myNbSeg->setValue( dfltNbSeg );
+  if ( double len = h->GetLocalLength() ) {
     myLength->setValue( len );
-  if ( double area = h->GetMaxElementArea() )
-    myArea->setValue( area );
-  if ( myVolume ) {
-    NETGENPlugin_SimpleHypothesis_3D_var h3d =
-      NETGENPlugin_SimpleHypothesis_3D::_narrow( initParamsHypothesis( hasInitParamsHypothesis()) );
-    if ( double volume = (double) h3d->GetMaxElementVolume() )
-      myVolume->setValue( volume );
+    myArea->setValue( len * len );
+    if ( myVolume )
+      myVolume->setValue( len * len * len );
   }
 
   h = NETGENPlugin_SimpleHypothesis_2D::_narrow( hypothesis() );
@@ -248,14 +256,14 @@ void NETGENPluginGUI_SimpleCreator::retrieveParams() const
   SMESH::ListOfParameters_var aParameters = h->GetLastParameters();
 
   // 1D
-  int nbSeg = (int) h->GetNumberOfSegments();
+  int nbSeg = isCreation() ? dfltNbSeg : (int) h->GetNumberOfSegments();
   myNbSegRadioBut->setChecked( nbSeg );
   myLengthRadioBut->setChecked( !nbSeg );
   QString aPrm;
   if ( nbSeg ) {
     myLength->setEnabled( false );
     myNbSeg->setEnabled( true );
-    aPrm = (aParameters->length() > 0) ? QString(aParameters[0].in()) : QString("");
+    aPrm = getVariableName("SetNumberOfSegments");
     if(aPrm.isEmpty())
       myNbSeg->setValue( nbSeg );
     else
@@ -264,7 +272,7 @@ void NETGENPluginGUI_SimpleCreator::retrieveParams() const
   else {
     myNbSeg->setEnabled( false );
     myLength->setEnabled( true );
-    aPrm = (aParameters->length() > 0) ? QString(aParameters[0].in()) : QString("");
+    aPrm = getVariableName("SetLocalLength");
     if(aPrm.isEmpty())
       myLength->setValue( h->GetLocalLength() );
     else
@@ -275,7 +283,7 @@ void NETGENPluginGUI_SimpleCreator::retrieveParams() const
   if ( double area = h->GetMaxElementArea() ) {
     myLenFromEdgesCheckBox->setChecked( false );
     myArea->setEnabled( true );
-    aPrm = (aParameters->length() > 1) ? QString(aParameters[1].in()) : QString("");
+    aPrm = getVariableName("SetMaxElementArea");
     if(aPrm.isEmpty()) 
       myArea->setValue( area );
     else
@@ -285,6 +293,8 @@ void NETGENPluginGUI_SimpleCreator::retrieveParams() const
     myLenFromEdgesCheckBox->setChecked( true );
     myArea->setEnabled( false );
   }
+  if ( myAllowQuadCheckBox )
+    myAllowQuadCheckBox->setChecked( h->GetAllowQuadrangles() );
 
   // 3D
   if ( myVolume ) {
@@ -292,7 +302,7 @@ void NETGENPluginGUI_SimpleCreator::retrieveParams() const
     if ( double volume = (double) h->GetMaxElementVolume() ) {
       myLenFromFacesCheckBox->setChecked( false );
       myVolume->setEnabled( true );
-      aPrm = (aParameters->length() > 2) ? QString(aParameters[2].in()) : QString("");
+      aPrm = getVariableName("SetMaxElementVolume");
       if(aPrm.isEmpty())
         myVolume->setValue( volume );
       else
@@ -319,49 +329,43 @@ QString NETGENPluginGUI_SimpleCreator::storeParams() const
     
 
     // 1D
-    QStringList aVariablesList;
     if ( myNbSeg->isEnabled() ) {
+      h->SetVarParameter( myNbSeg->text().toLatin1().constData(), "SetNumberOfSegments");
       h->SetNumberOfSegments( myNbSeg->value() );
       valStr += "nbSeg=" + myNbSeg->text();
-      aVariablesList.append(myNbSeg->text());
     }
     else {
+      h->SetVarParameter( myLength->text().toLatin1().constData(), "SetLocalLength");
       h->SetLocalLength( myLength->value() );
       valStr += "len=" + myLength->text();
-      aVariablesList.append(myLength->text());
     }
     
-    h->SetParameters(SMESHGUI::JoinObjectParameters(aVariablesList));
-
     // 2D
     if ( myArea->isEnabled() ) {
+      h->SetVarParameter( myArea->text().toLatin1().constData(), "SetMaxElementArea");
       h->SetMaxElementArea( myArea->value() );
       valStr += "; area=" + myArea->text();
-      aVariablesList.append(myArea->text());
     }
     else {
       h->LengthFromEdges();
       valStr += "; lenFromEdges";
-      aVariablesList.append(QString());
     }
-
-    h->SetParameters(SMESHGUI::JoinObjectParameters(aVariablesList));
+    if ( myAllowQuadCheckBox )
+      h->SetAllowQuadrangles( myAllowQuadCheckBox->isChecked() );
 
     // 3D
     if ( myVolume ) {
       NETGENPlugin_SimpleHypothesis_3D_var h =
         NETGENPlugin_SimpleHypothesis_3D::_narrow( hypothesis() );
       if ( myVolume->isEnabled() ) {
+        h->SetVarParameter( myVolume->text().toLatin1().constData(), "SetMaxElementVolume");
         h->SetMaxElementVolume( myVolume->value() );
         valStr += "; vol=" + myVolume->text();
-        aVariablesList.append( myVolume->text());
       }
       else {
         h->LengthFromFaces();
         valStr += "; lenFromFaces";
-        aVariablesList.append(QString());
       }
-      h->SetParameters(SMESHGUI::JoinObjectParameters(aVariablesList));
     }
   }
   catch(const SALOME::SALOME_Exception& ex)

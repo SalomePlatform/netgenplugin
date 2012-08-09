@@ -1,24 +1,25 @@
-//  Copyright (C) 2007-2008  CEA/DEN, EDF R&D, OPEN CASCADE
+// Copyright (C) 2007-2012  CEA/DEN, EDF R&D, OPEN CASCADE
 //
-//  Copyright (C) 2003-2007  OPEN CASCADE, EADS/CCR, LIP6, CEA/DEN,
-//  CEDRAT, EDF R&D, LEG, PRINCIPIA R&D, BUREAU VERITAS
+// Copyright (C) 2003-2007  OPEN CASCADE, EADS/CCR, LIP6, CEA/DEN,
+// CEDRAT, EDF R&D, LEG, PRINCIPIA R&D, BUREAU VERITAS
 //
-//  This library is free software; you can redistribute it and/or
-//  modify it under the terms of the GNU Lesser General Public
-//  License as published by the Free Software Foundation; either
-//  version 2.1 of the License.
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 2.1 of the License.
 //
-//  This library is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-//  Lesser General Public License for more details.
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
 //
-//  You should have received a copy of the GNU Lesser General Public
-//  License along with this library; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 //
-//  See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
+// See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
 //
+
 //  NETGENPlugin GUI: GUI for plugged-in mesher NETGENPlugin
 //  File   : NETGENPluginGUI_HypothesisCreator.h
 //  Author : Michael Zorin
@@ -32,18 +33,22 @@
 
 #include <SMESHGUI_Hypotheses.h>
 
-class SalomeApp_DoubleSpinBox;
+#include <TopAbs_ShapeEnum.hxx>
+
+class SMESHGUI_SpinBox;
+class GeomSelectionTools;
 class QComboBox;
 class QCheckBox;
 class QLineEdit;
+class QTableWidget;
 
 typedef struct
 {
-  double              myMaxSize, myGrowthRate, myNbSegPerEdge, myNbSegPerRadius;
+  double              myMaxSize, myMinSize, myGrowthRate, myNbSegPerEdge, myNbSegPerRadius;
   int                 myFineness;
   bool                mySecondOrder, myAllowQuadrangles, myOptimize;
   QString             myName;
-  QString             myMaxSizeVar, myGrowthRateVar, myNbSegPerEdgeVar, myNbSegPerRadiusVar;
+  QString             myMaxSizeVar, myMinSizeVar, myGrowthRateVar, myNbSegPerEdgeVar, myNbSegPerRadiusVar;
 } NetgenHypothesisData;
 
 /*!
@@ -71,24 +76,37 @@ protected:
 
 protected slots:
   virtual void     onFinenessChanged();
+  virtual void     onAddLocalSizeOnVertex();
+  virtual void     onAddLocalSizeOnEdge();
+  virtual void     onAddLocalSizeOnFace();
+  virtual void     onRemoveLocalSizeOnShape();
+  virtual void     onSetLocalSize(int,int);
 
 private:
   bool readParamsFromHypo( NetgenHypothesisData& ) const;
   bool readParamsFromWidgets( NetgenHypothesisData& ) const;
   bool storeParamsToHypo( const NetgenHypothesisData& ) const;
+  GeomSelectionTools* getGeomSelectionTools();
+  void addLocalSizeOnShape(TopAbs_ShapeEnum);
 
 private:
  QLineEdit*        myName;
- SalomeApp_DoubleSpinBox* myMaxSize;
+ SMESHGUI_SpinBox* myMaxSize;
+ SMESHGUI_SpinBox* myMinSize;
  QCheckBox*        mySecondOrder;
  QCheckBox*        myOptimize;
  QComboBox*        myFineness;
- SalomeApp_DoubleSpinBox* myGrowthRate;
- SalomeApp_DoubleSpinBox* myNbSegPerEdge;
- SalomeApp_DoubleSpinBox* myNbSegPerRadius;
+ SMESHGUI_SpinBox* myGrowthRate;
+ SMESHGUI_SpinBox* myNbSegPerEdge;
+ SMESHGUI_SpinBox* myNbSegPerRadius;
  QCheckBox*        myAllowQuadrangles;
 
  bool myIs2D;
+ bool myIsONLY;
+
+ QTableWidget* myLocalSizeTable;
+ GeomSelectionTools* myGeomSelectionTools;
+ QMap<QString, QString> myLocalSizeMap;
 };
 
 #endif

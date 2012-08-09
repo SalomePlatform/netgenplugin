@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='us-ascii'?>
 <!DOCTYPE meshers PUBLIC "" "desktop.dtd">
 <!--
-  Copyright (C) 2007-2008  CEA/DEN, EDF R&D, OPEN CASCADE
+  Copyright (C) 2007-2012  CEA/DEN, EDF R&D, OPEN CASCADE
 
   Copyright (C) 2003-2007  OPEN CASCADE, EADS/CCR, LIP6, CEA/DEN,
   CEDRAT, EDF R&D, LEG, PRINCIPIA R&D, BUREAU VERITAS
@@ -41,6 +41,14 @@
 		label-id="NETGEN 2D Parameters"
 		icon-id="mesh_hypo_netgen_2d.png"
 		dim="2"/>
+    <hypothesis type="NETGEN_Parameters_3D"
+		label-id="NETGEN 3D Parameters"
+		icon-id="mesh_hypo_netgen.png"
+		dim="3"/>
+    <hypothesis type="NETGEN_Parameters_2D_ONLY"
+		label-id="NETGEN 2D Parameters"
+		icon-id="mesh_hypo_netgen_2d.png"
+		dim="2"/>
     <hypothesis type="NETGEN_SimpleParameters_2D"
 		label-id="NETGEN 2D Simple Parameters"
 		icon-id="mesh_hypo_netgen_2d.png"
@@ -54,33 +62,63 @@
     <algorithm type="NETGEN_3D"
                label-id="Tetrahedron (Netgen)"
                icon-id="mesh_algo_tetra.png"
-               hypos="MaxElementVolume"
+               hypos="MaxElementVolume,NETGEN_Parameters_3D"
+               opt-hypos="ViscousLayers"
 	       need-geom="false"
                input="TRIA,QUAD"
-               dim="3"/>
+               dim="3">
+      <python-wrap>
+        <algo>NETGEN_3D=Tetrahedron()</algo>
+        <hypo>MaxElementVolume=MaxElementVolume(SetMaxElementVolume())</hypo>
+        <hypo>NETGEN_Parameters_3D=Parameters()</hypo>
+        <hypo>ViscousLayers=ViscousLayers(SetTotalThickness(),SetNumberLayers(),SetStretchFactor(),SetIgnoreFaces())</hypo>
+      </python-wrap>
+    </algorithm>
+
+    <algorithm type="NETGEN_2D_ONLY"
+               label-id="Netgen 2D"
+               icon-id="mesh_algo_netgen_2d.png"
+               hypos="LengthFromEdges,MaxElementArea,NETGEN_Parameters_2D_ONLY"
+               opt-hypos="QuadranglePreference"
+               input="EDGE"
+               output="TRIA,QUAD"
+               dim="2">
+       <python-wrap>
+        <algo>NETGEN_2D_ONLY=Triangle(algo=smesh.NETGEN_2D)</algo>
+        <hypo>LengthFromEdges=LengthFromEdges()</hypo>
+        <hypo>MaxElementArea=MaxElementArea(SetMaxElementArea())</hypo>
+        <hypo>NETGEN_Parameters_2D_ONLY=Parameters()</hypo>
+        <hypo>QuadranglePreference=SetQuadAllowed()</hypo>
+      </python-wrap>
+    </algorithm>
+
     <algorithm type="NETGEN_2D"
                label-id="Netgen 1D-2D"
                icon-id="mesh_algo_netgen_2d.png"
                hypos="NETGEN_Parameters_2D, NETGEN_SimpleParameters_2D"
                output="TRIA,QUAD"
                dim="2"
-               support-submeshes="true"
-               />
+               support-submeshes="true">
+      <python-wrap>
+        <algo>NETGEN_2D=Triangle(algo=smesh.NETGEN_1D2D)</algo>
+        <hypo>NETGEN_Parameters_2D=Parameters()</hypo>
+        <hypo>NETGEN_SimpleParameters_2D=Parameters(smesh.SIMPLE)</hypo>
+      </python-wrap>
+    </algorithm>
+
     <algorithm type="NETGEN_2D3D"
                label-id="Netgen 1D-2D-3D"
                icon-id="mesh_algo_netgen_2d3d.png"
                hypos="NETGEN_Parameters, NETGEN_SimpleParameters_3D"
                dim="3"
-               support-submeshes="true"
-               />
-    <algorithm type="NETGEN_2D_ONLY"
-               label-id="Netgen 2D"
-               icon-id="mesh_algo_netgen_2d.png"
-               hypos="LengthFromEdges,MaxElementArea"
-               opt-hypos="QuadranglePreference"
-               input="EDGE"
-               output="TRIA,QUAD"
-               dim="2"/>
+               support-submeshes="true">
+      <python-wrap>
+        <algo>NETGEN_2D3D=Tetrahedron(algo=smesh.NETGEN_1D2D3D)</algo>
+        <hypo>NETGEN_Parameters=Parameters()</hypo>
+        <hypo>NETGEN_SimpleParameters_3D=Parameters(smesh.SIMPLE)</hypo>
+      </python-wrap>
+    </algorithm>
+
   </algorithms>
 </meshers-group>
 

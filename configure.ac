@@ -1,24 +1,22 @@
-#  Copyright (C) 2007-2008  CEA/DEN, EDF R&D, OPEN CASCADE
+# Copyright (C) 2007-2012  CEA/DEN, EDF R&D, OPEN CASCADE
 #
-#  Copyright (C) 2003-2007  OPEN CASCADE, EADS/CCR, LIP6, CEA/DEN,
-#  CEDRAT, EDF R&D, LEG, PRINCIPIA R&D, BUREAU VERITAS
+# This library is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Lesser General Public
+# License as published by the Free Software Foundation; either
+# version 2.1 of the License.
 #
-#  This library is free software; you can redistribute it and/or
-#  modify it under the terms of the GNU Lesser General Public
-#  License as published by the Free Software Foundation; either
-#  version 2.1 of the License.
+# This library is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
 #
-#  This library is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-#  Lesser General Public License for more details.
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 #
-#  You should have received a copy of the GNU Lesser General Public
-#  License along with this library; if not, write to the Free Software
-#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
+# See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
 #
-#  See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
-#
+
 #  PLEASE DO NOT MODIFY configure.in FILE
 #  ALL CHANGES WILL BE DISCARDED BY THE NEXT
 #  build_configure COMMAND
@@ -31,14 +29,16 @@
 # Reorganization for usage of autotools
 # Created from configure.in.base
 #
-AC_INIT([Salome2 Project NETGENPLUGIN module], [5.1.0], [webmaster.salome@opencascade.com], [SalomeNETGENPLUGIN])
-AC_CONFIG_AUX_DIR(salome_adm/unix/config_files)
+AC_INIT([Salome2 Project NETGENPLUGIN module], [6.5.0], [webmaster.salome@opencascade.com], [SalomeNETGENPLUGIN])
+AC_CONFIG_AUX_DIR(adm_local/unix/config_files)
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE([-Wno-portability])
 
 XVERSION=`echo $VERSION | awk -F. '{printf("0x%02x%02x%02x",$1,$2,$3)}'`
 AC_SUBST(XVERSION)
+VERSION_DEV=1
+AC_SUBST(VERSION_DEV)
 
 # set up MODULE_NAME variable for dynamic construction of directories (resources, etc.)
 MODULE_NAME=netgenplugin
@@ -80,6 +80,7 @@ echo
 
 AC_PROG_MAKE_SET
 AC_PROG_INSTALL
+AC_LOCAL_INSTALL
 dnl 
 dnl libtool macro check for CC, LD, NM, LN_S, RANLIB, STRIP + pour les librairies dynamiques !
 
@@ -101,7 +102,7 @@ dnl Fix up the INSTALL macro if it s a relative path. We want the
 dnl full-path to the binary instead.
 case "$INSTALL" in
    *install-sh*)
-      INSTALL='\${KERNEL_ROOT_DIR}'/salome_adm/unix/config_files/install-sh
+      INSTALL='\${KERNEL_ROOT_DIR}'/adm_local/unix/config_files/install-sh
       ;;
 esac
 
@@ -161,7 +162,15 @@ dnl testing MPICH
 dnl ---------------------------------------------
 dnl
 
-CHECK_MPICH
+dnl CHECK_MPICH
+
+echo
+echo ---------------------------------------------
+echo testing MPI
+echo ---------------------------------------------
+echo
+
+CHECK_MPI
 
 echo
 echo ---------------------------------------------
@@ -237,11 +246,34 @@ AC_SUBST_FILE(CORBA)
 corba=make_$ORB
 CORBA=adm_local/unix/$corba
 
-NETGENPLUGIN_WITH_GUI=yes
+echo
+echo ---------------------------------------------
+echo Testing GUI
+echo ---------------------------------------------
+echo
 
-AM_CONDITIONAL(NETGENPLUGIN_ENABLE_GUI, [test "${NETGENPLUGIN_WITH_GUI}" = "yes"])
+CHECK_GUI_MODULE
 
-if test "${NETGENPLUGIN_WITH_GUI}" = "yes"; then
+gui_ok=no
+if test "${SalomeGUI_need}" != "no" -a "${FullGUI_ok}" = "yes" ; then 
+  gui_ok=yes
+fi
+
+AM_CONDITIONAL(NETGENPLUGIN_ENABLE_GUI, [test "${gui_ok}" = "yes"])
+
+if test "${SalomeGUI_need}" == "yes"; then
+  if test "${FullGUI_ok}" != "yes"; then
+    AC_MSG_WARN(For configure NETGENPLUGIN module necessary full GUI!)
+  fi
+elif test "${SalomeGUI_need}" == "auto"; then
+  if test "${FullGUI_ok}" != "yes"; then
+    AC_MSG_WARN(Full GUI not found. Build will be done without GUI!)
+  fi
+elif test "${SalomeGUI_need}" == "no"; then
+  echo Build without GUI option has been chosen
+fi
+
+if test "${gui_ok}" = "yes"; then
     echo
     echo ---------------------------------------------
     echo testing openGL
@@ -257,35 +289,15 @@ if test "${NETGENPLUGIN_WITH_GUI}" = "yes"; then
     echo
 
     CHECK_QT
-
-    echo
-    echo ---------------------------------------------
-    echo testing VTK
-    echo ---------------------------------------------
-    echo
-
-    CHECK_VTK
-
-    echo
-    echo ---------------------------------------------
-    echo Testing GUI
-    echo ---------------------------------------------
-    echo
-
-    CHECK_SALOME_GUI
-
-    echo
-    echo ---------------------------------------------
-    echo Testing full GUI
-    echo ---------------------------------------------
-    echo
-
-    CHECK_CORBA_IN_GUI
-    if test "x${CORBA_IN_GUI}" != "xyes"; then
-      echo "failed : For configure NETGENPLUGIN module necessary full GUI !"
-      exit
-    fi
 fi
+
+echo
+echo ---------------------------------------------
+echo testing VTK
+echo ---------------------------------------------
+echo
+
+CHECK_VTK
 
 echo
 echo ---------------------------------------------
@@ -357,14 +369,17 @@ echo Summary
 echo ---------------------------------------------
 echo
 
+AM_CONDITIONAL(CMAKE_BUILD, false)
 #AM_CONDITIONAL( USE_GFORTRAN, [test "$F77" = "gfortran"])
 
 echo Configure
-if test "${NETGENPLUGIN_WITH_GUI}" = "yes"; then
-variables="cc_ok boost_ok lex_yacc_ok python_ok swig_ok threads_ok OpenGL_ok qt_ok vtk_ok hdf5_ok omniORB_ok occ_ok doxygen_ok graphviz_ok Kernel_ok Geom_ok SMesh_ok Netgen_ok"
-fi
-if test "${NETGENPLUGIN_WITH_GUI}" = "no"; then
-variables="cc_ok boost_ok lex_yacc_ok python_ok swig_ok threads_ok hdf5_ok omniORB_ok occ_ok doxygen_ok graphviz_ok Kernel_ok Geom_ok SMesh_ok Netgen_ok"
+
+if test "${gui_ok}" = "yes"; then
+  variables="cc_ok boost_ok lex_yacc_ok python_ok swig_ok threads_ok OpenGL_ok qt_ok vtk_ok hdf5_ok omniORB_ok occ_ok doxygen_ok graphviz_ok Kernel_ok gui_ok Geom_ok SMesh_ok Netgen_ok"
+elif test "${SalomeGUI_need}" != "no"; then
+  variables="cc_ok boost_ok lex_yacc_ok python_ok swig_ok threads_ok vtk_ok hdf5_ok omniORB_ok occ_ok doxygen_ok graphviz_ok Kernel_ok gui_ok Geom_ok SMesh_ok Netgen_ok"
+else
+  variables="cc_ok boost_ok lex_yacc_ok python_ok swig_ok threads_ok vtk_ok hdf5_ok omniORB_ok occ_ok doxygen_ok graphviz_ok Kernel_ok Geom_ok SMesh_ok Netgen_ok"
 fi
 
 for var in $variables
@@ -385,6 +400,9 @@ else
    AC_SUBST(SETX) SETX="set -x"
 fi
 
+dnl Build with SMESH cancel compute feature
+AC_DEFINE(WITH_SMESH_CANCEL_COMPUTE)
+
 dnl copy shells and utilities contained in the bin directory
 dnl excluding .in files (treated in AC-OUTPUT below) and CVS
 dnl directory
@@ -400,23 +418,41 @@ echo
 #  chmod +x ./bin/salome/*;
 #])
 
+AC_HACK_LIBTOOL
+AC_CONFIG_COMMANDS([hack_libtool],[
+sed -i "s%^CC=\"\(.*\)\"%hack_libtool (){ \n\
+  $(pwd)/hack_libtool \1 \"\$[@]\" \n\
+}\n\
+CC=\"hack_libtool\"%g" libtool
+sed -i "s%\(\s*\)for searchdir in \$newlib_search_path \$lib_search_path \$sys_lib_search_path \$shlib_search_path; do%\1searchdirs=\"\$newlib_search_path \$lib_search_path \$sys_lib_search_path \$shlib_search_path\"\n\1for searchdir in \$searchdirs; do%g" libtool
+sed -i "s%\(\s*\)searchdirs=\"\$newlib_search_path \$lib_search_path \(.*\)\"%\1searchdirs=\"\$newlib_search_path \$lib_search_path\"\n\1sss_beg=\"\"\n\1sss_end=\"\2\"%g" libtool
+sed -i "s%\(\s*\)\(for searchdir in \$searchdirs; do\)%\1for sss in \$searchdirs; do\n\1  if ! test -d \$sss; then continue; fi\n\1  ssss=\$(cd \$sss; pwd)\n\1  if test \"\$ssss\" != \"\" \&\& test -d \$ssss; then\n\1    case \$ssss in\n\1      /usr/lib | /usr/lib64 ) ;;\n\1      * ) sss_beg=\"\$sss_beg \$ssss\" ;;\n\1    esac\n\1  fi\n\1done\n\1searchdirs=\"\$sss_beg \$sss_end\"\n\1\2%g" libtool
+],[])
+
 # This list is initiated using autoscan and must be updated manually
 # when adding a new file <filename>.in to manage. When you execute
 # autoscan, the Makefile list is generated in the output file configure.scan.
 # This could be helpfull to update de configuration.
 AC_OUTPUT([ \
-  ./salome_adm/unix/SALOMEconfig.h \
-  ./adm_local/Makefile \
-  ./adm_local/unix/Makefile \
-  ./adm_local/unix/config_files/Makefile \
-  ./bin/VERSION \
-  ./bin/Makefile \
-  ./NETGENPLUGIN_version.h \
-  ./src/Makefile \
-  ./src/GUI/Makefile \
-  ./src/NETGEN/Makefile \
-  ./src/NETGENPlugin/Makefile \
-  ./resources/Makefile \
-  ./idl/Makefile \
+  adm_local/Makefile \
+  adm_local/unix/Makefile \
+  adm_local/unix/config_files/Makefile \
+  bin/VERSION \
+  bin/Makefile \
+  NETGENPLUGIN_version.h \
+  doc/Makefile \
+  doc/salome/Makefile \
+  doc/salome/gui/Makefile \
+  doc/salome/gui/NETGENPLUGIN/Makefile \
+  doc/salome/gui/NETGENPLUGIN/doxyfile \
+  doc/salome/gui/NETGENPLUGIN/doxyfile_py \
+  doc/salome/gui/NETGENPLUGIN/static/header.html \
+  doc/salome/gui/NETGENPLUGIN/static/header_py.html \
+  src/Makefile \
+  src/GUI/Makefile \
+  src/NETGEN/Makefile \
+  src/NETGENPlugin/Makefile \
+  resources/Makefile \
+  idl/Makefile \
   Makefile \
 ])

@@ -1,24 +1,22 @@
-//  Copyright (C) 2007-2008  CEA/DEN, EDF R&D, OPEN CASCADE
+// Copyright (C) 2007-2012  CEA/DEN, EDF R&D, OPEN CASCADE
 //
-//  Copyright (C) 2003-2007  OPEN CASCADE, EADS/CCR, LIP6, CEA/DEN,
-//  CEDRAT, EDF R&D, LEG, PRINCIPIA R&D, BUREAU VERITAS
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 2.1 of the License.
 //
-//  This library is free software; you can redistribute it and/or
-//  modify it under the terms of the GNU Lesser General Public
-//  License as published by the Free Software Foundation; either
-//  version 2.1 of the License.
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
 //
-//  This library is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-//  Lesser General Public License for more details.
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 //
-//  You should have received a copy of the GNU Lesser General Public
-//  License along with this library; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
+// See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
 //
-//  See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
-//
+
 //  NETGENPlugin : C++ implementation
 // File      : NETGENPlugin_SimpleHypothesis_2D_i.cxx
 // Author    : Edward AGAPOV
@@ -33,6 +31,8 @@
 
 #include <Utils_CorbaException.hxx>
 #include <utilities.h>
+
+#include <TCollection_AsciiString.hxx>
 
 using namespace std;
 
@@ -84,7 +84,7 @@ void NETGENPlugin_SimpleHypothesis_2D_i::SetNumberOfSegments(CORBA::Short nb)
   catch (SALOME_Exception& S_ex) {
     THROW_SALOME_CORBA_EXCEPTION( S_ex.what(), SALOME::BAD_PARAM );
   }
-  SMESH::TPythonDump() << _this() << ".SetNumberOfSegments( " << nb << " )";
+  SMESH::TPythonDump() << _this() << ".SetNumberOfSegments( " << SMESH::TVar(nb) << " )";
 }
 
 //=============================================================================
@@ -115,7 +115,7 @@ void NETGENPlugin_SimpleHypothesis_2D_i::SetLocalLength(CORBA::Double segmentLen
   catch (SALOME_Exception& S_ex) {
     THROW_SALOME_CORBA_EXCEPTION( S_ex.what(), SALOME::BAD_PARAM );
   }
-  SMESH::TPythonDump() << _this() << ".SetLocalLength( " << segmentLength << " )";
+  SMESH::TPythonDump() << _this() << ".SetLocalLength( " << SMESH::TVar(segmentLength) << " )";
 }
 
 //================================================================================
@@ -154,7 +154,7 @@ void NETGENPlugin_SimpleHypothesis_2D_i::SetMaxElementArea(CORBA::Double area)
   MESSAGE("NETGENPlugin_SimpleHypothesis_2D_i::SetMaxElementArea");
   ASSERT(myBaseImpl);
   this->GetImpl()->SetMaxElementArea(area);
-  SMESH::TPythonDump() << _this() << ".SetMaxElementArea( " << area << " )";
+  SMESH::TPythonDump() << _this() << ".SetMaxElementArea( " << SMESH::TVar(area) << " )";
 }
 
 
@@ -163,18 +163,43 @@ void NETGENPlugin_SimpleHypothesis_2D_i::SetMaxElementArea(CORBA::Double area)
  *  NETGENPlugin_SimpleHypothesis_2D_i::GetMaxElementArea()
  */
 //=============================================================================
+
 CORBA::Double NETGENPlugin_SimpleHypothesis_2D_i::GetMaxElementArea()
 {
   MESSAGE("NETGENPlugin_SimpleHypothesis_2D_i::GetMaxElementArea");
   ASSERT(myBaseImpl);
   return this->GetImpl()->GetMaxElementArea();
 }
+
+//=============================================================================
+/*!
+ * Enables/disables generation of quadrangular faces
+ */
+//=============================================================================
+
+void NETGENPlugin_SimpleHypothesis_2D_i::SetAllowQuadrangles(CORBA::Boolean toAllow)
+{
+  ASSERT(myBaseImpl);
+  SMESH::TPythonDump() << _this() << ".SetAllowQuadrangles( " << toAllow << " )";
+  this->GetImpl()->SetAllowQuadrangles(toAllow);
+}
+
+//=============================================================================
+/*!
+ * Returns true if generation of quadrangular faces is enabled
+ */
+//=============================================================================
+
+CORBA::Boolean NETGENPlugin_SimpleHypothesis_2D_i::GetAllowQuadrangles()
+{
+  return this->GetImpl()->GetAllowQuadrangles();
+}
 //=============================================================================
 /*!
  *  NETGENPlugin_SimpleHypothesis_2D_i::GetImpl
  */
 //=============================================================================
-::NETGENPlugin_SimpleHypothesis_2D* NETGENPlugin_SimpleHypothesis_2D_i::GetImpl()
+::NETGENPlugin_SimpleHypothesis_2D* NETGENPlugin_SimpleHypothesis_2D_i::GetImpl() const
 {
   MESSAGE("NETGENPlugin_SimpleHypothesis_2D_i::GetImpl");
   return (::NETGENPlugin_SimpleHypothesis_2D*)myBaseImpl;
@@ -183,13 +208,51 @@ CORBA::Double NETGENPlugin_SimpleHypothesis_2D_i::GetMaxElementArea()
 //================================================================================
 /*!
  * \brief Verify whether hypothesis supports given entity type 
-  * \param type - dimension (see SMESH::Dimension enumeration)
-  * \retval CORBA::Boolean - TRUE if dimension is supported, FALSE otherwise
- * 
+ * \param type - dimension (see SMESH::Dimension enumeration)
+ * \retval CORBA::Boolean - TRUE if dimension is supported, FALSE otherwise
+ *
  * Verify whether hypothesis supports given entity type (see SMESH::Dimension enumeration)
  */
 //================================================================================  
 CORBA::Boolean NETGENPlugin_SimpleHypothesis_2D_i::IsDimSupported( SMESH::Dimension type )
 {
   return type == SMESH::DIM_2D;
+}
+
+//================================================================================
+/*!
+ * \brief method intended to remove explicit treatment of Netgen hypotheses from SMESH_NoteBook
+ */
+//================================================================================
+
+int NETGENPlugin_SimpleHypothesis_2D_i::getParamIndex(const TCollection_AsciiString& method,
+                                                      int nbVars) const
+{
+  if ( method == "SetLocalLength"      ) return 0;
+  if ( method == "SetNumberOfSegments" ) return 0;
+  if ( method == "SetMaxElementArea"   ) return 1;
+  if ( method == "LengthFromEdges"     ) return 10; // just to go to the next state
+  if ( method == "SetMaxElementVolume" ) return 2;
+  if ( method == "LengthFromFaces"     ) return 10; // just to go to the next state
+
+  return SMESH_Hypothesis_i::getParamIndex( method, nbVars ); // return default value
+}
+
+//================================================================================
+/*!
+ * \brief Method used to convert variable parameters stored in an old study
+ * into myMethod2VarParams. It should return a method name for an index of
+ * variable parameters. Index is countered from zero
+ */
+//================================================================================
+
+std::string NETGENPlugin_SimpleHypothesis_2D_i::getMethodOfParameter(const int paramIndex,
+                                                                     int nbVars) const
+{
+  switch ( paramIndex ) {
+  case 0: return GetImpl()->GetNumberOfSegments() ? "SetNumberOfSegments" : "SetLocalLength";
+  case 1: return "SetMaxElementArea";
+  case 2: return "SetMaxElementVolume";
+  }
+  return "";
 }
