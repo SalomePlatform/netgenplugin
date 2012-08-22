@@ -21,11 +21,6 @@
 # @package NETGENPluginDC
 # Python API for the NETGEN meshing plug-in module.
 
-##
-# @package smesh
-# Documentation of the methods dynamically added by the NETGEN meshing plug-in to the
-# smesh.Mesh class.
-
 from smesh import Mesh_Algorithm, AssureGeomPublished, ParseParameters, IsEqual
 
 # import NETGENPlugin module if possible
