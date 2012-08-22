@@ -24,8 +24,7 @@ algorithms </em></center>
 - <b>Min Size</b> - minimum linear dimensions for mesh cells. It is
 ignored if it is more than <b>Max Size</b>.
 - <b>Second Order</b> - if this box is checked in, the algorithm will
-create second order nodes on the mesh, which actually will become
-\ref adding_quadratic_elements_page "Quadratic".
+create second order nodes on the mesh, which will then become quadratic.
 - <b>Fineness</b> - ranging from Very Coarse to Very Fine allows to set the
 level of meshing detalization using the three parameters below. You
 can select Custom to define them manually.
@@ -59,17 +58,18 @@ parameters</b> allow defining the size of elements for each
 dimension.
 
 \b 1D group allows defining the size of 1D elements in either of two ways: 
-- <b>Number of Segments</b> has the same sense as \ref
-number_of_segments_anchor "Number of segments" hypothesis with
-equidistant distribution.
-- <b>Local Length</b> has the same sense as \ref 
-average_length_anchor "Local Length" hypothesis.
+- <b>Number of Segments</b> allows specifying number of segments, that
+will split each edge, with equidistant distribution.
+- <b>Local Length</b> can be applied for meshing of edges
+composing geometrical object. Definition of this hypothesis
+consists of setting required \b length of segments.
 
 \b 2D group allows defining the size of 2D elements 
-- <b>Length from edges</b> if checked in, acts like \ref
-length_from_edges_anchor "Length from Edges" hypothesis, else
-- <b>Max. Element Area</b> defines the maximum element area like \ref
-max_element_area_anchor "Max Element Area" hypothesis.
+- <b>Length from edges</b> if checked in, hypothesis forces building of
+2D mesh segments having a length calculated as an average edge length
+for a given wire, else
+- <b>Max. Element Area</b> specifies expected maximum element area for
+each 2d element.
 - <b>Allow Quadrangles</b> - allows to use quadrangle elements in a
 triangle 2D mesh. This checkbox is not present in Netgen 3D simple parameters
 because currently building a tetrahedral mesh with quadrangle faces is
@@ -78,9 +78,8 @@ not possible.
 \b 3D groups allows defining the size of 3D elements.
 - <b>Length from faces</b> if checked in, the area of sides of
 volumic elements will be equal to an average area of 2D elements, else
-- <b>Max. Element Volume</b> defines the maximum element volume like
-\ref max_element_volume_hypo_page "Max Element Volume"
-hypothesis.
+- <b>Max. Element Volume</b> specifies expected maximum element volume
+of each 3d element.
 
 \note Netgen algorithm does not strictly follow the input
 parameters. The actual mesh can be more or less dense than
