@@ -253,7 +253,7 @@ void NETGENPluginGUI_SimpleCreator::retrieveParams() const
 
   // set values of hypothesis
 
-  SMESH::ListOfParameters_var aParameters = h->GetLastParameters();
+  //SMESH::ListOfParameters_var aParameters = h->GetLastParameters();
 
   // 1D
   int nbSeg = isCreation() ? dfltNbSeg : (int) h->GetNumberOfSegments();
