@@ -389,13 +389,13 @@ bool NETGENPluginGUI_HypothesisCreator::readParamsFromHypo( NetgenHypothesisData
   h_data.myMinSize = h->GetMinSize();
   h_data.myMinSizeVar = getVariableName("SetMinSize");
 
-  if ( myIs2D )
+  //if ( myIs2D )
     {
-      NETGENPlugin::NETGENPlugin_Hypothesis_2D_var h_2d =
-        NETGENPlugin::NETGENPlugin_Hypothesis_2D::_narrow( initParamsHypothesis() );
+      NETGENPlugin::NETGENPlugin_Hypothesis_var h =
+        NETGENPlugin::NETGENPlugin_Hypothesis::_narrow( initParamsHypothesis() );
 
-      if ( !h_2d->_is_nil() )
-        h_data.myAllowQuadrangles = h_2d->GetQuadAllowed();
+      if ( !h->_is_nil() )
+        h_data.myAllowQuadrangles = h->GetQuadAllowed();
     }
   
   NETGENPluginGUI_HypothesisCreator* that = (NETGENPluginGUI_HypothesisCreator*)this;
