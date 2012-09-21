@@ -45,16 +45,16 @@ public:
 
   NETGENPlugin_Hypothesis_2D(int hypId, int studyId, SMESH_Gen * gen);
 
-  void SetQuadAllowed(bool theVal);
-  bool GetQuadAllowed() const { return _quadAllowed; }
-  static bool GetDefaultQuadAllowed();
+  // void SetQuadAllowed(bool theVal);
+  // bool GetQuadAllowed() const { return _quadAllowed; }
+  // static bool GetDefaultQuadAllowed();
 
   // Persistence
-  virtual ostream & SaveTo(ostream & save);
-  virtual istream & LoadFrom(istream & load);
+  // virtual ostream & SaveTo(ostream & save);
+  // virtual istream & LoadFrom(istream & load);
 
-private:
-  bool _quadAllowed;
+// private:
+//   bool _quadAllowed;
 };
 
 #endif
