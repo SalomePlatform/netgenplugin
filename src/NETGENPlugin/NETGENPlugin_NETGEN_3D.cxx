@@ -32,18 +32,19 @@
 
 #include "NETGENPlugin_Hypothesis.hxx"
 
-#include "SMDS_MeshElement.hxx"
-#include "SMDS_MeshNode.hxx"
-#include "SMESHDS_Mesh.hxx"
-#include "SMESH_Comment.hxx"
-#include "SMESH_ControlsDef.hxx"
-#include "SMESH_Gen.hxx"
-#include "SMESH_Mesh.hxx"
-#include "SMESH_MesherHelper.hxx"
-#include "SMESH_MeshEditor.hxx"
-#include "StdMeshers_QuadToTriaAdaptor.hxx"
-#include "StdMeshers_MaxElementVolume.hxx"
-#include "StdMeshers_ViscousLayers.hxx"
+#include <SMDS_MeshElement.hxx>
+#include <SMDS_MeshNode.hxx>
+#include <SMESHDS_Mesh.hxx>
+#include <SMESH_Comment.hxx>
+#include <SMESH_ControlsDef.hxx>
+#include <SMESH_Gen.hxx>
+#include <SMESH_Mesh.hxx>
+#include <SMESH_MeshEditor.hxx>
+#include <SMESH_MesherHelper.hxx>
+#include <SMESH_subMesh.hxx>
+#include <StdMeshers_MaxElementVolume.hxx>
+#include <StdMeshers_QuadToTriaAdaptor.hxx>
+#include <StdMeshers_ViscousLayers.hxx>
 
 #include <BRepGProp.hxx>
 #include <BRep_Tool.hxx>
@@ -56,7 +57,7 @@
 #include <Standard_Failure.hxx>
 #include <Standard_ErrorHandler.hxx>
 
-#include "utilities.h"
+#include <utilities.h>
 
 #include <list>
 #include <vector>

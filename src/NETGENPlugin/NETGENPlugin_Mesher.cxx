@@ -2340,7 +2340,9 @@ bool NETGENPlugin_Mesher::Evaluate(MapShapeNbElems& aResMap)
   // Prepare OCC geometry
   // -------------------------
   netgen::OCCGeometry occgeo;
-  PrepareOCCgeometry( occgeo, _shape, *_mesh );
+  list< SMESH_subMesh* > meshedSM[3]; // for 0-2 dimensions
+  NETGENPlugin_Internals internals( *_mesh, _shape, _isVolume );
+  PrepareOCCgeometry( occgeo, _shape, *_mesh, meshedSM, &internals );
 
   bool tooManyElems = false;
   const int hugeNb = std::numeric_limits<int>::max() / 100;
@@ -2349,26 +2351,31 @@ bool NETGENPlugin_Mesher::Evaluate(MapShapeNbElems& aResMap)
   // evaluate 1D 
   // ----------------
   // pass 1D simple parameters to NETGEN
-  if ( _simpleHyp ) {
-    if ( int nbSeg = _simpleHyp->GetNumberOfSegments() ) {
+  if ( _simpleHyp )
+  {
+    // not to RestrictLocalH() according to curvature during MESHCONST_ANALYSE
+    mparams.uselocalh = false;
+    mparams.grading = 0.8; // not limitited size growth
+
+    if ( _simpleHyp->GetNumberOfSegments() )
       // nb of segments
-      mparams.segmentsperedge = nbSeg + 0.1;
       mparams.maxh = occgeo.boundingbox.Diam();
-      mparams.minh = GetDefaultMinSize( _shape, mparams.maxh );
-      mparams.grading = 0.01;
-    }
-    else {
+    else
       // segment length
-      mparams.segmentsperedge = 1;
       mparams.maxh = _simpleHyp->GetLocalLength();
-    }
   }
+
+  if ( mparams.maxh == 0.0 )
+    mparams.maxh = occgeo.boundingbox.Diam();
+  if ( _simpleHyp || ( mparams.minh == 0.0 && _fineness != NETGENPlugin_Hypothesis::UserDefined))
+    mparams.minh = GetDefaultMinSize( _shape, mparams.maxh );
+
   // let netgen create ngMesh and calculate element size on not meshed shapes
   NETGENPlugin_NetgenLibWrapper ngLib;
   netgen::Mesh *ngMesh = NULL;
   char *optstr = 0;
   int startWith = netgen::MESHCONST_ANALYSE;
-  int endWith   = netgen::MESHCONST_MESHEDGES;
+  int endWith   = netgen::MESHCONST_ANALYSE;
   int err = netgen::OCCGenerateMesh(occgeo, ngMesh, startWith, endWith, optstr);
 #ifdef WITH_SMESH_CANCEL_COMPUTE
   if(netgen::multithread.terminate)
@@ -2380,7 +2387,53 @@ bool NETGENPlugin_Mesher::Evaluate(MapShapeNbElems& aResMap)
       sm->GetComputeError().reset( new SMESH_ComputeError( COMPERR_ALGO_FAILED ));
     return false;
   }
-
+  if ( _simpleHyp )
+  {
+    // Pass 1D simple parameters to NETGEN
+    // --------------------------------
+    int      nbSeg = _simpleHyp->GetNumberOfSegments();
+    double segSize = _simpleHyp->GetLocalLength();
+    for ( int iE = 1; iE <= occgeo.emap.Extent(); ++iE )
+    {
+      const TopoDS_Edge& e = TopoDS::Edge( occgeo.emap(iE));
+      if ( nbSeg )
+        segSize = SMESH_Algo::EdgeLength( e ) / ( nbSeg - 0.4 );
+      setLocalSize( e, segSize, *ngMesh );
+    }
+  }
+  else // if ( ! _simpleHyp )
+  {
+    // Local size on vertices and edges
+    // --------------------------------
+    for(std::map<int,double>::const_iterator it=EdgeId2LocalSize.begin(); it!=EdgeId2LocalSize.end(); it++)
+    {
+      int key = (*it).first;
+      double hi = (*it).second;
+      const TopoDS_Shape& shape = ShapesWithLocalSize.FindKey(key);
+      const TopoDS_Edge& e = TopoDS::Edge(shape);
+      setLocalSize( e, hi, *ngMesh );
+    }
+    for(std::map<int,double>::const_iterator it=VertexId2LocalSize.begin(); it!=VertexId2LocalSize.end(); it++)
+    {
+      int key = (*it).first;
+      double hi = (*it).second;
+      const TopoDS_Shape& shape = ShapesWithLocalSize.FindKey(key);
+      const TopoDS_Vertex& v = TopoDS::Vertex(shape);
+      gp_Pnt p = BRep_Tool::Pnt(v);
+      NETGENPlugin_Mesher::RestrictLocalSize( *ngMesh, p.XYZ(), hi );
+    }
+    for(map<int,double>::const_iterator it=FaceId2LocalSize.begin();
+        it!=FaceId2LocalSize.end(); it++)
+    {
+      int key = (*it).first;
+      double val = (*it).second;
+      const TopoDS_Shape& shape = ShapesWithLocalSize.FindKey(key);
+      int faceNgID = occgeo.fmap.FindIndex(shape);
+      occgeo.SetFaceMaxH(faceNgID, val);
+      for ( TopExp_Explorer edgeExp( shape, TopAbs_EDGE ); edgeExp.More(); edgeExp.Next() )
+        setLocalSize( TopoDS::Edge( edgeExp.Current() ), val, *ngMesh );
+    }
+  }
   // calculate total nb of segments and length of edges
   double fullLen = 0.0;
   int fullNbSeg = 0;

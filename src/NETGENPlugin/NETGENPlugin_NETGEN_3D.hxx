@@ -34,7 +34,7 @@
 #include "NETGENPlugin_Defs.hxx"
 #include "NETGENPlugin_Mesher.hxx"
 
-#include "SMESH_3D_Algo.hxx"
+#include "SMESH_Algo.hxx"
 #include "Utils_SALOME_Exception.hxx"
 
 class StdMeshers_ViscousLayers;

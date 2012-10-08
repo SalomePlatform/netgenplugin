@@ -39,8 +39,8 @@ using namespace std;
 //=============================================================================
 NETGENPlugin_Hypothesis_2D::NETGENPlugin_Hypothesis_2D (int hypId, int studyId,
                                                         SMESH_Gen * gen)
-  : NETGENPlugin_Hypothesis(hypId, studyId, gen),
-    _quadAllowed (GetDefaultQuadAllowed())
+  : NETGENPlugin_Hypothesis(hypId, studyId, gen)/*,
+    _quadAllowed (GetDefaultQuadAllowed())*/
 {
   _name = "NETGEN_Parameters_2D";
   _param_algo_dim = 2;
@@ -51,56 +51,56 @@ NETGENPlugin_Hypothesis_2D::NETGENPlugin_Hypothesis_2D (int hypId, int studyId,
  *  
  */
 //=============================================================================
-void NETGENPlugin_Hypothesis_2D::SetQuadAllowed(bool theVal)
-{
-  if (theVal != _quadAllowed)
-  {
-    _quadAllowed = theVal;
-    NotifySubMeshesHypothesisModification();
-  }
-}
+// void NETGENPlugin_Hypothesis_2D::SetQuadAllowed(bool theVal)
+// {
+//   if (theVal != _quadAllowed)
+//   {
+//     _quadAllowed = theVal;
+//     NotifySubMeshesHypothesisModification();
+//   }
+// }
 
-//=============================================================================
-/*!
- *  
- */
-//=============================================================================
-bool NETGENPlugin_Hypothesis_2D::GetDefaultQuadAllowed()
-{
-  return false;
-}
+// //=============================================================================
+// /*!
+//  *  
+//  */
+// //=============================================================================
+// bool NETGENPlugin_Hypothesis_2D::GetDefaultQuadAllowed()
+// {
+//   return false;
+// }
 
-//=============================================================================
-/*!
- *  
- */
-//=============================================================================
-ostream & NETGENPlugin_Hypothesis_2D::SaveTo(ostream & save)
-{
-  NETGENPlugin_Hypothesis::SaveTo(save);
+// //=============================================================================
+// /*!
+//  *  
+//  */
+// //=============================================================================
+// ostream & NETGENPlugin_Hypothesis_2D::SaveTo(ostream & save)
+// {
+//   NETGENPlugin_Hypothesis::SaveTo(save);
 
-  save << " " << (int)_quadAllowed;
+//   save << " " << (int)_quadAllowed;
 
-  return save;
-}
+//   return save;
+// }
 
-//=============================================================================
-/*!
- *  
- */
-//=============================================================================
-istream & NETGENPlugin_Hypothesis_2D::LoadFrom(istream & load)
-{
-  NETGENPlugin_Hypothesis::LoadFrom(load);
+// //=============================================================================
+// /*!
+//  *  
+//  */
+// //=============================================================================
+// istream & NETGENPlugin_Hypothesis_2D::LoadFrom(istream & load)
+// {
+//   NETGENPlugin_Hypothesis::LoadFrom(load);
 
-  bool isOK = true;
-  int is;
+//   bool isOK = true;
+//   int is;
 
-  isOK = (load >> is);
-  if (isOK)
-    _quadAllowed = (bool) is;
-  else
-    load.clear(ios::badbit | load.rdstate());
+//   isOK = (load >> is);
+//   if (isOK)
+//     _quadAllowed = (bool) is;
+//   else
+//     load.clear(ios::badbit | load.rdstate());
 
-  return load;
-}
+//   return load;
+// }

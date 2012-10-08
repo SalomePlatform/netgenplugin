@@ -26,23 +26,24 @@
 #include "NETGENPlugin_Mesher.hxx"
 #include "NETGENPlugin_Hypothesis_2D.hxx"
 
-#include "SMDS_MeshElement.hxx"
-#include "SMDS_MeshNode.hxx"
-#include "SMESHDS_Mesh.hxx"
-#include "SMESH_Comment.hxx"
-#include "SMESH_Gen.hxx"
-#include "SMESH_Mesh.hxx"
-#include "SMESH_MesherHelper.hxx"
-#include "StdMeshers_FaceSide.hxx"
-#include "StdMeshers_MaxElementArea.hxx"
-#include "StdMeshers_LengthFromEdges.hxx"
-#include "StdMeshers_QuadranglePreference.hxx"
+#include <SMDS_MeshElement.hxx>
+#include <SMDS_MeshNode.hxx>
+#include <SMESHDS_Mesh.hxx>
+#include <SMESH_Comment.hxx>
+#include <SMESH_Gen.hxx>
+#include <SMESH_Mesh.hxx>
+#include <SMESH_MesherHelper.hxx>
+#include <SMESH_subMesh.hxx>
+#include <StdMeshers_FaceSide.hxx>
+#include <StdMeshers_LengthFromEdges.hxx>
+#include <StdMeshers_MaxElementArea.hxx>
+#include <StdMeshers_QuadranglePreference.hxx>
 
 #include <Precision.hxx>
 #include <Standard_ErrorHandler.hxx>
 #include <Standard_Failure.hxx>
 
-#include "utilities.h"
+#include <utilities.h>
 
 #include <list>
 #include <vector>

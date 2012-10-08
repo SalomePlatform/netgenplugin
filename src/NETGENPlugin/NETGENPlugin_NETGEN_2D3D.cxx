@@ -25,7 +25,6 @@
 // Author : Michael Sazonov (OCN)
 // Date   : 20/03/2006
 // Project   : SALOME
-// $Header$
 //=============================================================================
 //
 #include "NETGENPlugin_NETGEN_2D3D.hxx"
@@ -125,7 +124,7 @@ bool NETGENPlugin_NETGEN_2D3D::CheckHypothesis
 
 //=============================================================================
 /*!
- *Here we are going to use the NETGEN mesher
+ *  Here we are going to use the NETGEN mesher
  */
 //=============================================================================
 
@@ -135,14 +134,18 @@ bool NETGENPlugin_NETGEN_2D3D::Compute(SMESH_Mesh&         aMesh,
 #ifdef WITH_SMESH_CANCEL_COMPUTE
   netgen::multithread.terminate = 0;
 #endif
-//   SMESHDS_Mesh* meshDS = aMesh.GetMeshDS();
 
   NETGENPlugin_Mesher mesher(&aMesh, aShape, true);
-//   NETGENPlugin_Mesher mesher(meshDS, aShape, true);
   mesher.SetParameters(dynamic_cast<const NETGENPlugin_Hypothesis*>(_hypothesis));
   mesher.SetParameters(dynamic_cast<const NETGENPlugin_SimpleHypothesis_2D*>(_hypothesis));
   return mesher.Compute();
 }
+
+//=============================================================================
+/*!
+ *
+ */
+//=============================================================================
 
 #ifdef WITH_SMESH_CANCEL_COMPUTE
 void NETGENPlugin_NETGEN_2D3D::CancelCompute()

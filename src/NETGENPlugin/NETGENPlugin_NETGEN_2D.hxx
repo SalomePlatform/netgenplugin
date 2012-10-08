@@ -25,7 +25,6 @@
 // Author    : Michael Sazonov (OCN)
 // Date      : 20/03/2006
 // Project   : SALOME
-// $Header$
 //=============================================================================
 //
 #ifndef _NETGENPlugin_NETGEN_2D_HXX_
@@ -33,12 +32,10 @@
 
 #include "NETGENPlugin_Defs.hxx"
 
-#include "SMESH_2D_Algo.hxx"
+#include "SMESH_Algo.hxx"
 #include "SMESH_Mesh.hxx"
 #include "StdMeshers_MaxElementVolume.hxx"
 #include "Utils_SALOME_Exception.hxx"
-
-//class NETGENPlugin_Hypothesis_2D;
 
 class NETGENPLUGIN_EXPORT NETGENPlugin_NETGEN_2D: public SMESH_2D_Algo
 {

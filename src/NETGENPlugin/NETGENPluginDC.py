@@ -17,7 +17,12 @@
 # See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
 #
 
-from smesh import Mesh_Algorithm, AssureGeomPublished, ParseParameters, IsEqual
+##
+# @package NETGENPluginDC
+# Python API for the NETGEN meshing plug-in module.
+
+from smesh_algorithm import Mesh_Algorithm
+from smesh import AssureGeomPublished, ParseParameters, IsEqual
 
 # import NETGENPlugin module if possible
 noNETGENPlugin = 0
@@ -27,71 +32,117 @@ except ImportError:
     noNETGENPlugin = 1
     pass
 
-# Types of algorithms
+#----------------------------
+# Mesh algo type identifiers
+#----------------------------
+
+## Algorithm type: Netgen tetrahedron 3D algorithm, see NETGEN_3D_Algorithm 
 NETGEN_3D     = "NETGEN_3D"
+## Algorithm type: Netgen tetrahedron 1D-2D-3D algorithm, see NETGEN_1D2D3D_Algorithm 
 NETGEN_1D2D3D = "NETGEN_2D3D"
+## Algorithm type: Netgen triangle 1D-2D algorithm, see NETGEN_1D2D_Algorithm 
 NETGEN_1D2D   = "NETGEN_2D"
+## Algorithm type: Netgen triangle 2D algorithm, see NETGEN_2D_Only_Algorithm
 NETGEN_2D     = "NETGEN_2D_ONLY"
+## Algorithm type: Synonim of NETGEN_1D2D3D, see NETGEN_1D2D3D_Algorithm 
 NETGEN_FULL   = NETGEN_1D2D3D
+## Algorithm type: Synonim of NETGEN_3D, see NETGEN_3D_Algorithm 
 NETGEN        = NETGEN_3D
+## Algorithm type: Synonim of NETGEN_1D2D3D, see NETGEN_1D2D3D_Algorithm 
 FULL_NETGEN   = NETGEN_FULL
 
+#----------------------------
+# Hypothesis type enumeration
+#----------------------------
+
+## Hypothesis type enumeration: complex hypothesis
+#  (full set of parameters can be specified),
+#  see NETGEN_Algorithm.Parameters()
 SOLE   = 0
+## Hypothesis type enumeration: simple hypothesis
+#  (only major parameters are specified),
+#  see NETGEN_Algorithm.Parameters()
 SIMPLE = 1
 
+#----------------------
 # Fineness enumeration
+#----------------------
+
+## Fineness enumeration: very coarse quality of mesh,
+#  see NETGEN_Algorithm.SetFineness()
 VeryCoarse = 0
+## Fineness enumeration: coarse quality of mesh,
+#  see NETGEN_Algorithm.SetFineness()
 Coarse     = 1
+## Fineness enumeration: moderate quality of mesh,
+#  see NETGEN_Algorithm.SetFineness()
 Moderate   = 2
+## Fineness enumeration: fine quality of mesh,
+#  see NETGEN_Algorithm.SetFineness()
 Fine       = 3
+## Fineness enumeration: very fine quality of mesh,
+#  see NETGEN_Algorithm.SetFineness()
 VeryFine   = 4
+## Fineness enumeration: custom quality of mesh specified by other parameters),
+#  see NETGEN_Algorithm.SetFineness()
 Custom     = 5
+
+#----------------------
+# Algorithms
+#----------------------
 
 ## Base of all NETGEN algorithms.
 #
+#  This class provides common methods for all algorithms implemented by NETGEN plugin.
+#  @note This class must not be instantiated directly.
 class NETGEN_Algorithm(Mesh_Algorithm):
 
+    ## Private constructor
+    #  @param mesh parent mesh object algorithm is assigned to
+    #  @param geom geometry (shape/sub-shape) algorithm is assigned to;
+    #              if it is @c 0 (default), the algorithm is assigned to the main shape
     def __init__(self, mesh, geom=0):
         Mesh_Algorithm.__init__(self)
         if noNETGENPlugin: print "Warning: NETGENPlugin module unavailable"
         self.Create(mesh, geom, self.algoType, "libNETGENEngine.so")
         self.params = None
+        pass
 
-    ## Sets MaxSize
-    #
+    ## Sets @c MaxSize parameter
+    #  @param theSize new value of the @c MaxSize parameter
     def SetMaxSize(self, theSize):
-        if self.Parameters():
-            self.params.SetMaxSize(theSize)
+        if self.Parameters(): self.params.SetMaxSize(theSize)
+        pass
 
-    ## Sets MinSize
-    #
+    ## Sets @c MinSize parameter
+    #  @param theSize new value of the @c MinSize parameter
     def SetMinSize(self, theSize):
-        if self.Parameters():
-            self.params.SetMinSize(theSize)
+        if self.Parameters(): self.params.SetMinSize(theSize)
+        pass
 
-
-    ## Sets Optimize flag
-    #
+    ## Sets @c Optimize flag
+    #  @param theVal new value of the @c Optimize parameter
     def SetOptimize(self, theVal):
-        if self.Parameters():
-            self.params.SetOptimize(theVal)
+        if self.Parameters(): self.params.SetOptimize(theVal)
+        pass
 
-    ## Sets Fineness
-    #  @param theFineness is:
-    #  VeryCoarse, Coarse, Moderate, Fine, VeryFine or Custom
-    #
+    ## Sets @c Fineness parameter
+    #  @param theFineness new value of the @c Fineness parameter; it can be:
+    #  @ref VeryCoarse, @ref Coarse, @ref Moderate, @ref Fine, @ref VeryFine or @ref Custom
     def SetFineness(self, theFineness):
-        if self.Parameters():
-            self.params.SetFineness(theFineness)
+        if self.Parameters(): self.params.SetFineness(theFineness)
+        pass
 
-    ## Sets GrowthRate
-    #
+    ## Sets @c GrowthRate parameter
+    #  @param theRate new value of the @c GrowthRate parameter
     def SetGrowthRate(self, theRate):
-        if self.Parameters():
-            self.params.SetGrowthRate(theRate)
+        if self.Parameters(): self.params.SetGrowthRate(theRate)
+        pass
 
-    ## Defines hypothesis having several parameters
-    #
+    ## Creates meshing hypothesis according to the chosen algorithm type
+    #  and initializes it with default parameters
+    #  @param which hypothesis type; can be either @ref SOLE (default) or @ref SIMPLE
+    #  @return hypothesis object
     def Parameters(self, which=SOLE):
         if self.algoType == NETGEN_1D2D:
             if which == SIMPLE:
@@ -116,111 +167,161 @@ class NETGEN_Algorithm(Mesh_Algorithm):
 
         return self.params
 
+    pass # end of NETGEN_Algorithm class
 
 
-## Defines a tetrahedron 1D-2D-3D algorithm
-#  It is created by calling Mesh.Triangle( NETGEN_1D2D3D, geom=0 )
+## Tetrahedron 1D-2D-3D algorithm.
 #
+#  It can be created by calling smesh.Mesh.Tetrahedron( smesh.NETGEN_1D2D3D, geom=0 ).
+#  This algorithm generates all 1D (edges), 2D (faces) and 3D (volumes) elements
+#  for given geometrical shape.
 class NETGEN_1D2D3D_Algorithm(NETGEN_Algorithm):
 
+    ## name of the dynamic method in smesh.Mesh class
+    #  @internal
     meshMethod = "Tetrahedron"
+    ## type of algorithm used with helper function in smesh.Mesh class
+    #  @internal
     algoType   = NETGEN_1D2D3D
+    ## doc string of the method
+    #  @internal
+    docHelper  = "Creates tetrahedron 3D algorithm for solids"
 
     ## Private constructor.
+    #  @param mesh parent mesh object algorithm is assigned to
+    #  @param geom geometry (shape/sub-shape) algorithm is assigned to;
+    #              if it is @c 0 (default), the algorithm is assigned to the main shape
     def __init__(self, mesh, geom=0):
         NETGEN_Algorithm.__init__(self, mesh, geom)
+        pass
 
-    ## Sets SecondOrder flag
-    #
+    ## Sets @c SecondOrder flag
+    #  @param theVal new value of the @c SecondOrder parameter
     def SetSecondOrder(self, theVal):
-        if self.Parameters():
-            self.params.SetSecondOrder(theVal)
+        if self.Parameters(): self.params.SetSecondOrder(theVal)
+        pass
 
-    ## Sets NbSegPerEdge
-    #
+    ## Sets @c NbSegPerEdge parameter
+    #  @param theVal new value of the @c NbSegPerEdge parameter
     def SetNbSegPerEdge(self, theVal):
-        if self.Parameters():
-            self.params.SetNbSegPerEdge(theVal)
+        if self.Parameters(): self.params.SetNbSegPerEdge(theVal)
+        pass
 
-    ## Sets NbSegPerRadius
-    #
+    ## Sets @c NbSegPerRadius parameter
+    #  @param theVal new value of the @c NbSegPerRadius parameter
     def SetNbSegPerRadius(self, theVal):
-        if self.Parameters():
-            self.params.SetNbSegPerRadius(theVal)
+        if self.Parameters(): self.params.SetNbSegPerRadius(theVal)
+        pass
 
-    ## Sets QuadAllowed flag.
+    ## Sets @c QuadAllowed flag
+    #  @param toAllow new value of the @c QuadAllowed parameter (@c True by default)
     def SetQuadAllowed(self, toAllow=True):
-        if self.Parameters():
-            self.params.SetQuadAllowed(toAllow)
-
+        if self.Parameters(): self.params.SetQuadAllowed(toAllow)
+        pass
 
     ## Sets number of segments overriding the value set by SetLocalLength()
-    #
+    #  @param theVal new value of number of segments parameter
     def SetNumberOfSegments(self, theVal):
         self.Parameters(SIMPLE).SetNumberOfSegments(theVal)
+        pass
 
     ## Sets number of segments overriding the value set by SetNumberOfSegments()
-    #
+    #  @param theVal new value of local length parameter
     def SetLocalLength(self, theVal):
         self.Parameters(SIMPLE).SetLocalLength(theVal)
+        pass
 
-    ## Defines "MaxElementArea" parameter of NETGEN_SimpleParameters_3D hypothesis.
+    ## Defines @c MaxElementArea parameter of @c NETGEN_SimpleParameters_3D hypothesis.
     #  Overrides value set by LengthFromEdges()
+    #  @param area new value of @c MaxElementArea parameter
     def MaxElementArea(self, area):
         self.Parameters(SIMPLE).SetMaxElementArea(area)
+        pass
 
-    ## Defines "LengthFromEdges" parameter of NETGEN_SimpleParameters_3D hypothesis
+    ## Defines @c LengthFromEdges parameter of @c NETGEN_SimpleParameters_3D hypothesis.
     #  Overrides value set by MaxElementArea()
     def LengthFromEdges(self):
         self.Parameters(SIMPLE).LengthFromEdges()
+        pass
 
-    ## Defines "LengthFromFaces" parameter of NETGEN_SimpleParameters_3D hypothesis
+    ## Defines @c LengthFromFaces parameter of @c NETGEN_SimpleParameters_3D hypothesis.
     #  Overrides value set by MaxElementVolume()
     def LengthFromFaces(self):
         self.Parameters(SIMPLE).LengthFromFaces()
+        pass
 
-    ## Defines "MaxElementVolume" parameter of NETGEN_SimpleParameters_3D hypothesis
+    ## Defines @c MaxElementVolume parameter of @c NETGEN_SimpleParameters_3D hypothesis.
     #  Overrides value set by LengthFromFaces()
+    #  @param vol new value of @c MaxElementVolume parameter
     def MaxElementVolume(self, vol):
         self.Parameters(SIMPLE).SetMaxElementVolume(vol)
+        pass
+
+    pass # end of NETGEN_1D2D3D_Algorithm class
 
 
 ## Triangle NETGEN 1D-2D algorithm. 
-#  It is created by calling Mesh.Triangle( NETGEN_1D2D, geom=0 )
 #
+#  It can be created by calling smesh.Mesh.Triangle( smesh.NETGEN_1D2D, geom=0 )
+#
+#  This algorithm generates 1D (edges) and 2D (faces) elements
+#  for given geometrical shape.
 class NETGEN_1D2D_Algorithm(NETGEN_1D2D3D_Algorithm):
 
+    ## name of the dynamic method in smesh.Mesh class
+    #  @internal
     meshMethod = "Triangle"
+    ## type of algorithm used with helper function in smesh.Mesh class
+    #  @internal
     algoType   = NETGEN_1D2D
+    ## doc string of the method
+    #  @internal
+    docHelper  = "Creates triangle 2D algorithm for faces"
 
     ## Private constructor.
+    #  @param mesh parent mesh object algorithm is assigned to
+    #  @param geom geometry (shape/sub-shape) algorithm is assigned to;
+    #              if it is @c 0 (default), the algorithm is assigned to the main shape
     def __init__(self, mesh, geom=0):
         NETGEN_1D2D3D_Algorithm.__init__(self, mesh, geom)
+        pass
 
+    pass # end of NETGEN_1D2D_Algorithm class
 
 
 ## Triangle NETGEN 2D algorithm
-#  It is created by calling Mesh.Triangle( NETGEN_2D, geom=0 )
 #
+#  It can be created by calling smesh.Mesh.Triangle( smesh.NETGEN_2D, geom=0 )
+#
+#  This algorithm generates only 2D (faces) elements for given geometrical shape
+#  and, in contrast to NETGEN_1D2D_Algorithm class, should be used in conjunction
+#  with other 1D meshing algorithm.
 class NETGEN_2D_Only_Algorithm(NETGEN_Algorithm):
 
+    ## name of the dynamic method in smesh.Mesh class
+    #  @internal
     meshMethod = "Triangle"
+    ## type of algorithm used with helper function in smesh.Mesh class
+    #  @internal
     algoType = NETGEN_2D
+    ## doc string of the method
+    #  @internal
+    docHelper  = "Creates triangle 2D algorithm for faces"
     
     ## Private constructor.
+    #  @param mesh parent mesh object algorithm is assigned to
+    #  @param geom geometry (shape/sub-shape) algorithm is assigned to;
+    #              if it is @c 0 (default), the algorithm is assigned to the main shape
     def __init__(self, mesh, geom=0):
         NETGEN_Algorithm.__init__(self, mesh, geom)
+        pass
 
-    ## Sets QuadAllowed flag.
-    def SetQuadAllowed(self, toAllow=True):
-        if self.Parameters():
-            self.params.SetQuadAllowed(toAllow)
-
-    ## Defines "MaxElementArea" hypothesis basing on the definition of the maximum area of each triangle
-    #  @param area for the maximum area of each triangle
-    #  @param UseExisting if ==true - searches for an  existing hypothesis created with the
+    ## Defines @c MaxElementArea parameter of hypothesis basing on the definition of the
+    #  maximum area of each triangle
+    #  @param area maximum area value of each triangle
+    #  @param UseExisting if \c True - searches for an existing hypothesis created with the
     #                     same parameters, else (default) - creates a new one
-    #
+    #  @return hypothesis object
     def MaxElementArea(self, area, UseExisting=0):
         compFun = lambda hyp, args: IsEqual(hyp.GetMaxElementArea(), args[0])
         hyp = self.Hypothesis("MaxElementArea", [area], UseExisting=UseExisting,
@@ -228,14 +329,16 @@ class NETGEN_2D_Only_Algorithm(NETGEN_Algorithm):
         hyp.SetMaxElementArea(area)
         return hyp
 
-    ## Defines "LengthFromEdges" hypothesis to build triangles
+    ## Defines @c LengthFromEdges hypothesis to build triangles
     #  based on the length of the edges taken from the wire
-    #
+    #  @return hypothesis object
     def LengthFromEdges(self):
         hyp = self.Hypothesis("LengthFromEdges", UseExisting=1, CompareMethod=self.CompareEqualHyp)
         return hyp
 
-    ## Sets QuadAllowed flag.
+    ## Sets @c QuadAllowed flag.
+    #  @param toAllow new value of the @c QuadAllowed parameter (@c True by default)
+    #  @return hypothesis object
     def SetQuadAllowed(self, toAllow=True):
         if not self.params:
             # use simple hyps
@@ -260,23 +363,45 @@ class NETGEN_2D_Only_Algorithm(NETGEN_Algorithm):
         self.Parameters().SetQuadAllowed( toAllow )
         return self.params
 
-## Defines a tetrahedron 3D algorithm
-#  It is created by calling Mesh.Tetrahedron()
+    pass # end of NETGEN_2D_Only_Algorithm class
+
+
+## Tetrahedron 3D algorithm
 #
+#  It can be created by calling smesh.Mesh.Tetrahedron() or smesh.Mesh.Tetrahedron( smesh.NETGEN, geom=0 )
+#
+#  This algorithm generates only 3D (volumes) elements for given geometrical shape
+#  and, in contrast to NETGEN_1D2D3D_Algorithm class, should be used in conjunction
+#  with other 1D and 2D meshing algorithms.
 class NETGEN_3D_Algorithm(NETGEN_Algorithm):
 
+    ## name of the dynamic method in smesh.Mesh class
+    #  @internal
     meshMethod = "Tetrahedron"
+    ## type of algorithm used with helper function in smesh.Mesh class
+    #  @internal
     algoType   = NETGEN
+    ## flag pointing either this algorithm should be used by default in dynamic method
+    #  of smesh.Mesh class
+    #  @internal
     isDefault  = True
+    ## doc string of the method
+    #  @internal
+    docHelper  = "Creates tetrahedron 3D algorithm for solids"
 
     ## Private constructor.
+    #  @param mesh parent mesh object algorithm is assigned to
+    #  @param geom geometry (shape/sub-shape) algorithm is assigned to;
+    #              if it is @c 0 (default), the algorithm is assigned to the main shape
     def __init__(self, mesh, geom=0):
         NETGEN_Algorithm.__init__(self, mesh, geom)
+        pass
 
-    ## Defines "MaxElementVolume" hypothesis to give the maximun volume of each tetrahedron
-    #  @param vol for the maximum volume of each tetrahedron
-    #  @param UseExisting if ==true - searches for the existing hypothesis created with
+    ## Defines @c MaxElementVolume hypothesis to specify the maximum volume value of each tetrahedron
+    #  @param vol maximum volume value of each tetrahedron
+    #  @param UseExisting if \c True - searches for the existing hypothesis created with
     #                   the same parameters, else (default) - creates a new one
+    #  @return hypothesis object
     def MaxElementVolume(self, vol, UseExisting=0):
         compFun = lambda hyp, args: IsEqual(hyp.GetMaxElementVolume(), args[0])
         hyp = self.Hypothesis("MaxElementVolume", [vol], UseExisting=UseExisting,
@@ -284,23 +409,57 @@ class NETGEN_3D_Algorithm(NETGEN_Algorithm):
         hyp.SetMaxElementVolume(vol)
         return hyp
 
+    pass # end of NETGEN_3D_Algorithm class
 
-# Class just to create NETGEN_1D2D by calling Mesh.Triangle(NETGEN)
+
+## Triangle (helper) 1D-2D algorithm
+#
+#  This is the helper class that is used just to allow creating of create NETGEN_1D2D algorithm
+#  by calling smesh.Mesh.Triangle( smesh.NETGEN, geom=0 ); this is required for backward compatibility
+#  with old Python scripts.
+#
+#  @note This class (and corresponding smesh.Mesh function) is obsolete;
+#  use smesh.Mesh.Triangle( smesh.NETGEN_1D2D, geom=0 ) instead.
 class NETGEN_1D2D_Algorithm_2(NETGEN_1D2D_Algorithm):
 
+    ## name of the dynamic method in smesh.Mesh class
+    #  @internal
     algoType = NETGEN
 
     ## Private constructor.
+    #  @param mesh parent mesh object algorithm is assigned to
+    #  @param geom geometry (shape/sub-shape) algorithm is assigned to;
+    #              if it is @c 0 (default), the algorithm is assigned to the main shape
     def __init__(self, mesh, geom=0):
         self.algoType = NETGEN_1D2D
         NETGEN_1D2D_Algorithm.__init__(self,mesh, geom)
+        pass
+
+    pass # end of NETGEN_1D2D_Algorithm_2 class
 
 
-# Class just to create NETGEN_1D2D3D by calling Mesh.Netgen()
+## Tetrahedron (helper) 1D-2D-3D algorithm.
+#
+#  This is the helper class that is used just to allow creating of create NETGEN_1D2D3D
+#  by calling smesh.Mesh.Netgen(); this is required for backward compatibility with old Python scripts.
+#
+#  @note This class (and corresponding smesh.Mesh function) is obsolete;
+#  use smesh.Mesh.Tetrahedron( smesh.NETGEN_1D2D3D, geom=0 ) instead.
 class NETGEN_1D2D3D_Algorithm_2(NETGEN_1D2D3D_Algorithm):
 
+    ## name of the dynamic method in smesh.Mesh class
+    #  @internal
     meshMethod = "Netgen"
+    ## doc string of the method
+    #  @internal
+    docHelper  = "Deprecated, used only for compatibility! See Tetrahedron() method."
 
     ## Private constructor.
+    #  @param mesh parent mesh object algorithm is assigned to
+    #  @param geom geometry (shape/sub-shape) algorithm is assigned to;
+    #              if it is @c 0 (default), the algorithm is assigned to the main shape
     def __init__(self, mesh, geom=0):
         NETGEN_1D2D3D_Algorithm.__init__(self,mesh, geom)
+        pass
+
+    pass # end of NETGEN_1D2D3D_Algorithm_2 class
