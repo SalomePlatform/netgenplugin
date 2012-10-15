@@ -38,6 +38,7 @@
 #include <StdMeshers_LengthFromEdges.hxx>
 #include <StdMeshers_MaxElementArea.hxx>
 #include <StdMeshers_QuadranglePreference.hxx>
+#include <StdMeshers_ViscousLayers2D.hxx>
 
 #include <Precision.hxx>
 #include <Standard_ErrorHandler.hxx>
@@ -91,6 +92,7 @@ NETGENPlugin_NETGEN_2D_ONLY::NETGENPlugin_NETGEN_2D_ONLY(int hypId, int studyId,
   _compatibleHypothesis.push_back("LengthFromEdges");
   _compatibleHypothesis.push_back("QuadranglePreference");
   _compatibleHypothesis.push_back("NETGEN_Parameters_2D");
+  _compatibleHypothesis.push_back("ViscousLayers2D");
 
   _hypMaxElementArea = 0;
   _hypLengthFromEdges = 0;
@@ -148,6 +150,8 @@ bool NETGENPlugin_NETGEN_2D_ONLY::CheckHypothesis (SMESH_Mesh&         aMesh,
       _hypQuadranglePreference = static_cast<const StdMeshers_QuadranglePreference*>(hyp);
     else if ( hypName == "NETGEN_Parameters_2D" )
       _hypParameters = static_cast<const NETGENPlugin_Hypothesis_2D*>(hyp);
+    else if ( hypName == StdMeshers_ViscousLayers2D::GetHypType() )
+      continue;
     else {
       aStatus = HYP_INCOMPATIBLE;
       return false;
@@ -157,211 +161,10 @@ bool NETGENPlugin_NETGEN_2D_ONLY::CheckHypothesis (SMESH_Mesh&         aMesh,
   int nbHyps = bool(_hypMaxElementArea) + bool(_hypLengthFromEdges) + bool(_hypParameters );
   if ( nbHyps > 1 )
     aStatus = HYP_CONCURENT;
-  else if ( nbHyps == 1)
+  else
     aStatus = HYP_OK;
 
   return ( aStatus == HYP_OK );
-}
-
-//================================================================================
-/*!
- * \brief Fill netgen mesh with segments
-  * \retval SMESH_ComputeErrorPtr - error description
- */
-//================================================================================
-
-static TError addSegmentsToMesh(netgen::Mesh&                    ngMesh,
-                                OCCGeometry&                     geom,
-                                const TSideVector&               wires,
-                                SMESH_MesherHelper&              helper,
-                                vector< const SMDS_MeshNode* > & nodeVec)
-{
-  // ----------------------------
-  // Check wires and count nodes
-  // ----------------------------
-  int nbNodes = 0;
-  double totalLength = 0;
-  for ( int iW = 0; iW < wires.size(); ++iW )
-  {
-    StdMeshers_FaceSidePtr wire = wires[ iW ];
-    if ( wire->MissVertexNode() )
-    {
-      // Commented for issue 0020960. It worked for the case, let's wait for case where it doesn't.
-      // It seems that there is no reason for this limitation
-//       return TError
-//         (new SMESH_ComputeError(COMPERR_BAD_INPUT_MESH, "Missing nodes on vertices"));
-      if (getenv("USER") && string("eap")==getenv("USER"))
-        cout << "Warning: NETGENPlugin_NETGEN_2D_ONLY : try to work with missing nodes on vertices"<<endl;
-    }
-    const vector<UVPtStruct>& uvPtVec = wire->GetUVPtStruct();
-    if ( uvPtVec.size() != wire->NbPoints() )
-      return TError
-        (new SMESH_ComputeError(COMPERR_BAD_INPUT_MESH,
-                                SMESH_Comment("Unexpected nb of points on wire ") << iW
-                                << ": " << uvPtVec.size()<<" != "<<wire->NbPoints()));
-    nbNodes += wire->NbPoints();
-    totalLength += wire->Length();
-  }
-  nodeVec.reserve( nbNodes );
-
-  // -----------------
-  // Fill netgen mesh
-  // -----------------
-
-//   netgen::Box<3> bb = geom.GetBoundingBox();
-//   bb.Increase (bb.Diam()/10);
-//   ngMesh.SetLocalH (bb.PMin(), bb.PMax(), 0.5); // set grading
-
-  // map for nodes on vertices since they can be shared between wires
-  // ( issue 0020676, face_int_box.brep)
-  map<const SMDS_MeshNode*, int > node2ngID;
-
-  const int faceID = 1, solidID = 0;
-  if ( ngMesh.GetNFD() < 1 )
-    ngMesh.AddFaceDescriptor (FaceDescriptor(faceID, solidID, solidID, 0));
-
-  for ( int iW = 0; iW < wires.size(); ++iW )
-  {
-    StdMeshers_FaceSidePtr wire = wires[ iW ];
-    const vector<UVPtStruct>& uvPtVec = wire->GetUVPtStruct();
-    const int nbSegments = wire->NbPoints() - 1;
-
-    // compute length of every segment
-    vector<double> segLen( nbSegments );
-    for ( int i = 0; i < nbSegments; ++i )
-      segLen[i] = SMESH_TNodeXYZ( uvPtVec[ i ].node ).Distance( uvPtVec[ i+1 ].node );
-
-    int edgeID = 1, posID = -2;
-    bool isInternalWire = false;
-    for ( int i = 0; i < nbSegments; ++i ) // loop on segments
-    {
-      // Add the first point of a segment
-      const SMDS_MeshNode * n = uvPtVec[ i ].node;
-      const int posShapeID = n->getshapeId();
-      bool onVertex = ( n->GetPosition()->GetTypeOfPosition() == SMDS_TOP_VERTEX );
-
-      // skip nodes on degenerated edges
-      if ( helper.IsDegenShape( posShapeID ) &&
-           helper.IsDegenShape( uvPtVec[ i+1 ].node->getshapeId() ))
-        continue;
-
-      int ngID1 = ngMesh.GetNP() + 1, ngID2 = ngID1+1;
-      if ( onVertex )
-        ngID1 = node2ngID.insert( make_pair( n, ngID1 )).first->second;
-      if ( ngID1 > ngMesh.GetNP() )
-      {
-        MeshPoint mp( Point<3> (n->X(), n->Y(), n->Z()) );
-        ngMesh.AddPoint ( mp, 1, EDGEPOINT );
-        nodeVec.push_back( n );
-      }
-      else
-      {
-        ngID2 = ngMesh.GetNP() + 1;
-        if ( i > 0 ) // prev segment belongs to same wire
-        {
-          Segment& prevSeg = ngMesh.LineSegment( ngMesh.GetNSeg() );
-          prevSeg[1] = ngID1;
-        }
-      }
-
-      // Add the segment
-      Segment seg;
-
-      seg[0] = ngID1;  // ng node id
-      seg[1] = ngID2;  // ng node id
-
-      seg.edgenr = ngMesh.GetNSeg() + 1;// segment id
-      seg.si = faceID;                  // = geom.fmap.FindIndex (face);
-
-      for ( int iEnd = 0; iEnd < 2; ++iEnd)
-      {
-        const UVPtStruct& pnt = uvPtVec[ i + iEnd ];
-
-        seg.epgeominfo[ iEnd ].dist = pnt.param; // param on curve
-        seg.epgeominfo[ iEnd ].u    = pnt.u;
-        seg.epgeominfo[ iEnd ].v    = pnt.v;
-
-        // find out edge id and node parameter on edge
-        onVertex = ( pnt.node->GetPosition()->GetTypeOfPosition() == SMDS_TOP_VERTEX );
-        if ( onVertex || posShapeID != posID )
-        {
-          // get edge id
-          double normParam = pnt.normParam;
-          if ( onVertex )
-            normParam = 0.5 * ( uvPtVec[ i ].normParam + uvPtVec[ i+1 ].normParam );
-          const TopoDS_Edge& edge = wire->Edge( wire->EdgeIndex( normParam ));
-          edgeID = geom.emap.FindIndex( edge );
-          posID  = posShapeID;
-          isInternalWire = ( edge.Orientation() == TopAbs_INTERNAL );
-          // if ( onVertex ) // param on curve is different on each of two edges
-          //   seg.epgeominfo[ iEnd ].dist = helper.GetNodeU( edge, pnt.node );
-        }
-        seg.epgeominfo[ iEnd ].edgenr = edgeID; //  = geom.emap.FindIndex(edge);
-      }
-
-      ngMesh.AddSegment (seg);
-      {
-        // restrict size of elements near the segment
-        SMESH_TNodeXYZ np1( n ), np2( uvPtVec[ i+1 ].node );
-        // get an average size of adjacent segments to avoid sharp change of
-        // element size (regression on issue 0020452, note 0010898)
-        int iPrev = SMESH_MesherHelper::WrapIndex( i-1, nbSegments );
-        int iNext = SMESH_MesherHelper::WrapIndex( i+1, nbSegments );
-        double avgH = ( segLen[ iPrev ] + segLen[ i ] + segLen[ iNext ]) / 3;
-
-        NETGENPlugin_Mesher::RestrictLocalSize( ngMesh, 0.5*(np1+np2), avgH );
-      }
-#ifdef DUMP_SEGMENTS
-        cout << "Segment: " << seg.edgenr << endl
-           << "\tp1: " << seg[0] << endl
-           << "\tp2: " << seg[1] << endl
-           << "\tp0 param: " << seg.epgeominfo[ 0 ].dist << endl
-           << "\tp0 uv: " << seg.epgeominfo[ 0 ].u <<", "<< seg.epgeominfo[ 0 ].v << endl
-           << "\tp0 edge: " << seg.epgeominfo[ 0 ].edgenr << endl
-           << "\tp1 param: " << seg.epgeominfo[ 1 ].dist << endl
-           << "\tp1 uv: " << seg.epgeominfo[ 1 ].u <<", "<< seg.epgeominfo[ 1 ].v << endl
-           << "\tp1 edge: " << seg.epgeominfo[ 1 ].edgenr << endl;
-#endif
-      if ( isInternalWire )
-      {
-        swap (seg[0], seg[1]);
-        swap( seg.epgeominfo[0], seg.epgeominfo[1] );
-        seg.edgenr = ngMesh.GetNSeg() + 1; // segment id
-        ngMesh.AddSegment (seg);
-#ifdef DUMP_SEGMENTS
-        cout << "Segment: " << seg.edgenr << endl << "\tis REVRESE of the previous one" << endl;
-#endif
-      }
-    } // loop on segments on a wire
-
-    // close chain of segments
-    if ( nbSegments > 0 )
-    {
-      Segment& lastSeg = ngMesh.LineSegment( ngMesh.GetNSeg() - int( isInternalWire));
-      const SMDS_MeshNode * lastNode = uvPtVec.back().node;
-      lastSeg[1] = node2ngID.insert( make_pair( lastNode, lastSeg[1] )).first->second;
-      if ( lastSeg[1] > ngMesh.GetNP() )
-      {
-        MeshPoint mp( Point<3> (lastNode->X(), lastNode->Y(), lastNode->Z()) );
-        ngMesh.AddPoint ( mp, 1, EDGEPOINT );
-        nodeVec.push_back( lastNode );
-      }
-      if ( isInternalWire )
-      {
-        Segment& realLastSeg = ngMesh.LineSegment( ngMesh.GetNSeg() );
-        realLastSeg[0] = lastSeg[1];
-      }
-    }
-
-  } // loop on wires of a face
-
-  // add a segment instead of internal vertex
-  NETGENPlugin_Internals intShapes( *helper.GetMesh(), helper.GetSubShape(), /*is3D=*/false );
-  NETGENPlugin_Mesher::addIntVerticesInFaces( geom, ngMesh, nodeVec, intShapes );
-
-  ngMesh.CalcSurfacesOfNode();
-
-  return TError();
 }
 
 //=============================================================================
@@ -386,12 +189,18 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
   helper.SetElementsOnShape( true );
   const bool ignoreMediumNodes = _quadraticMesh;
   
+  // build viscous layers if required
+  const TopoDS_Face F = TopoDS::Face( aShape.Oriented( TopAbs_FORWARD ));
+  SMESH_ProxyMesh::Ptr proxyMesh = StdMeshers_ViscousLayers2D::Compute( aMesh, F );
+  if ( !proxyMesh )
+    return false;
+
   // ------------------------
   // get all edges of a face
   // ------------------------
-  const TopoDS_Face F = TopoDS::Face( aShape.Oriented( TopAbs_FORWARD ));
   TError problem;
-  TSideVector wires = StdMeshers_FaceSide::GetFaceWires( F, aMesh, ignoreMediumNodes, problem );
+  TSideVector wires =
+    StdMeshers_FaceSide::GetFaceWires( F, aMesh, ignoreMediumNodes, problem, proxyMesh );
   if ( problem && !problem->IsOK() )
     return error( problem );
   int nbWires = wires.size();
@@ -459,7 +268,7 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
   ngMesh->SetGlobalH (netgen::mparam.maxh);
 
   vector< const SMDS_MeshNode* > nodeVec;
-  problem = addSegmentsToMesh( *ngMesh, occgeo, wires, helper, nodeVec );
+  problem = aMesher.AddSegmentsToMesh( *ngMesh, occgeo, wires, helper, nodeVec );
   if ( problem && !problem->IsOK() )
     return error( problem );
 
@@ -506,19 +315,19 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
   int nbNodes = ngMesh->GetNP();
   int nbFaces = ngMesh->GetNSE();
 
-  int nbInputNodes = nodeVec.size();
-  nodeVec.resize( nbNodes, 0 );
+  int nbInputNodes = nodeVec.size()-1;
+  nodeVec.resize( nbNodes+1, 0 );
 
   // add nodes
-  for ( int i = nbInputNodes + 1; i <= nbNodes; ++i )
+  for ( int ngID = nbInputNodes + 1; ngID <= nbNodes; ++ngID )
   {
-    const MeshPoint& ngPoint = ngMesh->Point(i);
+    const MeshPoint& ngPoint = ngMesh->Point( ngID );
 #ifdef NETGEN_NEW
     SMDS_MeshNode * node = meshDS->AddNode(ngPoint(0), ngPoint(1), ngPoint(2));
 #else
     SMDS_MeshNode * node = meshDS->AddNode(ngPoint.X(), ngPoint.Y(), ngPoint.Z());
 #endif
-    nodeVec[ i-1 ] = node;
+    nodeVec[ ngID ] = node;
   }
 
   // create faces
@@ -531,9 +340,9 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
     for (j=1; j <= elem.GetNP(); ++j)
     {
       int pind = elem.PNum(j);
-      if ( pind-1 < 0 )
+      if ( pind < 1 )
         break;
-      const SMDS_MeshNode* node = nodeVec.at(pind-1);
+      const SMDS_MeshNode* node = nodeVec[ pind ];
       if ( reverse )
         nodes[ nodes.size()-j ] = node;
       else
