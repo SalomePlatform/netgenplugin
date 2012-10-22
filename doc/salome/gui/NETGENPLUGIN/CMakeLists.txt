@@ -32,8 +32,6 @@ SALOME_CONFIGURE_FILE(doxyfile_py.in doxyfile_py)
 SALOME_CONFIGURE_FILE(static/header.html.in ${builddir}/static/header.html)
 SALOME_CONFIGURE_FILE(static/header_py.html.in ${builddir}/static/header_py.html)
 
-INSTALL(FILES images/head.png DESTINATION ${guidocdir}/netgenpluginpy_doc)
-
 SET(DOC_SMESH_MeshersList NETGENPlugin)
 SET(f "$(SMESH_ROOT_DIR)/bin/salome/collect_mesh_methods.py")
 IF(WINDOWS)
