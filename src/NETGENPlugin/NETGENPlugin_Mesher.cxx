@@ -2607,7 +2607,7 @@ bool NETGENPlugin_Mesher::Evaluate(MapShapeNbElems& aResMap)
   // Prepare OCC geometry
   // -------------------------
   netgen::OCCGeometry occgeo;
-  list< SMESH_subMesh* > meshedSM[3]; // for 0-2 dimensions
+  list< SMESH_subMesh* > meshedSM[4]; // for 0-3 dimensions
   NETGENPlugin_Internals internals( *_mesh, _shape, _isVolume );
   PrepareOCCgeometry( occgeo, _shape, *_mesh, meshedSM, &internals );
 
@@ -2642,7 +2642,7 @@ bool NETGENPlugin_Mesher::Evaluate(MapShapeNbElems& aResMap)
   netgen::Mesh *ngMesh = NULL;
   char *optstr = 0;
   int startWith = netgen::MESHCONST_ANALYSE;
-  int endWith   = netgen::MESHCONST_ANALYSE;
+  int endWith   = netgen::MESHCONST_MESHEDGES;
   int err = netgen::OCCGenerateMesh(occgeo, ngMesh, startWith, endWith, optstr);
 #ifdef WITH_SMESH_CANCEL_COMPUTE
   if(netgen::multithread.terminate)
@@ -2747,6 +2747,8 @@ bool NETGENPlugin_Mesher::Evaluate(MapShapeNbElems& aResMap)
     fullNbSeg += aVec[ entity ];
     Edge2NbSeg( Edge2NbSegIt.Key() ) = aVec[ entity ];
   }
+  if ( fullNbSeg == 0 )
+    return false;
 
   // ----------------
   // evaluate 2D 
