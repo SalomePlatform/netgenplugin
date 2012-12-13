@@ -314,7 +314,7 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
     if ( internals.hasInternalVertexInSolid() )
     {
       netgen::OCCGeometry occgeo;
-      NETGENPlugin_Mesher::addIntVerticesInSolids( occgeo,
+      NETGENPlugin_Mesher::AddIntVerticesInSolids( occgeo,
                                                    (netgen::Mesh&) *Netgen_mesh,
                                                    nodeVec,
                                                    internals);
@@ -423,7 +423,7 @@ bool NETGENPlugin_NETGEN_3D::compute(SMESH_Mesh&                     aMesh,
 
   if ( err )
   {
-    SMESH_ComputeErrorPtr ce = NETGENPlugin_Mesher::readErrors(nodeVec);
+    SMESH_ComputeErrorPtr ce = NETGENPlugin_Mesher::ReadErrors(nodeVec);
     if ( ce && !ce->myBadElements.empty() )
       error( ce );
   }

@@ -88,6 +88,7 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_Mesher
 
   void SetParameters(const NETGENPlugin_Hypothesis*          hyp);
   void SetParameters(const NETGENPlugin_SimpleHypothesis_2D* hyp);
+  void SetViscousLayers2DAssigned(bool isAssigned) { _isViscousLayers2D = isAssigned; }
 
   bool Compute();
 
@@ -111,31 +112,38 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_Mesher
                        std::vector<const SMDS_MeshNode*>&  nodeVec,
                        SMESH_Comment&                      comment);
 
-  bool fillNgMesh(netgen::OCCGeometry&                occgeom,
+  bool FillNgMesh(netgen::OCCGeometry&                occgeom,
                   netgen::Mesh&                       ngMesh,
                   std::vector<const SMDS_MeshNode*>&  nodeVec,
                   const std::list< SMESH_subMesh* > & meshedSM,
                   SMESH_ProxyMesh::Ptr                proxyMesh=SMESH_ProxyMesh::Ptr());
 
-  static void fixIntFaces(const netgen::OCCGeometry& occgeom,
+  static void FixIntFaces(const netgen::OCCGeometry& occgeom,
                           netgen::Mesh&              ngMesh,
                           NETGENPlugin_Internals&    internalShapes);
 
-  static void addIntVerticesInFaces(const netgen::OCCGeometry&          occgeom,
+  static void AddIntVerticesInFaces(const netgen::OCCGeometry&          occgeom,
                                     netgen::Mesh&                       ngMesh,
                                     std::vector<const SMDS_MeshNode*>&  nodeVec,
                                     NETGENPlugin_Internals&             internalShapes);
 
-  static void addIntVerticesInSolids(const netgen::OCCGeometry&         occgeom,
+  static void AddIntVerticesInSolids(const netgen::OCCGeometry&         occgeom,
                                     netgen::Mesh&                       ngMesh,
                                     std::vector<const SMDS_MeshNode*>&  nodeVec,
                                     NETGENPlugin_Internals&             internalShapes);
 
-  void defaultParameters();
+  static SMESH_ComputeErrorPtr
+    AddSegmentsToMesh(netgen::Mesh&                         ngMesh,
+                      netgen::OCCGeometry&                  geom,
+                      const TSideVector&                    wires,
+                      SMESH_MesherHelper&                   helper,
+                      std::vector< const SMDS_MeshNode* > & nodeVec);
+
+  void SetDefaultParameters();
 
   static void RemoveTmpFiles();
 
-  static SMESH_ComputeErrorPtr readErrors(const std::vector< const SMDS_MeshNode* >& nodeVec);
+  static SMESH_ComputeErrorPtr ReadErrors(const std::vector< const SMDS_MeshNode* >& nodeVec);
 
 
   static void toPython( const netgen::Mesh* ngMesh,
@@ -147,9 +155,9 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_Mesher
   bool                 _isVolume;
   bool                 _optimize;
   int                  _fineness;
+  bool                 _isViscousLayers2D;
 
   const NETGENPlugin_SimpleHypothesis_2D * _simpleHyp;
-  std::map< int, std::pair<int,int> >      _faceDescriptors;
 };
 
 //=============================================================================
