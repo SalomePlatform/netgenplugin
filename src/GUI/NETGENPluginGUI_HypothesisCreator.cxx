@@ -206,7 +206,7 @@ QFrame* NETGENPluginGUI_HypothesisCreator::buildFrame()
     row++;
   }
   myAllowQuadrangles = 0;
-  if ( true /*myIs2D*/ ) // issue 0021676
+  if ( myIs2D || !myIsONLY ) // issue 0021676
   {
     myAllowQuadrangles = new QCheckBox( tr( "NETGEN_ALLOW_QUADRANGLES" ), GroupC1 );
     aGroupLayout->addWidget( myAllowQuadrangles, row, 0 );

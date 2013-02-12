@@ -230,12 +230,10 @@ void NETGENPlugin_Mesher::SetParameters(const NETGENPlugin_Hypothesis* hyp)
         GEOM::GEOM_Object_var aGeomObj;
         TopoDS_Shape S = TopoDS_Shape();
         SALOMEDS::SObject_var aSObj = myStudy->FindObjectID( entry.c_str() );
-        SALOMEDS::GenericAttribute_var anAttr;
-        if (!aSObj->_is_nil() && aSObj->FindAttribute(anAttr, "AttributeIOR")) {
-          SALOMEDS::AttributeIOR_var anIOR = SALOMEDS::AttributeIOR::_narrow(anAttr);
-          CORBA::String_var aVal = anIOR->Value();
-          CORBA::Object_var obj = myStudy->ConvertIORToObject(aVal);
+        if (!aSObj->_is_nil()) {
+          CORBA::Object_var obj = aSObj->GetObject();
           aGeomObj = GEOM::GEOM_Object::_narrow(obj);
+          aSObj->UnRegister();
         }
         if ( !aGeomObj->_is_nil() )
           S = smeshGen_i->GeomObjectToShape( aGeomObj.in() );
@@ -322,10 +320,9 @@ namespace
                                          map< SMESH_subMesh*, set< int > >& addedEdgeSM2Faces)
   {
     // get ordered EDGEs
-    TopoDS_Vertex v1;
     list< TopoDS_Edge > edges;
     list< int > nbEdgesInWire;
-    int nbWires = SMESH_Block::GetOrderedEdges( face, v1, edges, nbEdgesInWire);
+    int nbWires = SMESH_Block::GetOrderedEdges( face, edges, nbEdgesInWire);
 
     // find <edge> within <edges>
     list< TopoDS_Edge >::iterator eItFwd = edges.begin();
@@ -2031,7 +2028,9 @@ namespace
   std::string text(netgen::NgException& ex)
   {
     SMESH_Comment str("NgException");
-    str << " at " << netgen::multithread.task << ": " << ex.What();
+    if ( strlen( netgen::multithread.task ) > 0 )
+      str << " at " << netgen::multithread.task;
+    str << ": " << ex.What();
     return str;
   }
 }

@@ -403,10 +403,19 @@ bool NETGENPlugin_NETGEN_3D::compute(SMESH_Mesh&                     aMesh,
       str << ": " << ex.GetMessageString();
     error(str);
   }
+  catch (netgen::NgException exc)
+  {
+    SMESH_Comment str("NgException");
+    if ( strlen( netgen::multithread.task ) > 0 )
+      str << " at " << netgen::multithread.task;
+    str << ": " << exc.What();
+    error(str);
+  }
   catch (...)
   {
     SMESH_Comment str("Exception in  netgen::OCCGenerateMesh()");
-    str << " at " << netgen::multithread.task;
+    if ( strlen( netgen::multithread.task ) > 0 )
+      str << " at " << netgen::multithread.task;
     error(str);
   }
 
