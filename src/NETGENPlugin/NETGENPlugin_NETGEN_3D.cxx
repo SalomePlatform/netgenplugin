@@ -75,7 +75,11 @@ namespace nglib {
 #include <nglib.h>
 }
 namespace netgen {
+#ifdef NETGEN_V5
+  extern int OCCGenerateMesh (OCCGeometry&, Mesh*&, MeshingParameters&, int, int);
+#else
   extern int OCCGenerateMesh (OCCGeometry&, Mesh*&, int, int, char*);
+#endif
   extern MeshingParameters mparam;
   extern volatile multithreadt multithread;
 }
@@ -247,7 +251,7 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
            helper.NbAncestors(aShapeFace, aMesh, aShape.ShapeType()) > 1 )
         // IsReversedSubMesh() can work wrong on strongly curved faces,
         // so we use it as less as possible
-        isRev = SMESH_Algo::IsReversedSubMesh( TopoDS::Face(aShapeFace), meshDS );
+        isRev = helper.IsReversedSubMesh( TopoDS::Face( aShapeFace ));
 
       const SMESHDS_SubMesh * aSubMeshDSFace = proxyMesh->GetSubMesh( aShapeFace );
       if ( !aSubMeshDSFace ) continue;
@@ -345,7 +349,9 @@ bool NETGENPlugin_NETGEN_3D::compute(SMESH_Mesh&                     aMesh,
   netgen::Mesh* ngMesh = (netgen::Mesh*)Netgen_mesh;
   int Netgen_NbOfNodes = Ng_GetNP(Netgen_mesh);
 
+#ifndef NETGEN_V5
   char *optstr = 0;
+#endif
   int startWith = netgen::MESHCONST_MESHVOLUME;
   int endWith   = netgen::MESHCONST_OPTVOLUME;
   int err = 1;
@@ -385,8 +391,13 @@ bool NETGENPlugin_NETGEN_3D::compute(SMESH_Mesh&                     aMesh,
 #if (OCC_VERSION_MAJOR << 16 | OCC_VERSION_MINOR << 8 | OCC_VERSION_MAINTENANCE) > 0x060100
     OCC_CATCH_SIGNALS;
 #endif
+#ifdef NETGEN_V5
+    ngMesh->CalcLocalH(netgen::mparam.grading);
+    err = netgen::OCCGenerateMesh(occgeo, ngMesh, netgen::mparam, startWith, endWith);
+#else
     ngMesh->CalcLocalH();
     err = netgen::OCCGenerateMesh(occgeo, ngMesh, startWith, endWith, optstr);
+#endif
 #ifdef WITH_SMESH_CANCEL_COMPUTE
     if(netgen::multithread.terminate)
       return false;

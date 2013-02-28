@@ -87,11 +87,7 @@ libNETGENEngine_la_CPPFLAGS = \
 	$(BOOST_CPPFLAGS) \
 	-I$(top_builddir)/idl
 
-if ! NETGEN_NEW
-libNETGENEngine_la_LDFLAGS = ../NETGEN/libNETGEN.la
-else
 libNETGENEngine_la_LDFLAGS = $(NETGEN_LIBS)
-endif
 
 libNETGENEngine_la_LDFLAGS  += \
 	../../idl/libSalomeIDLNETGENPLUGIN.la \

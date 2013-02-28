@@ -25,18 +25,10 @@
 #
 include $(top_srcdir)/adm_local/unix/make_common_starter.am
 
-SUBDIRS =
-if CMAKE_BUILD
-else
-if NETGEN_NEW
-else
-  SUBDIRS += NETGEN
-endif
-endif
-SUBDIRS += NETGENPlugin
+SUBDIRS = NETGENPlugin
 
 if NETGENPLUGIN_ENABLE_GUI
   SUBDIRS += GUI
 endif
 
-DIST_SUBDIRS = NETGEN NETGENPlugin GUI
+DIST_SUBDIRS = NETGENPlugin GUI

@@ -450,7 +450,6 @@ AC_OUTPUT([ \
   doc/salome/gui/NETGENPLUGIN/static/header_py.html \
   src/Makefile \
   src/GUI/Makefile \
-  src/NETGEN/Makefile \
   src/NETGENPlugin/Makefile \
   resources/Makefile \
   idl/Makefile \

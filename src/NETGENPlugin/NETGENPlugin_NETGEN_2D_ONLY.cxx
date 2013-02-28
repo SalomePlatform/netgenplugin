@@ -63,7 +63,11 @@ namespace nglib {
 #include <meshing.hpp>
 //#include <meshtype.hpp>
 namespace netgen {
+#ifdef NETGEN_V5
+  extern int OCCGenerateMesh (OCCGeometry&, Mesh*&, MeshingParameters&, int, int);
+#else
   extern int OCCGenerateMesh (OCCGeometry&, Mesh*&, int, int, char*);
+#endif
   extern MeshingParameters mparam;
 }
 
@@ -251,9 +255,7 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
     netgen::mparam.quad = _hypQuadranglePreference ? 1 : 0;
     netgen::mparam.grading = 0.7; // very coarse mesh by default
   }
-#ifdef NETGEN_NEW
   occgeo.face_maxh = netgen::mparam.maxh;
-#endif
 
   // -------------------------
   // Make input netgen mesh
@@ -276,7 +278,9 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
   // Generate surface mesh
   // -------------------------
 
+#ifndef NETGEN_V5
   char *optstr = 0;
+#endif
   int startWith = MESHCONST_MESHSURFACE;
   int endWith   = MESHCONST_OPTSURFACE;
   int err = 1;
@@ -285,7 +289,11 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
 #if (OCC_VERSION_MAJOR << 16 | OCC_VERSION_MINOR << 8 | OCC_VERSION_MAINTENANCE) > 0x060100
     OCC_CATCH_SIGNALS;
 #endif
+#ifdef NETGEN_V5
+    err = netgen::OCCGenerateMesh(occgeo, ngMesh, netgen::mparam, startWith, endWith);
+#else
     err = netgen::OCCGenerateMesh(occgeo, ngMesh, startWith, endWith, optstr);
+#endif
 #ifdef WITH_SMESH_CANCEL_COMPUTE
     if(netgen::multithread.terminate)
       return false;
@@ -322,11 +330,7 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
   for ( int ngID = nbInputNodes + 1; ngID <= nbNodes; ++ngID )
   {
     const MeshPoint& ngPoint = ngMesh->Point( ngID );
-#ifdef NETGEN_NEW
     SMDS_MeshNode * node = meshDS->AddNode(ngPoint(0), ngPoint(1), ngPoint(2));
-#else
-    SMDS_MeshNode * node = meshDS->AddNode(ngPoint.X(), ngPoint.Y(), ngPoint.Z());
-#endif
     nodeVec[ ngID ] = node;
   }
 
