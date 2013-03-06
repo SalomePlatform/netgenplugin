@@ -77,7 +77,8 @@ if test "x$NETGEN_HOME" != "x"; then
   echo ----------------------------------------------------------
 
   NETGEN_INCLUDES="-I${NETGEN_HOME}/include -I${NETGEN_HOME}/share/netgen/include"
-  NETGEN_LIBS="-L${NETGEN_HOME}/lib -lnglib"
+  NETGEN_LIBS_OLD="-L${NETGEN_HOME}/lib -lnglib"
+  NETGEN_LIBS_NEW="-L${NETGEN_HOME}/lib -lnglib -linterface -lgeom2d -lcsg -lstl -locc -lmesh"
   
   dnl check Netgen headers availability 
 
@@ -92,31 +93,57 @@ if test "x$NETGEN_HOME" != "x"; then
 
   dnl check Netgen libraries
 
+  NETGEN_LIBS=${NETGEN_LIBS_NEW}
+
   LIBS_old="$LIBS"
-  LIBS="$NETGEN_LIBS $CAS_LDPATH -lTKernel -lTKMath -lTKG3d -lTKBRep -lTKShHealing -lTKSTEP -lTKXSBase -lTKIGES -lTKSTL -lTKTopAlgo -lTKGeomBase $LIBS"
+  LIBS="$NETGEN_LIBS $CAS_LDPATH -lTKernel -lTKMath -lTKG3d -lTKBRep -lTKShHealing -lTKSTEP -lTKXSBase -lTKIGES -lTKSTL -lTKTopAlgo -lTKGeomBase $LIBS_old"
 
   if test "x$Netgen_ok" = "xyes"; then
 
-    AC_MSG_CHECKING([for Netgen libraries])
+    AC_MSG_NOTICE([checking for Netgen libraries])
 
-    AC_CACHE_VAL([salome_cv_netgen_lib],
-                 [AC_TRY_LINK(
-                   [
-                     #include <iostream>
-                     #include <fstream>
-                     namespace nglib {
-                     #include "nglib.h"
-                     }
-                   ],
-                   [
-                     nglib::Ng_Init();
-                     nglib::Ng_Exit();
-                   ],
-                   [eval "salome_cv_netgen_lib=yes"],
-                   [eval "salome_cv_netgen_lib=no"])
-                 ])
+    AC_MSG_CHECKING([libraries ... try new style ])
 
-    Netgen_ok="$salome_cv_netgen_lib"
+    AC_TRY_LINK(
+      [
+        #include <iostream>
+        #include <fstream>
+        namespace nglib {
+        #include "nglib.h"
+        }
+      ],
+      [
+        nglib::Ng_Init();
+        nglib::Ng_Exit();
+      ],
+      [Netgen_ok=yes],
+      [Netgen_ok=no])
+
+    if test "x$Netgen_ok" = "xno" ; then
+
+        AC_MSG_RESULT([no])
+
+        AC_MSG_CHECKING([libraries ... try old style])
+
+	NETGEN_LIBS=${NETGEN_LIBS_OLD}
+        LIBS="$NETGEN_LIBS $CAS_LDPATH -lTKernel -lTKMath -lTKG3d -lTKBRep -lTKShHealing -lTKSTEP -lTKXSBase -lTKIGES -lTKSTL -lTKTopAlgo -lTKGeomBase $LIBS_old"
+
+        AC_TRY_LINK(
+          [
+            #include <iostream>
+            #include <fstream>
+            namespace nglib {
+            #include "nglib.h"
+            }
+          ],
+          [
+            nglib::Ng_Init();
+            nglib::Ng_Exit();
+          ],
+          [Netgen_ok=yes],
+          [Netgen_ok=no])
+
+    fi
 
   fi
 
@@ -128,30 +155,25 @@ if test "x$NETGEN_HOME" != "x"; then
 
     AC_MSG_CHECKING([Netgen version])
 
-    AC_CACHE_VAL([salome_cv_netgen_v5_lib],
-                 [AC_TRY_LINK(
-                   [
-                     #include <iostream>
-                     #include <fstream>
-                     #define OCCGEOMETRY
-                     namespace nglib {
-                     #include "nglib.h"
-                     }
-                     #include <occgeom.hpp>
-                   ],
-                   [
-                     nglib::Ng_Init();
-                     netgen::Mesh* ngMesh;
-                     ngMesh->CalcLocalH(1.0);
-                     nglib::Ng_Exit();
-                   ],
-                   [eval "salome_cv_netgen_v5_lib=yes"],
-                   [eval "salome_cv_netgen_v5_lib=no"])
-                 ])
+    AC_TRY_LINK(
+      [
+        #include <iostream>
+        #include <fstream>
+        #define OCCGEOMETRY
+        namespace nglib {
+        #include "nglib.h"
+        }
+        #include <occgeom.hpp>
+      ],
+      [
+        nglib::Ng_Init();
+        netgen::Mesh* ngMesh;
+        ngMesh->CalcLocalH(1.0);
+        nglib::Ng_Exit();
+      ],
+      [NETGEN_V5=yes],
+      [NETGEN_V5=no])
 
-    if test "x$salome_cv_netgen_v5_lib" = "xyes" ; then
-      NETGEN_V5=yes
-    fi
   fi
 
   dnl check OCCT support in Netgen
@@ -162,26 +184,22 @@ if test "x$NETGEN_HOME" != "x"; then
 
     AC_MSG_CHECKING([for OCCT support in Netgen library])
 
-    AC_CACHE_VAL([salome_cv_netgen_occ_lib],
-                 [AC_TRY_LINK(
-                   [
-                     #include <iostream>
-                     #include <fstream>
-                     #define OCCGEOMETRY
-                     namespace nglib {
-                     #include "nglib.h"
-                     }
-                   ],
-                   [
-                     nglib::Ng_Init();
-                     nglib::Ng_OCC_Geometry* ng_occ_geom = nglib::Ng_OCC_NewGeometry();
-                     nglib::Ng_Exit();
-                   ],
-                   [eval "salome_cv_netgen_occ_lib=yes"],
-                   [eval "salome_cv_netgen_occ_lib=no"])
-                 ])
-
-    Netgen_ok="$salome_cv_netgen_occ_lib"
+    AC_TRY_LINK(
+      [
+        #include <iostream>
+        #include <fstream>
+        #define OCCGEOMETRY
+        namespace nglib {
+        #include "nglib.h"
+        }
+      ],
+      [
+        nglib::Ng_Init();
+        nglib::Ng_OCC_Geometry* ng_occ_geom = nglib::Ng_OCC_NewGeometry();
+        nglib::Ng_Exit();
+      ],
+      [Netgen_ok=yes],
+      [Netgen_ok=no])
 
   fi
 
@@ -193,28 +211,24 @@ if test "x$NETGEN_HOME" != "x"; then
 
     AC_MSG_CHECKING([for SALOME patch in Netgen library])
 
-    AC_CACHE_VAL([salome_cv_netgen_salome_patch_lib],
-                 [AC_TRY_LINK(
-                   [
-                     #include <iostream>
-                     #include <fstream>
-                     #define OCCGEOMETRY
-                     namespace nglib {
-                     #include "nglib.h"
-                     }
-                     #include <occgeom.hpp>
-                   ],
-                   [
-                     nglib::Ng_Init();
-                     netgen::OCCGeometry occgeo;
-                     nglib::Ng_Exit();
-                   ],
-                   [eval "salome_cv_netgen_salome_patch_lib=yes"],
-                   [eval "salome_cv_netgen_salome_patch_lib=no"])
-                 ])
+    AC_TRY_LINK(
+      [
+        #include <iostream>
+        #include <fstream>
+        #define OCCGEOMETRY
+        namespace nglib {
+        #include "nglib.h"
+        }
+        #include <occgeom.hpp>
+      ],
+      [
+        nglib::Ng_Init();
+        netgen::OCCGeometry occgeo;
+        nglib::Ng_Exit();
+      ],
+      [Netgen_ok=yes],
+      [Netgen_ok=no])
 
-    Netgen_ok="$salome_cv_netgen_salome_patch_lib"
-    
   fi
 
   LIBS="$LIBS_old"
