@@ -23,7 +23,7 @@ SET(top_builddir ${CMAKE_BINARY_DIR})
 SET(top_srcdir ${CMAKE_SOURCE_DIR})
 SET(srcdir ${CMAKE_CURRENT_SOURCE_DIR})
 SET(builddir ${CMAKE_CURRENT_BINARY_DIR})
-SET(datadir${CMAKE_INSTALL_PREFIX}/share)
+SET(datadir ${CMAKE_INSTALL_PREFIX}/share)
 SET(docdir ${datadir}/doc/salome)
 SET(guidocdir ${docdir}/gui/NETGENPLUGIN)
 
@@ -56,7 +56,9 @@ IF(WINDOWS)
   SET(CALL_STR "call")
 ELSE(WINDOWS)
   SET(DOC_PYTHONPATH ${CMAKE_INSTALL_PREFIX}/bin/salome:${SMESH_ROOT_DIR}/bin/salome:${SMESH_ROOT_DIR}/lib/python${PYTHON_VERSION}/site-packages/salome:${MED_ROOT_DIR}/lib/python${PYTHON_VERSION}/site-packages/salome:${GEOM_ROOT_DIR}/bin/salome:${GEOM_ROOT_DIR}/lib/python${PYTHON_VERSION}/site-packages/salome:${KERNEL_ROOT_DIR}/bin/salome:${KERNEL_ROOT_DIR}/lib/python${PYTHON_VERSION}/site-packages/salome:${OMNIORB_ROOT_USER}/lib/python${PYTHON_VERSION}/site-packages:${OMNIORB_ROOT_USER}/lib64/python${PYTHON_VERSION}/site-packages)
-  SET(SCR "export PYTHONPATH=${DOC_PYTHONPATH}:${PYTHONPATH}
+  SET(DOC_LD_LIBRARY_PATH "${CMAKE_INSTALL_PREFIX}/lib/salome:${SMESH_ROOT_DIR}/lib/salome:${MED_ROOT_DIR}/lib/salome:${GEOM_ROOT_DIR}/lib/salome:${KERNEL_ROOT_DIR}/lib/salome")
+  SET(SCR "export PYTHONPATH=${DOC_PYTHONPATH}:\${PYTHONPATH}
+  export LD_LIBRARY_PATH=${DOC_LD_LIBRARY_PATH}:\${LD_LIBRARY_PATH}
   export SMESH_MeshersList=${DOC_SMESH_MeshersList}
   ")
   SET(EXT "sh")
