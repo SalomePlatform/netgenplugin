@@ -442,6 +442,7 @@ AC_OUTPUT([ \
   NETGENPLUGIN_version.h \
   doc/Makefile \
   doc/salome/Makefile \
+  doc/salome/examples/Makefile \
   doc/salome/gui/Makefile \
   doc/salome/gui/NETGENPLUGIN/Makefile \
   doc/salome/gui/NETGENPLUGIN/doxyfile \

@@ -17,18 +17,6 @@
 # See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
 #
 
-# -* Makefile *- 
-# Author : Patrick GOLDBRONN (CEA)
-# Date : 30/11/2001
-#  Modified by : Alexander BORODIN (OCN) - autotools usage
-# $Header:
-#
-SUBDIRS = examples gui
-SUBDIRSGUI = gui
-
-usr_docs:
-	@@SETX@; for d in $(SUBDIRSGUI); do 	\
-	   (cd $$d && $(MAKE) $@) || exit 1; 	\
-	done;
-
-docs: usr_docs
+##
+# @package NETGENPluginBuilder
+# Python API for the NETGEN meshing plug-in module.

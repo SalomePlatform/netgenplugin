@@ -42,7 +42,7 @@ INPUT             = @srcdir@/input
 FILE_PATTERNS     = *.doc
 EXCLUDE           = 
 IMAGE_PATH        = @srcdir@/images
-EXAMPLE_PATH      = 
+EXAMPLE_PATH      = @top_srcdir@/doc/salome/examples 
 
 #---------------------------------------------------------------------------
 #HTML related options
@@ -113,3 +113,8 @@ GENERATE_RTF      = NO
 #because it wrongly defines location of the html files for search.
 TAGFILES          = netgenpluginpy_doc.tag=../NETGENPLUGIN/netgenpluginpy_doc
 SEARCHENGINE      = YES
+
+#---------------------------------------------------------------------------
+#Custom commands
+#---------------------------------------------------------------------------
+ALIASES += tui_script{1}="\include \1 <a href=\"../../examples/NETGENPLUGIN/\1\">Download this script</a>"

@@ -99,4 +99,8 @@ libNETGENEngine_la_LDFLAGS  += \
 	$(KERNEL_LDFLAGS) -lSalomeGenericObj -lSalomeNS -lSALOMELocalTrace -lOpUtil
 
 # Scripts to be installed.
-dist_salomescript_DATA= NETGENPluginDC.py
+#dist_salomescript_DATA= NETGENPluginDC.py
+mypkgpythondir = $(salomepythondir)/salome/NETGENPlugin
+mypkgpython_PYTHON = \
+	__init__.py \
+	NETGENPluginBuilder.py

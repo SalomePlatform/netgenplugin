@@ -84,7 +84,7 @@
                output="TRIA,QUAD"
                dim="2">
        <python-wrap>
-        <algo>NETGEN_2D_ONLY=Triangle(algo=smesh.NETGEN_2D)</algo>
+        <algo>NETGEN_2D_ONLY=Triangle(algo=smeshBuilder.NETGEN_2D)</algo>
         <hypo>LengthFromEdges=LengthFromEdges()</hypo>
         <hypo>MaxElementArea=MaxElementArea(SetMaxElementArea())</hypo>
         <hypo>NETGEN_Parameters_2D_ONLY=Parameters()</hypo>
@@ -102,7 +102,7 @@
                dim="2"
                support-submeshes="true">
       <python-wrap>
-        <algo>NETGEN_2D=Triangle(algo=smesh.NETGEN_1D2D)</algo>
+        <algo>NETGEN_2D=Triangle(algo=smeshBuilder.NETGEN_1D2D)</algo>
         <hypo>NETGEN_Parameters_2D=Parameters()</hypo>
         <hypo>NETGEN_SimpleParameters_2D=Parameters(smesh.SIMPLE)</hypo>
         <hypo>ViscousLayers2D=ViscousLayers2D(SetTotalThickness(),SetNumberLayers(),SetStretchFactor(),SetIgnoreEdges())</hypo>
@@ -116,7 +116,7 @@
                dim="3"
                support-submeshes="true">
       <python-wrap>
-        <algo>NETGEN_2D3D=Tetrahedron(algo=smesh.NETGEN_1D2D3D)</algo>
+        <algo>NETGEN_2D3D=Tetrahedron(algo=smeshBuilder.NETGEN_1D2D3D)</algo>
         <hypo>NETGEN_Parameters=Parameters()</hypo>
         <hypo>NETGEN_SimpleParameters_3D=Parameters(smesh.SIMPLE)</hypo>
       </python-wrap>
