@@ -100,8 +100,9 @@ EXAMPLE_RECURSIVE      = NO
 #Input related options
 #---------------------------------------------------------------------------
 INPUT             = @top_srcdir@/src/NETGENPlugin/NETGENPluginBuilder.py \
-		    @SMESH_ROOT_DIR@/lib/python@PYTHON_VERSION@/site-packages/salome/salome/smesh/smeshBuilder.py \
-		    @SMESH_ROOT_DIR@/lib/python@PYTHON_VERSION@/site-packages/salome/salome/smesh/smesh_algorithm.py
+		    smeshBuilder.py \
+		    @SMESH_ROOT_DIR@/lib/python@PYTHON_VERSION@/site-packages/salome/salome/smesh/smesh_algorithm.py \
+		    												     
 FILE_PATTERNS     = 
 IMAGE_PATH        = @srcdir@/images
 RECURSIVE         = NO
@@ -130,7 +131,7 @@ GENERATE_LATEX    = NO
 GENERATE_RTF      = NO
 
 #---------------------------------------------------------------------------
-# Configuration options related to the dot tool   
+# Configuration options related to the dot tool		
 #---------------------------------------------------------------------------
 CLASS_DIAGRAMS         = NO
 HIDE_UNDOC_RELATIONS   = NO
