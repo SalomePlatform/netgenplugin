@@ -6,7 +6,7 @@ Python package NETGENPlugin defines several classes, destined for
 creation of the 2D and 3D meshes.
 
 NETGEN meshing plugin dynamically adds several methods to the
- \ref SMESH_SWIG.smeshBuilder.Mesh "class Mesh" to create meshing algorithms.
+ smeshBuilder.Mesh to create meshing algorithms.
 
 Below you can see an example of usage of the NETGENPlugin package for mesh generation:
 
