@@ -172,15 +172,15 @@ class NETGEN_Algorithm(Mesh_Algorithm):
 
 ## Tetrahedron 1D-2D-3D algorithm.
 #
-#  It can be created by calling smesh.Mesh.Tetrahedron( smesh.NETGEN_1D2D3D, geom=0 ).
+#  It can be created by calling smeshBuilder.Mesh.Tetrahedron( smesh.NETGEN_1D2D3D, geom=0 ).
 #  This algorithm generates all 1D (edges), 2D (faces) and 3D (volumes) elements
 #  for given geometrical shape.
 class NETGEN_1D2D3D_Algorithm(NETGEN_Algorithm):
 
-    ## name of the dynamic method in smesh.Mesh class
+    ## name of the dynamic method in smeshBuilder.Mesh class
     #  @internal
     meshMethod = "Tetrahedron"
-    ## type of algorithm used with helper function in smesh.Mesh class
+    ## type of algorithm used with helper function in smeshBuilder.Mesh class
     #  @internal
     algoType   = NETGEN_1D2D3D
     ## doc string of the method
@@ -262,16 +262,16 @@ class NETGEN_1D2D3D_Algorithm(NETGEN_Algorithm):
 
 ## Triangle NETGEN 1D-2D algorithm. 
 #
-#  It can be created by calling smesh.Mesh.Triangle( smesh.NETGEN_1D2D, geom=0 )
+#  It can be created by calling smeshBuilder.Mesh.Triangle( smesh.NETGEN_1D2D, geom=0 )
 #
 #  This algorithm generates 1D (edges) and 2D (faces) elements
 #  for given geometrical shape.
 class NETGEN_1D2D_Algorithm(NETGEN_1D2D3D_Algorithm):
 
-    ## name of the dynamic method in smesh.Mesh class
+    ## name of the dynamic method in smeshBuilder.Mesh class
     #  @internal
     meshMethod = "Triangle"
-    ## type of algorithm used with helper function in smesh.Mesh class
+    ## type of algorithm used with helper function in smeshBuilder.Mesh class
     #  @internal
     algoType   = NETGEN_1D2D
     ## doc string of the method
@@ -291,17 +291,17 @@ class NETGEN_1D2D_Algorithm(NETGEN_1D2D3D_Algorithm):
 
 ## Triangle NETGEN 2D algorithm
 #
-#  It can be created by calling smesh.Mesh.Triangle( smesh.NETGEN_2D, geom=0 )
+#  It can be created by calling smeshBuilder.Mesh.Triangle( smesh.NETGEN_2D, geom=0 )
 #
 #  This algorithm generates only 2D (faces) elements for given geometrical shape
 #  and, in contrast to NETGEN_1D2D_Algorithm class, should be used in conjunction
 #  with other 1D meshing algorithm.
 class NETGEN_2D_Only_Algorithm(NETGEN_Algorithm):
 
-    ## name of the dynamic method in smesh.Mesh class
+    ## name of the dynamic method in smeshBuilder.Mesh class
     #  @internal
     meshMethod = "Triangle"
-    ## type of algorithm used with helper function in smesh.Mesh class
+    ## type of algorithm used with helper function in smeshBuilder.Mesh class
     #  @internal
     algoType = NETGEN_2D
     ## doc string of the method
@@ -368,21 +368,21 @@ class NETGEN_2D_Only_Algorithm(NETGEN_Algorithm):
 
 ## Tetrahedron 3D algorithm
 #
-#  It can be created by calling smesh.Mesh.Tetrahedron() or smesh.Mesh.Tetrahedron( smesh.NETGEN, geom=0 )
+#  It can be created by calling smeshBuilder.Mesh.Tetrahedron() or smeshBuilder.Mesh.Tetrahedron( smesh.NETGEN, geom=0 )
 #
 #  This algorithm generates only 3D (volumes) elements for given geometrical shape
 #  and, in contrast to NETGEN_1D2D3D_Algorithm class, should be used in conjunction
 #  with other 1D and 2D meshing algorithms.
 class NETGEN_3D_Algorithm(NETGEN_Algorithm):
 
-    ## name of the dynamic method in smesh.Mesh class
+    ## name of the dynamic method in smeshBuilder.Mesh class
     #  @internal
     meshMethod = "Tetrahedron"
-    ## type of algorithm used with helper function in smesh.Mesh class
+    ## type of algorithm used with helper function in smeshBuilder.Mesh class
     #  @internal
     algoType   = NETGEN
     ## flag pointing either this algorithm should be used by default in dynamic method
-    #  of smesh.Mesh class
+    #  of smeshBuilder.Mesh class
     #  @internal
     isDefault  = True
     ## doc string of the method
@@ -415,14 +415,14 @@ class NETGEN_3D_Algorithm(NETGEN_Algorithm):
 ## Triangle (helper) 1D-2D algorithm
 #
 #  This is the helper class that is used just to allow creating of create NETGEN_1D2D algorithm
-#  by calling smesh.Mesh.Triangle( smesh.NETGEN, geom=0 ); this is required for backward compatibility
+#  by calling smeshBuilder.Mesh.Triangle( smesh.NETGEN, geom=0 ); this is required for backward compatibility
 #  with old Python scripts.
 #
-#  @note This class (and corresponding smesh.Mesh function) is obsolete;
-#  use smesh.Mesh.Triangle( smesh.NETGEN_1D2D, geom=0 ) instead.
+#  @note This class (and corresponding smeshBuilder.Mesh function) is obsolete;
+#  use smeshBuilder.Mesh.Triangle( smesh.NETGEN_1D2D, geom=0 ) instead.
 class NETGEN_1D2D_Algorithm_2(NETGEN_1D2D_Algorithm):
 
-    ## name of the dynamic method in smesh.Mesh class
+    ## name of the dynamic method in smeshBuilder.Mesh class
     #  @internal
     algoType = NETGEN
 
@@ -441,13 +441,13 @@ class NETGEN_1D2D_Algorithm_2(NETGEN_1D2D_Algorithm):
 ## Tetrahedron (helper) 1D-2D-3D algorithm.
 #
 #  This is the helper class that is used just to allow creating of create NETGEN_1D2D3D
-#  by calling smesh.Mesh.Netgen(); this is required for backward compatibility with old Python scripts.
+#  by calling smeshBuilder.Mesh.Netgen(); this is required for backward compatibility with old Python scripts.
 #
-#  @note This class (and corresponding smesh.Mesh function) is obsolete;
-#  use smesh.Mesh.Tetrahedron( smesh.NETGEN_1D2D3D, geom=0 ) instead.
+#  @note This class (and corresponding smeshBuilder.Mesh function) is obsolete;
+#  use smeshBuilder.Mesh.Tetrahedron( smesh.NETGEN_1D2D3D, geom=0 ) instead.
 class NETGEN_1D2D3D_Algorithm_2(NETGEN_1D2D3D_Algorithm):
 
-    ## name of the dynamic method in smesh.Mesh class
+    ## name of the dynamic method in smeshBuilder.Mesh class
     #  @internal
     meshMethod = "Netgen"
     ## doc string of the method
