@@ -34,8 +34,10 @@ SALOME_CONFIGURE_FILE(static/header_py.html.in ${builddir}/static/header_py.html
 
 SET(DOC_SMESH_MeshersList NETGENPlugin)
 SET(f "$(SMESH_ROOT_DIR)/bin/salome/collect_mesh_methods.py")
+SET(f "$ENV{KERNEL_ROOT_DIR}/bin/salome/prepare_generating_doc.py")
 IF(WINDOWS)
   STRING(REPLACE "/" "\\" f ${f})
+  STRING(REPLACE "/" "\\" f1 ${f1})
   STRING(REPLACE "/" "\\" SCR "@SET PYTHONPATH=${OMNIORB_ROOT_USER}/lib/x86_win32\;%PYTHONPATH%
   @SET PYTHONPATH=${OMNIORB_ROOT_USER}/lib/python\;%PYTHONPATH%
   @SET PATH=${OMNIORB_ROOT_USER}/lib/x86_win32\;%PATH%
@@ -55,7 +57,7 @@ IF(WINDOWS)
   SET(EXT "bat")
   SET(CALL_STR "call")
 ELSE(WINDOWS)
-  SET(DOC_PYTHONPATH ${CMAKE_INSTALL_PREFIX}/bin/salome:${SMESH_ROOT_DIR}/bin/salome:${SMESH_ROOT_DIR}/lib/python${PYTHON_VERSION}/site-packages/salome:${MED_ROOT_DIR}/lib/python${PYTHON_VERSION}/site-packages/salome:${GEOM_ROOT_DIR}/bin/salome:${GEOM_ROOT_DIR}/lib/python${PYTHON_VERSION}/site-packages/salome:${KERNEL_ROOT_DIR}/bin/salome:${KERNEL_ROOT_DIR}/lib/python${PYTHON_VERSION}/site-packages/salome:${OMNIORB_ROOT_USER}/lib/python${PYTHON_VERSION}/site-packages:${OMNIORB_ROOT_USER}/lib64/python${PYTHON_VERSION}/site-packages)
+  SET(DOC_PYTHONPATH ${CMAKE_INSTALL_PREFIX}/bin/salome:${CMAKE_INSTALL_PREFIX}/lib/python${PYTHON_VERSION}/site-packages/salome:${SMESH_ROOT_DIR}/bin/salome:${SMESH_ROOT_DIR}/lib/python${PYTHON_VERSION}/site-packages/salome:${MED_ROOT_DIR}/lib/python${PYTHON_VERSION}/site-packages/salome:${GEOM_ROOT_DIR}/bin/salome:${GEOM_ROOT_DIR}/lib/python${PYTHON_VERSION}/site-packages/salome:${KERNEL_ROOT_DIR}/bin/salome:${KERNEL_ROOT_DIR}/lib/python${PYTHON_VERSION}/site-packages/salome:${OMNIORB_ROOT_USER}/lib/python${PYTHON_VERSION}/site-packages:${OMNIORB_ROOT_USER}/lib64/python${PYTHON_VERSION}/site-packages)
   SET(DOC_LD_LIBRARY_PATH "${CMAKE_INSTALL_PREFIX}/lib/salome:${SMESH_ROOT_DIR}/lib/salome:${MED_ROOT_DIR}/lib/salome:${GEOM_ROOT_DIR}/lib/salome:${KERNEL_ROOT_DIR}/lib/salome")
   SET(SCR "export PYTHONPATH=${DOC_PYTHONPATH}:\${PYTHONPATH}
   export LD_LIBRARY_PATH=${DOC_LD_LIBRARY_PATH}:\${LD_LIBRARY_PATH}
@@ -67,11 +69,14 @@ ENDIF(WINDOWS)
 
 FILE(WRITE ${CMAKE_CURRENT_BINARY_DIR}/tmp_env.${EXT} "${SCR}")
 
-ADD_CUSTOM_TARGET(usr_docs ${CALL_STR} ${CMAKE_CURRENT_BINARY_DIR}/tmp_env.${EXT} && ${PYTHON_EXECUTABLE} ${f} -d -o smesh.py NETGENPlugin
+ADD_CUSTOM_TARGET(usr_docs mkdir -p tmp
+  COMMAND ${PYTHON_EXECUTABLE} ${f} -o tmp/NETGENPluginBuilder.py ${CMAKE_SOURCE_DIR}/src/NETGENPlugin/NETGENPluginBuilder.py
+  COMMAND ${PYTHON_EXECUTABLE} ${f} -o tmp/smesh_algorithm.py ${SMESH_ROOT_DIR}/lib/python${PYTHON_VERSION}/site-packages/salome/salome/smesh/smesh_algorithm.py
+  COMMAND ${CALL_STR} ${CMAKE_CURRENT_BINARY_DIR}/tmp_env.${EXT} && ${PYTHON_EXECUTABLE} ${f1} -d -o tmp/smeshBuilder.py NETGENPlugin
   COMMAND ${DOXYGEN_EXECUTABLE} doxyfile_py
   COMMAND ${DOXYGEN_EXECUTABLE} doxyfile
-  COMMAND ${PYTHON_EXECUTABLE} -c "import os; os.remove(r'''smesh.py'''); os.remove(r'''tmp_env.${EXT}''')"
-  COMMAND ${PYTHON_EXECUTABLE} -c "import shutil, sys; shutil.rmtree(r'''${CMAKE_INSTALL_PREFIX}/share/doc/salome/gui/NETGENPLUGIN''',True); shutil.copytree(r'''${CMAKE_CURRENT_BINARY_DIR}''',r'''${CMAKE_INSTALL_PREFIX}/share/doc/salome/gui/NETGENPLUGIN''', ignore=shutil.ignore_patterns('*usr_docs*', '*CMakeFiles*', '*.cmake', 'doxyfile*', '*.vcproj', 'static', 'Makefile*')); shutil.copy(r'''${CMAKE_CURRENT_SOURCE_DIR}/images/head.png''',r'''${CMAKE_INSTALL_PREFIX}/share/doc/salome/gui/NETGENPLUGIN'''); shutil.copy(r'''${CMAKE_CURRENT_SOURCE_DIR}/images/head.png''',r'''${CMAKE_INSTALL_PREFIX}/share/doc/salome/gui/NETGENPLUGIN/netgenpluginpy_doc''')"
+  COMMAND ${PYTHON_EXECUTABLE} -c "import os, shutil; shutil.rmtree(r'''tmp''')"
+  COMMAND ${PYTHON_EXECUTABLE} -c "import shutil, sys; shutil.rmtree(r'''${CMAKE_INSTALL_PREFIX}/share/doc/salome/gui/NETGENPLUGIN''',True); shutil.copytree(r'''${CMAKE_CURRENT_BINARY_DIR}''',r'''${CMAKE_INSTALL_PREFIX}/share/doc/salome/gui/NETGENPLUGIN''', ignore=shutil.ignore_patterns('tmp_env.*', '*usr_docs*', '*CMakeFiles*', '*.cmake', 'doxyfile*', '*.vcproj', 'static', 'Makefile*')); shutil.copy(r'''${CMAKE_CURRENT_SOURCE_DIR}/images/head.png''',r'''${CMAKE_INSTALL_PREFIX}/share/doc/salome/gui/NETGENPLUGIN'''); shutil.copy(r'''${CMAKE_CURRENT_SOURCE_DIR}/images/head.png''',r'''${CMAKE_INSTALL_PREFIX}/share/doc/salome/gui/NETGENPLUGIN/netgenpluginpy_doc''')"
   VERBATIM 
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}             
 )

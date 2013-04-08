@@ -99,10 +99,9 @@ EXAMPLE_RECURSIVE      = NO
 #---------------------------------------------------------------------------
 #Input related options
 #---------------------------------------------------------------------------
-INPUT             = @top_srcdir@/src/NETGENPlugin/NETGENPluginBuilder.py \
-		    smeshBuilder.py \
-		    @SMESH_ROOT_DIR@/lib/python@PYTHON_VERSION@/site-packages/salome/salome/smesh/smesh_algorithm.py \
-		    												     
+INPUT             = tmp/NETGENPluginBuilder.py \
+		    tmp/smeshBuilder.py \
+		    tmp/smesh_algorithm.py
 FILE_PATTERNS     = 
 IMAGE_PATH        = @srcdir@/images
 RECURSIVE         = NO
