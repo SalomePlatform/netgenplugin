@@ -33,7 +33,7 @@ SALOME_CONFIGURE_FILE(static/header.html.in ${builddir}/static/header.html)
 SALOME_CONFIGURE_FILE(static/header_py.html.in ${builddir}/static/header_py.html)
 
 SET(DOC_SMESH_MeshersList NETGENPlugin)
-SET(f "$(SMESH_ROOT_DIR)/bin/salome/collect_mesh_methods.py")
+SET(f1 "$(SMESH_ROOT_DIR)/bin/salome/collect_mesh_methods.py")
 SET(f "$ENV{KERNEL_ROOT_DIR}/bin/salome/prepare_generating_doc.py")
 IF(WINDOWS)
   STRING(REPLACE "/" "\\" f ${f})
