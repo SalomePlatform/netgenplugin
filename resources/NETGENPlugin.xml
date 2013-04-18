@@ -104,7 +104,7 @@
       <python-wrap>
         <algo>NETGEN_2D=Triangle(algo=smeshBuilder.NETGEN_1D2D)</algo>
         <hypo>NETGEN_Parameters_2D=Parameters()</hypo>
-        <hypo>NETGEN_SimpleParameters_2D=Parameters(smesh.SIMPLE)</hypo>
+        <hypo>NETGEN_SimpleParameters_2D=Parameters(smeshBuilder.SIMPLE)</hypo>
         <hypo>ViscousLayers2D=ViscousLayers2D(SetTotalThickness(),SetNumberLayers(),SetStretchFactor(),SetIgnoreEdges())</hypo>
       </python-wrap>
     </algorithm>
@@ -118,7 +118,7 @@
       <python-wrap>
         <algo>NETGEN_2D3D=Tetrahedron(algo=smeshBuilder.NETGEN_1D2D3D)</algo>
         <hypo>NETGEN_Parameters=Parameters()</hypo>
-        <hypo>NETGEN_SimpleParameters_3D=Parameters(smesh.SIMPLE)</hypo>
+        <hypo>NETGEN_SimpleParameters_3D=Parameters(smeshBuilder.SIMPLE)</hypo>
       </python-wrap>
     </algorithm>
 
