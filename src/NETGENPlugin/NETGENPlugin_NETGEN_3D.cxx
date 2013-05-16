@@ -185,10 +185,7 @@ bool NETGENPlugin_NETGEN_3D::CheckHypothesis (SMESH_Mesh&         aMesh,
 bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
                                      const TopoDS_Shape& aShape)
 {
-#ifdef WITH_SMESH_CANCEL_COMPUTE
   netgen::multithread.terminate = 0;
-#endif
-  MESSAGE("NETGENPlugin_NETGEN_3D::Compute with maxElmentsize = " << _maxElementVolume);
 
   SMESHDS_Mesh* meshDS = aMesh.GetMeshDS();
 
@@ -196,8 +193,7 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
   bool _quadraticMesh = helper.IsQuadraticSubMesh(aShape);
   helper.SetElementsOnShape( true );
 
-  int Netgen_NbOfNodes     = 0;
-
+  int Netgen_NbOfNodes = 0;
   double Netgen_point[3];
   int Netgen_triangle[3];
 
@@ -343,9 +339,8 @@ bool NETGENPlugin_NETGEN_3D::compute(SMESH_Mesh&                     aMesh,
                                      vector< const SMDS_MeshNode* >& nodeVec,
                                      Ng_Mesh *                       Netgen_mesh)
 {
-#ifdef WITH_SMESH_CANCEL_COMPUTE
   netgen::multithread.terminate = 0;
-#endif
+
   netgen::Mesh* ngMesh = (netgen::Mesh*)Netgen_mesh;
   int Netgen_NbOfNodes = Ng_GetNP(Netgen_mesh);
 
@@ -398,10 +393,8 @@ bool NETGENPlugin_NETGEN_3D::compute(SMESH_Mesh&                     aMesh,
     ngMesh->CalcLocalH();
     err = netgen::OCCGenerateMesh(occgeo, ngMesh, startWith, endWith, optstr);
 #endif
-#ifdef WITH_SMESH_CANCEL_COMPUTE
     if(netgen::multithread.terminate)
       return false;
-#endif
     if ( err )
       error(SMESH_Comment("Error in netgen::OCCGenerateMesh() at ") << netgen::multithread.task);
   }
@@ -492,17 +485,14 @@ bool NETGENPlugin_NETGEN_3D::compute(SMESH_Mesh&                     aMesh,
 bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
                                      SMESH_MesherHelper* aHelper)
 {
-  MESSAGE("NETGENPlugin_NETGEN_3D::Compute with maxElmentsize = " << _maxElementVolume);  
   const int invalid_ID = -1;
-  bool _quadraticMesh = false;
 
   SMESH_MesherHelper::MType MeshType = aHelper->IsQuadraticMesh();
-
-  if(MeshType == SMESH_MesherHelper::COMP)
+  if ( MeshType == SMESH_MesherHelper::COMP )
     return error( COMPERR_BAD_INPUT_MESH,
-                  SMESH_Comment("Mesh with linear and quadratic elements given."));
-  else if (MeshType == SMESH_MesherHelper::QUADRATIC)
-    _quadraticMesh = true;
+                  SMESH_Comment("Mesh with linear and quadratic elements given"));
+
+  aHelper->SetIsQuadratic( MeshType == SMESH_MesherHelper::QUADRATIC );
 
   // ---------------------------------
   // Feed the Netgen with surface mesh
@@ -512,7 +502,7 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
   int Netgen_param2ndOrder = 0;
   double Netgen_paramFine = 1.;
   double Netgen_paramSize = pow( 72, 1/6. ) * pow( _maxElementVolume, 1/3. );
-  
+
   double Netgen_point[3];
   int Netgen_triangle[3];
   int Netgen_tetrahedron[4];
@@ -577,13 +567,11 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
   return compute( aMesh, *aHelper, nodeVec, Netgen_mesh);
 }
 
-#ifdef WITH_SMESH_CANCEL_COMPUTE
 void NETGENPlugin_NETGEN_3D::CancelCompute()
 {
   SMESH_Algo::CancelCompute();
   netgen::multithread.terminate = 1;
 }
-#endif
 
 //=============================================================================
 /*!
