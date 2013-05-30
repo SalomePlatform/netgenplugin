@@ -194,7 +194,7 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
   const bool ignoreMediumNodes = _quadraticMesh;
   
   // build viscous layers if required
-  const TopoDS_Face F = TopoDS::Face( aShape.Oriented( TopAbs_FORWARD ));
+  const TopoDS_Face F = TopoDS::Face( aShape/*.Oriented( TopAbs_FORWARD )*/);
   SMESH_ProxyMesh::Ptr proxyMesh = StdMeshers_ViscousLayers2D::Compute( aMesh, F );
   if ( !proxyMesh )
     return false;
@@ -335,7 +335,7 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
   }
 
   // create faces
-  bool reverse = ( aShape.Orientation() == TopAbs_REVERSED );
+  const bool reverse = false; //( aShape.Orientation() == TopAbs_REVERSED );
   int i,j;
   for ( i = 1; i <= nbFaces ; ++i )
   {
