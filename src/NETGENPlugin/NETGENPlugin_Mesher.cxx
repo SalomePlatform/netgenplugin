@@ -46,6 +46,8 @@
 #include <StdMeshers_QuadToTriaAdaptor.hxx>
 #include <StdMeshers_ViscousLayers2D.hxx>
 
+#include <SALOMEDS_Tool.hxx>
+
 #include <utilities.h>
 
 #include <BRepBuilderAPI_Copy.hxx>
@@ -53,6 +55,7 @@
 #include <Bnd_B3d.hxx>
 #include <NCollection_Map.hxx>
 #include <Standard_ErrorHandler.hxx>
+#include <Standard_ProgramError.hxx>
 #include <TopExp.hxx>
 #include <TopExp_Explorer.hxx>
 #include <TopTools_DataMapIteratorOfDataMapOfShapeInteger.hxx>
@@ -61,6 +64,8 @@
 #include <TopTools_DataMapOfShapeShape.hxx>
 #include <TopTools_MapOfShape.hxx>
 #include <TopoDS.hxx>
+#include <OSD_File.hxx>
+#include <OSD_Path.hxx>
 
 // Netgen include files
 #ifndef OCCGEOMETRY
@@ -2050,8 +2055,14 @@ namespace
 
 bool NETGENPlugin_Mesher::Compute()
 {
-  NETGENPlugin_NetgenLibWrapper ngLib;
+  NETGENPlugin_NetgenLibWrapper aNgLib;
 
+// Internal method is needed to get result of computation
+  return aNgLib.isComputeOk = _compute( &aNgLib );
+}
+
+bool NETGENPlugin_Mesher::_compute( NETGENPlugin_NetgenLibWrapper* ngLib )
+{
   netgen::MeshingParameters& mparams = netgen::mparam;
   MESSAGE("Compute with:\n"
           " max size = " << mparams.maxh << "\n"
@@ -2142,7 +2153,7 @@ bool NETGENPlugin_Mesher::Compute()
     err = 0; //- MESHCONST_ANALYSE isn't so important step
     if ( !ngMesh )
       return false;
-    ngLib.setMesh(( Ng_Mesh*) ngMesh );
+    ngLib->setMesh(( Ng_Mesh*) ngMesh );
 
     ngMesh->ClearFaceDescriptors(); // we make descriptors our-self
 
@@ -3457,7 +3468,8 @@ SMESH_Mesh& NETGENPlugin_Internals::getMesh() const
 
 NETGENPlugin_NetgenLibWrapper::NETGENPlugin_NetgenLibWrapper()
 {
-  Ng_Init();
+  myOutputFile = getOutputFileName();
+  Ng_Init( myOutputFile.c_str() );
   _ngMesh = Ng_NewMesh();
 }
 
@@ -3472,6 +3484,8 @@ NETGENPlugin_NetgenLibWrapper::~NETGENPlugin_NetgenLibWrapper()
   Ng_DeleteMesh( _ngMesh );
   Ng_Exit();
   NETGENPlugin_Mesher::RemoveTmpFiles();
+  if( isComputeOk )
+    RemoveOutputFile();
 }
 
 //================================================================================
@@ -3485,4 +3499,41 @@ void NETGENPlugin_NetgenLibWrapper::setMesh( Ng_Mesh* mesh )
   if ( _ngMesh )
     Ng_DeleteMesh( _ngMesh );
   _ngMesh = mesh;
+}
+
+//================================================================================
+/*!
+ * \brief Return a unique file name
+ */
+//================================================================================
+
+std::string NETGENPlugin_NetgenLibWrapper::getOutputFileName()
+{
+  std::string aTmpDir = SALOMEDS_Tool::GetTmpDir();
+
+  TCollection_AsciiString aGenericName = (char*)aTmpDir.c_str();
+  aGenericName += "NETGEN_";
+  aGenericName += getpid();
+  aGenericName += "_";
+  aGenericName += Abs((Standard_Integer)(long) aGenericName.ToCString());
+  aGenericName += ".out";
+
+  return aGenericName.ToCString();
+}
+
+//================================================================================
+/*!
+ * \brief Remove file with netgen output
+ */
+//================================================================================
+
+void NETGENPlugin_NetgenLibWrapper::RemoveOutputFile()
+{
+  string tmpDir = SALOMEDS_Tool::GetDirFromPath( myOutputFile );
+  SALOMEDS::ListOfFileNames_var aFiles = new SALOMEDS::ListOfFileNames;
+  aFiles->length(1);
+  std::string aFileName = SALOMEDS_Tool::GetNameFromPath( myOutputFile ) + ".out";
+  aFiles[0] = aFileName.c_str();
+  
+  SALOMEDS_Tool::RemoveTemporaryFiles( tmpDir.c_str(), aFiles.in(), true );
 }

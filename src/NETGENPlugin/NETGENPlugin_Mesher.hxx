@@ -72,6 +72,25 @@ struct NETGENPlugin_ngMeshInfo
   void restoreLocalH ( netgen::Mesh* ngMesh);
 };
 
+//================================================================================
+/*!
+ * \brief It correctly initializes netgen library at constructor and
+ *        correctly finishes using netgen library at destructor
+ */
+//================================================================================
+
+struct NETGENPLUGIN_EXPORT NETGENPlugin_NetgenLibWrapper
+{
+  std::string myOutputFile;
+  bool isComputeOk;
+  nglib::Ng_Mesh * _ngMesh;
+  NETGENPlugin_NetgenLibWrapper();
+  ~NETGENPlugin_NetgenLibWrapper();
+  void setMesh( nglib::Ng_Mesh* mesh );
+  std::string getOutputFileName();
+  void RemoveOutputFile();
+};
+
 //=============================================================================
 /*!
  * \brief This class calls the NETGEN mesher of OCC geometry
@@ -150,6 +169,8 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_Mesher
                         const std::string&  pyFile); // debug
 
  private:
+  bool _compute( NETGENPlugin_NetgenLibWrapper* ngLib );
+
   SMESH_Mesh*          _mesh;
   const TopoDS_Shape&  _shape;
   bool                 _isVolume;
@@ -228,21 +249,6 @@ public:
   const std::map<int,std::list<int> >& getSolidsWithVertices() const { return _s2v; }
 
 
-};
-
-//================================================================================
-/*!
- * \brief It correctly initializes netgen library at constructor and
- *        correctly finishes using netgen library at destructor
- */
-//================================================================================
-
-struct NETGENPLUGIN_EXPORT NETGENPlugin_NetgenLibWrapper
-{
-  nglib::Ng_Mesh * _ngMesh;
-  NETGENPlugin_NetgenLibWrapper();
-  ~NETGENPlugin_NetgenLibWrapper();
-  void setMesh( nglib::Ng_Mesh* mesh );
 };
 
 #endif
