@@ -3468,8 +3468,10 @@ SMESH_Mesh& NETGENPlugin_Internals::getMesh() const
 
 NETGENPlugin_NetgenLibWrapper::NETGENPlugin_NetgenLibWrapper()
 {
+  Ng_Init();
   myOutputFile = getOutputFileName();
-  Ng_Init( myOutputFile.c_str() );
+  netgen::mycout = new ofstream ( myOutputFile.c_str() );
+  cout << "NOTE: netgen output was redirected to file " << myOutputFile << endl;
   _ngMesh = Ng_NewMesh();
 }
 
@@ -3534,6 +3536,11 @@ void NETGENPlugin_NetgenLibWrapper::RemoveOutputFile()
   aFiles->length(1);
   std::string aFileName = SALOMEDS_Tool::GetNameFromPath( myOutputFile ) + ".out";
   aFiles[0] = aFileName.c_str();
+  if ( netgen::mycout)
+  {
+    delete netgen::mycout;
+    netgen::mycout = 0;
+  }
   
   SALOMEDS_Tool::RemoveTemporaryFiles( tmpDir.c_str(), aFiles.in(), true );
 }
