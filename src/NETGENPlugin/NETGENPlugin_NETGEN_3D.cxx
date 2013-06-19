@@ -325,7 +325,7 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
   // Generate the volume mesh
   // -------------------------
 
-  return compute( aMesh, helper, nodeVec, Netgen_mesh);
+  return ( ngLib._isComputeOk = compute( aMesh, helper, nodeVec, Netgen_mesh));
 }
 
 //================================================================================
@@ -564,7 +564,7 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
   // Generate the volume mesh
   // -------------------------
 
-  return compute( aMesh, *aHelper, nodeVec, Netgen_mesh);
+  return ( ngLib._isComputeOk = compute( aMesh, *aHelper, nodeVec, Netgen_mesh));
 }
 
 void NETGENPlugin_NETGEN_3D::CancelCompute()

@@ -48,7 +48,6 @@ class SMESH_Mesh;
 class SMESH_Comment;
 class SMESHDS_Mesh;
 class TopoDS_Shape;
-class TopTools_DataMapOfShapeShape;
 class TopTools_IndexedMapOfShape;
 class NETGENPlugin_Hypothesis;
 class NETGENPlugin_SimpleHypothesis_2D;
@@ -81,14 +80,17 @@ struct NETGENPlugin_ngMeshInfo
 
 struct NETGENPLUGIN_EXPORT NETGENPlugin_NetgenLibWrapper
 {
-  std::string myOutputFile;
-  bool isComputeOk;
+  bool             _isComputeOk;
   nglib::Ng_Mesh * _ngMesh;
+
   NETGENPlugin_NetgenLibWrapper();
   ~NETGENPlugin_NetgenLibWrapper();
   void setMesh( nglib::Ng_Mesh* mesh );
+
+ private:
   std::string getOutputFileName();
-  void RemoveOutputFile();
+  void        removeOutputFile();
+  std::string _outputFileName;
 };
 
 //=============================================================================
@@ -169,7 +171,6 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_Mesher
                         const std::string&  pyFile); // debug
 
  private:
-  bool _compute( NETGENPlugin_NetgenLibWrapper* ngLib );
 
   SMESH_Mesh*          _mesh;
   const TopoDS_Shape&  _shape;

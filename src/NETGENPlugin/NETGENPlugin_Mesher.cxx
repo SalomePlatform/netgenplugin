@@ -2055,14 +2055,8 @@ namespace
 
 bool NETGENPlugin_Mesher::Compute()
 {
-  NETGENPlugin_NetgenLibWrapper aNgLib;
+  NETGENPlugin_NetgenLibWrapper ngLib;
 
-// Internal method is needed to get result of computation
-  return aNgLib.isComputeOk = _compute( &aNgLib );
-}
-
-bool NETGENPlugin_Mesher::_compute( NETGENPlugin_NetgenLibWrapper* ngLib )
-{
   netgen::MeshingParameters& mparams = netgen::mparam;
   MESSAGE("Compute with:\n"
           " max size = " << mparams.maxh << "\n"
@@ -2153,7 +2147,7 @@ bool NETGENPlugin_Mesher::_compute( NETGENPlugin_NetgenLibWrapper* ngLib )
     err = 0; //- MESHCONST_ANALYSE isn't so important step
     if ( !ngMesh )
       return false;
-    ngLib->setMesh(( Ng_Mesh*) ngMesh );
+    ngLib.setMesh(( Ng_Mesh*) ngMesh );
 
     ngMesh->ClearFaceDescriptors(); // we make descriptors our-self
 
@@ -2636,6 +2630,8 @@ bool NETGENPlugin_Mesher::_compute( NETGENPlugin_NetgenLibWrapper* ngLib )
     if ( !pb2D && !pb3D )
       err = 0; // no fatal errors, only warnings
   }
+
+  ngLib._isComputeOk = !err;
 
   return !err;
 }
@@ -3469,9 +3465,12 @@ SMESH_Mesh& NETGENPlugin_Internals::getMesh() const
 NETGENPlugin_NetgenLibWrapper::NETGENPlugin_NetgenLibWrapper()
 {
   Ng_Init();
-  myOutputFile = getOutputFileName();
-  netgen::mycout = new ofstream ( myOutputFile.c_str() );
-  cout << "NOTE: netgen output was redirected to file " << myOutputFile << endl;
+
+  _isComputeOk    = false;
+  _outputFileName = getOutputFileName();
+  netgen::mycout  = new ofstream ( _outputFileName.c_str() );
+  cout << "NOTE: netgen output was redirected to file " << _outputFileName << endl;
+
   _ngMesh = Ng_NewMesh();
 }
 
@@ -3486,8 +3485,8 @@ NETGENPlugin_NetgenLibWrapper::~NETGENPlugin_NetgenLibWrapper()
   Ng_DeleteMesh( _ngMesh );
   Ng_Exit();
   NETGENPlugin_Mesher::RemoveTmpFiles();
-  if( isComputeOk )
-    RemoveOutputFile();
+  if( _isComputeOk )
+    removeOutputFile();
 }
 
 //================================================================================
@@ -3529,12 +3528,12 @@ std::string NETGENPlugin_NetgenLibWrapper::getOutputFileName()
  */
 //================================================================================
 
-void NETGENPlugin_NetgenLibWrapper::RemoveOutputFile()
+void NETGENPlugin_NetgenLibWrapper::removeOutputFile()
 {
-  string tmpDir = SALOMEDS_Tool::GetDirFromPath( myOutputFile );
+  string tmpDir = SALOMEDS_Tool::GetDirFromPath( _outputFileName );
   SALOMEDS::ListOfFileNames_var aFiles = new SALOMEDS::ListOfFileNames;
   aFiles->length(1);
-  std::string aFileName = SALOMEDS_Tool::GetNameFromPath( myOutputFile ) + ".out";
+  std::string aFileName = SALOMEDS_Tool::GetNameFromPath( _outputFileName ) + ".out";
   aFiles[0] = aFileName.c_str();
   if ( netgen::mycout)
   {
