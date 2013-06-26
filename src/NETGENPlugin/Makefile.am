@@ -76,7 +76,6 @@ dist_libNETGENEngine_la_SOURCES = \
 libNETGENEngine_la_CPPFLAGS = \
         $(KERNEL_CXXFLAGS) \
         $(GUI_CXXFLAGS) \
-	$(MED_CXXFLAGS) \
 	$(GEOM_CXXFLAGS) \
 	$(CAS_CPPFLAGS) \
         $(VTK_INCLUDES) \
@@ -94,7 +93,6 @@ libNETGENEngine_la_LDFLAGS  += \
 	$(CAS_LDPATH) -lTKernel -lTKBRep -lTKShHealing -lTKSTEP -lTKXSBase -lTKIGES -lTKMesh -lTKSTL -lTKG3d -lTKTopAlgo -lTKG2d -lTKBool -lTKGeomAlgo -lTKOffset -lTKGeomBase -lTKBO \
 		      -lTKMath -lTKFillet -lTKMeshVS -lTKPrim -lTKSTEPBase -lTKSTEPAttr -lTKSTEP209 -lTKXDESTEP -lTKXDEIGES -lTKXCAF -lTKLCAF -lFWOSPlugin \
 	$(GEOM_LDFLAGS) -lGEOMbasic \
-	$(MED_LDFLAGS) -lSalomeIDLMED \
 	$(SMESH_LDFLAGS) -lSMESHimpl -lSMESHEngine -lSMESHUtils -lStdMeshersEngine -lStdMeshers -lSMESHDS -lSMDS -lSMESHControls \
 	$(KERNEL_LDFLAGS) -lSalomeGenericObj -lSalomeNS -lSALOMELocalTrace -lOpUtil
 

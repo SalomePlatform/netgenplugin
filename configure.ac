@@ -339,14 +339,6 @@ echo
 
 CHECK_GEOM
 
- echo
- echo ---------------------------------------------
- echo Testing Med
- echo ---------------------------------------------
- echo
- 
-CHECK_MED
-
 echo
 echo ---------------------------------------------
 echo Testing Netgen
