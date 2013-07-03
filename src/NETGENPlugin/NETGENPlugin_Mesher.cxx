@@ -2134,10 +2134,9 @@ bool NETGENPlugin_Mesher::Compute()
 #else
       err = netgen::OCCGenerateMesh(occgeo, ngMesh, startWith, endWith, optstr);
 #endif
-#ifdef WITH_SMESH_CANCEL_COMPUTE
       if(netgen::multithread.terminate)
         return false;
-#endif
+
       comment << text(err);
     }
     catch (Standard_Failure& ex)
@@ -2223,10 +2222,9 @@ bool NETGENPlugin_Mesher::Compute()
 #else
         netgen::OCCGenerateMesh(intOccgeo, tmpNgMesh, startWith, endWith, optstr);
 #endif
-#ifdef WITH_SMESH_CANCEL_COMPUTE
         if(netgen::multithread.terminate)
           return false;
-#endif
+
         // copy LocalH from the main to temporary mesh
         initState.transferLocalH( ngMesh, tmpNgMesh );
 
@@ -2274,10 +2272,9 @@ bool NETGENPlugin_Mesher::Compute()
 #else
         err = netgen::OCCGenerateMesh(occgeo, ngMesh, startWith, endWith, optstr);
 #endif
-#ifdef WITH_SMESH_CANCEL_COMPUTE
         if(netgen::multithread.terminate)
           return false;
-#endif
+
         comment << text(err);
       }
       catch (Standard_Failure& ex)
@@ -2382,10 +2379,9 @@ bool NETGENPlugin_Mesher::Compute()
 #else
         err = netgen::OCCGenerateMesh(occgeo, ngMesh, startWith, endWith, optstr);
 #endif
-#ifdef WITH_SMESH_CANCEL_COMPUTE
         if(netgen::multithread.terminate)
           return false;
-#endif
+
         comment << text (err);
       }
       catch (Standard_Failure& ex)
@@ -2480,10 +2476,9 @@ bool NETGENPlugin_Mesher::Compute()
 #else
         err = netgen::OCCGenerateMesh(occgeo, ngMesh, startWith, endWith, optstr);
 #endif
-#ifdef WITH_SMESH_CANCEL_COMPUTE
         if(netgen::multithread.terminate)
           return false;
-#endif
+
         if ( comment.empty() ) // do not overwrite a previos error
           comment << text(err);
       }
@@ -2511,10 +2506,9 @@ bool NETGENPlugin_Mesher::Compute()
 #else
           err = netgen::OCCGenerateMesh(occgeo, ngMesh, startWith, endWith, optstr);
 #endif
-#ifdef WITH_SMESH_CANCEL_COMPUTE
           if(netgen::multithread.terminate)
             return false;
-#endif
+
           if ( comment.empty() ) // do not overwrite a previos error
             comment << text(err);
         }
@@ -2693,10 +2687,10 @@ bool NETGENPlugin_Mesher::Evaluate(MapShapeNbElems& aResMap)
 #else
   int err = netgen::OCCGenerateMesh(occgeo, ngMesh, startWith, endWith, optstr);
 #endif
-#ifdef WITH_SMESH_CANCEL_COMPUTE
+
   if(netgen::multithread.terminate)
     return false;
-#endif
+
   ngLib.setMesh(( Ng_Mesh*) ngMesh );
   if (err) {
     if ( SMESH_subMesh* sm = _mesh->GetSubMeshContaining( _shape ))
@@ -3469,7 +3463,7 @@ NETGENPlugin_NetgenLibWrapper::NETGENPlugin_NetgenLibWrapper()
   _isComputeOk    = false;
   _outputFileName = getOutputFileName();
   netgen::mycout  = new ofstream ( _outputFileName.c_str() );
-  cout << "NOTE: netgen output was redirected to file " << _outputFileName << endl;
+  cout << "NOTE: netgen output redirected to file " << _outputFileName << endl;
 
   _ngMesh = Ng_NewMesh();
 }
@@ -3542,4 +3536,5 @@ void NETGENPlugin_NetgenLibWrapper::removeOutputFile()
   }
   
   SALOMEDS_Tool::RemoveTemporaryFiles( tmpDir.c_str(), aFiles.in(), true );
+  cout << "NOTE: netgen output log REMOVED        " << _outputFileName << endl;
 }
