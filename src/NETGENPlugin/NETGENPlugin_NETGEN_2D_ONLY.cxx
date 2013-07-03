@@ -128,6 +128,7 @@ bool NETGENPlugin_NETGEN_2D_ONLY::CheckHypothesis (SMESH_Mesh&         aMesh,
   _hypMaxElementArea = 0;
   _hypLengthFromEdges = 0;
   _hypQuadranglePreference = 0;
+  _isSurfaceMeshing = true;
 
   const list<const SMESHDS_Hypothesis*>& hyps = GetUsedHypothesis(aMesh, aShape, false);
 
@@ -181,6 +182,7 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
                                           const TopoDS_Shape& aShape)
 {
   netgen::multithread.terminate = 0;
+  netgen::multithread.task = "Surface meshing";
 
   SMESHDS_Mesh* meshDS = aMesh.GetMeshDS();
   int faceID = meshDS->ShapeToIndex( aShape );
@@ -370,6 +372,36 @@ void NETGENPlugin_NETGEN_2D_ONLY::CancelCompute()
 {
   SMESH_Algo::CancelCompute();
   netgen::multithread.terminate = 1;
+}
+
+//================================================================================
+/*!
+ * \brief Return progress of Compute() [0.,1]
+ */
+//================================================================================
+
+double NETGENPlugin_NETGEN_2D_ONLY::GetProgress() const
+{
+  const char* task1 = "Surface meshing";
+  const char* task2 = "Optimizing surface";
+  double res = 0;
+  if ( _isSurfaceMeshing &&
+       strncmp( netgen::multithread.task, task1, 3 ) == 0 )
+  {
+    res = 0.3 * SMESH_Algo::GetProgressByTic(); // [0, 0.3]
+  }
+  else //if ( strncmp( netgen::multithread.task, task2, 3 ) == 0)
+  {
+    if ( _isSurfaceMeshing )
+    {
+      NETGENPlugin_NETGEN_2D_ONLY* me = (NETGENPlugin_NETGEN_2D_ONLY*) this;
+      me->_isSurfaceMeshing = false;
+      me->_progressTic = 0; // to re-start GetProgressByTic() from 0.
+    }
+    res = 0.3 + 0.7 * SMESH_Algo::GetProgressByTic(); // [0.3, 1.]
+  }
+  //cout << netgen::multithread.task << " " <<res << endl;
+  return res;
 }
 
 //=============================================================================

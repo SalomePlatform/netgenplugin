@@ -140,6 +140,11 @@ bool NETGENPlugin_NETGEN_3D::CheckHypothesis (SMESH_Mesh&         aMesh,
   _viscousLayersHyp = NULL;
   _maxElementVolume = DBL_MAX;
 
+  // for correct work of GetProgress():
+  netgen::multithread.percent = 0.;
+  netgen::multithread.task = "Volume meshing";
+  _optimizationStarted = false;
+
   list<const SMESHDS_Hypothesis*>::const_iterator itl;
   const SMESHDS_Hypothesis* theHyp;
 
@@ -186,7 +191,7 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
                                      const TopoDS_Shape& aShape)
 {
   netgen::multithread.terminate = 0;
-
+  
   SMESHDS_Mesh* meshDS = aMesh.GetMeshDS();
 
   SMESH_MesherHelper helper(aMesh);
@@ -487,6 +492,8 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
 {
   const int invalid_ID = -1;
 
+  netgen::multithread.terminate = 0;
+
   SMESH_MesherHelper::MType MeshType = aHelper->IsQuadraticMesh();
   if ( MeshType == SMESH_MesherHelper::COMP )
     return error( COMPERR_BAD_INPUT_MESH,
@@ -571,6 +578,31 @@ void NETGENPlugin_NETGEN_3D::CancelCompute()
 {
   SMESH_Algo::CancelCompute();
   netgen::multithread.terminate = 1;
+}
+
+//================================================================================
+/*!
+ * \brief Return Compute progress
+ */
+//================================================================================
+
+double NETGENPlugin_NETGEN_3D::GetProgress() const
+{
+  double res;
+  const char* volMeshing = "Volume meshing";
+  const char* dlnMeshing = "Delaunay meshing";
+  if ( !_optimizationStarted &&
+       ( strncmp( netgen::multithread.task, dlnMeshing, 3 ) == 0 ||
+         strncmp( netgen::multithread.task, volMeshing, 3 ) == 0 ))
+  {
+    res = 0.5 * netgen::multithread.percent / 100.; // [0., 0.5]
+  }
+  else // different otimizations
+  {
+    ((NETGENPlugin_NETGEN_3D*)this)->_optimizationStarted = true;
+    res = 0.5 + 0.5 * SMESH_Algo::GetProgressByTic(); // [0.5, 1.]
+  }
+  return res;
 }
 
 //=============================================================================

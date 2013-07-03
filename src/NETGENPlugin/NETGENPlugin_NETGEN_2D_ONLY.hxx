@@ -52,9 +52,9 @@ public:
   virtual bool Compute(SMESH_Mesh&         aMesh,
                        const TopoDS_Shape& aShape);
 
-#ifdef WITH_SMESH_CANCEL_COMPUTE
   virtual void CancelCompute();
-#endif
+
+  virtual double GetProgress() const;
 
   virtual bool Evaluate(SMESH_Mesh& aMesh, const TopoDS_Shape& aShape,
                         MapShapeNbElems& aResMap);
@@ -64,6 +64,8 @@ protected:
   const StdMeshers_LengthFromEdges*      _hypLengthFromEdges;
   const SMESHDS_Hypothesis*              _hypQuadranglePreference;
   const NETGENPlugin_Hypothesis_2D*      _hypParameters;
+
+  bool                                   _isSurfaceMeshing;
 };
 
 #endif
