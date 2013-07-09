@@ -595,7 +595,7 @@ double NETGENPlugin_NETGEN_3D::GetProgress() const
        ( strncmp( netgen::multithread.task, dlnMeshing, 3 ) == 0 ||
          strncmp( netgen::multithread.task, volMeshing, 3 ) == 0 ))
   {
-    res = 0.5 * netgen::multithread.percent / 100.; // [0., 0.5]
+    res = 0.001 + 0.5 * netgen::multithread.percent / 100.; // [0., 0.5]
   }
   else // different otimizations
   {
