@@ -3463,7 +3463,8 @@ NETGENPlugin_NetgenLibWrapper::NETGENPlugin_NetgenLibWrapper()
   _isComputeOk    = false;
   _outputFileName = getOutputFileName();
   netgen::mycout  = new ofstream ( _outputFileName.c_str() );
-  cout << "NOTE: netgen output redirected to file " << _outputFileName << endl;
+  netgen::myerr = netgen::mycout;
+  cout << "NOTE: netgen output is redirected to file " << _outputFileName << endl;
 
   _ngMesh = Ng_NewMesh();
 }
@@ -3533,8 +3534,9 @@ void NETGENPlugin_NetgenLibWrapper::removeOutputFile()
   {
     delete netgen::mycout;
     netgen::mycout = 0;
+    netgen::myerr = 0;
   }
   
   SALOMEDS_Tool::RemoveTemporaryFiles( tmpDir.c_str(), aFiles.in(), true );
-  cout << "NOTE: netgen output log REMOVED        " << _outputFileName << endl;
+  cout << "NOTE: netgen output log was REMOVED       " << _outputFileName << endl;
 }
