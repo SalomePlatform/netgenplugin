@@ -125,24 +125,38 @@ bool NETGENPlugin_NETGEN_2D::CheckHypothesis (SMESH_Mesh&         aMesh,
 bool NETGENPlugin_NETGEN_2D::Compute(SMESH_Mesh&         aMesh,
                                      const TopoDS_Shape& aShape)
 {
-#ifdef WITH_SMESH_CANCEL_COMPUTE
   netgen::multithread.terminate = 0;
-#endif
 
   NETGENPlugin_Mesher mesher(&aMesh, aShape, /*is3D = */false);
   mesher.SetParameters(dynamic_cast<const NETGENPlugin_Hypothesis*>(_hypothesis));
   mesher.SetParameters(dynamic_cast<const NETGENPlugin_SimpleHypothesis_2D*>(_hypothesis));
   mesher.SetViscousLayers2DAssigned( _isViscousLayers2D );
+  mesher.SetSelfPointer( &_mesher );
   return mesher.Compute();
 }
 
-#ifdef WITH_SMESH_CANCEL_COMPUTE
+//=============================================================================
+/*!
+ * Terminate Compute()
+ */
+//=============================================================================
+
 void NETGENPlugin_NETGEN_2D::CancelCompute()
 {
   SMESH_Algo::CancelCompute();
   netgen::multithread.terminate = 1;
 }
-#endif
+
+//================================================================================
+/*!
+ * \brief Return progress of Compute() [0.,1]
+ */
+//================================================================================
+
+double NETGENPlugin_NETGEN_2D::GetProgress() const
+{
+  return _mesher ? _mesher->GetProgress(this, &_progressTic) : 0;
+}
 
 //=============================================================================
 /*!
