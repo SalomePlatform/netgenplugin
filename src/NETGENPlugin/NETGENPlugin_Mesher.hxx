@@ -106,6 +106,8 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_Mesher
 
   NETGENPlugin_Mesher (SMESH_Mesh* mesh, const TopoDS_Shape& aShape,
                        const bool isVolume);
+  ~NETGENPlugin_Mesher();
+  void SetSelfPointer( NETGENPlugin_Mesher ** ptr );
 
   void SetParameters(const NETGENPlugin_Hypothesis*          hyp);
   void SetParameters(const NETGENPlugin_SimpleHypothesis_2D* hyp);
@@ -114,6 +116,8 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_Mesher
   bool Compute();
 
   bool Evaluate(MapShapeNbElems& aResMap);
+
+  double GetProgress(const SMESH_Algo* holder, const int * algoProgressTic ) const;
 
   static void PrepareOCCgeometry(netgen::OCCGeometry&          occgeom,
                                  const TopoDS_Shape&           shape,
@@ -178,8 +182,15 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_Mesher
   bool                 _optimize;
   int                  _fineness;
   bool                 _isViscousLayers2D;
+  netgen::Mesh*        _ngMesh;
+  netgen::OCCGeometry* _occgeom;
+  int                  _curShapeIndex;
 
   const NETGENPlugin_SimpleHypothesis_2D * _simpleHyp;
+
+  // a pointer to NETGENPlugin_Mesher* field of the holder, that will be
+  // nullified at destruction of this
+  NETGENPlugin_Mesher ** _ptrToMe; 
 };
 
 //=============================================================================

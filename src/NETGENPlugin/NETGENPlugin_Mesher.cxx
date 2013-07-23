@@ -124,13 +124,49 @@ NETGENPlugin_Mesher::NETGENPlugin_Mesher (SMESH_Mesh*         mesh,
     _optimize(true),
     _fineness(NETGENPlugin_Hypothesis::GetDefaultFineness()),
     _isViscousLayers2D(false),
-    _simpleHyp(NULL)
+    _ngMesh(NULL),
+    _occgeom(NULL),
+    _curShapeIndex(-1),
+    _simpleHyp(NULL),
+    _ptrToMe(NULL)
 {
   SetDefaultParameters();
   ShapesWithLocalSize.Clear();
   VertexId2LocalSize.clear();
   EdgeId2LocalSize.clear();
   FaceId2LocalSize.clear();
+}
+
+//================================================================================
+/*!
+ * Destuctor
+ */
+//================================================================================
+
+NETGENPlugin_Mesher::~NETGENPlugin_Mesher()
+{
+  if ( _ptrToMe )
+    *_ptrToMe = NULL;
+  _ptrToMe = 0;
+  _ngMesh = NULL;
+}
+
+//================================================================================
+/*!
+ * Set pointer to NETGENPlugin_Mesher* field of the holder, that will be
+ * nullified at destruction of this
+ */
+//================================================================================
+
+void NETGENPlugin_Mesher::SetSelfPointer( NETGENPlugin_Mesher ** ptr )
+{
+  if ( _ptrToMe )
+    *_ptrToMe = NULL;
+
+  _ptrToMe = ptr;
+
+  if ( _ptrToMe )
+    *_ptrToMe = this;
 }
 
 //================================================================================
@@ -2080,12 +2116,14 @@ bool NETGENPlugin_Mesher::Compute()
   list< SMESH_subMesh* > meshedSM[3]; // for 0-2 dimensions
   NETGENPlugin_Internals internals( *_mesh, _shape, _isVolume );
   PrepareOCCgeometry( occgeo, _shape, *_mesh, meshedSM, &internals );
+  _occgeom = &occgeo;
+  _curShapeIndex = -1;
 
   // -------------------------
   // Generate the mesh
   // -------------------------
 
-  netgen::Mesh *ngMesh = NULL;
+  _ngMesh = NULL;
   NETGENPlugin_ngMeshInfo initState; // it remembers size of ng mesh equal to size of Smesh
 
   SMESH_Comment comment;
@@ -2120,7 +2158,7 @@ bool NETGENPlugin_Mesher::Compute()
     // Local size on faces
     occgeo.face_maxh = mparams.maxh;
 
-    // Let netgen create ngMesh and calculate element size on not meshed shapes
+    // Let netgen create _ngMesh and calculate element size on not meshed shapes
 #ifndef NETGEN_V5
     char *optstr = 0;
 #endif
@@ -2130,9 +2168,9 @@ bool NETGENPlugin_Mesher::Compute()
     {
       OCC_CATCH_SIGNALS;
 #ifdef NETGEN_V5
-      err = netgen::OCCGenerateMesh(occgeo, ngMesh, mparams, startWith, endWith);
+      err = netgen::OCCGenerateMesh(occgeo, _ngMesh, mparams, startWith, endWith);
 #else
-      err = netgen::OCCGenerateMesh(occgeo, ngMesh, startWith, endWith, optstr);
+      err = netgen::OCCGenerateMesh(occgeo, _ngMesh, startWith, endWith, optstr);
 #endif
       if(netgen::multithread.terminate)
         return false;
@@ -2144,11 +2182,11 @@ bool NETGENPlugin_Mesher::Compute()
       comment << text(ex);
     }
     err = 0; //- MESHCONST_ANALYSE isn't so important step
-    if ( !ngMesh )
+    if ( !_ngMesh )
       return false;
-    ngLib.setMesh(( Ng_Mesh*) ngMesh );
+    ngLib.setMesh(( Ng_Mesh*) _ngMesh );
 
-    ngMesh->ClearFaceDescriptors(); // we make descriptors our-self
+    _ngMesh->ClearFaceDescriptors(); // we make descriptors our-self
 
     if ( _simpleHyp )
     {
@@ -2161,7 +2199,7 @@ bool NETGENPlugin_Mesher::Compute()
         const TopoDS_Edge& e = TopoDS::Edge( occgeo.emap(iE));
         if ( nbSeg )
           segSize = SMESH_Algo::EdgeLength( e ) / ( nbSeg - 0.4 );
-        setLocalSize( e, segSize, *ngMesh );
+        setLocalSize( e, segSize, *_ngMesh );
       }
     }
     else // if ( ! _simpleHyp )
@@ -2174,7 +2212,7 @@ bool NETGENPlugin_Mesher::Compute()
         double hi = (*it).second;
         const TopoDS_Shape& shape = ShapesWithLocalSize.FindKey(key);
         const TopoDS_Edge& e = TopoDS::Edge(shape);
-        setLocalSize( e, hi, *ngMesh );
+        setLocalSize( e, hi, *_ngMesh );
       }
       for(std::map<int,double>::const_iterator it=VertexId2LocalSize.begin(); it!=VertexId2LocalSize.end(); it++)
       {
@@ -2183,7 +2221,7 @@ bool NETGENPlugin_Mesher::Compute()
         const TopoDS_Shape& shape = ShapesWithLocalSize.FindKey(key);
         const TopoDS_Vertex& v = TopoDS::Vertex(shape);
         gp_Pnt p = BRep_Tool::Pnt(v);
-        NETGENPlugin_Mesher::RestrictLocalSize( *ngMesh, p.XYZ(), hi );
+        NETGENPlugin_Mesher::RestrictLocalSize( *_ngMesh, p.XYZ(), hi );
       }
       for(map<int,double>::const_iterator it=FaceId2LocalSize.begin();
           it!=FaceId2LocalSize.end(); it++)
@@ -2194,7 +2232,7 @@ bool NETGENPlugin_Mesher::Compute()
         int faceNgID = occgeo.fmap.FindIndex(shape);
         occgeo.SetFaceMaxH(faceNgID, val);
         for ( TopExp_Explorer edgeExp( shape, TopAbs_EDGE ); edgeExp.More(); edgeExp.Next() )
-          setLocalSize( TopoDS::Edge( edgeExp.Current() ), val, *ngMesh );
+          setLocalSize( TopoDS::Edge( edgeExp.Current() ), val, *_ngMesh );
       }
     }
 
@@ -2214,7 +2252,7 @@ bool NETGENPlugin_Mesher::Compute()
       {
         OCC_CATCH_SIGNALS;
         // compute local H on internal shapes in the main mesh
-        //OCCSetLocalMeshSize(intOccgeo, *ngMesh); it deletes ngMesh->localH
+        //OCCSetLocalMeshSize(intOccgeo, *_ngMesh); it deletes _ngMesh->localH
 
         // let netgen create a temporary mesh
 #ifdef NETGEN_V5
@@ -2226,7 +2264,7 @@ bool NETGENPlugin_Mesher::Compute()
           return false;
 
         // copy LocalH from the main to temporary mesh
-        initState.transferLocalH( ngMesh, tmpNgMesh );
+        initState.transferLocalH( _ngMesh, tmpNgMesh );
 
         // compute mesh on internal edges
         startWith = endWith = netgen::MESHCONST_MESHEDGES;
@@ -2252,13 +2290,13 @@ bool NETGENPlugin_Mesher::Compute()
       nglib::Ng_DeleteMesh((nglib::Ng_Mesh*)tmpNgMesh);
     }
 
-    // Fill ngMesh with nodes and segments of computed submeshes
+    // Fill _ngMesh with nodes and segments of computed submeshes
     if ( !err )
     {
-      err = ! ( FillNgMesh(occgeo, *ngMesh, nodeVec, meshedSM[ MeshDim_0D ]) &&
-                FillNgMesh(occgeo, *ngMesh, nodeVec, meshedSM[ MeshDim_1D ]));
+      err = ! ( FillNgMesh(occgeo, *_ngMesh, nodeVec, meshedSM[ MeshDim_0D ]) &&
+                FillNgMesh(occgeo, *_ngMesh, nodeVec, meshedSM[ MeshDim_1D ]));
     }
-    initState = NETGENPlugin_ngMeshInfo(ngMesh);
+    initState = NETGENPlugin_ngMeshInfo(_ngMesh);
 
     // Compute 1d mesh
     if (!err)
@@ -2268,9 +2306,9 @@ bool NETGENPlugin_Mesher::Compute()
       {
         OCC_CATCH_SIGNALS;
 #ifdef NETGEN_V5
-        err = netgen::OCCGenerateMesh(occgeo, ngMesh, mparams, startWith, endWith);
+        err = netgen::OCCGenerateMesh(occgeo, _ngMesh, mparams, startWith, endWith);
 #else
-        err = netgen::OCCGenerateMesh(occgeo, ngMesh, startWith, endWith, optstr);
+        err = netgen::OCCGenerateMesh(occgeo, _ngMesh, startWith, endWith, optstr);
 #endif
         if(netgen::multithread.terminate)
           return false;
@@ -2299,7 +2337,7 @@ bool NETGENPlugin_Mesher::Compute()
         }
         else {
           // length from edges
-          if ( ngMesh->GetNSeg() ) {
+          if ( _ngMesh->GetNSeg() ) {
             double edgeLength = 0;
             TopTools_MapOfShape visitedEdges;
             for ( TopExp_Explorer exp( _shape, TopAbs_EDGE ); exp.More(); exp.Next() )
@@ -2307,8 +2345,8 @@ bool NETGENPlugin_Mesher::Compute()
                 edgeLength += SMESH_Algo::EdgeLength( TopoDS::Edge( exp.Current() ));
             // we have to multiply length by 2 since for each TopoDS_Edge there
             // are double set of NETGEN edges, in other words, we have to
-            // divide ngMesh->GetNSeg() by 2.
-            mparams.maxh = 2*edgeLength / ngMesh->GetNSeg();
+            // divide _ngMesh->GetNSeg() by 2.
+            mparams.maxh = 2*edgeLength / _ngMesh->GetNSeg();
           }
           else {
             mparams.maxh = 1000;
@@ -2317,10 +2355,10 @@ bool NETGENPlugin_Mesher::Compute()
         }
         mparams.quad = _simpleHyp->GetAllowQuadrangles();
         mparams.maxh = min( mparams.maxh, occgeo.boundingbox.Diam()/2 );
-        ngMesh->SetGlobalH (mparams.maxh);
+        _ngMesh->SetGlobalH (mparams.maxh);
         netgen::Box<3> bb = occgeo.GetBoundingBox();
         bb.Increase (bb.Diam()/20);
-        ngMesh->SetLocalH (bb.PMin(), bb.PMax(), mparams.grading);
+        _ngMesh->SetLocalH (bb.PMin(), bb.PMax(), mparams.grading);
       }
 
       // Care of vertices internal in faces (issue 0020676)
@@ -2328,18 +2366,18 @@ bool NETGENPlugin_Mesher::Compute()
       {
         // store computed segments in SMESH in order not to create SMESH
         // edges for ng segments added by AddIntVerticesInFaces()
-        FillSMesh( occgeo, *ngMesh, initState, *_mesh, nodeVec, comment );
+        FillSMesh( occgeo, *_ngMesh, initState, *_mesh, nodeVec, comment );
         // add segments to faces with internal vertices
-        AddIntVerticesInFaces( occgeo, *ngMesh, nodeVec, internals );
-        initState = NETGENPlugin_ngMeshInfo(ngMesh);
+        AddIntVerticesInFaces( occgeo, *_ngMesh, nodeVec, internals );
+        initState = NETGENPlugin_ngMeshInfo(_ngMesh);
       }
 
       // Build viscous layers
       if ( _isViscousLayers2D )
       {
         if ( !internals.hasInternalVertexInFace() ) {
-          FillSMesh( occgeo, *ngMesh, initState, *_mesh, nodeVec, comment );
-          initState = NETGENPlugin_ngMeshInfo(ngMesh);
+          FillSMesh( occgeo, *_ngMesh, initState, *_mesh, nodeVec, comment );
+          initState = NETGENPlugin_ngMeshInfo(_ngMesh);
         }
         SMESH_ProxyMesh::Ptr viscousMesh;
         SMESH_MesherHelper   helper( *_mesh );
@@ -2350,22 +2388,22 @@ bool NETGENPlugin_Mesher::Compute()
           if ( !viscousMesh )
             return false;
           // exclude from computation ng segments built on EDGEs of F
-          for (int i = 1; i <= ngMesh->GetNSeg(); i++)
+          for (int i = 1; i <= _ngMesh->GetNSeg(); i++)
           {
-            netgen::Segment & seg = ngMesh->LineSegment(i);
+            netgen::Segment & seg = _ngMesh->LineSegment(i);
             if (seg.si == faceID)
               seg.si = 0;
           }
-          // add new segments to ngMesh instead of excluded ones
+          // add new segments to _ngMesh instead of excluded ones
           helper.SetSubShape( F );
           TSideVector wires =
             StdMeshers_FaceSide::GetFaceWires( F, *_mesh, /*skipMediumNodes=*/true,
                                                error, viscousMesh );
-          error = AddSegmentsToMesh( *ngMesh, occgeo, wires, helper, nodeVec );
+          error = AddSegmentsToMesh( *_ngMesh, occgeo, wires, helper, nodeVec );
 
           if ( !error ) error = SMESH_ComputeError::New();
         }
-        initState = NETGENPlugin_ngMeshInfo(ngMesh);
+        initState = NETGENPlugin_ngMeshInfo(_ngMesh);
       }
 
       // Let netgen compute 2D mesh
@@ -2375,9 +2413,9 @@ bool NETGENPlugin_Mesher::Compute()
       {
         OCC_CATCH_SIGNALS;
 #ifdef NETGEN_V5
-        err = netgen::OCCGenerateMesh(occgeo, ngMesh, mparams, startWith, endWith);
+        err = netgen::OCCGenerateMesh(occgeo, _ngMesh, mparams, startWith, endWith);
 #else
-        err = netgen::OCCGenerateMesh(occgeo, ngMesh, startWith, endWith, optstr);
+        err = netgen::OCCGenerateMesh(occgeo, _ngMesh, startWith, endWith, optstr);
 #endif
         if(netgen::multithread.terminate)
           return false;
@@ -2398,11 +2436,11 @@ bool NETGENPlugin_Mesher::Compute()
     // ---------------------
     // generate volume mesh
     // ---------------------
-    // Fill ngMesh with nodes and faces of computed 2D submeshes
+    // Fill _ngMesh with nodes and faces of computed 2D submeshes
     if ( !err && _isVolume && ( !meshedSM[ MeshDim_2D ].empty() || mparams.quad ))
     {
       // load SMESH with computed segments and faces
-      FillSMesh( occgeo, *ngMesh, initState, *_mesh, nodeVec, comment );
+      FillSMesh( occgeo, *_ngMesh, initState, *_mesh, nodeVec, comment );
 
       // compute pyramids on quadrangles
       SMESH_ProxyMesh::Ptr proxyMesh;
@@ -2423,13 +2461,13 @@ bool NETGENPlugin_Mesher::Compute()
                 quadFaceSM.push_back( _mesh->GetSubMesh( face.Current() ));
                 meshedSM[ MeshDim_2D ].remove( quadFaceSM.back() );
               }
-            FillNgMesh(occgeo, *ngMesh, nodeVec, quadFaceSM, proxyMesh);
+            FillNgMesh(occgeo, *_ngMesh, nodeVec, quadFaceSM, proxyMesh);
           }
         }
-      // fill ngMesh with faces of sub-meshes
-      err = ! ( FillNgMesh(occgeo, *ngMesh, nodeVec, meshedSM[ MeshDim_2D ]));
-      initState = NETGENPlugin_ngMeshInfo(ngMesh);
-      //toPython( ngMesh, "/tmp/ngPython.py");
+      // fill _ngMesh with faces of sub-meshes
+      err = ! ( FillNgMesh(occgeo, *_ngMesh, nodeVec, meshedSM[ MeshDim_2D ]));
+      initState = NETGENPlugin_ngMeshInfo(_ngMesh);
+      //toPython( _ngMesh, "/tmp/ngPython.py");
     }
     if (!err && _isVolume)
     {
@@ -2444,14 +2482,14 @@ bool NETGENPlugin_Mesher::Compute()
         }
         else {
           // length from faces
-          mparams.maxh = ngMesh->AverageH();
+          mparams.maxh = _ngMesh->AverageH();
         }
-        ngMesh->SetGlobalH (mparams.maxh);
+        _ngMesh->SetGlobalH (mparams.maxh);
         mparams.grading = 0.4;
 #ifdef NETGEN_V5
-        ngMesh->CalcLocalH(mparams.grading);
+        _ngMesh->CalcLocalH(mparams.grading);
 #else
-        ngMesh->CalcLocalH();
+        _ngMesh->CalcLocalH();
 #endif
       }
       // Care of vertices internal in solids and internal faces (issue 0020676)
@@ -2459,12 +2497,12 @@ bool NETGENPlugin_Mesher::Compute()
       {
         // store computed faces in SMESH in order not to create SMESH
         // faces for ng faces added here
-        FillSMesh( occgeo, *ngMesh, initState, *_mesh, nodeVec, comment );
+        FillSMesh( occgeo, *_ngMesh, initState, *_mesh, nodeVec, comment );
         // add ng faces to solids with internal vertices
-        AddIntVerticesInSolids( occgeo, *ngMesh, nodeVec, internals );
+        AddIntVerticesInSolids( occgeo, *_ngMesh, nodeVec, internals );
         // duplicate mesh faces on internal faces
-        FixIntFaces( occgeo, *ngMesh, internals );
-        initState = NETGENPlugin_ngMeshInfo(ngMesh);
+        FixIntFaces( occgeo, *_ngMesh, internals );
+        initState = NETGENPlugin_ngMeshInfo(_ngMesh);
       }
       // Let netgen compute 3D mesh
       startWith = endWith = netgen::MESHCONST_MESHVOLUME;
@@ -2472,9 +2510,9 @@ bool NETGENPlugin_Mesher::Compute()
       {
         OCC_CATCH_SIGNALS;
 #ifdef NETGEN_V5
-        err = netgen::OCCGenerateMesh(occgeo, ngMesh, mparams, startWith, endWith);
+        err = netgen::OCCGenerateMesh(occgeo, _ngMesh, mparams, startWith, endWith);
 #else
-        err = netgen::OCCGenerateMesh(occgeo, ngMesh, startWith, endWith, optstr);
+        err = netgen::OCCGenerateMesh(occgeo, _ngMesh, startWith, endWith, optstr);
 #endif
         if(netgen::multithread.terminate)
           return false;
@@ -2502,9 +2540,9 @@ bool NETGENPlugin_Mesher::Compute()
         {
           OCC_CATCH_SIGNALS;
 #ifdef NETGEN_V5
-          err = netgen::OCCGenerateMesh(occgeo, ngMesh, mparams, startWith, endWith);
+          err = netgen::OCCGenerateMesh(occgeo, _ngMesh, mparams, startWith, endWith);
 #else
-          err = netgen::OCCGenerateMesh(occgeo, ngMesh, startWith, endWith, optstr);
+          err = netgen::OCCGenerateMesh(occgeo, _ngMesh, startWith, endWith, optstr);
 #endif
           if(netgen::multithread.terminate)
             return false;
@@ -2530,7 +2568,7 @@ bool NETGENPlugin_Mesher::Compute()
       {
         OCC_CATCH_SIGNALS;
         netgen::OCCRefinementSurfaces ref (occgeo);
-        ref.MakeSecondOrder (*ngMesh);
+        ref.MakeSecondOrder (*_ngMesh);
       }
       catch (Standard_Failure& ex)
       {
@@ -2544,10 +2582,10 @@ bool NETGENPlugin_Mesher::Compute()
       }
     }
   }
-  int nbNod = ngMesh->GetNP();
-  int nbSeg = ngMesh->GetNSeg();
-  int nbFac = ngMesh->GetNSE();
-  int nbVol = ngMesh->GetNE();
+  int nbNod = _ngMesh->GetNP();
+  int nbSeg = _ngMesh->GetNSeg();
+  int nbFac = _ngMesh->GetNSE();
+  int nbVol = _ngMesh->GetNE();
   bool isOK = ( !err && (_isVolume ? (nbVol > 0) : (nbFac > 0)) );
 
   MESSAGE((err ? "Mesh Generation failure" : "End of Mesh Generation") <<
@@ -2558,7 +2596,7 @@ bool NETGENPlugin_Mesher::Compute()
 
   // Feed back the SMESHDS with the generated Nodes and Elements
   if ( true /*isOK*/ ) // get whatever built
-    FillSMesh( occgeo, *ngMesh, initState, *_mesh, nodeVec, comment ); //!< 
+    FillSMesh( occgeo, *_ngMesh, initState, *_mesh, nodeVec, comment ); //!< 
 
   SMESH_ComputeErrorPtr readErr = ReadErrors(nodeVec);
   if ( readErr && !readErr->myBadElements.empty() )
@@ -2674,7 +2712,7 @@ bool NETGENPlugin_Mesher::Evaluate(MapShapeNbElems& aResMap)
   if ( _simpleHyp || ( mparams.minh == 0.0 && _fineness != NETGENPlugin_Hypothesis::UserDefined))
     mparams.minh = GetDefaultMinSize( _shape, mparams.maxh );
 
-  // let netgen create ngMesh and calculate element size on not meshed shapes
+  // let netgen create _ngMesh and calculate element size on not meshed shapes
   NETGENPlugin_NetgenLibWrapper ngLib;
   netgen::Mesh *ngMesh = NULL;
 #ifndef NETGEN_V5
@@ -2891,6 +2929,51 @@ bool NETGENPlugin_Mesher::Evaluate(MapShapeNbElems& aResMap)
   }
 
   return true;
+}
+
+double NETGENPlugin_Mesher::GetProgress(const SMESH_Algo* holder,
+                                        const int *       algoProgressTic ) const
+{
+  double progress = holder->GetProgressByTic();
+
+  if ( _ngMesh && _occgeom )
+    if ( _isVolume )
+    {
+      if ( _occgeom->somap.Extent() > 1 )
+      {
+        int curShapeIndex = 0;
+        if ( _ngMesh->GetNE() > 0 )
+        {
+          netgen::Element el = (*_ngMesh)[netgen::ElementIndex( _ngMesh->GetNE()-1 )];
+          curShapeIndex = el.GetIndex();
+        }
+        if ( curShapeIndex != _curShapeIndex )
+        {
+          ((int&) * algoProgressTic ) = 1;
+          ((int&) _curShapeIndex    ) = curShapeIndex;
+        }
+        double progressPerShape = 1./ ( _occgeom->somap.Extent() + 1 );
+        progress = progressPerShape * ( _curShapeIndex + holder->GetProgressByTic() );
+      }
+    }
+    else
+    {
+      if ( _occgeom->fmap.Extent() > 1 )
+      {
+        int doneShapeIndex = -1;
+        while ( doneShapeIndex+1 < _occgeom->facemeshstatus.Size() &&
+                _occgeom->facemeshstatus[ doneShapeIndex+1 ])
+          doneShapeIndex++;
+        if ( doneShapeIndex+1 != _curShapeIndex )
+        {
+          ((int&) * algoProgressTic ) = 1;
+          ((int&) _curShapeIndex    ) = doneShapeIndex+1;
+        }
+        double progressPerShape = 1./ ( _occgeom->fmap.Extent() + 1 );
+        progress = progressPerShape * ( _curShapeIndex + holder->GetProgressByTic() );
+      }
+    }
+  return Min( progress, 0.98 );
 }
 
 //================================================================================
