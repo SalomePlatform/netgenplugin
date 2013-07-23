@@ -3564,7 +3564,9 @@ NETGENPlugin_NetgenLibWrapper::~NETGENPlugin_NetgenLibWrapper()
   Ng_DeleteMesh( _ngMesh );
   Ng_Exit();
   NETGENPlugin_Mesher::RemoveTmpFiles();
+#ifdef _DEBUG_
   if( _isComputeOk )
+#endif
     removeOutputFile();
 }
 
