@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE TS>
+<TS>
+  <context>
+    <name>@default</name>
+    <message>
+      <source>NETGEN_2D_HYPOTHESIS</source>
+      <translation>Netgen 2次元</translation>
+    </message>
+    <message>
+      <source>NETGEN_2D_TITLE</source>
+      <translation>仮説構築</translation>
+    </message>
+    <message>
+      <source>NETGEN_3D_HYPOTHESIS</source>
+      <translation>Netgen 3 D</translation>
+    </message>
+    <message>
+      <source>NETGEN_3D_TITLE</source>
+      <translation>仮説構築</translation>
+    </message>
+    <message>
+      <source>NETGEN_SimpleParameters_3D_HYPOTHESIS</source>
+      <translation>Netgen 3 D 単純なパラメーター</translation>
+    </message>
+    <message>
+      <source>NETGEN_SimpleParameters_3D_TITLE</source>
+      <translation>仮説構築</translation>
+    </message>
+    <message>
+      <source>NETGEN_SimpleParameters_2D_HYPOTHESIS</source>
+      <translation>Netgen 2次元単純なパラメーター</translation>
+    </message>
+    <message>
+      <source>NETGEN_SimpleParameters_2D_TITLE</source>
+      <translation>仮説構築</translation>
+    </message>
+    <message>
+      <source>NETGEN_ALLOW_QUADRANGLES</source>
+      <translation>四角形を許可します。</translation>
+    </message>
+    <message>
+      <source>NETGEN_COARSE</source>
+      <translation>粗</translation>
+    </message>
+    <message>
+      <source>NETGEN_CUSTOM</source>
+      <translation>カスタム</translation>
+    </message>
+    <message>
+      <source>NETGEN_FINE</source>
+      <translation>罰金</translation>
+    </message>
+    <message>
+      <source>NETGEN_FINENESS</source>
+      <translation>細かさ</translation>
+    </message>
+    <message>
+      <source>NETGEN_GROWTH_RATE</source>
+      <translation>成長率</translation>
+    </message>
+    <message>
+      <source>NETGEN_MAX_SIZE</source>
+      <translation>最大。サイズ</translation>
+    </message>
+    <message>
+      <source>NETGEN_MIN_SIZE</source>
+      <translation>最小サイズ</translation>
+    </message>
+    <message>
+      <source>NETGEN_MODERATE</source>
+      <translation>中等度</translation>
+    </message>
+    <message>
+      <source>NETGEN_OPTIMIZE</source>
+      <translation>最適化します。</translation>
+    </message>
+    <message>
+      <source>NETGEN_SECOND_ORDER</source>
+      <translation>2 番目の注文</translation>
+    </message>
+    <message>
+      <source>NETGEN_SEG_PER_EDGE</source>
+      <translation>注意 Segs 刃</translation>
+    </message>
+    <message>
+      <source>NETGEN_SEG_PER_RADIUS</source>
+      <translation>注意 Segs 半径あたり</translation>
+    </message>
+    <message>
+      <source>NETGEN_VERYCOARSE</source>
+      <translation>非常に粗い</translation>
+    </message>
+    <message>
+      <source>NETGEN_VERYFINE</source>
+      <translation>非常に微細な</translation>
+    </message>
+    <message>
+      <source>NG_1D</source>
+      <translation>1 D</translation>
+    </message>
+    <message>
+      <source>NG_2D</source>
+      <translation>2 D</translation>
+    </message>
+    <message>
+      <source>NG_3D</source>
+      <translation>3 D</translation>
+    </message>
+    <message>
+      <source>NG_LENGTH_FROM_EDGES</source>
+      <translation>エッジの長さ</translation>
+    </message>
+    <message>
+      <source>NG_LENGTH_FROM_FACES</source>
+      <translation>長さの面から</translation>
+    </message>
+    <message>
+      <source>NETGEN_LOCAL_SIZE</source>
+      <translation>ローカルのサイズ</translation>
+    </message>
+    <message>
+      <source>NETGEN_LSZ_VERTEX</source>
+      <translation>頂点</translation>
+    </message>
+    <message>
+      <source>NETGEN_LSZ_EDGE</source>
+      <translation>端に</translation>
+    </message>
+    <message>
+      <source>NETGEN_LSZ_FACE</source>
+      <translation>Sub-Face で</translation>
+    </message>
+    <message>
+      <source>NETGEN_LSZ_REMOVE</source>
+      <translation>削除</translation>
+    </message>
+    <message>
+      <source>LSZ_ENTRY_COLUMN</source>
+      <translation>エントリ</translation>
+    </message>
+    <message>
+      <source>LSZ_NAME_COLUMN</source>
+      <translation>名前</translation>
+    </message>
+    <message>
+      <source>LSZ_LOCALSIZE_COLUMN</source>
+      <translation>値</translation>
+    </message>
+  </context>
+</TS>
