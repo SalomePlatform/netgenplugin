@@ -127,6 +127,8 @@ NETGENPlugin_Mesher::NETGENPlugin_Mesher (SMESH_Mesh*         mesh,
     _ngMesh(NULL),
     _occgeom(NULL),
     _curShapeIndex(-1),
+    _progressTic(1),
+    _totalTime(1.0),
     _simpleHyp(NULL),
     _ptrToMe(NULL)
 {
@@ -2081,6 +2083,13 @@ namespace
     str << ": " << ex.What();
     return str;
   }
+
+  const double edgeMeshingTime = 0.001;
+  const double faceMeshingTime = 0.019;
+  const double edgeFaceMeshingTime = edgeMeshingTime + faceMeshingTime;
+  const double faceOptimizTime = 0.06;
+  const double voluMeshingTime = 0.15;
+  const double volOptimizeTime = 0.77;
 }
 
 //=============================================================================
@@ -2117,6 +2126,15 @@ bool NETGENPlugin_Mesher::Compute()
   NETGENPlugin_Internals internals( *_mesh, _shape, _isVolume );
   PrepareOCCgeometry( occgeo, _shape, *_mesh, meshedSM, &internals );
   _occgeom = &occgeo;
+
+  _totalTime = edgeFaceMeshingTime;
+  if ( _optimize )
+    _totalTime += faceOptimizTime;
+  if ( _isVolume )
+    _totalTime += voluMeshingTime + ( _optimize ? volOptimizeTime : 0 );
+  double doneTime = 0;
+  _ticTime = -1;
+  _progressTic = 1;
   _curShapeIndex = -1;
 
   // -------------------------
@@ -2321,6 +2339,9 @@ bool NETGENPlugin_Mesher::Compute()
         err = 1;
       }
     }
+    if ( _isVolume )
+      _ticTime = ( doneTime += edgeMeshingTime ) / _totalTime / _progressTic;
+
     mparams.uselocalh = true; // restore as it is used at surface optimization
 
     // ---------------------
@@ -2433,6 +2454,11 @@ bool NETGENPlugin_Mesher::Compute()
         //err = 1; -- try to make volumes anyway
       }
     }
+    if ( _isVolume )
+    {
+      doneTime += faceMeshingTime + ( _optimize ? faceOptimizTime : 0 );
+      _ticTime = doneTime / _totalTime / _progressTic;
+    }
     // ---------------------
     // generate volume mesh
     // ---------------------
@@ -2532,6 +2558,8 @@ bool NETGENPlugin_Mesher::Compute()
           comment << text(exc);
         err = 1;
       }
+      _ticTime = ( doneTime += voluMeshingTime ) / _totalTime / _progressTic;
+
       // Let netgen optimize 3D mesh
       if ( !err && _optimize )
       {
@@ -2582,6 +2610,9 @@ bool NETGENPlugin_Mesher::Compute()
       }
     }
   }
+
+  _ticTime = 0.98 / _progressTic;
+
   int nbNod = _ngMesh->GetNP();
   int nbSeg = _ngMesh->GetNSeg();
   int nbFac = _ngMesh->GetNSE();
@@ -2932,48 +2963,63 @@ bool NETGENPlugin_Mesher::Evaluate(MapShapeNbElems& aResMap)
 }
 
 double NETGENPlugin_Mesher::GetProgress(const SMESH_Algo* holder,
-                                        const int *       algoProgressTic ) const
+                                        const int *       algoProgressTic,
+                                        const double *    algoProgress) const
 {
-  double progress = holder->GetProgressByTic();
+  ((int&) _progressTic ) = *algoProgressTic + 1;
 
-  if ( _ngMesh && _occgeom )
-    if ( _isVolume )
+  double progress = -1;
+  if ( !_isVolume )
+  {
+    if ( _ticTime < 0 && netgen::multithread.task[0] == 'O'/*Optimizing surface*/ )
     {
-      if ( _occgeom->somap.Extent() > 1 )
+      ((double&) _ticTime ) = edgeFaceMeshingTime / _totalTime / _progressTic;
+    }
+    else if ( !_optimize /*&& _occgeom->fmap.Extent() > 1*/ )
+    {
+      int doneShapeIndex = -1;
+      while ( doneShapeIndex+1 < _occgeom->facemeshstatus.Size() &&
+              _occgeom->facemeshstatus[ doneShapeIndex+1 ])
+        doneShapeIndex++;
+      if ( doneShapeIndex+1 != _curShapeIndex )
       {
-        int curShapeIndex = 0;
-        if ( _ngMesh->GetNE() > 0 )
-        {
-          netgen::Element el = (*_ngMesh)[netgen::ElementIndex( _ngMesh->GetNE()-1 )];
-          curShapeIndex = el.GetIndex();
-        }
-        if ( curShapeIndex != _curShapeIndex )
-        {
-          ((int&) * algoProgressTic ) = 1;
-          ((int&) _curShapeIndex    ) = curShapeIndex;
-        }
-        double progressPerShape = 1./ ( _occgeom->somap.Extent() + 1 );
-        progress = progressPerShape * ( _curShapeIndex + holder->GetProgressByTic() );
+        ((int&) _curShapeIndex) = doneShapeIndex+1;
+        double    doneShapeRate = _curShapeIndex / double( _occgeom->fmap.Extent() );
+        double         doneTime = edgeMeshingTime + doneShapeRate * faceMeshingTime;
+        ((double&)    _ticTime) = doneTime / _totalTime / _progressTic;
+        // cout << "shape " << _curShapeIndex << " _ticTime " << _ticTime
+        //      << " " << doneTime / _totalTime / _progressTic << endl;
       }
     }
-    else
+  }
+  else if ( !_optimize && _occgeom->somap.Extent() > 1 )
+  {
+    int curShapeIndex = _curShapeIndex;
+    if ( _ngMesh->GetNE() > 0 )
     {
-      if ( _occgeom->fmap.Extent() > 1 )
-      {
-        int doneShapeIndex = -1;
-        while ( doneShapeIndex+1 < _occgeom->facemeshstatus.Size() &&
-                _occgeom->facemeshstatus[ doneShapeIndex+1 ])
-          doneShapeIndex++;
-        if ( doneShapeIndex+1 != _curShapeIndex )
-        {
-          ((int&) * algoProgressTic ) = 1;
-          ((int&) _curShapeIndex    ) = doneShapeIndex+1;
-        }
-        double progressPerShape = 1./ ( _occgeom->fmap.Extent() + 1 );
-        progress = progressPerShape * ( _curShapeIndex + holder->GetProgressByTic() );
-      }
+      netgen::Element el = (*_ngMesh)[netgen::ElementIndex( _ngMesh->GetNE()-1 )];
+      curShapeIndex = el.GetIndex();
     }
-  return Min( progress, 0.98 );
+    if ( curShapeIndex != _curShapeIndex )
+    {
+      ((int&) _curShapeIndex) = curShapeIndex;
+      double    doneShapeRate = _curShapeIndex / double( _occgeom->somap.Extent() );
+      double         doneTime = edgeFaceMeshingTime + doneShapeRate * voluMeshingTime;
+      ((double&)    _ticTime) = doneTime / _totalTime / _progressTic;
+      // cout << "shape " << _curShapeIndex << " _ticTime " << _ticTime
+      //      << " " << doneTime / _totalTime / _progressTic << endl;
+    }
+  }
+  if ( _ticTime > 0 )
+    progress  = Max( *algoProgressTic * _ticTime, *algoProgress );
+  if ( progress > 0 )
+  {
+    ((int&) *algoProgressTic )++;
+    ((double&) *algoProgress) = progress;
+  }
+  //cout << progress << " "  << *algoProgressTic << " " << netgen::multithread.task << " "<< _ticTime << endl;
+
+  return Min( progress, 0.99 );
 }
 
 //================================================================================

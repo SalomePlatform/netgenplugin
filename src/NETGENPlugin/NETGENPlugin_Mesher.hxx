@@ -117,7 +117,9 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_Mesher
 
   bool Evaluate(MapShapeNbElems& aResMap);
 
-  double GetProgress(const SMESH_Algo* holder, const int * algoProgressTic ) const;
+  double GetProgress(const SMESH_Algo* holder,
+                     const int *       algoProgressTic,
+                     const double *    algoProgress) const;
 
   static void PrepareOCCgeometry(netgen::OCCGeometry&          occgeom,
                                  const TopoDS_Shape&           shape,
@@ -184,7 +186,11 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_Mesher
   bool                 _isViscousLayers2D;
   netgen::Mesh*        _ngMesh;
   netgen::OCCGeometry* _occgeom;
+
   int                  _curShapeIndex;
+  volatile int         _progressTic;
+  volatile double      _ticTime; // normalized [0,1] compute time per a SMESH_Algo::_progressTic
+  volatile double      _totalTime;
 
   const NETGENPlugin_SimpleHypothesis_2D * _simpleHyp;
 

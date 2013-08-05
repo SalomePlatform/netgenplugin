@@ -33,9 +33,8 @@
 #include "NETGENPlugin_Defs.hxx"
 
 #include <SMESH_Algo.hxx>
-#include <SMESH_Mesh.hxx>
-#include <StdMeshers_MaxElementVolume.hxx>
-#include <Utils_SALOME_Exception.hxx>
+
+class NETGENPlugin_Mesher;
 
 class NETGENPLUGIN_EXPORT NETGENPlugin_NETGEN_2D3D: public SMESH_3D_Algo
 {
@@ -50,9 +49,10 @@ public:
   virtual bool Compute(SMESH_Mesh& aMesh,
                        const TopoDS_Shape& aShape);
 
-#ifdef WITH_SMESH_CANCEL_COMPUTE
   virtual void CancelCompute();
-#endif
+
+  virtual double GetProgress() const;
+
 
   virtual bool Evaluate(SMESH_Mesh& aMesh,
                         const TopoDS_Shape& aShape,
@@ -60,6 +60,7 @@ public:
 
 protected:
   const SMESHDS_Hypothesis* _hypothesis;
+  NETGENPlugin_Mesher *     _mesher;
 };
 
 #endif

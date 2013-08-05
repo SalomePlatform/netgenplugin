@@ -95,6 +95,7 @@ bool NETGENPlugin_NETGEN_2D::CheckHypothesis (SMESH_Mesh&         aMesh,
 {
   _hypothesis        = NULL;
   _isViscousLayers2D = false;
+  _mesher            = NULL;
 
   // can work with no hypothesis
   aStatus = SMESH_Hypothesis::HYP_OK;
@@ -155,7 +156,7 @@ void NETGENPlugin_NETGEN_2D::CancelCompute()
 
 double NETGENPlugin_NETGEN_2D::GetProgress() const
 {
-  return _mesher ? _mesher->GetProgress(this, &_progressTic) : 0;
+  return _mesher ? _mesher->GetProgress(this, &_progressTic, &_progress) : 0;
 }
 
 //=============================================================================

@@ -29,7 +29,7 @@
 //
 #include "NETGENPlugin_NETGEN_2D3D.hxx"
 #include "NETGENPlugin_Hypothesis.hxx"
-#include "NETGENPlugin_SimpleHypothesis_2D.hxx"
+#include "NETGENPlugin_SimpleHypothesis_3D.hxx"
 #include "NETGENPlugin_Mesher.hxx"
 
 #include <SMESH_Gen.hxx>
@@ -40,12 +40,10 @@
 
 #include <list>
 
-#ifdef WITH_SMESH_CANCEL_COMPUTE
 namespace nglib {
 #include <nglib.h>
 }
 #include <meshing.hpp>
-#endif
 
 using namespace std;
 
@@ -95,6 +93,7 @@ bool NETGENPlugin_NETGEN_2D3D::CheckHypothesis
   MESSAGE("NETGENPlugin_NETGEN_2D3D::CheckHypothesis");
 
   _hypothesis = NULL;
+  _mesher     = NULL;
 
   const list<const SMESHDS_Hypothesis*>& hyps = GetUsedHypothesis(aMesh, aShape);
   int nbHyp = hyps.size();
@@ -131,13 +130,12 @@ bool NETGENPlugin_NETGEN_2D3D::CheckHypothesis
 bool NETGENPlugin_NETGEN_2D3D::Compute(SMESH_Mesh&         aMesh,
                                        const TopoDS_Shape& aShape)
 {
-#ifdef WITH_SMESH_CANCEL_COMPUTE
   netgen::multithread.terminate = 0;
-#endif
 
   NETGENPlugin_Mesher mesher(&aMesh, aShape, true);
   mesher.SetParameters(dynamic_cast<const NETGENPlugin_Hypothesis*>(_hypothesis));
-  mesher.SetParameters(dynamic_cast<const NETGENPlugin_SimpleHypothesis_2D*>(_hypothesis));
+  mesher.SetParameters(dynamic_cast<const NETGENPlugin_SimpleHypothesis_3D*>(_hypothesis));
+  mesher.SetSelfPointer( &_mesher );
   return mesher.Compute();
 }
 
@@ -147,13 +145,28 @@ bool NETGENPlugin_NETGEN_2D3D::Compute(SMESH_Mesh&         aMesh,
  */
 //=============================================================================
 
-#ifdef WITH_SMESH_CANCEL_COMPUTE
 void NETGENPlugin_NETGEN_2D3D::CancelCompute()
 {
   SMESH_Algo::CancelCompute();
   netgen::multithread.terminate = 1;
 }
-#endif
+
+//================================================================================
+/*!
+ * \brief Return progress of Compute() [0.,1]
+ */
+//================================================================================
+
+double NETGENPlugin_NETGEN_2D3D::GetProgress() const
+{
+  double & progress = (double &)_progress;
+  if ( _mesher )
+    progress = _mesher->GetProgress(this, &_progressTic, &_progress);
+  else if ( _progress > 0.001 )
+    progress = 0.99;
+
+  return _progress;
+}
 
 //=============================================================================
 /*!
