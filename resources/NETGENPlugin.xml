@@ -30,6 +30,7 @@
 
 <meshers-group name="NETGEN"
                resources="NETGENPlugin"
+               idl-module="NETGENPlugin"
                server-lib="NETGENEngine"
                gui-lib="NETGENPluginGUI">
   <hypotheses>
