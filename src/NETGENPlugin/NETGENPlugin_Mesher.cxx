@@ -3030,11 +3030,14 @@ double NETGENPlugin_Mesher::GetProgress(const SMESH_Algo* holder,
 
 void NETGENPlugin_Mesher::RemoveTmpFiles()
 {
-  if ( SMESH_File("test.out").remove() && netgen::testout)
+  bool rm =  SMESH_File("test.out").remove() ;
+#ifndef WIN32
+  if (rm && netgen::testout)
   {
     delete netgen::testout;
     netgen::testout = 0;
   }
+#endif
   SMESH_File("problemfaces").remove();
   SMESH_File("occmesh.rep").remove();
 }
