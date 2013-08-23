@@ -3674,6 +3674,6 @@ void NETGENPlugin_NetgenLibWrapper::removeOutputFile()
   
   SALOMEDS_Tool::RemoveTemporaryFiles( tmpDir.c_str(), aFiles.in(), true );
 #ifdef _DEBUG_
-  cout << "NOTE: netgen output log was REMOVED       " << _outputFileName << endl;
+  //cout << "NOTE: netgen output log was REMOVED       " << _outputFileName << endl;
 #endif
 }
