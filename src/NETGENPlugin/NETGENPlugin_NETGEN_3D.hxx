@@ -77,7 +77,7 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_NETGEN_3D: public SMESH_3D_Algo
   const NETGENPlugin_Hypothesis *    _hypParameters;
   const StdMeshers_MaxElementVolume* _hypMaxElementVolume;
   const StdMeshers_ViscousLayers*    _viscousLayersHyp;
-  bool                               _optimizationStarted;
+  double                             _progressByTic;
 };
 
 #endif

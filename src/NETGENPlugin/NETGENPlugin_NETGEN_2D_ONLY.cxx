@@ -128,7 +128,7 @@ bool NETGENPlugin_NETGEN_2D_ONLY::CheckHypothesis (SMESH_Mesh&         aMesh,
   _hypMaxElementArea = 0;
   _hypLengthFromEdges = 0;
   _hypQuadranglePreference = 0;
-  _isSurfaceMeshing = true;
+  _progressByTic = -1;
 
   const list<const SMESHDS_Hypothesis*>& hyps = GetUsedHypothesis(aMesh, aShape, false);
 
@@ -386,25 +386,25 @@ void NETGENPlugin_NETGEN_2D_ONLY::CancelCompute()
 double NETGENPlugin_NETGEN_2D_ONLY::GetProgress() const
 {
   const char* task1 = "Surface meshing";
-  const char* task2 = "Optimizing surface";
-  double res = 0;
-  if ( _isSurfaceMeshing &&
+  //const char* task2 = "Optimizing surface";
+  double& progress = const_cast<NETGENPlugin_NETGEN_2D_ONLY*>( this )->_progress;
+  if ( _progressByTic < 0. &&
        strncmp( netgen::multithread.task, task1, 3 ) == 0 )
   {
-    res = 0.3 * SMESH_Algo::GetProgressByTic(); // [0, 0.3]
+    progress = Min( 0.25, SMESH_Algo::GetProgressByTic() ); // [0, 0.25]
   }
   else //if ( strncmp( netgen::multithread.task, task2, 3 ) == 0)
   {
-    if ( _isSurfaceMeshing )
+    if ( _progressByTic < 0 )
     {
       NETGENPlugin_NETGEN_2D_ONLY* me = (NETGENPlugin_NETGEN_2D_ONLY*) this;
-      me->_isSurfaceMeshing = false;
-      me->_progressTic = 0; // to re-start GetProgressByTic() from 0.
+      me->_progressByTic = 0.25 / _progressTic;
     }
-    res = 0.3 + 0.7 * SMESH_Algo::GetProgressByTic(); // [0.3, 1.]
+    const_cast<NETGENPlugin_NETGEN_2D_ONLY*>( this )->_progressTic++;
+    progress = Max( progress, _progressByTic * _progressTic );
   }
-  //cout << netgen::multithread.task << " " <<res << endl;
-  return res;
+  //cout << netgen::multithread.task << " " << _progressTic << endl;
+  return Min( progress, 0.99 );
 }
 
 //=============================================================================

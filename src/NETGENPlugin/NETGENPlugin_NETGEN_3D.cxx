@@ -143,7 +143,7 @@ bool NETGENPlugin_NETGEN_3D::CheckHypothesis (SMESH_Mesh&         aMesh,
   // for correct work of GetProgress():
   netgen::multithread.percent = 0.;
   netgen::multithread.task = "Volume meshing";
-  _optimizationStarted = false;
+  _progressByTic = -1.;
 
   list<const SMESHDS_Hypothesis*>::const_iterator itl;
   const SMESHDS_Hypothesis* theHyp;
@@ -191,6 +191,7 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
                                      const TopoDS_Shape& aShape)
 {
   netgen::multithread.terminate = 0;
+  _progressByTic = -1.;
   
   SMESHDS_Mesh* meshDS = aMesh.GetMeshDS();
 
@@ -493,6 +494,7 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
   const int invalid_ID = -1;
 
   netgen::multithread.terminate = 0;
+  _progressByTic = -1.;
 
   SMESH_MesherHelper::MType MeshType = aHelper->IsQuadraticMesh();
   if ( MeshType == SMESH_MesherHelper::COMP )
@@ -591,18 +593,24 @@ double NETGENPlugin_NETGEN_3D::GetProgress() const
   double res;
   const char* volMeshing = "Volume meshing";
   const char* dlnMeshing = "Delaunay meshing";
-  if ( !_optimizationStarted &&
+  const double meshingRatio = 0.15;
+  const_cast<NETGENPlugin_NETGEN_3D*>( this )->_progressTic++;
+
+  if ( _progressByTic < 0. &&
        ( strncmp( netgen::multithread.task, dlnMeshing, 3 ) == 0 ||
          strncmp( netgen::multithread.task, volMeshing, 3 ) == 0 ))
   {
-    res = 0.001 + 0.5 * netgen::multithread.percent / 100.; // [0., 0.5]
+    res = 0.001 + meshingRatio * netgen::multithread.percent / 100.;
+    //cout << netgen::multithread.task << " " <<_progressTic << "-" << netgen::multithread.percent << endl;
   }
   else // different otimizations
   {
-    ((NETGENPlugin_NETGEN_3D*)this)->_optimizationStarted = true;
-    res = 0.5 + 0.5 * SMESH_Algo::GetProgressByTic(); // [0.5, 1.]
+    if ( _progressByTic < 0. )
+      ((NETGENPlugin_NETGEN_3D*)this)->_progressByTic = meshingRatio / _progressTic;
+    res = _progressByTic * _progressTic;
+    //cout << netgen::multithread.task << " " << _progressTic << " " << res << endl;
   }
-  return res;
+  return Min ( res, 0.98 );
 }
 
 //=============================================================================

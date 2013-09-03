@@ -65,7 +65,7 @@ protected:
   const SMESHDS_Hypothesis*              _hypQuadranglePreference;
   const NETGENPlugin_Hypothesis_2D*      _hypParameters;
 
-  bool                                   _isSurfaceMeshing;
+  double                                 _progressByTic;
 };
 
 #endif
