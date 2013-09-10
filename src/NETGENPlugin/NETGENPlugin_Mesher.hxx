@@ -91,6 +91,8 @@ struct NETGENPLUGIN_EXPORT NETGENPlugin_NetgenLibWrapper
   std::string getOutputFileName();
   void        removeOutputFile();
   std::string _outputFileName;
+
+  std::streambuf* _coutBuffer;   // to re-/store cout.rdbuf()
 };
 
 //=============================================================================

@@ -3592,13 +3592,17 @@ NETGENPlugin_NetgenLibWrapper::NETGENPlugin_NetgenLibWrapper()
 {
   Ng_Init();
 
+  // redirect all netgen output (mycout,myerr,cout) to _outputFileName
   _isComputeOk    = false;
   _outputFileName = getOutputFileName();
   netgen::mycout  = new ofstream ( _outputFileName.c_str() );
-  netgen::myerr = netgen::mycout;
+  netgen::myerr   = netgen::mycout;
+  _coutBuffer     = std::cout.rdbuf();
 #ifdef _DEBUG_
   cout << "NOTE: netgen output is redirected to file " << _outputFileName << endl;
 #endif
+  std::cout.rdbuf( netgen::mycout->rdbuf() );
+
   _ngMesh = Ng_NewMesh();
 }
 
@@ -3613,6 +3617,7 @@ NETGENPlugin_NetgenLibWrapper::~NETGENPlugin_NetgenLibWrapper()
   Ng_DeleteMesh( _ngMesh );
   Ng_Exit();
   NETGENPlugin_Mesher::RemoveTmpFiles();
+  std::cout.rdbuf( _coutBuffer );
 #ifdef _DEBUG_
   if( _isComputeOk )
 #endif
