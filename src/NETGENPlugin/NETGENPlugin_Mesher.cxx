@@ -518,8 +518,9 @@ void NETGENPlugin_Mesher::PrepareOCCgeometry(netgen::OCCGeometry&     occgeo,
 
   // get root submeshes
   list< SMESH_subMesh* > rootSM;
-  if ( SMESH_subMesh* sm = mesh.GetSubMeshContaining( shape )) {
-    rootSM.push_back( sm );
+  const int shapeID = mesh.GetMeshDS()->ShapeToIndex( shape );
+  if ( shapeID > 0 ) { // SMESH_subMesh with ID 0 may exist, don't use it!
+    rootSM.push_back( mesh.GetSubMesh( shape ));
   }
   else {
     for ( TopoDS_Iterator it( shape ); it.More(); it.Next() )
@@ -2967,6 +2968,8 @@ double NETGENPlugin_Mesher::GetProgress(const SMESH_Algo* holder,
                                         const double *    algoProgress) const
 {
   ((int&) _progressTic ) = *algoProgressTic + 1;
+
+  if ( !_occgeom ) return 0;
 
   double progress = -1;
   if ( !_isVolume )
