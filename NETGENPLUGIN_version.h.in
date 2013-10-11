@@ -27,12 +27,22 @@
 #if !defined(__NETGENPLUGIN_VERSION_H__)
 #define __NETGENPLUGIN_VERSION_H__
 
-/*
-  NETGENPLUGIN_VERSION is (major << 16) + (minor << 8) + patch.
+/*!
+  Specify version of SALOME NETGENPLUGIN module, as follows
+
+  NETGENPLUGIN_VERSION_MAJOR       : (integer) number identifying major version
+  NETGENPLUGIN_VERSION_MINOR       : (integer) number identifying minor version
+  NETGENPLUGIN_VERSION_MAINTENANCE : (integer) number identifying maintenance version
+  NETGENPLUGIN_VERSION_STR         : (string)  complete version number "major.minor.maintenance"
+  NETGENPLUGIN_VERSION             : (hex)     complete version number (major << 16) + (minor << 8) + maintenance
+  NETGENPLUGIN_DEVELOPMENT         : (integer) indicates development version when set to 1
 */
 
-#define NETGENPLUGIN_VERSION_STR "@VERSION@"
-#define NETGENPLUGIN_VERSION     @XVERSION@
-#define NETGENPLUGIN_DEVELOPMENT @VERSION_DEV@
+#define NETGENPLUGIN_VERSION_MAJOR       @SALOMENETGENPLUGIN_MAJOR_VERSION@
+#define NETGENPLUGIN_VERSION_MINOR       @SALOMENETGENPLUGIN_MINOR_VERSION@
+#define NETGENPLUGIN_VERSION_MAINTENANCE @SALOMENETGENPLUGIN_PATCH_VERSION@
+#define NETGENPLUGIN_VERSION_STR         "@SALOMENETGENPLUGIN_VERSION@"
+#define NETGENPLUGIN_VERSION             @SALOMENETGENPLUGIN_XVERSION@
+#define NETGENPLUGIN_DEVELOPMENT         @SALOMENETGENPLUGIN_VERSION_DEV@
 
 #endif // __NETGENPLUGIN_VERSION_H__

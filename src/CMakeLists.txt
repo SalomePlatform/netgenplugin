@@ -1,4 +1,4 @@
-# Copyright (C) 2013  CEA/DEN, EDF R&D, OPEN CASCADE
+# Copyright (C) 2012-2013  CEA/DEN, EDF R&D, OPEN CASCADE
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -17,5 +17,25 @@
 # See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
 #
 
-FILE(GLOB files "${CMAKE_CURRENT_SOURCE_DIR}/*.py")
-INSTALL(FILES ${files} DESTINATION ${SALOME_INSTALL_DOC}/examples/NETGENPLUGIN)
+##
+# Common packages
+##
+SET(SUBDIRS_COMMON
+  NETGENPlugin
+)
+
+IF(SALOME_BUILD_GUI)
+  SET(SUBDIRS_ENABLE_GUI
+    GUI
+  )
+ENDIF(SALOME_BUILD_GUI)
+
+SET(SUBDIRS
+  ${SUBDIRS_COMMON}
+  ${SUBDIRS_ENABLE_GUI}
+)
+
+FOREACH(dir ${SUBDIRS})
+ ADD_SUBDIRECTORY(${dir})
+ENDFOREACH(dir ${SUBDIRS})
+

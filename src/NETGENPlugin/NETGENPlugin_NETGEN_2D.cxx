@@ -41,12 +41,10 @@
 
 #include <list>
 
-#ifdef WITH_SMESH_CANCEL_COMPUTE
 namespace nglib {
 #include <nglib.h>
 }
 #include <meshing.hpp>
-#endif
 
 using namespace std;
 

@@ -1,4 +1,4 @@
-# Copyright (C) 2007-2013  CEA/DEN, EDF R&D, OPEN CASCADE
+# Copyright (C) 2013  CEA/DEN, EDF R&D, OPEN CASCADE
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -17,18 +17,5 @@
 # See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
 #
 
-#  File   : Makefile.in
-#  Author : Patrick GOLDBRONN (CEA)
-#  Modified by : Alexander BORODIN (OCN) - autotools usage
-#  Module : SMESH
-#  $Header$
-#
-include $(top_srcdir)/adm_local/unix/make_common_starter.am
-
-SUBDIRS = NETGENPlugin
-
-if NETGENPLUGIN_ENABLE_GUI
-  SUBDIRS += GUI
-endif
-
-DIST_SUBDIRS = NETGENPlugin GUI
+SALOME_FIND_PACKAGE_AND_DETECT_CONFLICTS(Netgen NETGEN_INCLUDE_DIRS 1)
+MARK_AS_ADVANCED(NETGEN_INCLUDE_DIRS NETGEN_LIBRARIES)

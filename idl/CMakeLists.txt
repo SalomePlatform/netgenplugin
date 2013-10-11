@@ -1,4 +1,4 @@
-# Copyright (C) 2007-2013  CEA/DEN, EDF R&D, OPEN CASCADE
+# Copyright (C) 2012-2013  CEA/DEN, EDF R&D, OPEN CASCADE
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -17,16 +17,31 @@
 # See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
 #
 
-#  File   : Makefile.in
-#  Author : Vasily Rusyaev (Open Cascade NN)
-#  Modified by : Alexander BORODIN (OCN) - autotools usage
-#  Module : doc
-#
-include $(top_srcdir)/adm_local/unix/make_common_starter.am
+INCLUDE(UseOmniORB)  # Provided by KERNEL
 
-SUBDIRS = NETGENPLUGIN
+INCLUDE_DIRECTORIES(
+  ${OMNIORB_INCLUDE_DIR}
+  ${KERNEL_INCLUDE_DIRS}
+  ${GEOM_INCLUDE_DIRS}
+  ${SMESH_INCLUDE_DIRS}
+  ${PROJECT_BINARY_DIR}/idl
+)
 
-usr_docs:
-	(cd NETGENPLUGIN && $(MAKE) $(AM_MAKEFLAGS) usr_docs)
+SET(SalomeIDLNETGENPLUGIN_IDLSOURCES
+  NETGENPlugin_Algorithm.idl
+)
 
-docs: usr_docs
+SET(_idl_include_dirs
+  ${KERNEL_ROOT_DIR}/idl/salome
+  ${GEOM_ROOT_DIR}/idl/salome
+  ${SMESH_ROOT_DIR}/idl/salome
+)
+
+SET(_idl_link_flags
+  ${KERNEL_SalomeIDLKernel}
+  ${GEOM_SalomeIDLGEOM}
+  ${SMESH_SalomeIDLSMESH}
+)
+
+OMNIORB_ADD_MODULE(SalomeIDLNETGENPLUGIN "${SalomeIDLNETGENPLUGIN_IDLSOURCES}" "${_idl_include_dirs}" "${_idl_link_flags}")
+INSTALL(TARGETS SalomeIDLNETGENPLUGIN EXPORT ${PROJECT_NAME}TargetGroup DESTINATION ${SALOME_INSTALL_LIBS})

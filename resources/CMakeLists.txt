@@ -1,5 +1,8 @@
 # Copyright (C) 2007-2013  CEA/DEN, EDF R&D, OPEN CASCADE
 #
+# Copyright (C) 2003-2007  OPEN CASCADE, EADS/CCR, LIP6, CEA/DEN,
+# CEDRAT, EDF R&D, LEG, PRINCIPIA R&D, BUREAU VERITAS
+#
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
 # License as published by the Free Software Foundation; either
@@ -17,27 +20,24 @@
 # See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
 #
 
-# -* Makefile *- 
-# Author : Patrick GOLDBRONN (CEA)
-# Date : 28/06/2001
-#  Modified by : Alexander BORODIN (OCN) - autotools usage
-# $Header$
-#
-include $(top_srcdir)/adm_local/unix/make_common_starter.am
+IF(SALOME_BUILD_GUI)
+  SET(NETGENPLUGIN_RESOURCES_FILES_WITH_GUI
+  mesh_algo_netgen_2d.png
+  mesh_algo_netgen_2d3d.png
+  mesh_hypo_netgen.png
+  mesh_hypo_netgen_2d.png
+  mesh_tree_algo_netgen_2d.png
+  mesh_tree_algo_netgen_2d3d.png
+  mesh_tree_hypo_netgen.png
+  mesh_tree_hypo_netgen_2d.png
+  mesh_tree_algo_netgen.png
+  )
+ENDIF(SALOME_BUILD_GUI)
 
-dist_salomeres_DATA =		\
-	NETGENPlugin.xml	\
-	SalomeApp.xml
+SET(NETGENPLUGIN_RESOURCES_FILES
+  NETGENPlugin.xml
+  SalomeApp.xml
+  ${NETGENPLUGIN_RESOURCES_FILES_WITH_GUI}
+)
 
-if NETGENPLUGIN_ENABLE_GUI
-  dist_salomeres_DATA +=		\
-	mesh_algo_netgen_2d.png		\
-	mesh_algo_netgen_2d3d.png	\
-	mesh_hypo_netgen.png		\
-	mesh_hypo_netgen_2d.png		\
-	mesh_tree_algo_netgen_2d.png	\
-	mesh_tree_algo_netgen_2d3d.png	\
-	mesh_tree_hypo_netgen.png	\
-	mesh_tree_hypo_netgen_2d.png	\
-	mesh_tree_algo_netgen.png
-endif
+INSTALL(FILES ${NETGENPLUGIN_RESOURCES_FILES} DESTINATION ${SALOME_NETGENPLUGIN_INSTALL_RES_DATA})

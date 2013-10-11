@@ -19,18 +19,10 @@
 
 INCLUDE(${KERNEL_ROOT_DIR}/salome_adm/cmake_files/SalomeMacros.cmake)
 
-SET(top_builddir ${CMAKE_BINARY_DIR})
-SET(top_srcdir ${CMAKE_SOURCE_DIR})
-SET(srcdir ${CMAKE_CURRENT_SOURCE_DIR})
-SET(builddir ${CMAKE_CURRENT_BINARY_DIR})
-SET(datadir ${CMAKE_INSTALL_PREFIX}/share)
-SET(docdir ${datadir}/doc/salome)
-SET(guidocdir ${docdir}/gui/NETGENPLUGIN)
-
 SALOME_CONFIGURE_FILE(doxyfile.in doxyfile)
 SALOME_CONFIGURE_FILE(doxyfile_py.in doxyfile_py)
-SALOME_CONFIGURE_FILE(static/header.html.in ${builddir}/static/header.html)
-SALOME_CONFIGURE_FILE(static/header_py.html.in ${builddir}/static/header_py.html)
+SALOME_CONFIGURE_FILE(static/header.html.in ${CMAKE_CURRENT_BINARY_DIR}/static/header.html)
+SALOME_CONFIGURE_FILE(static/header_py.html.in ${CMAKE_CURRENT_BINARY_DIR}/static/header_py.html)
 
 SET(DOC_SMESH_MeshersList NETGENPlugin)
 SET(f1 "$(SMESH_ROOT_DIR)/bin/salome/collect_mesh_methods.py")
@@ -67,14 +59,17 @@ ENDIF(WINDOWS)
 
 FILE(WRITE ${CMAKE_CURRENT_BINARY_DIR}/tmp_env.${EXT} "${SCR}")
 
-ADD_CUSTOM_TARGET(usr_docs mkdir -p tmp
+ADD_CUSTOM_TARGET(usr_docs ${CMAKE_COMMAND} -E make_directory tmp
   COMMAND ${PYTHON_EXECUTABLE} ${f} -o tmp/NETGENPluginBuilder.py ${CMAKE_SOURCE_DIR}/src/NETGENPlugin/NETGENPluginBuilder.py
-  COMMAND ${PYTHON_EXECUTABLE} ${f} -o tmp/smesh_algorithm.py ${SMESH_ROOT_DIR}/lib/python${PYTHON_VERSION}/site-packages/salome/salome/smesh/smesh_algorithm.py
+  COMMAND ${PYTHON_EXECUTABLE} ${f} -o tmp/smesh_algorithm.py ${SMESH_ROOT_DIR}/${SALOME_INSTALL_PYTHON}/salome/smesh/smesh_algorithm.py
   COMMAND ${CALL_STR} ${CMAKE_CURRENT_BINARY_DIR}/tmp_env.${EXT} && ${PYTHON_EXECUTABLE} ${f1} -d -o tmp/smeshBuilder.py NETGENPlugin
   COMMAND ${DOXYGEN_EXECUTABLE} doxyfile_py
   COMMAND ${DOXYGEN_EXECUTABLE} doxyfile
-  COMMAND ${PYTHON_EXECUTABLE} -c "import os, shutil; shutil.rmtree(r'''tmp''')"
-  COMMAND ${PYTHON_EXECUTABLE} -c "import shutil, sys; shutil.rmtree(r'''${CMAKE_INSTALL_PREFIX}/share/doc/salome/gui/NETGENPLUGIN''',True); shutil.copytree(r'''${CMAKE_CURRENT_BINARY_DIR}''',r'''${CMAKE_INSTALL_PREFIX}/share/doc/salome/gui/NETGENPLUGIN''', ignore=shutil.ignore_patterns('tmp_env.*', '*usr_docs*', '*CMakeFiles*', '*.cmake', 'doxyfile*', '*.vcproj', 'static', 'Makefile*')); shutil.copy(r'''${CMAKE_CURRENT_SOURCE_DIR}/images/head.png''',r'''${CMAKE_INSTALL_PREFIX}/share/doc/salome/gui/NETGENPLUGIN'''); shutil.copy(r'''${CMAKE_CURRENT_SOURCE_DIR}/images/head.png''',r'''${CMAKE_INSTALL_PREFIX}/share/doc/salome/gui/NETGENPLUGIN/netgenpluginpy_doc''')"
-  VERBATIM 
-  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}             
+  COMMAND ${CMAKE_COMMAND} -E remove_directory tmp
+  VERBATIM
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
 )
+
+INSTALL(CODE "EXECUTE_PROCESS(COMMAND \"${CMAKE_COMMAND}\" --build ${PROJECT_BINARY_DIR} --target usr_docs)")
+INSTALL(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/NETGENPLUGIN DESTINATION ${SALOME_INSTALL_DOC}/gui)
+INSTALL(FILES images/head.png DESTINATION ${SALOME_INSTALL_DOC}/gui/NETGENPLUGIN)

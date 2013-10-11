@@ -1,4 +1,4 @@
-# Copyright (C) 2013  CEA/DEN, EDF R&D, OPEN CASCADE
+# Copyright (C) 2007-2013  CEA/DEN, EDF R&D, OPEN CASCADE
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -16,6 +16,16 @@
 #
 # See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
 #
+#
 
-FILE(GLOB files "${CMAKE_CURRENT_SOURCE_DIR}/*.py")
-INSTALL(FILES ${files} DESTINATION ${SALOME_INSTALL_DOC}/examples/NETGENPLUGIN)
+IF(NOT SalomeNETGENPLUGIN_FIND_QUIETLY)
+  MESSAGE(STATUS "Looking for Salome NETGENPLUGIN ...")
+ENDIF()
+
+SET(CMAKE_PREFIX_PATH "${NETGENPLUGIN_ROOT_DIR}")
+
+SALOME_FIND_PACKAGE(SalomeNETGENPLUGIN SalomeNETGENPLUGIN CONFIG)
+
+IF(NOT SalomeNETGENPLUGIN_FIND_QUIETLY)
+  MESSAGE(STATUS "Found Salome NETGENPLUGIN: ${NETGENPLUGIN_ROOT_DIR}")
+ENDIF()
