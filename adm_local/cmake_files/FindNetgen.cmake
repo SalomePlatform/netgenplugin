@@ -1,6 +1,6 @@
 # - Find NETGEN
 # Sets the following variables:
-#   NETGEN_INCLUDE_DIRS - path to the NETGEN include directory
+#   NETGEN_INCLUDE_DIRS - path to the NETGEN include directories
 #   NETGEN_LIBRARIES    - path to the NETGEN libraries to be linked against
 #
 
@@ -29,7 +29,9 @@
 
 # ------
 
-MESSAGE(STATUS "Check for NETGEN ...")
+IF(NOT Netgen_FIND_QUIETLY)
+  MESSAGE(STATUS "Check for Netgen ...")
+ENDIF()
 
 # ------
 
@@ -39,8 +41,19 @@ IF(NETGEN_ROOT_DIR)
  LIST(APPEND CMAKE_PREFIX_PATH "${NETGEN_ROOT_DIR}")
 ENDIF(NETGEN_ROOT_DIR)
 
-FIND_PATH(NETGEN_INCLUDE_DIRS nglib.h)
+FIND_PATH(_netgen_base_inc_dir nglib.h)
+SET(NETGEN_INCLUDE_DIRS ${_netgen_base_inc_dir})
+FIND_PATH(_netgen_add_inc_dir occgeom.hpp HINTS ${_netgen_base_inc_dir} PATH_SUFFIXES share/netgen/include)
+LIST(APPEND NETGEN_INCLUDE_DIRS ${_netgen_add_inc_dir})
+LIST(REMOVE_DUPLICATES NETGEN_INCLUDE_DIRS)
+
 FIND_LIBRARY(NETGEN_LIBRARIES NAMES nglib)
 
 INCLUDE(FindPackageHandleStandardArgs)
 FIND_PACKAGE_HANDLE_STANDARD_ARGS(NETGEN REQUIRED_VARS NETGEN_INCLUDE_DIRS NETGEN_LIBRARIES)
+
+IF(NETGEN_FOUND)
+  IF(NOT Netgen_FIND_QUIETLY)
+    MESSAGE(STATUS "Netgen library: ${NETGEN_LIBRARIES}")
+  ENDIF()
+ENDIF()
