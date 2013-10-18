@@ -126,4 +126,16 @@
   </algorithms>
 </meshers-group>
 
+<hypotheses-set-group>
+
+    <hypotheses-set name="Automatic Tetrahedralization"
+                    hypos="NETGEN_Parameters"
+                    algos="NETGEN_2D3D"/>
+
+    <hypotheses-set name="Automatic Triangulation"
+                    hypos="NETGEN_Parameters_2D"
+                    algos="NETGEN_2D"/>
+
+</hypotheses-set-group>
+
 </meshers>
