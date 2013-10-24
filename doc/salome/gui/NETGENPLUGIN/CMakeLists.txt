@@ -27,7 +27,7 @@ SALOME_CONFIGURE_FILE(static/header_py.html.in ${CMAKE_CURRENT_BINARY_DIR}/stati
 SET(DOC_SMESH_MeshersList NETGENPlugin)
 SET(f1 "$(SMESH_ROOT_DIR)/bin/salome/collect_mesh_methods.py")
 SET(f "$ENV{KERNEL_ROOT_DIR}/bin/salome/prepare_generating_doc.py")
-IF(WINDOWS)
+IF(WIN32)
   STRING(REPLACE "/" "\\" f ${f})
   STRING(REPLACE "/" "\\" f1 ${f1})
   STRING(REPLACE "/" "\\" SCR "@SET PYTHONPATH=${OMNIORB_ROOT_USER}/lib/x86_win32\;%PYTHONPATH%
@@ -46,7 +46,7 @@ IF(WINDOWS)
   ")
   SET(EXT "bat")
   SET(CALL_STR "call")
-ELSE(WINDOWS)
+ELSE(WIN32)
   SET(DOC_PYTHONPATH ${CMAKE_INSTALL_PREFIX}/bin/salome:${CMAKE_INSTALL_PREFIX}/lib/python${PYTHON_VERSION}/site-packages/salome:${SMESH_ROOT_DIR}/bin/salome:${SMESH_ROOT_DIR}/lib/python${PYTHON_VERSION}/site-packages/salome:${GEOM_ROOT_DIR}/bin/salome:${GEOM_ROOT_DIR}/lib/python${PYTHON_VERSION}/site-packages/salome:${KERNEL_ROOT_DIR}/bin/salome:${KERNEL_ROOT_DIR}/lib/python${PYTHON_VERSION}/site-packages/salome:${OMNIORB_ROOT_USER}/lib/python${PYTHON_VERSION}/site-packages:${OMNIORB_ROOT_USER}/lib64/python${PYTHON_VERSION}/site-packages)
   SET(DOC_LD_LIBRARY_PATH "${CMAKE_INSTALL_PREFIX}/lib/salome:${SMESH_ROOT_DIR}/lib/salome:${GEOM_ROOT_DIR}/lib/salome:${KERNEL_ROOT_DIR}/lib/salome")
   SET(SCR "export PYTHONPATH=${DOC_PYTHONPATH}:\${PYTHONPATH}
@@ -55,7 +55,7 @@ ELSE(WINDOWS)
   ")
   SET(EXT "sh")
   SET(CALL_STR ".")
-ENDIF(WINDOWS)
+ENDIF(WIN32)
 
 FILE(WRITE ${CMAKE_CURRENT_BINARY_DIR}/tmp_env.${EXT} "${SCR}")
 

@@ -47,7 +47,34 @@ FIND_PATH(_netgen_add_inc_dir occgeom.hpp HINTS ${_netgen_base_inc_dir} PATH_SUF
 LIST(APPEND NETGEN_INCLUDE_DIRS ${_netgen_add_inc_dir})
 LIST(REMOVE_DUPLICATES NETGEN_INCLUDE_DIRS)
 
-FIND_LIBRARY(NETGEN_LIBRARIES NAMES nglib)
+FIND_LIBRARY(NETGEN_nglib NAMES nglib)
+IF(WIN32)
+  FIND_LIBRARY(NETGEN_csg NAMES csg)
+  FIND_LIBRARY(NETGEN_gen NAMES gen)
+  FIND_LIBRARY(NETGEN_geom2d NAMES geom2d)
+  FIND_LIBRARY(NETGEN_gprim NAMES gprim)
+  FIND_LIBRARY(NETGEN_interface NAMES interface)
+  FIND_LIBRARY(NETGEN_la NAMES la)
+  FIND_LIBRARY(NETGEN_mesh NAMES mesh)
+  FIND_LIBRARY(NETGEN_occ NAMES occ)
+  FIND_LIBRARY(NETGEN_stl NAMES stl)
+ENDIF(WIN32)
+
+SET(NETGEN_LIBRARIES ${NETGEN_nglib})
+
+IF(WIN32)
+  SET(NETGEN_LIBRARIES ${NETGEN_LIBRARIES}
+      ${NETGEN_csg}
+      ${NETGEN_gen}
+      ${NETGEN_geom2d}
+      ${NETGEN_gprim}
+      ${NETGEN_interface}
+      ${NETGEN_la}
+      ${NETGEN_mesh}
+      ${NETGEN_occ}
+      ${NETGEN_stl}
+   )
+ENDIF(WIN32)
 
 INCLUDE(FindPackageHandleStandardArgs)
 FIND_PACKAGE_HANDLE_STANDARD_ARGS(NETGEN REQUIRED_VARS NETGEN_INCLUDE_DIRS NETGEN_LIBRARIES)
@@ -56,4 +83,11 @@ IF(NETGEN_FOUND)
   IF(NOT Netgen_FIND_QUIETLY)
     MESSAGE(STATUS "Netgen library: ${NETGEN_LIBRARIES}")
   ENDIF()
+  SET(NETGEN_DEFINITIONS "-DOCCGEOMETRY")
+
+  #RNV:  currently on windows use netgen without thread support.
+  #TODO: check support of the multithreading on windows
+  IF(WIN32)
+   SET(NETGEN_DEFINITIONS "${NETGEN_DEFINITIONS} -DNO_PARALLEL_THREADS")
+  ENDIF(WIN32)
 ENDIF()

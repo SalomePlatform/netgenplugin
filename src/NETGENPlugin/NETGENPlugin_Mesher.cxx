@@ -88,6 +88,9 @@ namespace netgen {
 #include <vector>
 #include <limits>
 
+#ifdef WIN32
+#include <process.h>
+#endif
 using namespace nglib;
 using namespace std;
 
@@ -3652,7 +3655,11 @@ std::string NETGENPlugin_NetgenLibWrapper::getOutputFileName()
 
   TCollection_AsciiString aGenericName = (char*)aTmpDir.c_str();
   aGenericName += "NETGEN_";
+#ifndef WIN32
   aGenericName += getpid();
+#else
+  aGenericName += _getpid();
+#endif
   aGenericName += "_";
   aGenericName += Abs((Standard_Integer)(long) aGenericName.ToCString());
   aGenericName += ".out";
