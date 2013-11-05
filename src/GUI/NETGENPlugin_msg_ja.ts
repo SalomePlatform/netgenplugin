@@ -5,43 +5,43 @@
     <name>@default</name>
     <message>
       <source>NETGEN_2D_HYPOTHESIS</source>
-      <translation>Netgen 2次元</translation>
+      <translation>Netgen 2D</translation>
     </message>
     <message>
       <source>NETGEN_2D_TITLE</source>
-      <translation>仮説構築</translation>
+      <translation>仮説の構築</translation>
     </message>
     <message>
       <source>NETGEN_3D_HYPOTHESIS</source>
-      <translation>Netgen 3 D</translation>
+      <translation>Netgen 3D</translation>
     </message>
     <message>
       <source>NETGEN_3D_TITLE</source>
-      <translation>仮説構築</translation>
+      <translation>仮説の構築</translation>
     </message>
     <message>
       <source>NETGEN_SimpleParameters_3D_HYPOTHESIS</source>
-      <translation>Netgen 3 D 単純なパラメーター</translation>
+      <translation>Netgen 3 D 簡易パラメーター</translation>
     </message>
     <message>
       <source>NETGEN_SimpleParameters_3D_TITLE</source>
-      <translation>仮説構築</translation>
+      <translation>仮説の構築</translation>
     </message>
     <message>
       <source>NETGEN_SimpleParameters_2D_HYPOTHESIS</source>
-      <translation>Netgen 2次元単純なパラメーター</translation>
+      <translation>Netgen 2D 簡易パラメーター</translation>
     </message>
     <message>
       <source>NETGEN_SimpleParameters_2D_TITLE</source>
-      <translation>仮説構築</translation>
+      <translation>仮説の構築</translation>
     </message>
     <message>
       <source>NETGEN_ALLOW_QUADRANGLES</source>
-      <translation>四角形を許可します。</translation>
+      <translation>四角形を許可</translation>
     </message>
     <message>
       <source>NETGEN_COARSE</source>
-      <translation>粗</translation>
+      <translation>粗い</translation>
     </message>
     <message>
       <source>NETGEN_CUSTOM</source>
@@ -49,7 +49,7 @@
     </message>
     <message>
       <source>NETGEN_FINE</source>
-      <translation>罰金</translation>
+      <translation>細かい</translation>
     </message>
     <message>
       <source>NETGEN_FINENESS</source>
@@ -57,11 +57,11 @@
     </message>
     <message>
       <source>NETGEN_GROWTH_RATE</source>
-      <translation>成長率</translation>
+      <translation>増加率</translation>
     </message>
     <message>
       <source>NETGEN_MAX_SIZE</source>
-      <translation>最大。サイズ</translation>
+      <translation>最大サイズ</translation>
     </message>
     <message>
       <source>NETGEN_MIN_SIZE</source>
@@ -69,43 +69,43 @@
     </message>
     <message>
       <source>NETGEN_MODERATE</source>
-      <translation>中等度</translation>
+      <translation>普通</translation>
     </message>
     <message>
       <source>NETGEN_OPTIMIZE</source>
-      <translation>最適化します。</translation>
+      <translation>最適化</translation>
     </message>
     <message>
       <source>NETGEN_SECOND_ORDER</source>
-      <translation>2 番目の注文</translation>
+      <translation>2次要素</translation>
     </message>
     <message>
       <source>NETGEN_SEG_PER_EDGE</source>
-      <translation>注意 Segs 刃</translation>
+      <translation>エッジ上の分割数</translation>
     </message>
     <message>
       <source>NETGEN_SEG_PER_RADIUS</source>
-      <translation>注意 Segs 半径あたり</translation>
+      <translation>半径毎の分割数</translation>
     </message>
     <message>
       <source>NETGEN_VERYCOARSE</source>
-      <translation>非常に粗い</translation>
+      <translation>非常に粗く</translation>
     </message>
     <message>
       <source>NETGEN_VERYFINE</source>
-      <translation>非常に微細な</translation>
+      <translation>非常に細かく</translation>
     </message>
     <message>
       <source>NG_1D</source>
-      <translation>1 D</translation>
+      <translation>1D</translation>
     </message>
     <message>
       <source>NG_2D</source>
-      <translation>2 D</translation>
+      <translation>2D</translation>
     </message>
     <message>
       <source>NG_3D</source>
-      <translation>3 D</translation>
+      <translation>3D</translation>
     </message>
     <message>
       <source>NG_LENGTH_FROM_EDGES</source>
@@ -113,7 +113,7 @@
     </message>
     <message>
       <source>NG_LENGTH_FROM_FACES</source>
-      <translation>長さの面から</translation>
+      <translation>フェースの長さ</translation>
     </message>
     <message>
       <source>NETGEN_LOCAL_SIZE</source>
@@ -121,15 +121,15 @@
     </message>
     <message>
       <source>NETGEN_LSZ_VERTEX</source>
-      <translation>頂点</translation>
+      <translation>点上</translation>
     </message>
     <message>
       <source>NETGEN_LSZ_EDGE</source>
-      <translation>端に</translation>
+      <translation>エッジ上</translation>
     </message>
     <message>
       <source>NETGEN_LSZ_FACE</source>
-      <translation>Sub-Face で</translation>
+      <translation>サブフェース上</translation>
     </message>
     <message>
       <source>NETGEN_LSZ_REMOVE</source>
