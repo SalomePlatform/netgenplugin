@@ -233,7 +233,7 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
   else
   {
     double edgeLength = 0;
-    if (_hypLengthFromEdges || (!_hypLengthFromEdges && !_hypMaxElementArea))
+    if (_hypLengthFromEdges /*|| (!_hypLengthFromEdges && !_hypMaxElementArea)*/)
     {
       int nbSegments = 0;
       for ( int iW = 0; iW < nbWires; ++iW )
@@ -266,31 +266,65 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
   NETGENPlugin_NetgenLibWrapper ngLib;
   netgen::Mesh * ngMesh = (netgen::Mesh*) ngLib._ngMesh;
 
-  Box<3> bb = occgeo.GetBoundingBox();
-  bb.Increase (bb.Diam()/10);
-  ngMesh->SetLocalH (bb.PMin(), bb.PMax(), netgen::mparam.grading);
-  ngMesh->SetGlobalH (netgen::mparam.maxh);
+#ifndef NETGEN_V5
+  char *optstr = 0;
+#endif
+  int startWith = MESHCONST_ANALYSE;
+  int endWith   = MESHCONST_ANALYSE;
+  int err = 1;
+
+  if ( !_hypLengthFromEdges && !_hypMaxElementArea )
+  {
+#ifdef NETGEN_V5
+    err = netgen::OCCGenerateMesh(occgeo, ngMesh, netgen::mparam, startWith, endWith);
+#else
+    err = netgen::OCCGenerateMesh(occgeo, ngMesh, startWith, endWith, optstr);
+#endif
+    ngLib._ngMesh = 0;
+    ngLib.setMesh(( nglib::Ng_Mesh*) ngMesh );
+  }
+  else
+  {
+    Box<3> bb = occgeo.GetBoundingBox();
+    bb.Increase (bb.Diam()/10);
+    ngMesh->SetLocalH (bb.PMin(), bb.PMax(), netgen::mparam.grading);
+    ngMesh->SetGlobalH (netgen::mparam.maxh);
+  }
 
   vector< const SMDS_MeshNode* > nodeVec;
   problem = aMesher.AddSegmentsToMesh( *ngMesh, occgeo, wires, helper, nodeVec );
   if ( problem && !problem->IsOK() )
     return error( problem );
 
+  // limit element size near existing segments
+  TopTools_IndexedMapOfShape edgeMap, faceMap;
+  TopExp::MapShapes( aMesh.GetShapeToMesh(), TopAbs_EDGE, edgeMap );
+  for ( int iE = 1; iE <= edgeMap.Extent(); ++iE )
+  {
+    SMESHDS_SubMesh* smDS = aMesh.GetMeshDS()->MeshElements( edgeMap( iE ));
+    if ( !smDS ) continue;
+    SMDS_ElemIteratorPtr segIt = smDS->GetElements();
+    while ( segIt->more() )
+    {
+      const SMDS_MeshElement* seg = segIt->next();
+      SMESH_TNodeXYZ n1 = seg->GetNode(0);
+      SMESH_TNodeXYZ n2 = seg->GetNode(1);
+      gp_XYZ p = 0.5 * ( n1 + n2 );
+      netgen::Point3d pi(p.X(), p.Y(), p.Z());
+      ngMesh->RestrictLocalH( pi, ( n1 - n2 ).Modulus() );
+    }
+  }
+
   // -------------------------
   // Generate surface mesh
   // -------------------------
 
-#ifndef NETGEN_V5
-  char *optstr = 0;
-#endif
-  int startWith = MESHCONST_MESHSURFACE;
-  int endWith   = MESHCONST_OPTSURFACE;
-  int err = 1;
+  startWith = MESHCONST_MESHSURFACE;
+  endWith   = MESHCONST_OPTSURFACE;
 
   try {
-#if (OCC_VERSION_MAJOR << 16 | OCC_VERSION_MINOR << 8 | OCC_VERSION_MAINTENANCE) > 0x060100
     OCC_CATCH_SIGNALS;
-#endif
+
 #ifdef NETGEN_V5
     err = netgen::OCCGenerateMesh(occgeo, ngMesh, netgen::mparam, startWith, endWith);
 #else
