@@ -301,7 +301,10 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
   TopExp::MapShapes( aMesh.GetShapeToMesh(), TopAbs_EDGE, edgeMap );
   for ( int iE = 1; iE <= edgeMap.Extent(); ++iE )
   {
-    SMESHDS_SubMesh* smDS = aMesh.GetMeshDS()->MeshElements( edgeMap( iE ));
+    const TopoDS_Shape& edge = edgeMap( iE );
+    if ( SMESH_Algo::isDegenerated( TopoDS::Edge( edge )))
+      continue;
+    SMESHDS_SubMesh* smDS = aMesh.GetMeshDS()->MeshElements( edge );
     if ( !smDS ) continue;
     SMDS_ElemIteratorPtr segIt = smDS->GetElements();
     while ( segIt->more() )
@@ -311,7 +314,7 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
       SMESH_TNodeXYZ n2 = seg->GetNode(1);
       gp_XYZ p = 0.5 * ( n1 + n2 );
       netgen::Point3d pi(p.X(), p.Y(), p.Z());
-      ngMesh->RestrictLocalH( pi, ( n1 - n2 ).Modulus() );
+      ngMesh->RestrictLocalH( pi, Max(( n1 - n2 ).Modulus(), netgen::mparam.minh ));
     }
   }
 
