@@ -255,7 +255,7 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
     netgen::mparam.maxh = edgeLength;
     netgen::mparam.minh = aMesher.GetDefaultMinSize( aShape, netgen::mparam.maxh );
     netgen::mparam.quad = _hypQuadranglePreference ? 1 : 0;
-    netgen::mparam.grading = 0.7; // very coarse mesh by default
+    netgen::mparam.grading = 0.5; // coarse mesh by default
   }
   occgeo.face_maxh = netgen::mparam.maxh;
 
@@ -302,7 +302,8 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
   for ( int iE = 1; iE <= edgeMap.Extent(); ++iE )
   {
     const TopoDS_Shape& edge = edgeMap( iE );
-    if ( SMESH_Algo::isDegenerated( TopoDS::Edge( edge )))
+    if ( SMESH_Algo::isDegenerated( TopoDS::Edge( edge )) ||
+         helper.IsSubShape( edge, aShape ))
       continue;
     SMESHDS_SubMesh* smDS = aMesh.GetMeshDS()->MeshElements( edge );
     if ( !smDS ) continue;
