@@ -436,7 +436,7 @@ double NETGENPlugin_NETGEN_2D_ONLY::GetProgress() const
     if ( _progressByTic < 0 )
     {
       NETGENPlugin_NETGEN_2D_ONLY* me = (NETGENPlugin_NETGEN_2D_ONLY*) this;
-      me->_progressByTic = 0.25 / _progressTic;
+      me->_progressByTic = 0.25 / (_progressTic+1);
     }
     const_cast<NETGENPlugin_NETGEN_2D_ONLY*>( this )->_progressTic++;
     progress = Max( progress, _progressByTic * _progressTic );
