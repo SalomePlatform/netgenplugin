@@ -191,7 +191,7 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
   _quadraticMesh = helper.IsQuadraticSubMesh(aShape);
   helper.SetElementsOnShape( true );
   const bool ignoreMediumNodes = _quadraticMesh;
-  
+
   // build viscous layers if required
   TopoDS_Face F = TopoDS::Face( aShape/*.Oriented( TopAbs_FORWARD )*/);
   if ( F.Orientation() != TopAbs_FORWARD &&
@@ -263,149 +263,166 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
   // Make input netgen mesh
   // -------------------------
 
-  NETGENPlugin_NetgenLibWrapper ngLib;
-  netgen::Mesh * ngMesh = (netgen::Mesh*) ngLib._ngMesh;
+  // MESHCONST_ANALYSE step may lead to a failure, so we make an attempt
+  // w/o MESHCONST_ANALYSE at the second loop
+  int err = 1;
+  for ( int iLoop = 0; iLoop < 2; iLoop++ )
+  {
+    bool isMESHCONST_ANALYSE = false;
+    InitComputeError();
+
+    NETGENPlugin_NetgenLibWrapper ngLib;
+    netgen::Mesh * ngMesh = (netgen::Mesh*) ngLib._ngMesh;
+    ngLib._isComputeOk = false;
 
 #ifndef NETGEN_V5
-  char *optstr = 0;
+    char *optstr = 0;
 #endif
-  int startWith = MESHCONST_ANALYSE;
-  int endWith   = MESHCONST_ANALYSE;
-  int err = 1;
+    int startWith = MESHCONST_ANALYSE;
+    int endWith   = MESHCONST_ANALYSE;
 
-  if ( !_hypLengthFromEdges && !_hypMaxElementArea )
-  {
-#ifdef NETGEN_V5
-    err = netgen::OCCGenerateMesh(occgeo, ngMesh, netgen::mparam, startWith, endWith);
-#else
-    err = netgen::OCCGenerateMesh(occgeo, ngMesh, startWith, endWith, optstr);
-#endif
-    ngLib._ngMesh = 0;
-    ngLib.setMesh(( nglib::Ng_Mesh*) ngMesh );
-  }
-  else
-  {
-    Box<3> bb = occgeo.GetBoundingBox();
-    bb.Increase (bb.Diam()/10);
-    ngMesh->SetLocalH (bb.PMin(), bb.PMax(), netgen::mparam.grading);
-    ngMesh->SetGlobalH (netgen::mparam.maxh);
-  }
-
-  vector< const SMDS_MeshNode* > nodeVec;
-  problem = aMesher.AddSegmentsToMesh( *ngMesh, occgeo, wires, helper, nodeVec );
-  if ( problem && !problem->IsOK() )
-    return error( problem );
-
-  // limit element size near existing segments
-  TopTools_IndexedMapOfShape edgeMap, faceMap;
-  TopExp::MapShapes( aMesh.GetShapeToMesh(), TopAbs_EDGE, edgeMap );
-  for ( int iE = 1; iE <= edgeMap.Extent(); ++iE )
-  {
-    const TopoDS_Shape& edge = edgeMap( iE );
-    if ( SMESH_Algo::isDegenerated( TopoDS::Edge( edge )) ||
-         helper.IsSubShape( edge, aShape ))
-      continue;
-    SMESHDS_SubMesh* smDS = aMesh.GetMeshDS()->MeshElements( edge );
-    if ( !smDS ) continue;
-    SMDS_ElemIteratorPtr segIt = smDS->GetElements();
-    while ( segIt->more() )
+    if ( !_hypLengthFromEdges && !_hypMaxElementArea && !iLoop == 1 )
     {
-      const SMDS_MeshElement* seg = segIt->next();
-      SMESH_TNodeXYZ n1 = seg->GetNode(0);
-      SMESH_TNodeXYZ n2 = seg->GetNode(1);
-      gp_XYZ p = 0.5 * ( n1 + n2 );
-      netgen::Point3d pi(p.X(), p.Y(), p.Z());
-      ngMesh->RestrictLocalH( pi, Max(( n1 - n2 ).Modulus(), netgen::mparam.minh ));
+      isMESHCONST_ANALYSE = true;
+#ifdef NETGEN_V5
+      err = netgen::OCCGenerateMesh(occgeo, ngMesh, netgen::mparam, startWith, endWith);
+#else
+      err = netgen::OCCGenerateMesh(occgeo, ngMesh, startWith, endWith, optstr);
+#endif
+      ngLib._ngMesh = 0;
+      ngLib.setMesh(( nglib::Ng_Mesh*) ngMesh );
     }
-  }
-
-  // -------------------------
-  // Generate surface mesh
-  // -------------------------
-
-  startWith = MESHCONST_MESHSURFACE;
-  endWith   = MESHCONST_OPTSURFACE;
-
-  try {
-    OCC_CATCH_SIGNALS;
-
-#ifdef NETGEN_V5
-    err = netgen::OCCGenerateMesh(occgeo, ngMesh, netgen::mparam, startWith, endWith);
-#else
-    err = netgen::OCCGenerateMesh(occgeo, ngMesh, startWith, endWith, optstr);
-#endif
-    if(netgen::multithread.terminate)
-      return false;
-    if ( err )
-      error(SMESH_Comment("Error in netgen::OCCGenerateMesh() at ") << netgen::multithread.task);
-  }
-  catch (Standard_Failure& ex)
-  {
-    SMESH_Comment str("Exception in  netgen::OCCGenerateMesh()");
-    str << " at " << netgen::multithread.task
-        << ": " << ex.DynamicType()->Name();
-    if ( ex.GetMessageString() && strlen( ex.GetMessageString() ))
-      str << ": " << ex.GetMessageString();
-    error(str);
-  }
-  catch (...) {
-    SMESH_Comment str("Exception in  netgen::OCCGenerateMesh()");
-    str << " at " << netgen::multithread.task;
-    error(str);
-  }
-
-  // ----------------------------------------------------
-  // Fill the SMESHDS with the generated nodes and faces
-  // ----------------------------------------------------
-
-  int nbNodes = ngMesh->GetNP();
-  int nbFaces = ngMesh->GetNSE();
-
-  int nbInputNodes = nodeVec.size()-1;
-  nodeVec.resize( nbNodes+1, 0 );
-
-  // add nodes
-  for ( int ngID = nbInputNodes + 1; ngID <= nbNodes; ++ngID )
-  {
-    const MeshPoint& ngPoint = ngMesh->Point( ngID );
-    SMDS_MeshNode * node = meshDS->AddNode(ngPoint(0), ngPoint(1), ngPoint(2));
-    nodeVec[ ngID ] = node;
-  }
-
-  // create faces
-  const bool reverse = false; //( aShape.Orientation() == TopAbs_REVERSED );
-  int i,j;
-  for ( i = 1; i <= nbFaces ; ++i )
-  {
-    const Element2d& elem = ngMesh->SurfaceElement(i);
-    vector<const SMDS_MeshNode*> nodes( elem.GetNP() );
-    for (j=1; j <= elem.GetNP(); ++j)
+    else
     {
-      int pind = elem.PNum(j);
-      if ( pind < 1 )
-        break;
-      const SMDS_MeshNode* node = nodeVec[ pind ];
-      if ( reverse )
-        nodes[ nodes.size()-j ] = node;
-      else
-        nodes[ j-1 ] = node;
-      if ( node->GetPosition()->GetTypeOfPosition() == SMDS_TOP_3DSPACE )
+      Box<3> bb = occgeo.GetBoundingBox();
+      bb.Increase (bb.Diam()/10);
+      ngMesh->SetLocalH (bb.PMin(), bb.PMax(), netgen::mparam.grading);
+      ngMesh->SetGlobalH (netgen::mparam.maxh);
+    }
+
+    vector< const SMDS_MeshNode* > nodeVec;
+    problem = aMesher.AddSegmentsToMesh( *ngMesh, occgeo, wires, helper, nodeVec );
+    if ( problem && !problem->IsOK() )
+      return error( problem );
+
+    // limit element size near existing segments
+    TopTools_IndexedMapOfShape edgeMap, faceMap;
+    TopExp::MapShapes( aMesh.GetShapeToMesh(), TopAbs_EDGE, edgeMap );
+    for ( int iE = 1; iE <= edgeMap.Extent(); ++iE )
+    {
+      const TopoDS_Shape& edge = edgeMap( iE );
+      if ( SMESH_Algo::isDegenerated( TopoDS::Edge( edge )) ||
+           helper.IsSubShape( edge, aShape ))
+        continue;
+      SMESHDS_SubMesh* smDS = aMesh.GetMeshDS()->MeshElements( edge );
+      if ( !smDS ) continue;
+      SMDS_ElemIteratorPtr segIt = smDS->GetElements();
+      while ( segIt->more() )
       {
-        const PointGeomInfo& pgi = elem.GeomInfoPi(j);
-        meshDS->SetNodeOnFace((SMDS_MeshNode*)node, faceID, pgi.u, pgi.v);
+        const SMDS_MeshElement* seg = segIt->next();
+        SMESH_TNodeXYZ n1 = seg->GetNode(0);
+        SMESH_TNodeXYZ n2 = seg->GetNode(1);
+        gp_XYZ p = 0.5 * ( n1 + n2 );
+        netgen::Point3d pi(p.X(), p.Y(), p.Z());
+        ngMesh->RestrictLocalH( pi, Max(( n1 - n2 ).Modulus(), netgen::mparam.minh ));
       }
     }
-    if ( j > elem.GetNP() )
-    {
-      SMDS_MeshFace* face = 0;
-      if ( elem.GetType() == TRIG )
-        face = helper.AddFace(nodes[0],nodes[1],nodes[2]);
-      else
-        face = helper.AddFace(nodes[0],nodes[1],nodes[2],nodes[3]);
-    }
-  }
 
-  ngLib._isComputeOk = !err;
+    // -------------------------
+    // Generate surface mesh
+    // -------------------------
+
+    startWith = MESHCONST_MESHSURFACE;
+    endWith   = MESHCONST_OPTSURFACE;
+
+    try {
+      OCC_CATCH_SIGNALS;
+
+#ifdef NETGEN_V5
+      err = netgen::OCCGenerateMesh(occgeo, ngMesh, netgen::mparam, startWith, endWith);
+#else
+      err = netgen::OCCGenerateMesh(occgeo, ngMesh, startWith, endWith, optstr);
+#endif
+      if(netgen::multithread.terminate)
+        return false;
+      if ( err )
+        error(SMESH_Comment("Error in netgen::OCCGenerateMesh() at ") << netgen::multithread.task);
+    }
+    catch (Standard_Failure& ex)
+    {
+      SMESH_Comment str("Exception in  netgen::OCCGenerateMesh()");
+      str << " at " << netgen::multithread.task
+          << ": " << ex.DynamicType()->Name();
+      if ( ex.GetMessageString() && strlen( ex.GetMessageString() ))
+        str << ": " << ex.GetMessageString();
+      error(str);
+      err = 1;
+    }
+    catch (...) {
+      SMESH_Comment str("Exception in  netgen::OCCGenerateMesh()");
+      str << " at " << netgen::multithread.task;
+      error(str);
+      err = 1;
+    }
+    if ( err && isMESHCONST_ANALYSE )
+      continue;
+
+    // ----------------------------------------------------
+    // Fill the SMESHDS with the generated nodes and faces
+    // ----------------------------------------------------
+
+    int nbNodes = ngMesh->GetNP();
+    int nbFaces = ngMesh->GetNSE();
+
+    int nbInputNodes = nodeVec.size()-1;
+    nodeVec.resize( nbNodes+1, 0 );
+
+    // add nodes
+    for ( int ngID = nbInputNodes + 1; ngID <= nbNodes; ++ngID )
+    {
+      const MeshPoint& ngPoint = ngMesh->Point( ngID );
+      SMDS_MeshNode * node = meshDS->AddNode(ngPoint(0), ngPoint(1), ngPoint(2));
+      nodeVec[ ngID ] = node;
+    }
+
+    // create faces
+    const bool reverse = false; //( aShape.Orientation() == TopAbs_REVERSED );
+    int i,j;
+    for ( i = 1; i <= nbFaces ; ++i )
+    {
+      const Element2d& elem = ngMesh->SurfaceElement(i);
+      vector<const SMDS_MeshNode*> nodes( elem.GetNP() );
+      for (j=1; j <= elem.GetNP(); ++j)
+      {
+        int pind = elem.PNum(j);
+        if ( pind < 1 )
+          break;
+        const SMDS_MeshNode* node = nodeVec[ pind ];
+        if ( reverse )
+          nodes[ nodes.size()-j ] = node;
+        else
+          nodes[ j-1 ] = node;
+        if ( node->GetPosition()->GetTypeOfPosition() == SMDS_TOP_3DSPACE )
+        {
+          const PointGeomInfo& pgi = elem.GeomInfoPi(j);
+          meshDS->SetNodeOnFace((SMDS_MeshNode*)node, faceID, pgi.u, pgi.v);
+        }
+      }
+      if ( j > elem.GetNP() )
+      {
+        SMDS_MeshFace* face = 0;
+        if ( elem.GetType() == TRIG )
+          face = helper.AddFace(nodes[0],nodes[1],nodes[2]);
+        else
+          face = helper.AddFace(nodes[0],nodes[1],nodes[2],nodes[3]);
+      }
+    }
+
+    ngLib._isComputeOk = !err;
+    break;
+
+  } // two attempts
+
   return !err;
 }
 
