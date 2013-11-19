@@ -27,7 +27,7 @@ from salome.smesh.smeshBuilder import AssureGeomPublished, ParseParameters, IsEq
 # import NETGENPlugin module if possible
 noNETGENPlugin = 0
 try:
-    import NETGENPlugin
+    from salome.NETGENPlugin import NETGENPluginBuilder
 except ImportError:
     noNETGENPlugin = 1
     pass

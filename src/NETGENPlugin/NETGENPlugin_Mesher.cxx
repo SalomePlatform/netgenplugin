@@ -1283,8 +1283,10 @@ void NETGENPlugin_Mesher::AddIntVerticesInSolids(const netgen::OCCGeometry&     
 #ifdef DUMP_TRIANGLES_SCRIPT
   // create a python script making a mesh containing triangles added for internal vertices
   ofstream py(DUMP_TRIANGLES_SCRIPT);
-  py << "from smesh import * "<< endl
-     << "m = Mesh(name='triangles')" << endl;
+  py << "import SMESH"<< endl
+     << "from salome.smesh import smeshBuilder"<<endl
+     << "smesh = smeshBuilder.New(salome.myStudy)"
+     << "m = smesh.Mesh(name='triangles')" << endl;
 #endif
   if ( nodeVec.size() < ngMesh.GetNP() )
     nodeVec.resize( ngMesh.GetNP(), 0 );
@@ -3124,7 +3126,9 @@ void NETGENPlugin_Mesher::toPython( const netgen::Mesh* ngMesh,
   ofstream outfile(pyFile.c_str(), ios::out);
   if ( !outfile ) return;
 
-  outfile << "import smesh, SMESH" << endl
+  outfile << "import SMESH" << endl
+          << "from salome.smesh import smeshBuilder" << endl
+          << "smesh = smeshBuilder.New(salome.myStudy)" << endl
           << "mesh = smesh.Mesh()" << endl << endl;
 
   using namespace netgen;
