@@ -255,7 +255,7 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
     netgen::mparam.maxh = edgeLength;
     netgen::mparam.minh = aMesher.GetDefaultMinSize( aShape, netgen::mparam.maxh );
     netgen::mparam.quad = _hypQuadranglePreference ? 1 : 0;
-    netgen::mparam.grading = 0.5; // coarse mesh by default
+    netgen::mparam.grading = 0.7; // very coarse mesh by default
   }
   occgeo.face_maxh = netgen::mparam.maxh;
 
@@ -281,7 +281,7 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
     int startWith = MESHCONST_ANALYSE;
     int endWith   = MESHCONST_ANALYSE;
 
-    if ( !_hypLengthFromEdges && !_hypMaxElementArea && !iLoop == 1 )
+    if ( !_hypLengthFromEdges && !_hypMaxElementArea && iLoop == 0 )
     {
       isMESHCONST_ANALYSE = true;
 #ifdef NETGEN_V5
@@ -299,6 +299,7 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
       ngMesh->SetLocalH (bb.PMin(), bb.PMax(), netgen::mparam.grading);
       ngMesh->SetGlobalH (netgen::mparam.maxh);
     }
+    cerr << "max " << netgen::mparam.maxh << " min " << netgen::mparam.minh << endl;
 
     vector< const SMDS_MeshNode* > nodeVec;
     problem = aMesher.AddSegmentsToMesh( *ngMesh, occgeo, wires, helper, nodeVec );
@@ -364,8 +365,29 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
       error(str);
       err = 1;
     }
-    if ( err && isMESHCONST_ANALYSE )
+    if ( err /*&& isMESHCONST_ANALYSE*/ && iLoop == 0 )
+    {
+      netgen::mparam.minh = netgen::mparam.maxh;
+      netgen::mparam.maxh = 0;
+      for ( int iW = 0; iW < wires.size(); ++iW )
+      {
+        StdMeshers_FaceSidePtr wire = wires[ iW ];
+        const vector<UVPtStruct>& uvPtVec = wire->GetUVPtStruct();
+        for ( size_t iP = 0; iP < uvPtVec.size(); ++iP )
+        {
+          netgen::Point3d p( uvPtVec[iP].node->X(),
+                             uvPtVec[iP].node->Y(),
+                             uvPtVec[iP].node->Z());
+          double size = ngMesh->GetH( p );
+          netgen::mparam.minh = Min( netgen::mparam.minh, size );
+          netgen::mparam.maxh = Max( netgen::mparam.maxh, size );
+        }
+      }
+      netgen::mparam.minh *= 0.9;
+      netgen::mparam.maxh *= 1.1;
+
       continue;
+    }
 
     // ----------------------------------------------------
     // Fill the SMESHDS with the generated nodes and faces
