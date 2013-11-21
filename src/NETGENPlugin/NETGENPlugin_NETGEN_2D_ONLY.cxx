@@ -299,7 +299,7 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
       ngMesh->SetLocalH (bb.PMin(), bb.PMax(), netgen::mparam.grading);
       ngMesh->SetGlobalH (netgen::mparam.maxh);
     }
-    cerr << "max " << netgen::mparam.maxh << " min " << netgen::mparam.minh << endl;
+    //cerr << "max " << netgen::mparam.maxh << " min " << netgen::mparam.minh << endl;
 
     vector< const SMDS_MeshNode* > nodeVec;
     problem = aMesher.AddSegmentsToMesh( *ngMesh, occgeo, wires, helper, nodeVec );
