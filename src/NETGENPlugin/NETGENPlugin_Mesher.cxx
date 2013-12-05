@@ -1667,8 +1667,11 @@ NETGENPlugin_Mesher::AddSegmentsToMesh(netgen::Mesh&                    ngMesh,
         // element size (regression on issue 0020452, note 0010898)
         int   iPrev = SMESH_MesherHelper::WrapIndex( i-1, nbSegments );
         int   iNext = SMESH_MesherHelper::WrapIndex( i+1, nbSegments );
-        int   nbSeg = 1 + ( segLen[ iPrev ] > 1e-20 ) + ( segLen[ iNext ] > 1e-20 );
-        double avgH = ( segLen[ iPrev ] + segLen[ i ] + segLen[ iNext ]) / nbSeg;
+        double sunH = segLen[ iPrev ] + segLen[ i ] + segLen[ iNext ];
+        int   nbSeg = ( segLen[ iPrev ] > sunH / 100.  +
+                        segLen[ i     ] > sunH / 100.  +
+                        segLen[ iNext ] > sunH / 100.);
+        double avgH = sunH / nbSeg;
 
         RestrictLocalSize( ngMesh, 0.5*(np1+np2), avgH );
       }
