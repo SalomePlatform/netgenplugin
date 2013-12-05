@@ -9,7 +9,7 @@
     </message>
     <message>
       <source>NETGEN_2D_TITLE</source>
-      <translation>仮説の構築</translation>
+      <translation>設定項目</translation>
     </message>
     <message>
       <source>NETGEN_3D_HYPOTHESIS</source>
@@ -17,15 +17,15 @@
     </message>
     <message>
       <source>NETGEN_3D_TITLE</source>
-      <translation>仮説の構築</translation>
+      <translation>設定項目</translation>
     </message>
     <message>
       <source>NETGEN_SimpleParameters_3D_HYPOTHESIS</source>
-      <translation>Netgen 3 D 簡易パラメーター</translation>
+      <translation>Netgen 3D 簡易パラメーター</translation>
     </message>
     <message>
       <source>NETGEN_SimpleParameters_3D_TITLE</source>
-      <translation>仮説の構築</translation>
+      <translation>設定項目</translation>
     </message>
     <message>
       <source>NETGEN_SimpleParameters_2D_HYPOTHESIS</source>
@@ -33,7 +33,7 @@
     </message>
     <message>
       <source>NETGEN_SimpleParameters_2D_TITLE</source>
-      <translation>仮説の構築</translation>
+      <translation>設定項目</translation>
     </message>
     <message>
       <source>NETGEN_ALLOW_QUADRANGLES</source>
@@ -121,7 +121,7 @@
     </message>
     <message>
       <source>NETGEN_LSZ_VERTEX</source>
-      <translation>点上</translation>
+      <translation>頂点</translation>
     </message>
     <message>
       <source>NETGEN_LSZ_EDGE</source>
