@@ -252,7 +252,7 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
     else
     {
       // set edgeLength by a longest segment
-      double maxSeg2 = occgeo.GetBoundingBox().Diam();
+      double maxSeg2 = 0;
       for ( int iW = 0; iW < nbWires; ++iW )
       {
         const UVPtStructVec& points = wires[ iW ]->GetUVPtStruct();
