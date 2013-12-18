@@ -244,10 +244,27 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
       if ( nbSegments )
         edgeLength /= nbSegments;
     }
-    if ( _hypMaxElementArea )
+    else if ( _hypMaxElementArea )
     {
       double maxArea = _hypMaxElementArea->GetMaxArea();
       edgeLength = sqrt(2. * maxArea/sqrt(3.0));
+    }
+    else
+    {
+      // set edgeLength by a longest segment
+      double maxSeg2 = 0;
+      for ( int iW = 0; iW < nbWires; ++iW )
+      {
+        const UVPtStructVec& points = wires[ iW ]->GetUVPtStruct();
+        gp_Pnt pPrev = SMESH_TNodeXYZ( points[0].node );
+        for ( size_t i = 1; i < points.size(); ++i )
+        {
+          gp_Pnt p = SMESH_TNodeXYZ( points[i].node );
+          maxSeg2 = Max( maxSeg2, p.SquareDistance( pPrev ));
+          pPrev = p;
+        }
+      }
+      edgeLength = sqrt( maxSeg2 ) * 1.05;
     }
     if ( edgeLength < DBL_MIN )
       edgeLength = occgeo.GetBoundingBox().Diam();
@@ -255,7 +272,7 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
     netgen::mparam.maxh = edgeLength;
     netgen::mparam.minh = aMesher.GetDefaultMinSize( aShape, netgen::mparam.maxh );
     netgen::mparam.quad = _hypQuadranglePreference ? 1 : 0;
-    netgen::mparam.grading = 0.7; // very coarse mesh by default
+    netgen::mparam.grading = 0.4; // Moderate fineness by default
   }
   occgeo.face_maxh = netgen::mparam.maxh;
 
@@ -383,6 +400,7 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
           netgen::mparam.maxh = Max( netgen::mparam.maxh, size );
         }
       }
+      //cerr << "min " << netgen::mparam.minh << " max " << netgen::mparam.maxh << endl;
       netgen::mparam.minh *= 0.9;
       netgen::mparam.maxh *= 1.1;
 

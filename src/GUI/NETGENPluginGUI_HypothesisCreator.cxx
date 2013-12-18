@@ -443,13 +443,14 @@ bool NETGENPluginGUI_HypothesisCreator::storeParamsToHypo( const NetgenHypothesi
     h->SetVarParameter( h_data.myMinSizeVar.toLatin1().constData(), "SetMinSize");
     h->SetMinSize( h_data.myMinSize );
     
-    if ( myIs2D )
+    //if ( myIs2D )
       {
-        NETGENPlugin::NETGENPlugin_Hypothesis_2D_var h_2d =
-          NETGENPlugin::NETGENPlugin_Hypothesis_2D::_narrow( h );
+        // NETGENPlugin::NETGENPlugin_Hypothesis_2D_var h_2d =
+        //   NETGENPlugin::NETGENPlugin_Hypothesis_2D::_narrow( h );
         
-        if ( !h_2d->_is_nil() )
-          h_2d->SetQuadAllowed( h_data.myAllowQuadrangles );
+        // if ( !h_2d->_is_nil() )
+        //   h_2d->SetQuadAllowed( h_data.myAllowQuadrangles );
+        h->SetQuadAllowed( h_data.myAllowQuadrangles );
       }
 
     QMapIterator<QString,QString> i(myLocalSizeMap);
