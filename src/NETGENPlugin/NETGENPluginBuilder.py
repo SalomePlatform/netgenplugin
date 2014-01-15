@@ -218,6 +218,16 @@ class NETGEN_1D2D3D_Algorithm(NETGEN_Algorithm):
     def SetQuadAllowed(self, toAllow=True):
         if self.Parameters(): self.params.SetQuadAllowed(toAllow)
         pass
+    ## Sets @c UseSurfaceCurvature flag
+    #  @param toUse new value of the @c UseSurfaceCurvature parameter (@c True by default)
+    def SetUseSurfaceCurvature(self, toUse=True):
+        if self.Parameters(): self.params.SetUseSurfaceCurvature(toUse)
+        pass
+    ## Sets @c FuseEdges flag
+    #  @param toFuse new value of the @c FuseEdges parameter (@c False by default)
+    def SetFuseEdges(self, toFuse=False):
+        if self.Parameters(): self.params.SetFuseEdges(toFuse)
+        pass
 
     ## Sets number of segments overriding the value set by SetLocalLength()
     #  @param theVal new value of number of segments parameter
@@ -335,6 +345,12 @@ class NETGEN_2D_Only_Algorithm(NETGEN_Algorithm):
     def LengthFromEdges(self):
         hyp = self.Hypothesis("LengthFromEdges", UseExisting=1, CompareMethod=self.CompareEqualHyp)
         return hyp
+        
+    ## Sets @c SurfaceCurvature flag
+    #  @param toAllow new value of the @c SurfaceCurvature parameter (@c True by default)
+    def SetSurfaceCurvature(self, toAllow=True):
+        if self.Parameters(): self.params.SetSurfaceCurvature(toAllow)
+        pass
 
     ## Sets @c QuadAllowed flag.
     #  @param toAllow new value of the @c QuadAllowed parameter (@c True by default)

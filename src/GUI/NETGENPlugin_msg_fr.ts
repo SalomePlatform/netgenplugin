@@ -56,6 +56,10 @@
         <translation>Finesse</translation>
     </message>
     <message>
+        <source>NETGEN_FUSE_EDGES</source>
+        <translation type="unfinished">Fuse Coincident Nodes on Edges and Vertices</translation>
+    </message>
+    <message>
         <source>NETGEN_GROWTH_RATE</source>
         <translation>Taux d&apos;accroissement</translation>
     </message>
@@ -86,6 +90,10 @@
     <message>
         <source>NETGEN_SEG_PER_RADIUS</source>
         <translation>Nb. segments par rayon</translation>
+    </message>
+    <message>
+        <source>NETGEN_SURFACE_CURVATURE</source>
+        <translation type="unfinished">Limit Size by Surface Curvature</translation>
     </message>
     <message>
         <source>NETGEN_VERYCOARSE</source>

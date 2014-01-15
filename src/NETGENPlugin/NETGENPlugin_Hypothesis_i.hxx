@@ -88,6 +88,12 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_Hypothesis_i:
   void SetQuadAllowed(CORBA::Boolean theVal);
   CORBA::Boolean GetQuadAllowed();
 
+  void SetUseSurfaceCurvature(CORBA::Boolean theVal);
+  CORBA::Boolean GetUseSurfaceCurvature();
+
+  void SetFuseEdges(CORBA::Boolean theVal);
+  CORBA::Boolean GetFuseEdges();
+
   // Get implementation
   ::NETGENPlugin_Hypothesis* GetImpl();
   
@@ -109,7 +115,9 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_Hypothesis_i:
     METH_SetNbSegPerRadius   = 128,
     METH_SetLocalSizeOnEntry = 256,
     METH_SetQuadAllowed      = METH_SetLocalSizeOnEntry * 2,
-    METH_LAST                = METH_SetQuadAllowed
+    METH_SetSurfaceCurvature = METH_SetQuadAllowed * 2,
+    METH_SetFuseEdges        = METH_SetSurfaceCurvature * 2,
+    METH_LAST                = METH_SetFuseEdges
   };
   int mySetMethodFlags;
 

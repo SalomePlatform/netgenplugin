@@ -283,7 +283,8 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
   // MESHCONST_ANALYSE step may lead to a failure, so we make an attempt
   // w/o MESHCONST_ANALYSE at the second loop
   int err = 1;
-  for ( int iLoop = 0; iLoop < 2; iLoop++ )
+  int iLoop = netgen::mparam.uselocalh ? 0 : 1; // uselocalh depends on 
+  for ( ; iLoop < 2; iLoop++ )
   {
     bool isMESHCONST_ANALYSE = false;
     InitComputeError();

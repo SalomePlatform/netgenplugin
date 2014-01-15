@@ -93,6 +93,12 @@ public:
   void SetQuadAllowed(bool theVal);
   bool GetQuadAllowed() const { return _quadAllowed; }
 
+  void SetSurfaceCurvature(bool theVal);
+  bool GetSurfaceCurvature() const { return _surfaceCurvature; }
+
+  void SetFuseEdges(bool theVal);
+  bool GetFuseEdges() const { return _fuseEdges; }
+
   // the default values (taken from NETGEN 4.5 sources)
 
   static double GetDefaultMaxSize();
@@ -103,6 +109,8 @@ public:
   static bool GetDefaultSecondOrder();
   static bool GetDefaultOptimize();
   static bool GetDefaultQuadAllowed();
+  static bool GetDefaultSurfaceCurvature();
+  static bool GetDefaultFuseEdges();
 
   // Persistence
   virtual ostream & SaveTo(ostream & save);
@@ -134,6 +142,8 @@ private:
   bool          _optimize;
   TLocalSize    _localSize;
   bool          _quadAllowed;
+  bool          _surfaceCurvature;
+  bool          _fuseEdges;
 };
 
 #endif

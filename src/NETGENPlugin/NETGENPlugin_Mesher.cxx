@@ -83,6 +83,7 @@ namespace netgen {
   //extern void OCCSetLocalMeshSize(OCCGeometry & geom, Mesh & mesh);
   extern MeshingParameters mparam;
   extern volatile multithreadt multithread;
+  extern bool merge_solids;
 }
 
 #include <vector>
@@ -184,22 +185,24 @@ void NETGENPlugin_Mesher::SetDefaultParameters()
 {
   netgen::MeshingParameters& mparams = netgen::mparam;
   // maximal mesh edge size
-  mparams.maxh = 0;//NETGENPlugin_Hypothesis::GetDefaultMaxSize();
-  mparams.minh = 0;
+  mparams.maxh            = 0;//NETGENPlugin_Hypothesis::GetDefaultMaxSize();
+  mparams.minh            = 0;
   // minimal number of segments per edge
   mparams.segmentsperedge = NETGENPlugin_Hypothesis::GetDefaultNbSegPerEdge();
   // rate of growth of size between elements
-  mparams.grading = NETGENPlugin_Hypothesis::GetDefaultGrowthRate();
+  mparams.grading         = NETGENPlugin_Hypothesis::GetDefaultGrowthRate();
   // safety factor for curvatures (elements per radius)
   mparams.curvaturesafety = NETGENPlugin_Hypothesis::GetDefaultNbSegPerRadius();
   // create elements of second order
-  mparams.secondorder = NETGENPlugin_Hypothesis::GetDefaultSecondOrder() ? 1 : 0;
+  mparams.secondorder     = NETGENPlugin_Hypothesis::GetDefaultSecondOrder();
   // quad-dominated surface meshing
   if (_isVolume)
-    mparams.quad = 0;
+    mparams.quad          = 0;
   else
-    mparams.quad = NETGENPlugin_Hypothesis_2D::GetDefaultQuadAllowed() ? 1 : 0;
-  _fineness = NETGENPlugin_Hypothesis::GetDefaultFineness();
+    mparams.quad          = NETGENPlugin_Hypothesis_2D::GetDefaultQuadAllowed();
+  _fineness               = NETGENPlugin_Hypothesis::GetDefaultFineness();
+  mparams.uselocalh       = NETGENPlugin_Hypothesis::GetDefaultSurfaceCurvature();
+  netgen::merge_solids    = NETGENPlugin_Hypothesis::GetDefaultFuseEdges();
 }
 
 //=============================================================================
@@ -242,23 +245,25 @@ void NETGENPlugin_Mesher::SetParameters(const NETGENPlugin_Hypothesis* hyp)
     netgen::MeshingParameters& mparams = netgen::mparam;
     // Initialize global NETGEN parameters:
     // maximal mesh segment size
-    mparams.maxh = hyp->GetMaxSize();
+    mparams.maxh            = hyp->GetMaxSize();
     // maximal mesh element linear size
-    mparams.minh = hyp->GetMinSize();
+    mparams.minh            = hyp->GetMinSize();
     // minimal number of segments per edge
     mparams.segmentsperedge = hyp->GetNbSegPerEdge();
     // rate of growth of size between elements
-    mparams.grading = hyp->GetGrowthRate();
+    mparams.grading         = hyp->GetGrowthRate();
     // safety factor for curvatures (elements per radius)
     mparams.curvaturesafety = hyp->GetNbSegPerRadius();
     // create elements of second order
-    mparams.secondorder = hyp->GetSecondOrder() ? 1 : 0;
+    mparams.secondorder     = hyp->GetSecondOrder() ? 1 : 0;
     // quad-dominated surface meshing
     // only triangles are allowed for volumic mesh (before realizing IMP 0021676)
     //if (!_isVolume)
-      mparams.quad = hyp->GetQuadAllowed() ? 1 : 0;
-    _optimize = hyp->GetOptimize();
-    _fineness = hyp->GetFineness();
+      mparams.quad          = hyp->GetQuadAllowed() ? 1 : 0;
+    _optimize               = hyp->GetOptimize();
+    _fineness               = hyp->GetFineness();
+    mparams.uselocalh       = hyp->GetSurfaceCurvature();
+    netgen::merge_solids    = hyp->GetFuseEdges();
     _simpleHyp = NULL;
 
     SMESH_Gen_i* smeshGen_i = SMESH_Gen_i::GetSMESHGen();
@@ -2116,8 +2121,9 @@ bool NETGENPlugin_Mesher::Compute()
           " growth rate = " << mparams.grading << "\n"
           " elements per radius = " << mparams.curvaturesafety << "\n"
           " second order = " << mparams.secondorder << "\n"
-          " quad allowed = " << mparams.quad);
-  //cout << " quad allowed = " << mparams.quad<<endl;
+          " quad allowed = " << mparams.quad << "\n"
+          " surface curvature = " << mparams.uselocalh << "\n"
+          " fuse edges = " << netgen::merge_solids);
 
   SMESH_ComputeErrorPtr error = SMESH_ComputeError::New();
 
@@ -3610,8 +3616,9 @@ NETGENPlugin_NetgenLibWrapper::NETGENPlugin_NetgenLibWrapper()
   _coutBuffer     = std::cout.rdbuf();
 #ifdef _DEBUG_
   cout << "NOTE: netgen output is redirected to file " << _outputFileName << endl;
-#endif
+#else
   std::cout.rdbuf( netgen::mycout->rdbuf() );
+#endif
 
   _ngMesh = Ng_NewMesh();
 }

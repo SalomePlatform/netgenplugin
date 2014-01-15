@@ -383,6 +383,46 @@ CORBA::Boolean NETGENPlugin_Hypothesis_i::GetQuadAllowed()
 }
 
 //=============================================================================
+
+void NETGENPlugin_Hypothesis_i::SetUseSurfaceCurvature (CORBA::Boolean theValue)
+{
+  if ( NETGENPlugin_Hypothesis_i::isToSetParameter( GetUseSurfaceCurvature(),
+                                                    theValue,
+                                                    METH_SetSurfaceCurvature ))
+  {
+    this->GetImpl()->SetSurfaceCurvature(theValue);
+    SMESH::TPythonDump() << _this() << ".SetSurfaceCurvature( " << theValue << " )";
+  }
+}
+
+//=============================================================================
+
+CORBA::Boolean NETGENPlugin_Hypothesis_i::GetUseSurfaceCurvature()
+{
+  return this->GetImpl()->GetSurfaceCurvature();
+}
+
+//=============================================================================
+
+void NETGENPlugin_Hypothesis_i::SetFuseEdges (CORBA::Boolean theValue)
+{
+  if ( NETGENPlugin_Hypothesis_i::isToSetParameter( GetFuseEdges(),
+                                                    theValue,
+                                                    METH_SetFuseEdges ))
+  {
+    this->GetImpl()->SetFuseEdges(theValue);
+    SMESH::TPythonDump() << _this() << ".SetFuseEdges( " << theValue << " )";
+  }
+}
+
+//=============================================================================
+
+CORBA::Boolean NETGENPlugin_Hypothesis_i::GetFuseEdges()
+{
+  return this->GetImpl()->GetFuseEdges();
+}
+
+//=============================================================================
 /*!
  *  NETGENPlugin_Hypothesis_i::GetImpl
  *

@@ -67,6 +67,7 @@
                opt-hypos="ViscousLayers"
 	       need-geom="false"
                input="TRIA,QUAD"
+               output="TETRA,PYRAMID"
                dim="3">
       <python-wrap>
         <algo>NETGEN_3D=Tetrahedron()</algo>
@@ -114,6 +115,7 @@
                label-id="Netgen 1D-2D-3D"
                icon-id="mesh_algo_netgen_2d3d.png"
                hypos="NETGEN_Parameters, NETGEN_SimpleParameters_3D"
+               output="TETRA,PYRAMID"
                dim="3"
                support-submeshes="true">
       <python-wrap>

@@ -46,7 +46,7 @@ typedef struct
 {
   double              myMaxSize, myMinSize, myGrowthRate, myNbSegPerEdge, myNbSegPerRadius;
   int                 myFineness;
-  bool                mySecondOrder, myAllowQuadrangles, myOptimize;
+  bool                mySecondOrder, myAllowQuadrangles, myOptimize, mySurfaceCurvature, myFuseEdges;
   QString             myName;
   QString             myMaxSizeVar, myMinSizeVar, myGrowthRateVar, myNbSegPerEdgeVar, myNbSegPerRadiusVar;
 } NetgenHypothesisData;
@@ -76,6 +76,7 @@ protected:
 
 protected slots:
   virtual void     onFinenessChanged();
+  virtual void     onSurfaceCurvatureChanged();
   virtual void     onAddLocalSizeOnVertex();
   virtual void     onAddLocalSizeOnEdge();
   virtual void     onAddLocalSizeOnFace();
@@ -100,6 +101,8 @@ private:
  SMESHGUI_SpinBox* myNbSegPerEdge;
  SMESHGUI_SpinBox* myNbSegPerRadius;
  QCheckBox*        myAllowQuadrangles;
+ QCheckBox*        mySurfaceCurvature;
+ QCheckBox*        myFuseEdges;
 
  bool myIs2D;
  bool myIsONLY;

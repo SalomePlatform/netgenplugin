@@ -97,6 +97,12 @@ module NETGENPlugin
 
     void SetQuadAllowed(in boolean value);
     boolean GetQuadAllowed();
+    
+    void SetUseSurfaceCurvature(in boolean value);
+    boolean GetUseSurfaceCurvature();
+    
+    void SetFuseEdges(in boolean value);
+    boolean GetFuseEdges();
 
     void SetLocalSizeOnShape(in GEOM::GEOM_Object GeomObj, in double localSize);
     void SetLocalSizeOnEntry(in string entry, in double localSize);

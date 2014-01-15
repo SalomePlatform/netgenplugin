@@ -56,6 +56,10 @@
       <translation>細かさ</translation>
     </message>
     <message>
+        <source>NETGEN_FUSE_EDGES</source>
+        <translation type="unfinished">Fuse Coincident Nodes on Edges and Vertices</translation>
+    </message>
+    <message>
       <source>NETGEN_GROWTH_RATE</source>
       <translation>増加率</translation>
     </message>
@@ -86,6 +90,10 @@
     <message>
       <source>NETGEN_SEG_PER_RADIUS</source>
       <translation>半径毎の分割数</translation>
+    </message>
+    <message>
+        <source>NETGEN_SURFACE_CURVATURE</source>
+        <translation type="unfinished">Limit Size by Surface Curvature</translation>
     </message>
     <message>
       <source>NETGEN_VERYCOARSE</source>

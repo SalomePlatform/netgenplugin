@@ -43,16 +43,18 @@ using namespace std;
 NETGENPlugin_Hypothesis::NETGENPlugin_Hypothesis (int hypId, int studyId,
                                                   SMESH_Gen * gen)
   : SMESH_Hypothesis(hypId, studyId, gen),
-    _maxSize       (GetDefaultMaxSize()),
-    _minSize       (0),
-    _growthRate    (GetDefaultGrowthRate()),
-    _nbSegPerEdge  (GetDefaultNbSegPerEdge()),
-    _nbSegPerRadius(GetDefaultNbSegPerRadius()),
-    _fineness      (GetDefaultFineness()),
-    _secondOrder   (GetDefaultSecondOrder()),
-    _optimize      (GetDefaultOptimize()),
-    _localSize     (GetDefaultLocalSize()),
-    _quadAllowed   (GetDefaultQuadAllowed())
+    _maxSize         (GetDefaultMaxSize()),
+    _minSize         (0),
+    _growthRate      (GetDefaultGrowthRate()),
+    _nbSegPerEdge    (GetDefaultNbSegPerEdge()),
+    _nbSegPerRadius  (GetDefaultNbSegPerRadius()),
+    _fineness        (GetDefaultFineness()),
+    _secondOrder     (GetDefaultSecondOrder()),
+    _optimize        (GetDefaultOptimize()),
+    _localSize       (GetDefaultLocalSize()),
+    _quadAllowed     (GetDefaultQuadAllowed()),
+    _surfaceCurvature(GetDefaultSurfaceCurvature()),
+    _fuseEdges       (GetDefaultFuseEdges())
 {
   _name = "NETGEN_Parameters";
   _param_algo_dim = 3;
@@ -274,6 +276,54 @@ bool NETGENPlugin_Hypothesis::GetDefaultQuadAllowed()
  *  
  */
 //=============================================================================
+void NETGENPlugin_Hypothesis::SetSurfaceCurvature(bool theVal)
+{
+  if (theVal != _surfaceCurvature)
+  {
+    _surfaceCurvature = theVal;
+    NotifySubMeshesHypothesisModification();
+  }
+}
+
+//=============================================================================
+/*!
+ *
+ */
+//=============================================================================
+bool NETGENPlugin_Hypothesis::GetDefaultSurfaceCurvature()
+{
+  return true;
+}
+
+//=============================================================================
+/*!
+ *
+ */
+//=============================================================================
+void NETGENPlugin_Hypothesis::SetFuseEdges(bool theVal)
+{
+  if (theVal != _fuseEdges)
+  {
+    _fuseEdges = theVal;
+    NotifySubMeshesHypothesisModification();
+  }
+}
+
+//=============================================================================
+/*!
+ *
+ */
+//=============================================================================
+bool NETGENPlugin_Hypothesis::GetDefaultFuseEdges()
+{
+  return false;
+}
+
+//=============================================================================
+/*!
+ *
+ */
+//=============================================================================
 ostream & NETGENPlugin_Hypothesis::SaveTo(ostream & save)
 {
   save << _maxSize << " " << _fineness;
@@ -294,6 +344,8 @@ ostream & NETGENPlugin_Hypothesis::SaveTo(ostream & save)
   }
   save << " " << _minSize;
   save << " " << _quadAllowed;
+  save << " " << _surfaceCurvature;
+  save << " " << _fuseEdges;
 
   return save;
 }
@@ -384,6 +436,14 @@ istream & NETGENPlugin_Hypothesis::LoadFrom(istream & load)
   isOK = ( load >> _quadAllowed );
   if ( !isOK )
     _quadAllowed = GetDefaultQuadAllowed();
+
+  isOK = ( load >> _surfaceCurvature );
+  if ( !isOK )
+    _surfaceCurvature = GetDefaultSurfaceCurvature();
+
+  isOK = ( load >> _fuseEdges );
+  if ( !isOK )
+    _fuseEdges = GetDefaultFuseEdges();
 
   return load;
 }

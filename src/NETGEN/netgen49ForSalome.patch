@@ -1012,3 +1012,38 @@ diff -Naur netgen-4.9.13_orig/nglib/nglib.h netgen-4.9.13_new/nglib/nglib.h
        #define DLL_HEADER   __declspec(dllexport)
     #else
        #define DLL_HEADER   __declspec(dllimport)
+    }
+diff -Naur netgen-4.9.13_orig/libsrc/occ/occgenmesh.cpp /netgen-4.9.13_new/libsrc/occ/occgenmesh.cpp
+--- netgen-4.9.13_orig/libsrc/occ/occgenmesh.cpp	2013-12-04 14:39:45.000000000 +0400
++++ netgen-4.9.13_new/libsrc/occ/occgenmesh.cpp	2013-12-04 15:20:24.000000000 +0400
+@@ -564,17 +564,20 @@
+                   bool exists = 0;
+                   int j;
+                   for (j = first_ep; j <= mesh.GetNP(); j++)
++                  {
++                     if (!merge_solids && mesh.Point(j).GetLayer() != geomedgenr ) continue; // to support SALOME fuse edges
+                      if ((mesh.Point(j)-Point<3>(mp[i-1])).Length() < eps)
+                      {
+                         exists = 1;
+                         break;
+                      }
++                  }
+ 
+                      if (exists)
+                         pnums[i] = j;
+                      else
+                      {
+-                        mesh.AddPoint (mp[i-1]);
++                        mesh.AddPoint (mp[i-1], geomedgenr); // to support SALOME fuse edges
+                         (*testout) << "add meshpoint " << mp[i-1] << endl;
+                         pnums[i] = mesh.GetNP();
+                      }
+@@ -658,6 +661,8 @@
+       //		(*testout) << "edge " << mesh.LineSegment(i).edgenr << " face " << mesh.LineSegment(i).si
+       //				<< " p1 " << mesh.LineSegment(i)[0] << " p2 " << mesh.LineSegment(i)[1] << endl;
+       //	exit(10);
++      for (int j = 1; j <= mesh.GetNP(); j++) // to support SALOME fuse edges: set level to zero
++        mesh.Point(j) = MeshPoint( (Point<3>&) mesh.Point(j) );
+ 
+       mesh.CalcSurfacesOfNode();
+       multithread.task = savetask;
