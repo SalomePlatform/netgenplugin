@@ -391,7 +391,7 @@ void NETGENPlugin_Hypothesis_i::SetUseSurfaceCurvature (CORBA::Boolean theValue)
                                                     METH_SetSurfaceCurvature ))
   {
     this->GetImpl()->SetSurfaceCurvature(theValue);
-    SMESH::TPythonDump() << _this() << ".SetSurfaceCurvature( " << theValue << " )";
+    SMESH::TPythonDump() << _this() << ".SetUseSurfaceCurvature( " << theValue << " )";
   }
 }
 
