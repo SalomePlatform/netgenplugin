@@ -41,13 +41,10 @@ IF(EXISTS ${KERNEL_ROOT_DIR})
   LIST(APPEND CMAKE_MODULE_PATH "${KERNEL_ROOT_DIR}/salome_adm/cmake_files")
   INCLUDE(SalomeMacros)
   FIND_PACKAGE(SalomeKERNEL REQUIRED)
+  KERNEL_WITH_CORBA() # check whether KERNEL builded with CORBA
 ELSE(EXISTS ${KERNEL_ROOT_DIR})
   MESSAGE(FATAL_ERROR "We absolutely need a Salome KERNEL, please define KERNEL_ROOT_DIR")
 ENDIF(EXISTS ${KERNEL_ROOT_DIR})
-
-IF(SALOME_LIGHT_ONLY)
-  MESSAGE(FATAL_ERROR "NETGENPLUGIN module can't be built in Light mode (without CORBA)")
-ENDIF()
 
 # Platform setup
 # ==============
@@ -94,6 +91,7 @@ IF(SALOME_BUILD_GUI)
   IF(EXISTS ${GUI_ROOT_DIR})
     LIST(APPEND CMAKE_MODULE_PATH "${GUI_ROOT_DIR}/adm_local/cmake_files")
     FIND_PACKAGE(SalomeGUI)
+    FULL_GUI(TRUE) # check whether GUI builded in full mode and with CORBA
   ELSE(EXISTS ${GUI_ROOT_DIR})
     MESSAGE(FATAL_ERROR "We absolutely need a Salome GUI, please define GUI_ROOT_DIR")
   ENDIF(EXISTS ${GUI_ROOT_DIR})
