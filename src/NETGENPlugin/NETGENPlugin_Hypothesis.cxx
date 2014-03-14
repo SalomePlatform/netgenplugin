@@ -316,7 +316,7 @@ void NETGENPlugin_Hypothesis::SetFuseEdges(bool theVal)
 //=============================================================================
 bool NETGENPlugin_Hypothesis::GetDefaultFuseEdges()
 {
-  return false;
+  return true; // false; -- for SALOME_TESTS/Grids/smesh/3D_mesh_NETGEN_05/F6
 }
 
 //=============================================================================

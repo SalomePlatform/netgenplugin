@@ -2095,6 +2095,39 @@ namespace
     return str;
   }
 
+  //================================================================================
+  /*!
+   * \brief Looks for triangles lying on a SOLID
+   */
+  //================================================================================
+
+  bool hasBadElemOnSolid( const list<const SMDS_MeshElement*>& elems,
+                          SMESH_subMesh*                       solidSM )
+  {
+    TopTools_IndexedMapOfShape solidSubs;
+    TopExp::MapShapes( solidSM->GetSubShape(), solidSubs );
+    SMESHDS_Mesh* mesh = solidSM->GetFather()->GetMeshDS();
+
+    list<const SMDS_MeshElement*>::const_iterator e = elems.begin();
+    for ( ; e != elems.end(); ++e )
+    {
+      const SMDS_MeshElement* elem = *e;
+      if ( elem->GetType() != SMDSAbs_Face )
+        continue;
+      int nbNodesOnSolid = 0;
+      SMDS_NodeIteratorPtr nIt = elem->nodeIterator();
+      while ( nIt->more() )
+      {
+        const SMDS_MeshNode* n = nIt->next();
+        const TopoDS_Shape&  s = mesh->IndexToShape( n->getshapeId() );
+        nbNodesOnSolid += ( !s.IsNull() && solidSubs.Contains( s ));
+        if ( nbNodesOnSolid > 2 )
+          return true;
+      }
+    }
+    return false;
+  }
+
   const double edgeMeshingTime = 0.001;
   const double faceMeshingTime = 0.019;
   const double edgeFaceMeshingTime = edgeMeshingTime + faceMeshingTime;
@@ -2698,7 +2731,14 @@ bool NETGENPlugin_Mesher::Compute()
           {
             smError.reset( new SMESH_ComputeError( *error ));
             if ( nbVol && SMESH_Algo::GetMeshError( sm ) == SMESH_Algo::MEr_OK )
+            {
               smError->myName = COMPERR_WARNING;
+            }
+            else if ( !smError->myBadElements.empty() ) // bad surface mesh
+            {
+              if ( !hasBadElemOnSolid( smError->myBadElements, sm ))
+                smError.reset();
+            }
           }
           pb3D = pb3D || ( smError && smError->IsKO() );
         }
