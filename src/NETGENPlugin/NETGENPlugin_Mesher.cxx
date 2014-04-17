@@ -3648,17 +3648,21 @@ NETGENPlugin_NetgenLibWrapper::NETGENPlugin_NetgenLibWrapper()
 {
   Ng_Init();
 
-  // redirect all netgen output (mycout,myerr,cout) to _outputFileName
-  _isComputeOk    = false;
-  _outputFileName = getOutputFileName();
-  netgen::mycout  = new ofstream ( _outputFileName.c_str() );
-  netgen::myerr   = netgen::mycout;
-  _coutBuffer     = std::cout.rdbuf();
+  _isComputeOk      = false;
+  _coutBuffer       = NULL;
+  if ( !getenv( "KEEP_NETGEN_OUTPUT" ))
+  {
+    // redirect all netgen output (mycout,myerr,cout) to _outputFileName
+    _outputFileName = getOutputFileName();
+    netgen::mycout  = new ofstream ( _outputFileName.c_str() );
+    netgen::myerr   = netgen::mycout;
+    _coutBuffer     = std::cout.rdbuf();
 #ifdef _DEBUG_
-  cout << "NOTE: netgen output is redirected to file " << _outputFileName << endl;
+    cout << "NOTE: netgen output is redirected to file " << _outputFileName << endl;
 #else
-  std::cout.rdbuf( netgen::mycout->rdbuf() );
+    std::cout.rdbuf( netgen::mycout->rdbuf() );
 #endif
+  }
 
   _ngMesh = Ng_NewMesh();
 }
@@ -3674,7 +3678,8 @@ NETGENPlugin_NetgenLibWrapper::~NETGENPlugin_NetgenLibWrapper()
   Ng_DeleteMesh( _ngMesh );
   Ng_Exit();
   NETGENPlugin_Mesher::RemoveTmpFiles();
-  std::cout.rdbuf( _coutBuffer );
+  if ( _coutBuffer )
+    std::cout.rdbuf( _coutBuffer );
 #ifdef _DEBUG_
   if( _isComputeOk )
 #endif
@@ -3726,20 +3731,20 @@ std::string NETGENPlugin_NetgenLibWrapper::getOutputFileName()
 
 void NETGENPlugin_NetgenLibWrapper::removeOutputFile()
 {
-  string tmpDir = SALOMEDS_Tool::GetDirFromPath( _outputFileName );
-  SALOMEDS::ListOfFileNames_var aFiles = new SALOMEDS::ListOfFileNames;
-  aFiles->length(1);
-  std::string aFileName = SALOMEDS_Tool::GetNameFromPath( _outputFileName ) + ".out";
-  aFiles[0] = aFileName.c_str();
-  if ( netgen::mycout)
+  if ( !_outputFileName.empty() )
   {
-    delete netgen::mycout;
-    netgen::mycout = 0;
-    netgen::myerr = 0;
+    if ( netgen::mycout )
+    {
+      delete netgen::mycout;
+      netgen::mycout = 0;
+      netgen::myerr = 0;
+    }
+    string    tmpDir = SALOMEDS_Tool::GetDirFromPath ( _outputFileName );
+    string aFileName = SALOMEDS_Tool::GetNameFromPath( _outputFileName ) + ".out";
+    SALOMEDS::ListOfFileNames_var aFiles = new SALOMEDS::ListOfFileNames;
+    aFiles->length(1);
+    aFiles[0] = aFileName.c_str();
+
+    SALOMEDS_Tool::RemoveTemporaryFiles( tmpDir.c_str(), aFiles.in(), true );
   }
-  
-  SALOMEDS_Tool::RemoveTemporaryFiles( tmpDir.c_str(), aFiles.in(), true );
-#ifdef _DEBUG_
-  //cout << "NOTE: netgen output log was REMOVED       " << _outputFileName << endl;
-#endif
 }
