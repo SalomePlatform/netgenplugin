@@ -128,6 +128,7 @@ bool NETGENPlugin_NETGEN_2D_ONLY::CheckHypothesis (SMESH_Mesh&         aMesh,
   _hypMaxElementArea = 0;
   _hypLengthFromEdges = 0;
   _hypQuadranglePreference = 0;
+  _hypParameters = 0;
   _progressByTic = -1;
 
   const list<const SMESHDS_Hypothesis*>& hyps = GetUsedHypothesis(aMesh, aShape, false);
@@ -324,26 +325,34 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
     if ( problem && !problem->IsOK() )
       return error( problem );
 
-    // limit element size near existing segments
-    TopTools_IndexedMapOfShape edgeMap, faceMap;
-    TopExp::MapShapes( aMesh.GetShapeToMesh(), TopAbs_EDGE, edgeMap );
-    for ( int iE = 1; iE <= edgeMap.Extent(); ++iE )
+    if ( iLoop == 0 )
     {
-      const TopoDS_Shape& edge = edgeMap( iE );
-      if ( SMESH_Algo::isDegenerated( TopoDS::Edge( edge )) ||
-           helper.IsSubShape( edge, aShape ))
-        continue;
-      SMESHDS_SubMesh* smDS = aMesh.GetMeshDS()->MeshElements( edge );
-      if ( !smDS ) continue;
-      SMDS_ElemIteratorPtr segIt = smDS->GetElements();
-      while ( segIt->more() )
+      // limit element size near existing segments
+      TopTools_IndexedMapOfShape edgeMap;
+      PShapeIteratorPtr solidIt = helper.GetAncestors( F, aMesh, TopAbs_SOLID );
+      while ( const TopoDS_Shape* solid = solidIt->next() )
       {
-        const SMDS_MeshElement* seg = segIt->next();
-        SMESH_TNodeXYZ n1 = seg->GetNode(0);
-        SMESH_TNodeXYZ n2 = seg->GetNode(1);
-        gp_XYZ p = 0.5 * ( n1 + n2 );
-        netgen::Point3d pi(p.X(), p.Y(), p.Z());
-        ngMesh->RestrictLocalH( pi, Max(( n1 - n2 ).Modulus(), netgen::mparam.minh ));
+        TopExp_Explorer eExp( *solid, TopAbs_EDGE );
+        for ( ; eExp.More(); eExp.Next() )
+        {
+          const TopoDS_Shape& edge = eExp.Current();
+          if (( SMESH_Algo::isDegenerated( TopoDS::Edge( edge ))) ||
+              ( helper.IsSubShape( edge, aShape )) ||
+              ( !edgeMap.Add( edge )))
+            continue;
+          SMESHDS_SubMesh* smDS = aMesh.GetMeshDS()->MeshElements( edge );
+          if ( !smDS ) continue;
+          SMDS_ElemIteratorPtr segIt = smDS->GetElements();
+          while ( segIt->more() )
+          {
+            const SMDS_MeshElement* seg = segIt->next();
+            SMESH_TNodeXYZ n1 = seg->GetNode(0);
+            SMESH_TNodeXYZ n2 = seg->GetNode(1);
+            gp_XYZ p = 0.5 * ( n1 + n2 );
+            netgen::Point3d pi(p.X(), p.Y(), p.Z());
+            ngMesh->RestrictLocalH( pi, Max(( n1 - n2 ).Modulus(), netgen::mparam.minh ));
+          }
+        }
       }
     }
 
@@ -383,7 +392,7 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
       error(str);
       err = 1;
     }
-    if ( err /*&& isMESHCONST_ANALYSE*/ && iLoop == 0 )
+    if ( err /*&& !isMESHCONST_ANALYSE*/ && iLoop == 0 )
     {
       netgen::mparam.minh = netgen::mparam.maxh;
       netgen::mparam.maxh = 0;
@@ -391,14 +400,14 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
       {
         StdMeshers_FaceSidePtr wire = wires[ iW ];
         const vector<UVPtStruct>& uvPtVec = wire->GetUVPtStruct();
-        for ( size_t iP = 0; iP < uvPtVec.size(); ++iP )
+        for ( size_t iP = 1; iP < uvPtVec.size(); ++iP )
         {
-          netgen::Point3d p( uvPtVec[iP].node->X(),
-                             uvPtVec[iP].node->Y(),
-                             uvPtVec[iP].node->Z());
-          double size = ngMesh->GetH( p );
+          SMESH_TNodeXYZ   p( uvPtVec[ iP ].node );
+          netgen::Point3d np( p.X(),p.Y(),p.Z());
+          double segLen = p.Distance( uvPtVec[ iP-1 ].node );
+          double   size = ngMesh->GetH( np );
           netgen::mparam.minh = Min( netgen::mparam.minh, size );
-          netgen::mparam.maxh = Max( netgen::mparam.maxh, size );
+          netgen::mparam.maxh = Max( netgen::mparam.maxh, segLen );
         }
       }
       //cerr << "min " << netgen::mparam.minh << " max " << netgen::mparam.maxh << endl;
