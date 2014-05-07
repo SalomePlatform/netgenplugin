@@ -330,14 +330,7 @@ void NETGENPluginGUI_HypothesisCreator::retrieveParams() const
     myFuseEdges->setChecked( data.myFuseEdges );
 
   // update widgets
-  bool isCustom = (myFineness->currentIndex() == UserDefined);
-  bool isSurfaceCurvature = (mySurfaceCurvature ? mySurfaceCurvature->checkState() == Qt::Checked : true);
-  myFineness->setEnabled(isSurfaceCurvature);
-  myGrowthRate->setEnabled(isCustom && isSurfaceCurvature);
-  if ( myNbSegPerEdge )
-    myNbSegPerEdge->setEnabled(isCustom && isSurfaceCurvature);
-  if ( myNbSegPerRadius )
-    myNbSegPerRadius->setEnabled(isCustom && isSurfaceCurvature);
+  ((NETGENPluginGUI_HypothesisCreator*) this )-> onSurfaceCurvatureChanged();
 
   if ( myLocalSizeTable )
   {
@@ -566,6 +559,7 @@ void NETGENPluginGUI_HypothesisCreator::onSurfaceCurvatureChanged()
 {
   bool isSurfaceCurvature = (mySurfaceCurvature ? mySurfaceCurvature->isChecked() : true);
   bool isCustom           = (myFineness->currentIndex() == UserDefined);
+  myFineness->setEnabled(isSurfaceCurvature);
   myGrowthRate->setEnabled(isCustom);
   if ( myNbSegPerEdge )
     myNbSegPerEdge->setEnabled(isCustom && isSurfaceCurvature);
