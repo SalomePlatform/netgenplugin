@@ -363,6 +363,7 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
     startWith = MESHCONST_MESHSURFACE;
     endWith   = MESHCONST_OPTSURFACE;
 
+    netgen::mparam.uselocalh = true; // needed while optimization
     try {
       OCC_CATCH_SIGNALS;
 

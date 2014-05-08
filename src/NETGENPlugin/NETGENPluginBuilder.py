@@ -346,10 +346,10 @@ class NETGEN_2D_Only_Algorithm(NETGEN_Algorithm):
         hyp = self.Hypothesis("LengthFromEdges", UseExisting=1, CompareMethod=self.CompareEqualHyp)
         return hyp
         
-    ## Sets @c SurfaceCurvature flag
-    #  @param toAllow new value of the @c SurfaceCurvature parameter (@c True by default)
-    def SetSurfaceCurvature(self, toAllow=True):
-        if self.Parameters(): self.params.SetSurfaceCurvature(toAllow)
+    ## Sets @c UseSurfaceCurvature flag
+    #  @param toUse new value of the @c UseSurfaceCurvature parameter (@c True by default)
+    def SetUseSurfaceCurvature(self, toUse=True):
+        if self.Parameters(): self.params.SetUseSurfaceCurvature(toUse)
         pass
 
     ## Sets @c QuadAllowed flag.
