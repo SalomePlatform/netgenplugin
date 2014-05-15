@@ -57,7 +57,7 @@
     </message>
     <message>
         <source>NETGEN_FUSE_EDGES</source>
-        <translation type="unfinished">Fuse Coincident Nodes on Edges and Vertices</translation>
+        <translation>Fusionner les noeuds coincidents sur les arêtes et les points</translation>
     </message>
     <message>
         <source>NETGEN_GROWTH_RATE</source>
@@ -93,7 +93,7 @@
     </message>
     <message>
         <source>NETGEN_SURFACE_CURVATURE</source>
-        <translation type="unfinished">Limit Size by Surface Curvature</translation>
+        <translation>Adapter la taille à la courbure de la surface</translation>
     </message>
     <message>
         <source>NETGEN_VERYCOARSE</source>
