@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
-<TS>
+<TS version="2.0" language="ja" sourcelanguage="en">
   <context>
     <name>@default</name>
     <message>
@@ -56,8 +56,8 @@
       <translation>細かさ</translation>
     </message>
     <message>
-        <source>NETGEN_FUSE_EDGES</source>
-        <translation type="unfinished">Fuse Coincident Nodes on Edges and Vertices</translation>
+      <source>NETGEN_FUSE_EDGES</source>
+      <translation>NETGEN_FUSE_EDGES</translation>
     </message>
     <message>
       <source>NETGEN_GROWTH_RATE</source>
@@ -92,8 +92,8 @@
       <translation>半径毎の分割数</translation>
     </message>
     <message>
-        <source>NETGEN_SURFACE_CURVATURE</source>
-        <translation type="unfinished">Limit Size by Surface Curvature</translation>
+      <source>NETGEN_SURFACE_CURVATURE</source>
+      <translation>NETGEN_SURFACE_CURVATURE</translation>
     </message>
     <message>
       <source>NETGEN_VERYCOARSE</source>
