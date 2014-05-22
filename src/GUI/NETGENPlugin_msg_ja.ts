@@ -57,7 +57,7 @@
     </message>
     <message>
       <source>NETGEN_FUSE_EDGES</source>
-      <translation>NETGEN_FUSE_EDGES</translation>
+      <translation>エッジ及び頂点上の一致節点を結合</translation>
     </message>
     <message>
       <source>NETGEN_GROWTH_RATE</source>
@@ -93,7 +93,7 @@
     </message>
     <message>
       <source>NETGEN_SURFACE_CURVATURE</source>
-      <translation>NETGEN_SURFACE_CURVATURE</translation>
+      <translation>面の極率による限界サイズ</translation>
     </message>
     <message>
       <source>NETGEN_VERYCOARSE</source>
