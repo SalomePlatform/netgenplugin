@@ -4,11 +4,19 @@
 
 \b NETGENPLUGIN plugin is destined for:
 - Meshing 1D, 2D and 3D geometric entities.
-  - Faces are split into triangular elements.
-  - Volumes are split into tetrahedral (pyramidal) elements.
+  - Faces are split into triangular elements. Quad-dominant mesh is
+  also possible.
+  - Solids are split into tetrahedral elements. Pyramids are
+  constructed as a transition from quadrangles to tetrahedra.
 - Generating 3D meshes from 2D meshes, working without geometrical objects.
 
-To manage parameters of the NETGENPLUGIN use \subpage netgen_2d_3d_hypo_page and \subpage additional_hypo_page.
+To manage parameters of the NETGENPLUGIN use \subpage
+netgen_2d_3d_hypo_page and \subpage additional_hypo_page.
+
+Native Netgen mesher usually prints a lot of trace output to the terminal
+window. This output is redirected to some log file by the Plugin. It
+is possible to switch off this redirection by setting up
+KEEP_NETGEN_OUTPUT environment variable.
 
 Also all NETGENPLUGIN functionalities are accessible via
 \subpage netgenplugin_python_interface_page "NETGENPLUGIN Python interface".
