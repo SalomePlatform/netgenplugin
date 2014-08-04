@@ -1,6 +1,6 @@
 diff -Naur netgen-4.9.13_orig/libsrc/meshing/meshtype.cpp netgen-4.9.13_new/libsrc/meshing/meshtype.cpp
 --- netgen-4.9.13_orig/libsrc/meshing/meshtype.cpp	2009-09-13 14:28:38.000000000 +0400
-+++ netgen-4.9.13_new/libsrc/meshing/meshtype.cpp	2011-12-20 14:50:26.000000000 +0400
++++ netgen-4.9.13_new/libsrc/meshing/meshtype.cpp	2014-07-22 13:01:28.000000000 +0400
 @@ -1,4 +1,5 @@
  #include <mystdlib.h>
 +#include <float.h> // to get DBL_MIN defined
@@ -101,7 +101,7 @@ diff -Naur netgen-4.9.13_orig/libsrc/meshing/meshtype.cpp netgen-4.9.13_new/libs
      blockfill = 1;
 diff -Naur netgen-4.9.13_orig/libsrc/meshing/meshtype.hpp netgen-4.9.13_new/libsrc/meshing/meshtype.hpp
 --- netgen-4.9.13_orig/libsrc/meshing/meshtype.hpp	2009-11-09 13:50:43.000000000 +0300
-+++ netgen-4.9.13_new/libsrc/meshing/meshtype.hpp	2011-12-20 14:50:26.000000000 +0400
++++ netgen-4.9.13_new/libsrc/meshing/meshtype.hpp	2014-07-22 13:01:28.000000000 +0400
 @@ -12,6 +12,7 @@
      Classes for NETGEN
  */
@@ -112,7 +112,7 @@ diff -Naur netgen-4.9.13_orig/libsrc/meshing/meshtype.hpp netgen-4.9.13_new/libs
    SEGMENT = 1, SEGMENT3 = 2,
 diff -Naur netgen-4.9.13_orig/libsrc/meshing/smoothing2.cpp netgen-4.9.13_new/libsrc/meshing/smoothing2.cpp
 --- netgen-4.9.13_orig/libsrc/meshing/smoothing2.cpp	2009-11-09 13:47:09.000000000 +0300
-+++ netgen-4.9.13_new/libsrc/meshing/smoothing2.cpp	2011-12-20 14:50:26.000000000 +0400
++++ netgen-4.9.13_new/libsrc/meshing/smoothing2.cpp	2014-07-22 13:01:28.000000000 +0400
 @@ -302,7 +302,8 @@
      vgrad = 0;
      badness = 0;
@@ -164,7 +164,7 @@ diff -Naur netgen-4.9.13_orig/libsrc/meshing/smoothing2.cpp netgen-4.9.13_new/li
  
 diff -Naur netgen-4.9.13_orig/libsrc/occ/occconstruction.cpp netgen-4.9.13_new/libsrc/occ/occconstruction.cpp
 --- netgen-4.9.13_orig/libsrc/occ/occconstruction.cpp	2009-08-24 06:32:47.000000000 +0400
-+++ netgen-4.9.13_new/libsrc/occ/occconstruction.cpp	2011-12-20 14:50:26.000000000 +0400
++++ netgen-4.9.13_new/libsrc/occ/occconstruction.cpp	2014-07-22 13:01:28.000000000 +0400
 @@ -28,7 +28,7 @@
  #include <BRepAlgoAPI_Common.hxx>
  #include <BRepAlgoAPI_Fuse.hxx>
@@ -175,8 +175,8 @@ diff -Naur netgen-4.9.13_orig/libsrc/occ/occconstruction.cpp netgen-4.9.13_new/l
  #include <BRepOffsetAPI_MakeOffsetShape.hxx>
  #include <ShapeFix_Shape.hxx>
 diff -Naur netgen-4.9.13_orig/libsrc/occ/occgenmesh.cpp netgen-4.9.13_new/libsrc/occ/occgenmesh.cpp
---- netgen-4.9.13_orig/libsrc/occ/occgenmesh.cpp	2011-12-20 14:50:26.000000000 +0400
-+++ netgen-4.9.13_new/libsrc/occ/occgenmesh.cpp	2014-02-05 20:16:34.000000000 +0400
+--- netgen-4.9.13_orig/libsrc/occ/occgenmesh.cpp	2010-03-16 09:30:07.000000000 +0300
++++ netgen-4.9.13_new/libsrc/occ/occgenmesh.cpp	2014-07-22 13:01:28.000000000 +0400
 @@ -15,6 +15,8 @@
  
  #define DIVIDEEDGESECTIONS 1000
@@ -504,7 +504,7 @@ diff -Naur netgen-4.9.13_orig/libsrc/occ/occgenmesh.cpp netgen-4.9.13_new/libsrc
 +
 diff -Naur netgen-4.9.13_orig/libsrc/occ/occgeom.cpp netgen-4.9.13_new/libsrc/occ/occgeom.cpp
 --- netgen-4.9.13_orig/libsrc/occ/occgeom.cpp	2010-03-05 16:16:21.000000000 +0300
-+++ netgen-4.9.13_new/libsrc/occ/occgeom.cpp	2011-12-20 14:50:26.000000000 +0400
++++ netgen-4.9.13_new/libsrc/occ/occgeom.cpp	2014-07-22 13:01:28.000000000 +0400
 @@ -8,6 +8,8 @@
  #include "ShapeAnalysis_CheckSmallFace.hxx"
  #include "ShapeAnalysis_DataMapOfShapeListOfReal.hxx"
@@ -723,7 +723,7 @@ diff -Naur netgen-4.9.13_orig/libsrc/occ/occgeom.cpp netgen-4.9.13_new/libsrc/oc
     }
 diff -Naur netgen-4.9.13_orig/libsrc/occ/occgeom.hpp netgen-4.9.13_new/libsrc/occ/occgeom.hpp
 --- netgen-4.9.13_orig/libsrc/occ/occgeom.hpp	2010-01-14 19:56:19.000000000 +0300
-+++ netgen-4.9.13_new/libsrc/occ/occgeom.hpp	2011-12-20 14:50:26.000000000 +0400
++++ netgen-4.9.13_new/libsrc/occ/occgeom.hpp	2014-07-22 13:09:03.000000000 +0400
 @@ -15,8 +15,8 @@
  #include "Geom_Curve.hxx"
  #include "Geom2d_Curve.hxx"
@@ -746,7 +746,7 @@ diff -Naur netgen-4.9.13_orig/libsrc/occ/occgeom.hpp netgen-4.9.13_new/libsrc/oc
  #include "TopoDS_Wire.hxx"
  #include "BRepTools_WireExplorer.hxx"
  #include "BRepTools.hxx"
-@@ -68,7 +68,7 @@
+@@ -68,18 +68,26 @@
  #include "IGESToBRep_Reader.hxx"
  #include "Interface_Static.hxx"
  #include "GeomAPI_ExtremaCurveCurve.hxx"
@@ -755,7 +755,15 @@ diff -Naur netgen-4.9.13_orig/libsrc/occ/occgeom.hpp netgen-4.9.13_new/libsrc/oc
  #include "Standard_Failure.hxx"
  #include "ShapeUpgrade_ShellSewing.hxx"
  #include "ShapeFix_Shape.hxx"
-@@ -80,6 +80,10 @@
+ #include "ShapeFix_Wireframe.hxx"
++#include <Standard_Version.hxx>
++#if (OCC_VERSION_MAJOR << 16 | OCC_VERSION_MINOR << 8 | OCC_VERSION_MAINTENANCE) <= 0x060702
++// porting to OCCT6.7.3
+ #include "BRepMesh.hxx"
++#endif
+ #include "BRepMesh_IncrementalMesh.hxx"
+ #include "BRepBndLib.hxx"
+ #include "Bnd_Box.hxx"
  #include "ShapeAnalysis.hxx"
  #include "ShapeBuild_ReShape.hxx"
  
@@ -766,7 +774,7 @@ diff -Naur netgen-4.9.13_orig/libsrc/occ/occgeom.hpp netgen-4.9.13_new/libsrc/oc
  
  // Philippose - 29/01/2009
  // OpenCascade XDE Support
-@@ -190,6 +194,9 @@
+@@ -190,6 +198,9 @@
     class OCCGeometry : public NetgenGeometry
     {
        Point<3> center;
@@ -776,7 +784,7 @@ diff -Naur netgen-4.9.13_orig/libsrc/occ/occgeom.hpp netgen-4.9.13_new/libsrc/oc
  
     public:
        TopoDS_Shape shape;
-@@ -241,6 +248,8 @@
+@@ -241,6 +252,8 @@
           vmap.Clear();
        }
  
@@ -785,7 +793,7 @@ diff -Naur netgen-4.9.13_orig/libsrc/occ/occgeom.hpp netgen-4.9.13_new/libsrc/oc
        void BuildFMap();
  
        Box<3> GetBoundingBox()
-@@ -260,9 +269,14 @@
+@@ -260,9 +273,14 @@
        Point<3> Center()
        {  return center;}
  
@@ -803,7 +811,7 @@ diff -Naur netgen-4.9.13_orig/libsrc/occ/occgeom.hpp netgen-4.9.13_new/libsrc/oc
           cout << "OCCGeometry::GetSurface using PLANESPACE" << endl;
 diff -Naur netgen-4.9.13_orig/libsrc/occ/occmeshsurf.cpp netgen-4.9.13_new/libsrc/occ/occmeshsurf.cpp
 --- netgen-4.9.13_orig/libsrc/occ/occmeshsurf.cpp	2009-08-24 06:32:47.000000000 +0400
-+++ netgen-4.9.13_new/libsrc/occ/occmeshsurf.cpp	2011-12-20 14:50:26.000000000 +0400
++++ netgen-4.9.13_new/libsrc/occ/occmeshsurf.cpp	2014-07-22 13:01:28.000000000 +0400
 @@ -6,6 +6,7 @@
  #include <meshing.hpp>
  #include <GeomLProp_SLProps.hxx>
@@ -912,7 +920,7 @@ diff -Naur netgen-4.9.13_orig/libsrc/occ/occmeshsurf.cpp netgen-4.9.13_new/libsr
  
 diff -Naur netgen-4.9.13_orig/libsrc/occ/Partition_Inter3d.cxx netgen-4.9.13_new/libsrc/occ/Partition_Inter3d.cxx
 --- netgen-4.9.13_orig/libsrc/occ/Partition_Inter3d.cxx	2009-08-24 06:12:24.000000000 +0400
-+++ netgen-4.9.13_new/libsrc/occ/Partition_Inter3d.cxx	2011-12-20 14:50:26.000000000 +0400
++++ netgen-4.9.13_new/libsrc/occ/Partition_Inter3d.cxx	2014-07-22 13:01:28.000000000 +0400
 @@ -86,6 +86,9 @@
  #include <TopOpeBRepTool_OutCurveType.hxx>
  #include <TopOpeBRep_DSFiller.hxx>
@@ -938,7 +946,7 @@ diff -Naur netgen-4.9.13_orig/libsrc/occ/Partition_Inter3d.cxx netgen-4.9.13_new
          }
 diff -Naur netgen-4.9.13_orig/libsrc/occ/Partition_Loop2d.cxx netgen-4.9.13_new/libsrc/occ/Partition_Loop2d.cxx
 --- netgen-4.9.13_orig/libsrc/occ/Partition_Loop2d.cxx	2009-08-24 06:12:24.000000000 +0400
-+++ netgen-4.9.13_new/libsrc/occ/Partition_Loop2d.cxx	2011-12-20 14:53:39.000000000 +0400
++++ netgen-4.9.13_new/libsrc/occ/Partition_Loop2d.cxx	2014-07-22 13:01:28.000000000 +0400
 @@ -22,7 +22,6 @@
  #include <BRepAdaptor_Surface.hxx>
  #include <BRepAlgo_AsDes.hxx>
@@ -996,7 +1004,7 @@ diff -Naur netgen-4.9.13_orig/libsrc/occ/Partition_Loop2d.cxx netgen-4.9.13_new/
    BRep_Tool::Range (DegEdge, f, l);
 diff -Naur netgen-4.9.13_orig/libsrc/occ/Partition_Loop.cxx netgen-4.9.13_new/libsrc/occ/Partition_Loop.cxx
 --- netgen-4.9.13_orig/libsrc/occ/Partition_Loop.cxx	2009-08-24 06:12:24.000000000 +0400
-+++ netgen-4.9.13_new/libsrc/occ/Partition_Loop.cxx	2011-12-20 14:53:05.000000000 +0400
++++ netgen-4.9.13_new/libsrc/occ/Partition_Loop.cxx	2014-07-22 13:01:28.000000000 +0400
 @@ -178,7 +178,7 @@
        }
      }
@@ -1008,7 +1016,7 @@ diff -Naur netgen-4.9.13_orig/libsrc/occ/Partition_Loop.cxx netgen-4.9.13_new/li
        const TopoDS_Edge& E = TopoDS::Edge(itl.Value());
 diff -Naur netgen-4.9.13_orig/libsrc/occ/Partition_Spliter.cxx netgen-4.9.13_new/libsrc/occ/Partition_Spliter.cxx
 --- netgen-4.9.13_orig/libsrc/occ/Partition_Spliter.cxx	2009-08-24 06:12:24.000000000 +0400
-+++ netgen-4.9.13_new/libsrc/occ/Partition_Spliter.cxx	2011-12-20 14:50:26.000000000 +0400
++++ netgen-4.9.13_new/libsrc/occ/Partition_Spliter.cxx	2014-07-22 13:01:28.000000000 +0400
 @@ -79,6 +79,8 @@
  #include <GeomAdaptor_Curve.hxx>
  #include <TopOpeBRepTool_CurveTool.hxx>
@@ -1033,7 +1041,7 @@ diff -Naur netgen-4.9.13_orig/libsrc/occ/Partition_Spliter.cxx netgen-4.9.13_new
          }
 diff -Naur netgen-4.9.13_orig/libsrc/occ/utilities.h netgen-4.9.13_new/libsrc/occ/utilities.h
 --- netgen-4.9.13_orig/libsrc/occ/utilities.h	2009-08-24 06:12:24.000000000 +0400
-+++ netgen-4.9.13_new/libsrc/occ/utilities.h	2011-12-20 14:50:26.000000000 +0400
++++ netgen-4.9.13_new/libsrc/occ/utilities.h	2014-07-22 13:01:28.000000000 +0400
 @@ -33,6 +33,7 @@
  
  #include <string>
@@ -1044,7 +1052,7 @@ diff -Naur netgen-4.9.13_orig/libsrc/occ/utilities.h netgen-4.9.13_new/libsrc/oc
  
 diff -Naur netgen-4.9.13_orig/libsrc/stlgeom/stlgeommesh.cpp netgen-4.9.13_new/libsrc/stlgeom/stlgeommesh.cpp
 --- netgen-4.9.13_orig/libsrc/stlgeom/stlgeommesh.cpp	2009-08-10 15:40:51.000000000 +0400
-+++ netgen-4.9.13_new/libsrc/stlgeom/stlgeommesh.cpp	2011-12-20 14:50:26.000000000 +0400
++++ netgen-4.9.13_new/libsrc/stlgeom/stlgeommesh.cpp	2014-07-22 13:01:28.000000000 +0400
 @@ -1435,7 +1435,8 @@
  
  	  if (!optstring || strlen(optstring) == 0)
@@ -1077,7 +1085,7 @@ diff -Naur netgen-4.9.13_orig/libsrc/stlgeom/stlgeommesh.cpp netgen-4.9.13_new/l
  	    {
 diff -Naur netgen-4.9.13_orig/nglib/nglib.h netgen-4.9.13_new/nglib/nglib.h
 --- netgen-4.9.13_orig/nglib/nglib.h	2010-05-18 15:20:25.000000000 +0400
-+++ netgen-4.9.13_new/nglib/nglib.h	2011-12-20 14:50:26.000000000 +0400
++++ netgen-4.9.13_new/nglib/nglib.h	2014-07-22 13:01:28.000000000 +0400
 @@ -24,7 +24,7 @@
  // Philippose - 14.02.2009
  // Modifications for creating a DLL in Windows
