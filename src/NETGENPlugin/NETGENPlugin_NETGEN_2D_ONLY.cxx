@@ -141,6 +141,7 @@ bool NETGENPlugin_NETGEN_2D_ONLY::CheckHypothesis (SMESH_Mesh&         aMesh,
 
   aStatus = HYP_MISSING;
 
+  bool hasVL = false;
   list<const SMESHDS_Hypothesis*>::const_iterator ith;
   for (ith = hyps.begin(); ith != hyps.end(); ++ith )
   {
@@ -157,7 +158,7 @@ bool NETGENPlugin_NETGEN_2D_ONLY::CheckHypothesis (SMESH_Mesh&         aMesh,
     else if ( hypName == "NETGEN_Parameters_2D" )
       _hypParameters = static_cast<const NETGENPlugin_Hypothesis_2D*>(hyp);
     else if ( hypName == StdMeshers_ViscousLayers2D::GetHypType() )
-      continue;
+      hasVL = true;
     else {
       aStatus = HYP_INCOMPATIBLE;
       return false;
@@ -167,6 +168,8 @@ bool NETGENPlugin_NETGEN_2D_ONLY::CheckHypothesis (SMESH_Mesh&         aMesh,
   int nbHyps = bool(_hypMaxElementArea) + bool(_hypLengthFromEdges) + bool(_hypParameters );
   if ( nbHyps > 1 )
     aStatus = HYP_CONCURENT;
+  else if ( hasVL )
+    error( StdMeshers_ViscousLayers2D::CheckHypothesis( aMesh, aShape, aStatus ));
   else
     aStatus = HYP_OK;
 

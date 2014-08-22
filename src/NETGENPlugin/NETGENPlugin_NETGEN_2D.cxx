@@ -112,6 +112,9 @@ bool NETGENPlugin_NETGEN_2D::CheckHypothesis (SMESH_Mesh&         aMesh,
       _hypothesis = theHyp;
   }
 
+  if ( aStatus == HYP_OK && _isViscousLayers2D )
+    error( StdMeshers_ViscousLayers2D::CheckHypothesis( aMesh, aShape, aStatus ));
+
   return aStatus == SMESH_Hypothesis::HYP_OK;
 }
 

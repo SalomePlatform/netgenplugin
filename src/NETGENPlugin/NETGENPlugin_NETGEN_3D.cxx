@@ -162,7 +162,7 @@ bool NETGENPlugin_NETGEN_3D::CheckHypothesis (SMESH_Mesh&         aMesh,
   {
     if ( !_hypMaxElementVolume )
       _hypMaxElementVolume = dynamic_cast< const StdMeshers_MaxElementVolume*> ( *h );
-    if ( !_viscousLayersHyp )
+    // if ( !_viscousLayersHyp ) several _viscousLayersHyp's allowed
       _viscousLayersHyp = dynamic_cast< const StdMeshers_ViscousLayers*> ( *h );
     if ( ! _hypParameters )
       _hypParameters = dynamic_cast< const NETGENPlugin_Hypothesis*> ( *h );
@@ -174,6 +174,8 @@ bool NETGENPlugin_NETGEN_3D::CheckHypothesis (SMESH_Mesh&         aMesh,
   }
   if ( _hypMaxElementVolume && _hypParameters )
     aStatus = HYP_INCOMPATIBLE;
+  else if ( aStatus == HYP_OK && _viscousLayersHyp )
+    error( _viscousLayersHyp->CheckHypothesis( aMesh, aShape, aStatus ));
 
   if ( _hypMaxElementVolume )
     _maxElementVolume = _hypMaxElementVolume->GetMaxVolume();
