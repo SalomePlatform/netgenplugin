@@ -44,9 +44,10 @@ namespace nglib {
 #include <vector>
 #include <set>
 
-class SMESH_Mesh;
-class SMESH_Comment;
 class SMESHDS_Mesh;
+class SMESH_Comment;
+class SMESH_Mesh;
+class SMESH_MesherHelper;
 class TopoDS_Shape;
 class TopTools_IndexedMapOfShape;
 class NETGENPlugin_Hypothesis;
@@ -139,12 +140,14 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_Mesher
                        const NETGENPlugin_ngMeshInfo&      initState,
                        SMESH_Mesh&                         sMesh,
                        std::vector<const SMDS_MeshNode*>&  nodeVec,
-                       SMESH_Comment&                      comment);
+                       SMESH_Comment&                      comment,
+                       SMESH_MesherHelper*                 quadHelper=0);
 
   bool FillNgMesh(netgen::OCCGeometry&                occgeom,
                   netgen::Mesh&                       ngMesh,
                   std::vector<const SMDS_MeshNode*>&  nodeVec,
                   const std::list< SMESH_subMesh* > & meshedSM,
+                  SMESH_MesherHelper*                 quadHelper=0,
                   SMESH_ProxyMesh::Ptr                proxyMesh=SMESH_ProxyMesh::Ptr());
 
   static void FixIntFaces(const netgen::OCCGeometry& occgeom,

@@ -489,6 +489,60 @@ namespace
   //     }
   //   }
   }
+  //================================================================================
+  /*!
+   * \brief Returns a medium node either existing in SMESH of created by NETGEN
+   *  \param [in] corner1 - corner node 1
+   *  \param [in] corner2 - corner node 2
+   *  \param [in] defaultMedium - the node created by NETGEN
+   *  \param [in] helper - holder of medium nodes existing in SMESH
+   *  \return const SMDS_MeshNode* - the result node
+   */
+  //================================================================================
+
+  const SMDS_MeshNode* mediumNode( const SMDS_MeshNode*      corner1,
+                                   const SMDS_MeshNode*      corner2,
+                                   const SMDS_MeshNode*      defaultMedium,
+                                   const SMESH_MesherHelper* helper)
+  {
+    if ( helper )
+    {
+      TLinkNodeMap::const_iterator l2n =
+        helper->GetTLinkNodeMap().find( SMESH_TLink( corner1, corner2 ));
+      if ( l2n != helper->GetTLinkNodeMap().end() )
+        defaultMedium = l2n->second;
+    }
+    return defaultMedium;
+  }
+
+  //================================================================================
+  /*!
+   * \brief Assure that mesh on given shapes is quadratic
+   */
+  //================================================================================
+
+  void makeQuadratic( const TopTools_IndexedMapOfShape& shapes,
+                      SMESH_Mesh*                       mesh )
+  {
+    for ( int i = 1; i <= shapes.Extent(); ++i )
+    {
+      SMESHDS_SubMesh* smDS = mesh->GetMeshDS()->MeshElements( shapes(i) );
+      if ( !smDS ) continue;
+      SMDS_ElemIteratorPtr elemIt = smDS->GetElements();
+      if ( !elemIt->more() ) continue;
+      const SMDS_MeshElement* e = elemIt->next();
+      if ( !e || e->IsQuadratic() )
+        continue;
+
+      TIDSortedElemSet elems;
+      elems.insert( e );
+      while ( elemIt->more() )
+        elems.insert( elems.end(), elemIt->next() );
+
+      SMESH_MeshEditor( mesh ).ConvertToQuadratic( /*3d=*/false, elems, /*biQuad=*/false );
+    }
+  }
+
 }
 
 //================================================================================
@@ -657,6 +711,7 @@ bool NETGENPlugin_Mesher::FillNgMesh(netgen::OCCGeometry&           occgeom,
                                      netgen::Mesh&                  ngMesh,
                                      vector<const SMDS_MeshNode*>&  nodeVec,
                                      const list< SMESH_subMesh* > & meshedSM,
+                                     SMESH_MesherHelper*            quadHelper,
                                      SMESH_ProxyMesh::Ptr           proxyMesh)
 {
   TNode2IdMap nodeNgIdMap;
@@ -830,6 +885,17 @@ bool NETGENPlugin_Mesher::FillNgMesh(netgen::OCCGeometry&           occgeom,
         }
       } // loop on geomEdge ancestors
 
+      if ( quadHelper ) // remember medium nodes of sub-meshes
+      {
+        SMDS_ElemIteratorPtr edges = smDS->GetElements();
+        while ( edges->more() )
+        {
+          const SMDS_MeshElement* e = edges->next();
+          if ( !quadHelper->AddTLinks( static_cast< const SMDS_MeshEdge*>( e )))
+            break;
+        }
+      }
+
       break;
     } // case TopAbs_EDGE
 
@@ -920,7 +986,7 @@ bool NETGENPlugin_Mesher::FillNgMesh(netgen::OCCGeometry&           occgeom,
           if ( helper.IsSeamShape( shapeID ))
             if ( helper.IsSeamShape( f->GetNodeWrap( i+1 )->getshapeId() ))
               inFaceNode = f->GetNodeWrap( i-1 );
-            else 
+            else
               inFaceNode = f->GetNodeWrap( i+1 );
           gp_XY uv = helper.GetNodeUV( geomFace, node, inFaceNode );
 
@@ -940,10 +1006,22 @@ bool NETGENPlugin_Mesher::FillNgMesh(netgen::OCCGeometry&           occgeom,
           swap( tri[1], tri[2] );
           ngMesh.AddSurfaceElement (tri);
 #ifdef DUMP_TRIANGLES
-        cout << tri << endl;
+          cout << tri << endl;
 #endif
         }
       }
+
+      if ( quadHelper ) // remember medium nodes of sub-meshes
+      {
+        SMDS_ElemIteratorPtr faces = smDS->GetElements();
+        while ( faces->more() )
+        {
+          const SMDS_MeshElement* f = faces->next();
+          if ( !quadHelper->AddTLinks( static_cast< const SMDS_MeshFace*>( f )))
+            break;
+        }
+      }
+
       break;
     } // case TopAbs_FACE
 
@@ -1754,6 +1832,8 @@ NETGENPlugin_Mesher::AddSegmentsToMesh(netgen::Mesh&                    ngMesh,
  *  \param initState - bn of entities in netgen mesh before computing
  *  \param sMesh - SMESH mesh to fill in
  *  \param nodeVec - vector of nodes in which node index == netgen ID
+ *  \param comment - returns problem description
+ *  \param quadHelper - holder of medium nodes of sub-meshes
  *  \retval int - error
  */
 //================================================================================
@@ -1763,7 +1843,8 @@ int NETGENPlugin_Mesher::FillSMesh(const netgen::OCCGeometry&          occgeo,
                                    const NETGENPlugin_ngMeshInfo&      initState,
                                    SMESH_Mesh&                         sMesh,
                                    std::vector<const SMDS_MeshNode*>&  nodeVec,
-                                   SMESH_Comment&                      comment)
+                                   SMESH_Comment&                      comment,
+                                   SMESH_MesherHelper*                 quadHelper)
 {
   int nbNod = ngMesh.GetNP();
   int nbSeg = ngMesh.GetNSeg();
@@ -1771,6 +1852,13 @@ int NETGENPlugin_Mesher::FillSMesh(const netgen::OCCGeometry&          occgeo,
   int nbVol = ngMesh.GetNE();
 
   SMESHDS_Mesh* meshDS = sMesh.GetMeshDS();
+
+  // quadHelper is used for either
+  // 1) making quadratic elements when a lower dimention mesh is loaded
+  //    to SMESH before convertion to quadratic by NETGEN
+  // 2) sewing of quadratic elements with quadratic elements of sub-meshes
+  if ( quadHelper && !quadHelper->GetIsQuadratic() && quadHelper->GetTLinkNodeMap().empty() )
+    quadHelper = 0;
 
   // -------------------------------------
   // Create and insert nodes into nodeVec
@@ -1854,7 +1942,10 @@ int NETGENPlugin_Mesher::FillSMesh(const netgen::OCCGeometry&          occgeo,
       {
         if ( meshDS->FindEdge( nodeVec_ACCESS(pinds[0]), nodeVec_ACCESS(pinds[1])))
           continue;
-        edge = meshDS->AddEdge(nodeVec_ACCESS(pinds[0]), nodeVec_ACCESS(pinds[1]));
+        if ( quadHelper ) // final mesh must be quadratic
+          edge = quadHelper->AddEdge(nodeVec_ACCESS(pinds[0]), nodeVec_ACCESS(pinds[1]));
+        else
+          edge = meshDS->AddEdge(nodeVec_ACCESS(pinds[0]), nodeVec_ACCESS(pinds[1]));
       }
       else
       {
@@ -1891,6 +1982,7 @@ int NETGENPlugin_Mesher::FillSMesh(const netgen::OCCGeometry&          occgeo,
     // from computation of 3D mesh
     ngMesh.AddFaceDescriptor (netgen::FaceDescriptor(quadFaceID, /*solid1=*/0, /*solid2=*/0, 0));
 
+  vector<const SMDS_MeshNode*> nodes;
   for (i = nbInitFac+1; i <= nbFac; ++i )
   {
     const netgen::Element2d& elem = ngMesh.SurfaceElement(i);
@@ -1898,7 +1990,7 @@ int NETGENPlugin_Mesher::FillSMesh(const netgen::OCCGeometry&          occgeo,
     TopoDS_Face aFace;
     if (aGeomFaceInd > 0 && aGeomFaceInd <= occgeo.fmap.Extent())
       aFace = TopoDS::Face(occgeo.fmap(aGeomFaceInd));
-    vector<SMDS_MeshNode*> nodes;
+    nodes.clear();
     for (int j=1; j <= elem.GetNP(); ++j)
     {
       int pind = elem.PNum(j);
@@ -1906,7 +1998,7 @@ int NETGENPlugin_Mesher::FillSMesh(const netgen::OCCGeometry&          occgeo,
         break;
       if ( SMDS_MeshNode* node = nodeVec_ACCESS(pind))
       {
-        nodes.push_back(node);
+        nodes.push_back( node );
         if (!aFace.IsNull() && node->getshapeId() < 1)
         {
           const netgen::PointGeomInfo& pgi = elem.GeomInfoPi(j);
@@ -1924,17 +2016,30 @@ int NETGENPlugin_Mesher::FillSMesh(const netgen::OCCGeometry&          occgeo,
     switch (elem.GetType())
     {
     case netgen::TRIG:
-      face = meshDS->AddFace(nodes[0],nodes[1],nodes[2]);
+      if ( quadHelper ) // final mesh must be quadratic
+        face = quadHelper->AddFace(nodes[0],nodes[1],nodes[2]);
+      else
+        face = meshDS->AddFace(nodes[0],nodes[1],nodes[2]);
       break;
     case netgen::QUAD:
-      face = meshDS->AddFace(nodes[0],nodes[1],nodes[2],nodes[3]);
+      if ( quadHelper ) // final mesh must be quadratic
+        face = quadHelper->AddFace(nodes[0],nodes[1],nodes[2],nodes[3]);
+      else
+        face = meshDS->AddFace(nodes[0],nodes[1],nodes[2],nodes[3]);
       // exclude qudrangle elements from computation of 3D mesh
       const_cast< netgen::Element2d& >( elem ).SetIndex( quadFaceID );
       break;
     case netgen::TRIG6:
+      nodes[5] = mediumNode( nodes[0],nodes[1],nodes[5], quadHelper );
+      nodes[3] = mediumNode( nodes[1],nodes[2],nodes[3], quadHelper );
+      nodes[4] = mediumNode( nodes[2],nodes[0],nodes[4], quadHelper );
       face = meshDS->AddFace(nodes[0],nodes[1],nodes[2],nodes[5],nodes[3],nodes[4]);
       break;
     case netgen::QUAD8:
+      nodes[4] = mediumNode( nodes[0],nodes[1],nodes[4], quadHelper );
+      nodes[7] = mediumNode( nodes[1],nodes[2],nodes[7], quadHelper );
+      nodes[5] = mediumNode( nodes[2],nodes[3],nodes[5], quadHelper );
+      nodes[6] = mediumNode( nodes[3],nodes[0],nodes[6], quadHelper );
       face = meshDS->AddFace(nodes[0],nodes[1],nodes[2],nodes[3],
                              nodes[4],nodes[7],nodes[5],nodes[6]);
       // exclude qudrangle elements from computation of 3D mesh
@@ -1966,7 +2071,7 @@ int NETGENPlugin_Mesher::FillSMesh(const netgen::OCCGeometry&          occgeo,
     TopoDS_Solid aSolid;
     if (aSolidInd > 0 && aSolidInd <= occgeo.somap.Extent())
       aSolid = TopoDS::Solid(occgeo.somap(aSolidInd));
-    vector<SMDS_MeshNode*> nodes;
+    nodes.clear();
     for (int j=1; j <= elem.GetNP(); ++j)
     {
       int pind = elem.PNum(j);
@@ -1992,6 +2097,12 @@ int NETGENPlugin_Mesher::FillSMesh(const netgen::OCCGeometry&          occgeo,
       vol = meshDS->AddVolume(nodes[0],nodes[1],nodes[2],nodes[3]);
       break;
     case netgen::TET10:
+      nodes[4] = mediumNode( nodes[0],nodes[1],nodes[4], quadHelper );
+      nodes[7] = mediumNode( nodes[1],nodes[2],nodes[7], quadHelper );
+      nodes[5] = mediumNode( nodes[2],nodes[0],nodes[5], quadHelper );
+      nodes[6] = mediumNode( nodes[0],nodes[3],nodes[6], quadHelper );
+      nodes[8] = mediumNode( nodes[1],nodes[3],nodes[8], quadHelper );
+      nodes[9] = mediumNode( nodes[2],nodes[3],nodes[9], quadHelper );
       vol = meshDS->AddVolume(nodes[0],nodes[1],nodes[2],nodes[3],
                               nodes[4],nodes[7],nodes[5],nodes[6],nodes[8],nodes[9]);
       break;
@@ -2159,6 +2270,8 @@ bool NETGENPlugin_Mesher::Compute()
           " fuse edges = " << netgen::merge_solids);
 
   SMESH_ComputeErrorPtr error = SMESH_ComputeError::New();
+  SMESH_MesherHelper quadHelper( *_mesh );
+  quadHelper.SetIsQuadratic( mparams.secondorder );
 
   static string debugFile = "/tmp/ngMesh.py"; /* to call toPython( ngMesh, debugFile )
                                                  while debugging netgen */
@@ -2357,7 +2470,7 @@ bool NETGENPlugin_Mesher::Compute()
     if ( !err )
     {
       err = ! ( FillNgMesh(occgeo, *_ngMesh, nodeVec, meshedSM[ MeshDim_0D ]) &&
-                FillNgMesh(occgeo, *_ngMesh, nodeVec, meshedSM[ MeshDim_1D ]));
+                FillNgMesh(occgeo, *_ngMesh, nodeVec, meshedSM[ MeshDim_1D ], &quadHelper));
     }
     initState = NETGENPlugin_ngMeshInfo(_ngMesh);
 
@@ -2511,7 +2624,7 @@ bool NETGENPlugin_Mesher::Compute()
     if ( !err && _isVolume && ( !meshedSM[ MeshDim_2D ].empty() || mparams.quad ))
     {
       // load SMESH with computed segments and faces
-      FillSMesh( occgeo, *_ngMesh, initState, *_mesh, nodeVec, comment );
+      FillSMesh( occgeo, *_ngMesh, initState, *_mesh, nodeVec, comment, &quadHelper );
 
       // compute pyramids on quadrangles
       SMESH_ProxyMesh::Ptr proxyMesh;
@@ -2532,11 +2645,11 @@ bool NETGENPlugin_Mesher::Compute()
                 quadFaceSM.push_back( _mesh->GetSubMesh( face.Current() ));
                 meshedSM[ MeshDim_2D ].remove( quadFaceSM.back() );
               }
-            FillNgMesh(occgeo, *_ngMesh, nodeVec, quadFaceSM, proxyMesh);
+            FillNgMesh(occgeo, *_ngMesh, nodeVec, quadFaceSM, &quadHelper, proxyMesh);
           }
         }
       // fill _ngMesh with faces of sub-meshes
-      err = ! ( FillNgMesh(occgeo, *_ngMesh, nodeVec, meshedSM[ MeshDim_2D ]));
+      err = ! ( FillNgMesh(occgeo, *_ngMesh, nodeVec, meshedSM[ MeshDim_2D ], &quadHelper));
       initState = NETGENPlugin_ngMeshInfo(_ngMesh);
       //toPython( _ngMesh, "/tmp/ngPython.py");
     }
@@ -2568,7 +2681,7 @@ bool NETGENPlugin_Mesher::Compute()
       {
         // store computed faces in SMESH in order not to create SMESH
         // faces for ng faces added here
-        FillSMesh( occgeo, *_ngMesh, initState, *_mesh, nodeVec, comment );
+        FillSMesh( occgeo, *_ngMesh, initState, *_mesh, nodeVec, comment, &quadHelper );
         // add ng faces to solids with internal vertices
         AddIntVerticesInSolids( occgeo, *_ngMesh, nodeVec, internals );
         // duplicate mesh faces on internal faces
@@ -2640,8 +2753,26 @@ bool NETGENPlugin_Mesher::Compute()
       try
       {
         OCC_CATCH_SIGNALS;
+        if ( !meshedSM[ MeshDim_1D ].empty() )
+        {
+          // remove segments not attached to geometry (IPAL0052479)
+          for (int i = 1; i <= _ngMesh->GetNSeg(); ++i)
+          {
+            const netgen::Segment & seg = _ngMesh->LineSegment (i);
+            if ( seg.epgeominfo[ 0 ].edgenr == 0 )
+              _ngMesh->DeleteSegment( i );
+          }
+          _ngMesh->Compress();
+        }
+        // convert to quadratic
         netgen::OCCRefinementSurfaces ref (occgeo);
         ref.MakeSecondOrder (*_ngMesh);
+
+        // care of elements already loaded to SMESH
+        // if ( initState._nbSegments > 0 )
+        //   makeQuadratic( occgeo.emap, _mesh );
+        // if ( initState._nbFaces > 0 )
+        //   makeQuadratic( occgeo.fmap, _mesh );
       }
       catch (Standard_Failure& ex)
       {
@@ -2672,8 +2803,14 @@ bool NETGENPlugin_Mesher::Compute()
 
   // Feed back the SMESHDS with the generated Nodes and Elements
   if ( true /*isOK*/ ) // get whatever built
-    FillSMesh( occgeo, *_ngMesh, initState, *_mesh, nodeVec, comment ); //!< 
+  {
+    FillSMesh( occgeo, *_ngMesh, initState, *_mesh, nodeVec, comment, &quadHelper );
 
+    if ( quadHelper.GetIsQuadratic() ) // remove free nodes
+      for ( size_t i = 0; i < nodeVec.size(); ++i )
+        if ( nodeVec[i] && nodeVec[i]->NbInverseElements() == 0 )
+          _mesh->GetMeshDS()->RemoveFreeNode( nodeVec[i], 0, /*fromGroups=*/false );
+  }
   SMESH_ComputeErrorPtr readErr = ReadErrors(nodeVec);
   if ( readErr && !readErr->myBadElements.empty() )
     error = readErr;
