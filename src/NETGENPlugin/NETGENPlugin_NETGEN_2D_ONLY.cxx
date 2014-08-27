@@ -173,6 +173,14 @@ bool NETGENPlugin_NETGEN_2D_ONLY::CheckHypothesis (SMESH_Mesh&         aMesh,
   else
     aStatus = HYP_OK;
 
+  if ( aStatus == HYP_OK && _hypParameters && _hypQuadranglePreference )
+  {
+    aStatus = HYP_INCOMPAT_HYPS;
+    return error(SMESH_Comment("\"") << _hypQuadranglePreference->GetName()
+                 << "\" and \"" << _hypParameters->GetName()
+                 << "\" are incompatible hypotheses");
+  }
+
   return ( aStatus == HYP_OK );
 }
 
