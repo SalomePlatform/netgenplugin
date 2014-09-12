@@ -559,7 +559,7 @@ void NETGENPluginGUI_HypothesisCreator::onSurfaceCurvatureChanged()
 {
   bool isSurfaceCurvature = (mySurfaceCurvature ? mySurfaceCurvature->isChecked() : true);
   bool isCustom           = (myFineness->currentIndex() == UserDefined);
-  myFineness->setEnabled(isSurfaceCurvature);
+  //myFineness->setEnabled(isSurfaceCurvature);
   myGrowthRate->setEnabled(isCustom);
   if ( myNbSegPerEdge )
     myNbSegPerEdge->setEnabled(isCustom && isSurfaceCurvature);

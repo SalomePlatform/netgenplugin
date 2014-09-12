@@ -103,10 +103,12 @@ using namespace std;
 
 #define NGPOINT_COORDS(p) p(0),p(1),p(2)
 
+#ifdef _DEBUG_
 // dump elements added to ng mesh
 //#define DUMP_SEGMENTS
 //#define DUMP_TRIANGLES
 //#define DUMP_TRIANGLES_SCRIPT "/tmp/trias.py" //!< debug AddIntVerticesInSolids()
+#endif
 
 TopTools_IndexedMapOfShape ShapesWithLocalSize;
 std::map<int,double> VertexId2LocalSize;
@@ -690,9 +692,12 @@ double NETGENPlugin_Mesher::GetDefaultMinSize(const TopoDS_Shape& geom,
  */
 //================================================================================
 
-void NETGENPlugin_Mesher::RestrictLocalSize(netgen::Mesh& ngMesh, const gp_XYZ& p, const double size)
+void NETGENPlugin_Mesher::RestrictLocalSize(netgen::Mesh& ngMesh,
+                                            const gp_XYZ& p,
+                                            const double  size,
+                                            const bool    overrideMinH)
 {
-  if ( netgen::mparam.minh > size )
+  if ( overrideMinH && netgen::mparam.minh > size )
   {
     ngMesh.SetMinimalH( size );
     netgen::mparam.minh = size;
@@ -1594,7 +1599,8 @@ NETGENPlugin_Mesher::AddSegmentsToMesh(netgen::Mesh&                    ngMesh,
                                        netgen::OCCGeometry&             geom,
                                        const TSideVector&               wires,
                                        SMESH_MesherHelper&              helper,
-                                       vector< const SMDS_MeshNode* > & nodeVec)
+                                       vector< const SMDS_MeshNode* > & nodeVec,
+                                       const bool                       overrideMinH)
 {
   // ----------------------------
   // Check wires and count nodes
@@ -1755,7 +1761,7 @@ NETGENPlugin_Mesher::AddSegmentsToMesh(netgen::Mesh&                    ngMesh,
                         int( segLen[ i     ] > sumH / 100.)  +
                         int( segLen[ iNext ] > sumH / 100.));
         if ( nbSeg > 0 )
-          RestrictLocalSize( ngMesh, 0.5*(np1+np2), sumH / nbSeg );
+          RestrictLocalSize( ngMesh, 0.5*(np1+np2), sumH / nbSeg, overrideMinH );
       }
       if ( isInternalWire )
       {

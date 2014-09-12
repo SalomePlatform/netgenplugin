@@ -133,7 +133,10 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_Mesher
   static double GetDefaultMinSize(const TopoDS_Shape& shape,
                                   const double        maxSize);
 
-  static void RestrictLocalSize(netgen::Mesh& ngMesh, const gp_XYZ& p, const double  size);
+  static void RestrictLocalSize(netgen::Mesh& ngMesh,
+                                const gp_XYZ& p,
+                                const double  size,
+                                const bool    overrideMinH=true);
 
   static int FillSMesh(const netgen::OCCGeometry&          occgeom,
                        netgen::Mesh&                       ngMesh,
@@ -169,7 +172,8 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_Mesher
                       netgen::OCCGeometry&                  geom,
                       const TSideVector&                    wires,
                       SMESH_MesherHelper&                   helper,
-                      std::vector< const SMDS_MeshNode* > & nodeVec);
+                      std::vector< const SMDS_MeshNode* > & nodeVec,
+                      const bool                            overrideMinH=true);
 
   void SetDefaultParameters();
 
