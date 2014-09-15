@@ -289,7 +289,7 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
   for ( int iF = 0; fExp.More(); fExp.Next(), ++iF )
   {
     TopoDS_Face F = TopoDS::Face( fExp.Current() /*.Oriented( TopAbs_FORWARD )*/);
-    int    faceID = meshDS->ShapeToIndex( aShape );
+    int    faceID = meshDS->ShapeToIndex( F );
     SMESH_ComputeErrorPtr& faceErr = aMesh.GetSubMesh( F )->GetComputeError();
 
     _quadraticMesh = helper.IsQuadraticSubMesh( F );

@@ -193,8 +193,9 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
                                      const TopoDS_Shape& aShape)
 {
   netgen::multithread.terminate = 0;
+  netgen::multithread.task = "Volume meshing";
   _progressByTic = -1.;
-  
+
   SMESHDS_Mesh* meshDS = aMesh.GetMeshDS();
 
   SMESH_MesherHelper helper(aMesh);
@@ -234,12 +235,14 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
     SMESH_ProxyMesh::Ptr proxyMesh( new SMESH_ProxyMesh( aMesh ));
     if ( _viscousLayersHyp )
     {
+      netgen::multithread.percent = 3;
       proxyMesh = _viscousLayersHyp->Compute( aMesh, aShape );
       if ( !proxyMesh )
         return false;
     }
     if ( aMesh.NbQuadrangles() > 0 )
     {
+      netgen::multithread.percent = 6;
       StdMeshers_QuadToTriaAdaptor* Adaptor = new StdMeshers_QuadToTriaAdaptor;
       Adaptor->Compute(aMesh,aShape,proxyMesh.get());
       proxyMesh.reset( Adaptor );
