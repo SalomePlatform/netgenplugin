@@ -40,6 +40,10 @@
             <translation>mesh_tree_hypo_netgen.png</translation>
         </message>
         <message>
+            <source>ICON_SMESH_TREE_HYPO_NETGEN_Parameters_3D</source>
+            <translation>mesh_tree_hypo_netgen.png</translation>
+        </message>
+        <message>
             <source>ICON_SMESH_TREE_HYPO_NETGEN_Parameters_2D</source>
             <translation>mesh_tree_hypo_netgen_2d.png</translation>
         </message>

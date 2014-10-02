@@ -339,6 +339,43 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
   return ( ngLib._isComputeOk = compute( aMesh, helper, nodeVec, Netgen_mesh));
 }
 
+namespace
+{
+  void limitVolumeSize( netgen::Mesh* ngMesh,
+                        const double  maxh )
+  {
+    // get bnd box
+    netgen::Point3d pmin, pmax;
+    ngMesh->GetBox( pmin, pmax, 0 );
+    const double dx = pmax.X() - pmin.X();
+    const double dy = pmax.Y() - pmin.Y();
+    const double dz = pmax.Z() - pmin.Z();
+
+    // adjusted by SALOME_TESTS/Grids/smesh/bugs_08/I8
+    const int nbX = Max( 2, int( dx / maxh * 2 ));
+    const int nbY = Max( 2, int( dy / maxh * 2 ));
+    const int nbZ = Max( 2, int( dz / maxh * 2 ));
+
+    if ( ! & ngMesh->LocalHFunction() )
+      ngMesh->SetLocalH( pmin, pmax, 0.1 );
+
+    netgen::Point3d p;
+    for ( int i = 0; i <= nbX; ++i )
+    {
+      p.X() = pmin.X() +  i * dx / nbX;
+      for ( int j = 0; j <= nbY; ++j )
+      {
+        p.Y() = pmin.Y() +  j * dy / nbY;
+        for ( int k = 0; k <= nbZ; ++k )
+        {
+          p.Z() = pmin.Z() +  k * dz / nbZ;
+          ngMesh->RestrictLocalH( p, maxh );
+        }
+      }
+    }
+  }
+}
+
 //================================================================================
 /*!
  * \brief set parameters and generate the volume mesh
@@ -374,6 +411,7 @@ bool NETGENPlugin_NETGEN_3D::compute(SMESH_Mesh&                     aMesh,
   else if ( _hypMaxElementVolume )
   {
     netgen::mparam.maxh = pow( 72, 1/6. ) * pow( _maxElementVolume, 1/3. );
+    limitVolumeSize( ngMesh, netgen::mparam.maxh * 0.8 );
   }
   else if ( aMesh.HasShapeToMesh() )
   {

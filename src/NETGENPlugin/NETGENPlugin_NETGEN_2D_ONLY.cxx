@@ -184,6 +184,42 @@ bool NETGENPlugin_NETGEN_2D_ONLY::CheckHypothesis (SMESH_Mesh&         aMesh,
   return ( aStatus == HYP_OK );
 }
 
+namespace
+{
+  void limitSize( netgen::Mesh* ngMesh,
+                  const double  maxh )
+  {
+    // get bnd box
+    netgen::Point3d pmin, pmax;
+    ngMesh->GetBox( pmin, pmax, 0 );
+    const double dx = pmax.X() - pmin.X();
+    const double dy = pmax.Y() - pmin.Y();
+    const double dz = pmax.Z() - pmin.Z();
+
+    const int nbX = Max( 2, int( dx / maxh * 3 ));
+    const int nbY = Max( 2, int( dy / maxh * 3 ));
+    const int nbZ = Max( 2, int( dz / maxh * 3 ));
+
+    if ( ! & ngMesh->LocalHFunction() )
+      ngMesh->SetLocalH( pmin, pmax, 0.1 );
+
+    netgen::Point3d p;
+    for ( int i = 0; i <= nbX; ++i )
+    {
+      p.X() = pmin.X() +  i * dx / nbX;
+      for ( int j = 0; j <= nbY; ++j )
+      {
+        p.Y() = pmin.Y() +  j * dy / nbY;
+        for ( int k = 0; k <= nbZ; ++k )
+        {
+          p.Z() = pmin.Z() +  k * dz / nbZ;
+          ngMesh->RestrictLocalH( p, maxh );
+        }
+      }
+    }
+  }
+}
+
 //=============================================================================
 /*!
  *Here we are going to use the NETGEN mesher
@@ -227,9 +263,11 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
   {
     netgen::mparam.maxh = sqrt( 2. * _hypMaxElementArea->GetMaxArea() / sqrt(3.0) );
   }
+  if ( _hypQuadranglePreference )
+    netgen::mparam.quad = true;
 
   // local size is common for all FACEs in aShape?
-  const bool isCommonLocalSize = ( !_hypLengthFromEdges && netgen::mparam.uselocalh );
+  const bool isCommonLocalSize = ( !_hypLengthFromEdges && !_hypMaxElementArea && netgen::mparam.uselocalh );
   const bool isDefaultHyp = ( !_hypLengthFromEdges && !_hypMaxElementArea && !_hypParameters );
 
   if ( isCommonLocalSize ) // compute common local size in ngMeshes[0]
@@ -241,7 +279,7 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
     // minh, face_maxh, grading and curvaturesafety; find minh if not set by the user
     if ( !_hypParameters || netgen::mparam.minh < DBL_MIN )
     {
-      if ( !_hypMaxElementArea )
+      if ( !_hypParameters )
         netgen::mparam.maxh = occgeoComm.GetBoundingBox().Diam() / 3.;
       netgen::mparam.minh = aMesher.GetDefaultMinSize( aShape, netgen::mparam.maxh );
     }
@@ -416,6 +454,9 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
                                            /*overrideMinH=*/!_hypParameters);
       if ( faceErr && !faceErr->IsOK() )
         break;
+
+      //if ( !isCommonLocalSize )
+      //limitSize( ngMesh, mparam.maxh * 0.8);
 
       // -------------------------
       // Generate surface mesh
