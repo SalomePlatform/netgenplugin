@@ -342,8 +342,43 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
 namespace
 {
   void limitVolumeSize( netgen::Mesh* ngMesh,
-                        const double  maxh )
+                        double        maxh )
   {
+    // get average h of faces
+    double faceh = 0;
+    int nbh = 0;
+    for (int i = 1; i <= ngMesh->GetNSE(); i++)
+    {
+      const netgen::Element2d& face = ngMesh->SurfaceElement(i);
+      for (int j=1; j <= face.GetNP(); ++j)
+      {
+        const netgen::PointIndex & i1 = face.PNumMod(j);
+        const netgen::PointIndex & i2 = face.PNumMod(j+1);
+        if ( i1 < i2 )
+        {
+          const netgen::Point3d & p1 = ngMesh->Point( i1 );
+          const netgen::Point3d & p2 = ngMesh->Point( i2 );
+          faceh += netgen::Dist2( p1, p2 );
+          nbh++;
+        }
+      }
+    }
+    faceh = Sqrt( faceh / nbh );
+
+    double compareh;
+    if      ( faceh < 0.5 * maxh ) compareh = -1;
+    else if ( faceh > 1.5 * maxh ) compareh = 1;
+    else                           compareh = 0;
+    // cerr << "faceh " << faceh << endl;
+    // cerr << "init maxh " << maxh << endl;
+    // cerr << "compareh " << compareh << endl;
+
+    if ( compareh > 0 )
+      maxh *= 1.2;
+    else
+      maxh *= 0.8;
+    // cerr << "maxh " << maxh << endl;
+
     // get bnd box
     netgen::Point3d pmin, pmax;
     ngMesh->GetBox( pmin, pmax, 0 );
@@ -351,13 +386,13 @@ namespace
     const double dy = pmax.Y() - pmin.Y();
     const double dz = pmax.Z() - pmin.Z();
 
+    if ( ! & ngMesh->LocalHFunction() )
+      ngMesh->SetLocalH( pmin, pmax, compareh <= 0 ? 0.1 : 0.5 );
+
     // adjusted by SALOME_TESTS/Grids/smesh/bugs_08/I8
     const int nbX = Max( 2, int( dx / maxh * 2 ));
     const int nbY = Max( 2, int( dy / maxh * 2 ));
     const int nbZ = Max( 2, int( dz / maxh * 2 ));
-
-    if ( ! & ngMesh->LocalHFunction() )
-      ngMesh->SetLocalH( pmin, pmax, 0.1 );
 
     netgen::Point3d p;
     for ( int i = 0; i <= nbX; ++i )
@@ -411,7 +446,7 @@ bool NETGENPlugin_NETGEN_3D::compute(SMESH_Mesh&                     aMesh,
   else if ( _hypMaxElementVolume )
   {
     netgen::mparam.maxh = pow( 72, 1/6. ) * pow( _maxElementVolume, 1/3. );
-    limitVolumeSize( ngMesh, netgen::mparam.maxh * 0.8 );
+    // limitVolumeSize( ngMesh, netgen::mparam.maxh ); // result is unpredictable
   }
   else if ( aMesh.HasShapeToMesh() )
   {
