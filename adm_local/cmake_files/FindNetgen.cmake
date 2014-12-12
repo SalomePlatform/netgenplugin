@@ -79,11 +79,32 @@ ENDIF(WIN32)
 INCLUDE(FindPackageHandleStandardArgs)
 FIND_PACKAGE_HANDLE_STANDARD_ARGS(NETGEN REQUIRED_VARS NETGEN_INCLUDE_DIRS NETGEN_LIBRARIES)
 
+INCLUDE(CheckCXXSourceCompiles)
+
 IF(NETGEN_FOUND)
+
+  SET(CMAKE_REQUIRED_INCLUDES "${CMAKE_REQUIRED_INCLUDES} ${NETGEN_INCLUDE_DIRS}")
+  SET(CMAKE_REQUIRED_LIBRARIES "${NETGEN_LIBRARIES}")
+  CHECK_CXX_SOURCE_COMPILES("
+    #include <meshing.hpp>
+    
+    int main()
+    {
+      netgen::Mesh* ngMesh;
+      ngMesh->CalcLocalH(1.0);
+    }
+" NETGEN_V5
+    )
+
   IF(NOT Netgen_FIND_QUIETLY)
     MESSAGE(STATUS "Netgen library: ${NETGEN_LIBRARIES}")
   ENDIF()
   SET(NETGEN_DEFINITIONS "-DOCCGEOMETRY")
+
+  IF(NETGEN_V5)
+    MESSAGE(STATUS "NETGEN V5 or later found")
+    SET(NETGEN_DEFINITIONS "${NETGEN_DEFINITIONS} -DNETGEN_V5")
+  ENDIF(NETGEN_V5)
 
   #RNV:  currently on windows use netgen without thread support.
   #TODO: check support of the multithreading on windows
