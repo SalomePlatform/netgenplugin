@@ -73,7 +73,7 @@
         <algo>NETGEN_3D=Tetrahedron()</algo>
         <hypo>MaxElementVolume=MaxElementVolume(SetMaxElementVolume())</hypo>
         <hypo>NETGEN_Parameters_3D=Parameters()</hypo>
-        <hypo>ViscousLayers=ViscousLayers(SetTotalThickness(),SetNumberLayers(),SetStretchFactor(),SetIgnoreFaces())</hypo>
+        <hypo>ViscousLayers=ViscousLayers(SetTotalThickness(),SetNumberLayers(),SetStretchFactor(),SetFaces(1),SetFaces(2),SetMethod())</hypo>
       </python-wrap>
     </algorithm>
 

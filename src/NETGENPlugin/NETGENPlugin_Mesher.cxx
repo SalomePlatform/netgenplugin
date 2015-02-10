@@ -1235,7 +1235,7 @@ void NETGENPlugin_Mesher::AddIntVerticesInFaces(const netgen::OCCGeometry&     o
       nodeVec.push_back( nV );
 
       // get node UV
-      bool uvOK = false;
+      bool uvOK = true;
       vData.uv = helper.GetNodeUV( face, nV, 0, &uvOK );
       if ( !uvOK ) helper.CheckNodeUV( face, nV, vData.uv, BRep_Tool::Tolerance(V),/*force=*/1);
 
