@@ -721,6 +721,18 @@ diff -Naur netgen-4.9.13_orig/libsrc/occ/occgeom.cpp netgen-4.9.13_new/libsrc/oc
  
        return true;
     }
+@@ -1038,9 +1095,9 @@
+    {
+       cout << "writing stl..."; cout.flush();
+       StlAPI_Writer writer;
+-      writer.RelativeMode() = Standard_False;
++      // writer.RelativeMode() = Standard_False;
+ 
+-      writer.SetDeflection(0.02);
++      // writer.SetDeflection(0.02);
+       writer.Write(shape,filename);
+ 
+       cout << "done" << endl;
 diff -Naur netgen-4.9.13_orig/libsrc/occ/occgeom.hpp netgen-4.9.13_new/libsrc/occ/occgeom.hpp
 --- netgen-4.9.13_orig/libsrc/occ/occgeom.hpp	2010-01-14 19:56:19.000000000 +0300
 +++ netgen-4.9.13_new/libsrc/occ/occgeom.hpp	2014-07-22 13:09:03.000000000 +0400
