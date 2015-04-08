@@ -162,14 +162,15 @@ bool NETGENPlugin_NETGEN_3D::CheckHypothesis (SMESH_Mesh&         aMesh,
   {
     if ( !_hypMaxElementVolume )
       _hypMaxElementVolume = dynamic_cast< const StdMeshers_MaxElementVolume*> ( *h );
-    // if ( !_viscousLayersHyp ) several _viscousLayersHyp's allowed
+    if ( !_viscousLayersHyp ) // several _viscousLayersHyp's allowed
       _viscousLayersHyp = dynamic_cast< const StdMeshers_ViscousLayers*> ( *h );
     if ( ! _hypParameters )
       _hypParameters = dynamic_cast< const NETGENPlugin_Hypothesis*> ( *h );
 
     if ( *h != _hypMaxElementVolume &&
          *h != _viscousLayersHyp &&
-         *h != _hypParameters)
+         *h != _hypParameters &&
+         !dynamic_cast< const StdMeshers_ViscousLayers*>(*h)) // several VL hyps allowed
       aStatus = HYP_INCOMPATIBLE;
   }
   if ( _hypMaxElementVolume && _hypParameters )
@@ -467,9 +468,8 @@ bool NETGENPlugin_NETGEN_3D::compute(SMESH_Mesh&                     aMesh,
 
   try
   {
-#if (OCC_VERSION_MAJOR << 16 | OCC_VERSION_MINOR << 8 | OCC_VERSION_MAINTENANCE) > 0x060100
     OCC_CATCH_SIGNALS;
-#endif
+
 #ifdef NETGEN_V5
     ngMesh->CalcLocalH(netgen::mparam.grading);
     err = netgen::OCCGenerateMesh(occgeo, ngMesh, netgen::mparam, startWith, endWith);

@@ -1373,7 +1373,7 @@ void NETGENPlugin_Mesher::AddIntVerticesInSolids(const netgen::OCCGeometry&     
   ofstream py(DUMP_TRIANGLES_SCRIPT);
   py << "import SMESH"<< endl
      << "from salome.smesh import smeshBuilder"<<endl
-     << "smesh = smeshBuilder.New(salome.myStudy)"
+     << "smesh = smeshBuilder.New(salome.myStudy)"<<endl
      << "m = smesh.Mesh(name='triangles')" << endl;
 #endif
   if ( nodeVec.size() < ngMesh.GetNP() )
@@ -1572,9 +1572,9 @@ void NETGENPlugin_Mesher::AddIntVerticesInSolids(const netgen::OCCGeometry&     
       ngMesh.AddSurfaceElement (tri);
 
 #ifdef DUMP_TRIANGLES_SCRIPT
-      py << "n1 = m.AddNode( "<< mpV.X()<<", "<< mpV.Y()<<", "<< mpV.Z()<<") "<< endl
-         << "n2 = m.AddNode( "<< mp[0].X()<<", "<< mp[0].Y()<<", "<< mp[0].Z()<<") "<< endl
-         << "n3 = m.AddNode( "<< mp[1].X()<<", "<< mp[1].Y()<<", "<< mp[1].Z()<<" )" << endl
+      py << "n1 = m.AddNode( "<< mpV(0)<<", "<< mpV(1)<<", "<< mpV(2)<<") "<< endl
+         << "n2 = m.AddNode( "<< mp[0](0)<<", "<< mp[0](1)<<", "<< mp[0](2)<<") "<< endl
+         << "n3 = m.AddNode( "<< mp[1](0)<<", "<< mp[1](1)<<", "<< mp[1](2)<<" )" << endl
          << "m.AddFace([n1,n2,n3])" << endl;
 #endif
     } // loop on internal vertices of a solid
@@ -3252,8 +3252,10 @@ NETGENPlugin_Mesher::ReadErrors(const vector<const SMDS_MeshNode* >& nodeVec)
     (COMPERR_BAD_INPUT_MESH, "Some edges multiple times in surface mesh");
   SMESH_File file("test.out");
   vector<int> two(2);
+  vector<int> three1(3), three2(3);
   const char* badEdgeStr = " multiple times in surface mesh";
   const int   badEdgeStrLen = strlen( badEdgeStr );
+
   while( !file.eof() )
   {
     if ( strncmp( file, "Edge ", 5 ) == 0 &&
@@ -3270,7 +3272,6 @@ NETGENPlugin_Mesher::ReadErrors(const vector<const SMDS_MeshNode* >& nodeVec)
 // openelement 18 with open element 126
 // 41  36  38  
 // 69  70  72
-      vector<int> three1(3), three2(3);
       file.getLine();
       const char* pos = file;
       bool ok = ( strncmp( file, "openelement ", 12 ) == 0 );
@@ -3301,6 +3302,12 @@ NETGENPlugin_Mesher::ReadErrors(const vector<const SMDS_MeshNode* >& nodeVec)
       ++file;
     }
   }
+
+#ifdef _DEBUG_
+  size_t nbBadElems = err->myBadElements.size();
+  nbBadElems = 0;
+#endif
+
   return err;
 }
 
