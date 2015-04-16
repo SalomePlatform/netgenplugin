@@ -1041,7 +1041,8 @@ bool NETGENPlugin_Mesher::FillNgMesh(netgen::OCCGeometry&           occgeom,
       while ( const TopoDS_Shape* e = ansIt->next() )
       {
         SMESH_subMesh* eSub = helper.GetMesh()->GetSubMesh( *e );
-        if (( toAdd = eSub->IsEmpty() )) break;
+        if (( toAdd = ( eSub->IsEmpty() && !SMESH_Algo::isDegenerated( TopoDS::Edge( *e )))))
+          break;
       }
       if ( toAdd )
       {
@@ -1885,7 +1886,7 @@ int NETGENPlugin_Mesher::FillSMesh(const netgen::OCCGeometry&          occgeo,
       gp_Pnt p ( NGPOINT_COORDS(ngPoint) );
       for (int iV = i-nbInitNod; aVert.IsNull() && iV <= occgeo.vmap.Extent(); ++iV)
       {
-        aVert = TopoDS::Vertex( occgeo.vmap( iV ) );
+        aVert = TopoDS::Vertex( occgeo.vmap( iV ));
         gp_Pnt pV = BRep_Tool::Pnt( aVert );
         if ( p.SquareDistance( pV ) > 1e-20 )
           aVert.Nullify();
@@ -2229,16 +2230,17 @@ namespace
     for ( ; e != elems.end(); ++e )
     {
       const SMDS_MeshElement* elem = *e;
-      if ( elem->GetType() != SMDSAbs_Face )
-        continue;
-      int nbNodesOnSolid = 0;
+      // if ( elem->GetType() != SMDSAbs_Face ) -- 23047
+      //   continue;
+      int nbNodesOnSolid = 0, nbNodes = elem->NbNodes();
       SMDS_NodeIteratorPtr nIt = elem->nodeIterator();
       while ( nIt->more() )
       {
         const SMDS_MeshNode* n = nIt->next();
         const TopoDS_Shape&  s = mesh->IndexToShape( n->getshapeId() );
         nbNodesOnSolid += ( !s.IsNull() && solidSubs.Contains( s ));
-        if ( nbNodesOnSolid > 2 )
+        if ( nbNodesOnSolid > 2 ||
+             nbNodesOnSolid == nbNodes)
           return true;
       }
     }
@@ -2279,7 +2281,7 @@ bool NETGENPlugin_Mesher::Compute()
   SMESH_MesherHelper quadHelper( *_mesh );
   quadHelper.SetIsQuadratic( mparams.secondorder );
 
-  static string debugFile = "/tmp/ngMesh.py"; /* to call toPython( ngMesh, debugFile )
+  static string debugFile = "/tmp/ngMesh.py"; /* to call toPython( _ngMesh, debugFile )
                                                  while debugging netgen */
   // -------------------------
   // Prepare OCC geometry
@@ -2819,8 +2821,11 @@ bool NETGENPlugin_Mesher::Compute()
   }
   SMESH_ComputeErrorPtr readErr = ReadErrors(nodeVec);
   if ( readErr && !readErr->myBadElements.empty() )
+  {
     error = readErr;
-
+    if ( !comment.empty() && !readErr->myComment.empty() ) comment += "\n";
+    comment += readErr->myComment;
+  }
   if ( error->IsOK() && ( !isOK || comment.size() > 0 ))
     error->myName = COMPERR_ALGO_FAILED;
   if ( !comment.empty() )
