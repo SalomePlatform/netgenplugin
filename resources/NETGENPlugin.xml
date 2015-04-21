@@ -37,19 +37,43 @@
     <hypothesis type="NETGEN_Parameters"
 		label-id="NETGEN 3D Parameters"
 		icon-id="mesh_hypo_netgen.png"
-		dim="3"/>
+		dim="3">
+      <python-wrap>
+        <accumulative-methods>
+          SetLocalSizeOnShape
+        </accumulative-methods>
+      </python-wrap>
+    </hypothesis>
     <hypothesis type="NETGEN_Parameters_2D"
 		label-id="NETGEN 2D Parameters"
 		icon-id="mesh_hypo_netgen_2d.png"
-		dim="2"/>
+		dim="2">
+      <python-wrap>
+        <accumulative-methods>
+          SetLocalSizeOnShape
+        </accumulative-methods>
+      </python-wrap>
+    </hypothesis>
     <hypothesis type="NETGEN_Parameters_3D"
 		label-id="NETGEN 3D Parameters"
 		icon-id="mesh_hypo_netgen.png"
-		dim="3"/>
+		dim="3">
+      <python-wrap>
+        <accumulative-methods>
+          SetLocalSizeOnShape
+        </accumulative-methods>
+      </python-wrap>
+    </hypothesis>
     <hypothesis type="NETGEN_Parameters_2D_ONLY"
 		label-id="NETGEN 2D Parameters"
 		icon-id="mesh_hypo_netgen_2d.png"
-		dim="2"/>
+		dim="2">
+      <python-wrap>
+        <accumulative-methods>
+          SetLocalSizeOnShape
+        </accumulative-methods>
+      </python-wrap>
+    </hypothesis>
     <hypothesis type="NETGEN_SimpleParameters_2D"
 		label-id="NETGEN 2D Simple Parameters"
 		icon-id="mesh_hypo_netgen_2d.png"
