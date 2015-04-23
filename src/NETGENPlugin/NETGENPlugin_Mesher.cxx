@@ -212,8 +212,10 @@ void NETGENPlugin_Mesher::SetDefaultParameters()
  *
  */
 //=============================================================================
+
 void SetLocalSize(TopoDS_Shape GeomShape, double LocalSize)
 {
+  if ( GeomShape.IsNull() ) return;
   TopAbs_ShapeEnum GeomType = GeomShape.ShapeType();
   if (GeomType == TopAbs_COMPOUND) {
     for (TopoDS_Iterator it (GeomShape); it.More(); it.Next()) {

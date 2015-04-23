@@ -104,7 +104,8 @@ module NETGENPlugin
     void SetFuseEdges(in boolean value);
     boolean GetFuseEdges();
 
-    void SetLocalSizeOnShape(in GEOM::GEOM_Object GeomObj, in double localSize);
+    void SetLocalSizeOnShape(in GEOM::GEOM_Object GeomObj, in double localSize)
+      raises (SALOME::SALOME_Exception);
     void SetLocalSizeOnEntry(in string entry, in double localSize);
     double GetLocalSizeOnEntry(in string entry);
     string_array GetLocalSizeEntries();

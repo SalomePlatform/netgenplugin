@@ -311,9 +311,13 @@ CORBA::Double NETGENPlugin_Hypothesis_i::GetNbSegPerRadius()
 
 void NETGENPlugin_Hypothesis_i::SetLocalSizeOnShape(GEOM::GEOM_Object_ptr GeomObj,
                                                     CORBA::Double         localSize)
+  throw (SALOME::SALOME_Exception)
 {
   string entry;
   entry = GeomObj->GetStudyEntry();
+  if ( entry.empty() )
+    THROW_SALOME_CORBA_EXCEPTION( "SetLocalSizeOnShape(), shape is not published in study!",
+                                  SALOME::BAD_PARAM );
   SetLocalSizeOnEntry(entry.c_str(), localSize);
 }
 

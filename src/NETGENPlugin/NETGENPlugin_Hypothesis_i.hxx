@@ -79,7 +79,8 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_Hypothesis_i:
   void SetNbSegPerRadius(CORBA::Double theVal);
   CORBA::Double GetNbSegPerRadius();
 
-  void SetLocalSizeOnShape(GEOM::GEOM_Object_ptr GeomObj, CORBA::Double localSize);
+  void SetLocalSizeOnShape(GEOM::GEOM_Object_ptr GeomObj, CORBA::Double localSize)
+    throw (SALOME::SALOME_Exception);
   void SetLocalSizeOnEntry(const char* entry, CORBA::Double localSize);
   CORBA::Double GetLocalSizeOnEntry(const char* entry);
   NETGENPlugin::string_array* GetLocalSizeEntries();
