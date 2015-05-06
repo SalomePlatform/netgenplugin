@@ -790,6 +790,7 @@ bool NETGENPlugin_Mesher::FillNgMesh(netgen::OCCGeometry&           occgeom,
         bool isQuad   = smDS->NbElements() ? smDS->GetElements()->next()->IsQuadratic() : false;
         StdMeshers_FaceSide fSide( face, edges, _mesh, isForwad, isQuad );
         const vector<UVPtStruct>& points = fSide.GetUVPtStruct();
+        if ( points.empty() ) return false; // invalid node params?
         int i, nbSeg = fSide.NbSegments();
 
         // remember EDGEs of fSide to treat only once
