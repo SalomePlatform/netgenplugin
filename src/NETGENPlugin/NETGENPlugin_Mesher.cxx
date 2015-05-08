@@ -1132,7 +1132,7 @@ namespace
       return dist3D;
     
     // start recursion if necessary
-    double dist2D = SMESH_MesherHelper::applyIn2D(surf, uv1, uv2, gp_XY_Subtracted, 0).Modulus();
+    double dist2D = SMESH_MesherHelper::ApplyIn2D(surf, uv1, uv2, gp_XY_Subtracted, 0).Modulus();
     if ( fabs( dist3D - dist2D ) < dist2D * 1e-10 )
       return dist3D; // equal parametrization of a planar surface
 
@@ -1256,14 +1256,14 @@ void NETGENPlugin_Mesher::AddIntVerticesInFaces(const netgen::OCCGeometry&     o
         {
           uv[iEnd].SetCoord( seg.epgeominfo[iEnd].u, seg.epgeominfo[iEnd].v );
           if ( ngIdLast == seg[ iEnd ] ) continue;
-          dist2 = helper.applyIn2D(surf, uv[iEnd], vData.uv, gp_XY_Subtracted,0).SquareModulus();
+          dist2 = helper.ApplyIn2D(surf, uv[iEnd], vData.uv, gp_XY_Subtracted,0).SquareModulus();
           if ( dist2 < closeDist2 )
             vData.ngIdClose = seg[ iEnd ], vData.uvClose = uv[iEnd], closeDist2 = dist2;
           ngIdLast = seg[ iEnd ];
         }
         if ( !nbV )
         {
-          totSegLen2D += helper.applyIn2D(surf, uv[0], uv[1], gp_XY_Subtracted, false).Modulus();
+          totSegLen2D += helper.ApplyIn2D(surf, uv[0], uv[1], gp_XY_Subtracted, false).Modulus();
           totNbSeg++;
         }
       }
@@ -1290,7 +1290,7 @@ void NETGENPlugin_Mesher::AddIntVerticesInFaces(const netgen::OCCGeometry&     o
         for ( int iEnd = 0; iEnd < 2; ++iEnd)
         {
           uv[iEnd].SetCoord( seg.epgeominfo[iEnd].u, seg.epgeominfo[iEnd].v );
-          dist2 = helper.applyIn2D(surf, uv[iEnd], vData.uv, gp_XY_Subtracted,0).SquareModulus();
+          dist2 = helper.ApplyIn2D(surf, uv[iEnd], vData.uv, gp_XY_Subtracted,0).SquareModulus();
           if ( dist2 < closeDist2 )
             vData.ngIdClose = seg[ iEnd ], vData.uvClose = uv[iEnd], closeDist2 = dist2;
         }
@@ -1313,7 +1313,7 @@ void NETGENPlugin_Mesher::AddIntVerticesInFaces(const netgen::OCCGeometry&     o
         // how far from V
         double r = min( 0.5, ( hintLenOK ? segLenHint/nodeDist3D : avgSegLen2d/nodeDist2D ));
         // direction from V to closet node in 2D
-        gp_Dir2d v2n( helper.applyIn2D(surf, uvP, uvV, gp_XY_Subtracted, false ));
+        gp_Dir2d v2n( helper.ApplyIn2D(surf, uvP, uvV, gp_XY_Subtracted, false ));
         // new point
         uvP = vData.uv + r * nodeDist2D * v2n.XY();
         gp_Pnt P = surf->Value( uvP.X(), uvP.Y() ).Transformed( loc );
