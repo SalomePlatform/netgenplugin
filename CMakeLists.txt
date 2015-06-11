@@ -91,7 +91,8 @@ IF(SALOME_BUILD_GUI)
   IF(EXISTS ${GUI_ROOT_DIR})
     LIST(APPEND CMAKE_MODULE_PATH "${GUI_ROOT_DIR}/adm_local/cmake_files")
     FIND_PACKAGE(SalomeGUI)
-    FULL_GUI(TRUE) # check whether GUI builded in full mode and with CORBA
+    SALOME_GUI_WITH_CORBA() # check whether GUI builded with CORBA
+    SALOME_GUI_MODE(SALOME_USE_SALOMEOBJECT)
   ELSE(EXISTS ${GUI_ROOT_DIR})
     MESSAGE(FATAL_ERROR "We absolutely need a Salome GUI, please define GUI_ROOT_DIR")
   ENDIF(EXISTS ${GUI_ROOT_DIR})
