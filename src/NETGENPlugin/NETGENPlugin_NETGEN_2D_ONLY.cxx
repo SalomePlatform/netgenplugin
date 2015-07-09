@@ -391,6 +391,8 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
         for ( int iW = 0; iW < nbWires; ++iW )
         {
           const UVPtStructVec& points = wires[ iW ]->GetUVPtStruct();
+          if ( points.empty() )
+            return error( COMPERR_BAD_INPUT_MESH );
           gp_Pnt pPrev = SMESH_TNodeXYZ( points[0].node );
           for ( size_t i = 1; i < points.size(); ++i )
           {

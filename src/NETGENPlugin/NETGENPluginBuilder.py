@@ -32,6 +32,8 @@ except ImportError:
     noNETGENPlugin = 1
     pass
 
+LIBRARY = "libNETGENEngine.so"
+
 #----------------------------
 # Mesh algo type identifiers
 #----------------------------
@@ -104,7 +106,7 @@ class NETGEN_Algorithm(Mesh_Algorithm):
     def __init__(self, mesh, geom=0):
         Mesh_Algorithm.__init__(self)
         if noNETGENPlugin: print "Warning: NETGENPlugin module unavailable"
-        self.Create(mesh, geom, self.algoType, "libNETGENEngine.so")
+        self.Create(mesh, geom, self.algoType, LIBRARY)
         self.params = None
         pass
 
@@ -163,7 +165,7 @@ class NETGEN_Algorithm(Mesh_Algorithm):
             self.mesh.RemoveHypothesis( self.params, self.geom )
             self.params = None
         if not self.params:
-            self.params = self.Hypothesis(hypType, [],"libNETGENEngine.so",UseExisting=0)
+            self.params = self.Hypothesis(hypType, [], LIBRARY, UseExisting=0)
 
         return self.params
 
