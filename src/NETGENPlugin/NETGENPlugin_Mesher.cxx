@@ -787,10 +787,11 @@ bool NETGENPlugin_Mesher::FillNgMesh(netgen::OCCGeometry&           occgeom,
         bool isForwad = ( fOri == eNotSeam.Orientation() || fOri >= TopAbs_INTERNAL );
 
         // get all nodes from connected <edges>
-        bool isQuad   = smDS->NbElements() ? smDS->GetElements()->next()->IsQuadratic() : false;
+        const bool isQuad = smDS->IsQuadratic();
         StdMeshers_FaceSide fSide( face, edges, _mesh, isForwad, isQuad );
         const vector<UVPtStruct>& points = fSide.GetUVPtStruct();
-        if ( points.empty() ) return false; // invalid node params?
+        if ( points.empty() )
+          return false; // invalid node params?
         int i, nbSeg = fSide.NbSegments();
 
         // remember EDGEs of fSide to treat only once
@@ -3607,7 +3608,7 @@ void NETGENPlugin_Internals::findBorderElements( TIDSortedElemSet & borderElems 
         while ( fIt->more() )
         {
           const SMDS_MeshElement* f = fIt->next();
-          int nbNodes = f->NbNodes() / ( f->IsQuadratic() ? 2 : 1 );
+          const int nbNodes = f->NbCornerNodes();
           if ( intFaceSM->Contains( f ))
           {
             for ( int i = 0; i < nbNodes; ++i )
@@ -3638,7 +3639,7 @@ void NETGENPlugin_Internals::findBorderElements( TIDSortedElemSet & borderElems 
         const SMDS_MeshElement* f = *fIt;
         bool isBorder = false, linkFound = false, borderLinkFound = false;
         list< SMESH_OrientedLink > faceLinks;
-        int nbNodes = f->NbNodes() / ( f->IsQuadratic() ? 2 : 1 );
+        int nbNodes = f->NbCornerNodes();
         for ( int i = 0; i < nbNodes; ++i )
         {
           SMESH_OrientedLink link( f->GetNode(i), f->GetNode((i+1)%nbNodes));
