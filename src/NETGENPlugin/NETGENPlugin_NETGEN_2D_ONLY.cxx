@@ -498,6 +498,8 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
       }
       if ( err )
       {
+        if ( aMesher.FixFaceMesh( occgeom, *ngMesh, 1 ))
+          break;
         if ( iLoop == LOC_SIZE )
         {
           netgen::mparam.minh = netgen::mparam.maxh;

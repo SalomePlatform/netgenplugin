@@ -157,6 +157,10 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_Mesher
                           netgen::Mesh&              ngMesh,
                           NETGENPlugin_Internals&    internalShapes);
 
+  static bool FixFaceMesh(const netgen::OCCGeometry& occgeom,
+                          netgen::Mesh&              ngMesh,
+                          const int                  faceID);
+
   static void AddIntVerticesInFaces(const netgen::OCCGeometry&          occgeom,
                                     netgen::Mesh&                       ngMesh,
                                     std::vector<const SMDS_MeshNode*>&  nodeVec,

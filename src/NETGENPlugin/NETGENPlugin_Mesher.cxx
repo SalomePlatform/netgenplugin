@@ -56,6 +56,7 @@
 #include <NCollection_Map.hxx>
 #include <Standard_ErrorHandler.hxx>
 #include <Standard_ProgramError.hxx>
+#include <TColStd_MapOfInteger.hxx>
 #include <TopExp.hxx>
 #include <TopExp_Explorer.hxx>
 #include <TopTools_DataMapIteratorOfDataMapOfShapeInteger.hxx>
@@ -64,8 +65,6 @@
 #include <TopTools_DataMapOfShapeShape.hxx>
 #include <TopTools_MapOfShape.hxx>
 #include <TopoDS.hxx>
-#include <OSD_File.hxx>
-#include <OSD_Path.hxx>
 
 // Netgen include files
 #ifndef OCCGEOMETRY
@@ -321,6 +320,11 @@ struct Link
   int n1, n2;
   Link(int _n1, int _n2) : n1(_n1), n2(_n2) {}
   Link() : n1(0), n2(0) {}
+  bool Contains( int n ) const { return n == n1 || n == n2; }
+  bool IsConnected( const Link& other ) const
+  {
+    return (( Contains( other.n1 ) || Contains( other.n2 )) && ( this != &other ));
+  }
 };
 
 int HashCode(const Link& aLink, int aLimit)
@@ -699,6 +703,8 @@ void NETGENPlugin_Mesher::RestrictLocalSize(netgen::Mesh& ngMesh,
                                             const double  size,
                                             const bool    overrideMinH)
 {
+  if ( size <= std::numeric_limits<double>::min() )
+    return;
   if ( overrideMinH && netgen::mparam.minh > size )
   {
     ngMesh.SetMinimalH( size );
@@ -1104,6 +1110,115 @@ void NETGENPlugin_Mesher::FixIntFaces(const netgen::OCCGeometry& occgeom,
     }
   }
 }
+
+//================================================================================
+/*!
+ * \brief Tries to heal the mesh on a FACE. The FACE is supposed to be partially
+ *        meshed due to NETGEN failure
+ *  \param [in] occgeom - geometry
+ *  \param [in,out] ngMesh - the mesh to fix
+ *  \param [inout] faceID - ID of the FACE to fix the mesh on
+ *  \return bool - is mesh is or becomes OK
+ */
+//================================================================================
+
+bool NETGENPlugin_Mesher::FixFaceMesh(const netgen::OCCGeometry& occgeom,
+                                      netgen::Mesh&              ngMesh,
+                                      const int                  faceID)
+{
+  // we address a case where the FACE is almost fully meshed except small holes
+  // of usually triangular shape at FACE boundary (IPAL52861)
+
+  // The case appeared to be not simple: holes only look triangular but
+  // indeed are a self intersecting polygon. A reason of the bug was in coincident
+  // NG points on a seam edge. But the code below is very nice, leave it for
+  // another case.
+  return false;
+
+
+  if ( occgeom.fmap.Extent() < faceID )
+    return false;
+  const TopoDS_Face& face = TopoDS::Face( occgeom.fmap( faceID ));
+
+  // find free links on the FACE
+  NCollection_Map<Link> linkMap;
+  for ( int iF = 1; iF <= ngMesh.GetNSE(); ++iF )
+  {
+    const netgen::Element2d& elem = ngMesh.SurfaceElement(iF);
+    if ( faceID != elem.GetIndex() )
+      continue;
+    int n0 = elem[ elem.GetNP() - 1 ];
+    for ( int i = 0; i < elem.GetNP(); ++i )
+    {
+      int n1 = elem[i];
+      Link link( n0, n1 );
+      if ( !linkMap.Add( link ))
+        linkMap.Remove( link );
+      n0 = n1;
+    }
+  }
+  // add/remove boundary links
+  for ( int iSeg = 1; iSeg <= ngMesh.GetNSeg(); ++iSeg )
+  {
+    const netgen::Segment& seg = ngMesh.LineSegment( iSeg );
+    if ( seg.si != faceID ) // !edgeIDs.Contains( seg.edgenr ))
+      continue;
+    Link link( seg[1], seg[0] ); // reverse!!!
+    if ( !linkMap.Add( link ))
+      linkMap.Remove( link );
+  }
+  if ( linkMap.IsEmpty() )
+    return true;
+  if ( linkMap.Extent() < 3 )
+    return false;
+
+  // make triangles of the links
+
+  netgen::Element2d tri(3);
+  tri.SetIndex ( faceID );
+
+  NCollection_Map<Link>::Iterator linkIt( linkMap );
+  Link link1 = linkIt.Value();
+  // look for a link connected to link1
+  NCollection_Map<Link>::Iterator linkIt2 = linkIt;
+  for ( linkIt2.Next(); linkIt2.More(); linkIt2.Next() )
+  {
+    const Link& link2 = linkIt2.Value();
+    if ( link2.IsConnected( link1 ))
+    {
+      // look for a link connected to both link1 and link2
+      NCollection_Map<Link>::Iterator linkIt3 = linkIt2;
+      for ( linkIt3.Next(); linkIt3.More(); linkIt3.Next() )
+      {
+        const Link& link3 = linkIt3.Value();
+        if ( link3.IsConnected( link1 ) &&
+             link3.IsConnected( link2 ) )
+        {
+          // add a triangle
+          tri[0] = link1.n2;
+          tri[1] = link1.n1;
+          tri[2] = ( link2.Contains( link1.n1 ) ? link2.n1 : link3.n1 );
+          if ( tri[0] == tri[2] || tri[1] == tri[2] )
+            return false;
+          ngMesh.AddSurfaceElement( tri );
+
+          // prepare for the next tria search
+          if ( linkMap.Extent() == 3 )
+            return true;
+          linkMap.Remove( link3 );
+          linkMap.Remove( link2 );
+          linkIt.Next();
+          linkMap.Remove( link1 );
+          link1 = linkIt.Value();
+          linkIt2 = linkIt;
+          break;
+        }
+      }
+    }
+  }
+  return false;
+
+} // FixFaceMesh()
 
 namespace
 {
@@ -1698,7 +1813,7 @@ NETGENPlugin_Mesher::AddSegmentsToMesh(netgen::Mesh&                    ngMesh,
         continue;
 
       int ngID1 = ngMesh.GetNP() + 1, ngID2 = ngID1+1;
-      if ( onVertex || ( !wasNgMeshEmpty && onEdge ))
+      if ( onVertex || ( !wasNgMeshEmpty && onEdge ) || helper.IsRealSeam( posShapeID ))
         ngID1 = node2ngID.insert( make_pair( n, ngID1 )).first->second;
       if ( ngID1 > ngMesh.GetNP() )
       {
@@ -1810,8 +1925,8 @@ NETGENPlugin_Mesher::AddSegmentsToMesh(netgen::Mesh&                    ngMesh,
         }
       }
       cout << "Segment: " << seg.edgenr << endl
-           << "\tp1: " << seg[0] << endl
-           << "\tp2: " << seg[1] << endl
+           << "\tp1: " << seg[0] << "   n" << nodeVec[ seg[0]]->GetID() << endl
+           << "\tp2: " << seg[1] << "   n" << nodeVec[ seg[1]]->GetID() <<  endl
            << "\tp0 param: " << seg.epgeominfo[ 0 ].dist << endl
            << "\tp0 uv: " << seg.epgeominfo[ 0 ].u <<", "<< seg.epgeominfo[ 0 ].v << endl
            << "\tp0 edge: " << seg.epgeominfo[ 0 ].edgenr << endl
@@ -2146,7 +2261,8 @@ namespace
                     double             size,
                     netgen::Mesh&      mesh)
   {
-    const int nb = 1000;
+    if ( size <= std::numeric_limits<double>::min() )
+      return;
     Standard_Real u1, u2;
     Handle(Geom_Curve) curve = BRep_Tool::Curve(edge, u1, u2);
     if ( curve.IsNull() )
@@ -2158,6 +2274,7 @@ namespace
     }
     else
     {
+      const int nb = (int)( 1.5 * SMESH_Algo::EdgeLength( edge ) / size );
       Standard_Real delta = (u2-u1)/nb;
       for(int i=0; i<nb; i++)
       {
