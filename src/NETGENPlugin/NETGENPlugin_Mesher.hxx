@@ -135,7 +135,7 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_Mesher
 
   static void RestrictLocalSize(netgen::Mesh& ngMesh,
                                 const gp_XYZ& p,
-                                const double  size,
+                                double        size,
                                 const bool    overrideMinH=true);
 
   static int FillSMesh(const netgen::OCCGeometry&          occgeom,

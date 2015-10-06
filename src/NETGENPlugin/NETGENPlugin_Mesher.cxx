@@ -700,15 +700,22 @@ double NETGENPlugin_Mesher::GetDefaultMinSize(const TopoDS_Shape& geom,
 
 void NETGENPlugin_Mesher::RestrictLocalSize(netgen::Mesh& ngMesh,
                                             const gp_XYZ& p,
-                                            const double  size,
+                                            double        size,
                                             const bool    overrideMinH)
 {
   if ( size <= std::numeric_limits<double>::min() )
     return;
-  if ( overrideMinH && netgen::mparam.minh > size )
+  if ( netgen::mparam.minh > size )
   {
-    ngMesh.SetMinimalH( size );
-    netgen::mparam.minh = size;
+    if ( overrideMinH )
+    {
+      ngMesh.SetMinimalH( size );
+      netgen::mparam.minh = size;
+    }
+    else
+    {
+      size = netgen::mparam.minh;
+    }
   }
   netgen::Point3d pi(p.X(), p.Y(), p.Z());
   ngMesh.RestrictLocalH( pi, size );
@@ -968,7 +975,7 @@ bool NETGENPlugin_Mesher::FillNgMesh(netgen::OCCGeometry&           occgeom,
 
       netgen::Element2d tri(3);
       tri.SetIndex ( faceNgID );
-
+      SMESH_TNodeXYZ xyz[3];
 
 #ifdef DUMP_TRIANGLES
       cout << "SMESH face " << helper.GetMeshDS()->ShapeToIndex( geomFace )
@@ -987,7 +994,7 @@ bool NETGENPlugin_Mesher::FillNgMesh(netgen::OCCGeometry&           occgeom,
           if ( const TopoDS_Shape * solid = solidIt->next() )
             sm = _mesh->GetSubMesh( *solid );
           SMESH_ComputeErrorPtr& smError = sm->GetComputeError();
-          smError.reset( new SMESH_ComputeError(COMPERR_BAD_INPUT_MESH,"Not triangle submesh"));
+          smError.reset( new SMESH_ComputeError(COMPERR_BAD_INPUT_MESH,"Not triangle sub-mesh"));
           smError->myBadElements.push_back( f );
           return false;
         }
@@ -995,14 +1002,17 @@ bool NETGENPlugin_Mesher::FillNgMesh(netgen::OCCGeometry&           occgeom,
         for ( int i = 0; i < 3; ++i )
         {
           const SMDS_MeshNode* node = f->GetNode( i ), * inFaceNode=0;
+          xyz[i].Set( node );
 
           // get node UV on face
           int shapeID = node->getshapeId();
           if ( helper.IsSeamShape( shapeID ))
+          {
             if ( helper.IsSeamShape( f->GetNodeWrap( i+1 )->getshapeId() ))
               inFaceNode = f->GetNodeWrap( i-1 );
             else
               inFaceNode = f->GetNodeWrap( i+1 );
+          }
           gp_XY uv = helper.GetNodeUV( geomFace, node, inFaceNode );
 
           int ind = reverse ? 3-i : i+1;
@@ -1010,6 +1020,13 @@ bool NETGENPlugin_Mesher::FillNgMesh(netgen::OCCGeometry&           occgeom,
           tri.GeomInfoPi(ind).v = uv.Y();
           tri.PNum      (ind) = ngNodeId( node, ngMesh, nodeNgIdMap );
         }
+
+        // pass a triangle size to NG size-map
+        double size = ( ( xyz[0] - xyz[1] ).Modulus() +
+                        ( xyz[1] - xyz[2] ).Modulus() +
+                        ( xyz[2] - xyz[0] ).Modulus() ) / 3;
+        gp_XYZ gc = ( xyz[0] + xyz[1] + xyz[2] ) / 3;
+        RestrictLocalSize( ngMesh, gc, size, /*overrideMinH=*/false );
 
         ngMesh.AddSurfaceElement (tri);
 #ifdef DUMP_TRIANGLES
