@@ -389,8 +389,8 @@ bool NETGENPluginGUI_HypothesisCreator::readParamsFromHypo( NetgenHypothesisData
   NETGENPlugin::NETGENPlugin_Hypothesis_var h =
     NETGENPlugin::NETGENPlugin_Hypothesis::_narrow( initParamsHypothesis() );
 
-  HypothesisData* data = SMESH::GetHypothesisData( hypType() );
-  h_data.myName = isCreation() && data ? data->Label : "";
+  //HypothesisData* data = SMESH::GetHypothesisData( hypType() );
+  h_data.myName = isCreation() ? hypName() : "";
 
   h_data.myMaxSize = h->GetMaxSize();
   h_data.myMaxSizeVar = getVariableName("SetMaxSize");
