@@ -40,7 +40,8 @@
 		dim="3">
       <python-wrap>
         <accumulative-methods>
-          SetLocalSizeOnShape
+          SetLocalSizeOnShape,
+          UnsetLocalSizeOnEntry
         </accumulative-methods>
       </python-wrap>
     </hypothesis>
@@ -50,7 +51,8 @@
 		dim="2">
       <python-wrap>
         <accumulative-methods>
-          SetLocalSizeOnShape
+          SetLocalSizeOnShape,
+          UnsetLocalSizeOnEntry
         </accumulative-methods>
       </python-wrap>
     </hypothesis>
@@ -60,7 +62,8 @@
 		dim="3">
       <python-wrap>
         <accumulative-methods>
-          SetLocalSizeOnShape
+          SetLocalSizeOnShape,
+          UnsetLocalSizeOnEntry
         </accumulative-methods>
       </python-wrap>
     </hypothesis>
@@ -70,7 +73,8 @@
 		dim="2">
       <python-wrap>
         <accumulative-methods>
-          SetLocalSizeOnShape
+          SetLocalSizeOnShape,
+          UnsetLocalSizeOnEntry
         </accumulative-methods>
       </python-wrap>
     </hypothesis>

@@ -216,15 +216,15 @@ void NETGENPlugin_Hypothesis::SetNbSegPerRadius(double theVal)
 void NETGENPlugin_Hypothesis::SetLocalSizeOnEntry(const std::string& entry, double localSize)
 {
   if(_localSize[entry] != localSize)
-    {
-      _localSize[entry] = localSize;
-      NotifySubMeshesHypothesisModification();
-    }
+  {
+    _localSize[entry] = localSize;
+    NotifySubMeshesHypothesisModification();
+  }
 }
 
 //=============================================================================
 /*!
- *  
+ *
  */
 //=============================================================================
 double NETGENPlugin_Hypothesis::GetLocalSizeOnEntry(const std::string& entry)

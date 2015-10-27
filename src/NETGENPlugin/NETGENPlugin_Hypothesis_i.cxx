@@ -363,7 +363,7 @@ NETGENPlugin::string_array* NETGENPlugin_Hypothesis_i::GetLocalSizeEntries()
 void NETGENPlugin_Hypothesis_i::UnsetLocalSizeOnEntry(const char* entry)
 {
   this->GetImpl()->UnsetLocalSizeOnEntry(entry);
-  SMESH::TPythonDump() << _this() << ".UnsetLocalSizeOnEntry(" << entry << ")";
+  SMESH::TPythonDump() << _this() << ".UnsetLocalSizeOnEntry(\"" << entry << "\")";
 }
 
 //=============================================================================

@@ -13,11 +13,11 @@ This hypothesis allows creation of layers of highly stretched prisms near
 mesh boundary, which is beneficial for high quality viscous
 computations. The prisms constructed on the quadrangular mesh faces are
 actually the hexahedrons.</li>
-</ul>
 
 <li><b>Quadrangle Preference</b> - This additional hypothesis can be
   used together with Netgen 2D algorithm.
 It allows Netgen 2D to build quad-dominant meshes.</li>
+</ul>
 <br>
 
 For more detailed description of the described above hypothesis please refer SALOME Mesh User's Guide.

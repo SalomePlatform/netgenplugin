@@ -418,9 +418,9 @@ bool NETGENPluginGUI_HypothesisCreator::readParamsFromHypo( NetgenHypothesisData
         h_data.myAllowQuadrangles = h->GetQuadAllowed();
     }
   
-  NETGENPluginGUI_HypothesisCreator* that = (NETGENPluginGUI_HypothesisCreator*)this;
+  NETGENPluginGUI_HypothesisCreator*  that = (NETGENPluginGUI_HypothesisCreator*)this;
   NETGENPlugin::string_array_var myEntries = h->GetLocalSizeEntries();
-  for ( int i=0 ; i<myEntries->length() ; i++ )
+  for ( size_t i = 0; i < myEntries->length(); i++ )
     {
       QString entry = myEntries[i].in();
       double val = h->GetLocalSizeOnEntry(entry.toStdString().c_str());
@@ -642,7 +642,7 @@ void NETGENPluginGUI_HypothesisCreator::addLocalSizeOnShape(TopAbs_ShapeEnum typ
   SALOME_ListIO ListSelectedObjects;
   mySel->selectedObjects(ListSelectedObjects, NULL, false );
   SALOME_ListIteratorOfListIO Object_It(ListSelectedObjects);
-  for (Object_It ; Object_It.More() ; Object_It.Next())
+  for ( ; Object_It.More() ; Object_It.Next())
     {
       Handle(SALOME_InteractiveObject) anObject = Object_It.Value();
       std::string entry, shapeName;

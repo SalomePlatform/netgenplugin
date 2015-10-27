@@ -42,8 +42,9 @@ size at a given point. This parameter is used only if <b>Limit Size by
 then size of mesh segments and mesh faces on curved edges and surfaces
 is defined using value of <b>Nb Segs per Radius</b> parameter, and
 number of segments on straight edges is defined by values of
-<b>Nb. Segs per Edge</b> parameter. If this box is not checked in,
-then size of elements is defined by three parameters only:
+<b>Nb. Segs per Edge</b> parameter. (<b>Growth rate</b> is also taken
+into account.) If this box is not checked in, then size of elements is
+defined by three parameters only:
 <b>Max Size</b>, <b>Min Size</b> and <b>Growth rate</b>.
 - <b>Allow Quadrangles</b> - if this box is checked in, the mesher
 tries to generate quadrangle 2D mesh. Triangle elements are created

@@ -10,8 +10,8 @@
   constructed as a transition from quadrangles to tetrahedra.
 - Generating 3D meshes from 2D meshes, working without geometrical objects.
 
-To manage parameters of the NETGENPLUGIN use \subpage
-netgen_2d_3d_hypo_page and \subpage additional_hypo_page.
+To manage parameters of the NETGENPLUGIN use 
+\subpage netgen_2d_3d_hypo_page and \subpage additional_hypo_page.
 
 Native Netgen mesher usually prints a lot of trace output to the terminal
 window. This output is redirected to some log file by the Plugin. It
