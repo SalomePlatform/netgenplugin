@@ -504,7 +504,7 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
         {
           netgen::mparam.minh = netgen::mparam.maxh;
           netgen::mparam.maxh = 0;
-          for ( int iW = 0; iW < wires.size(); ++iW )
+          for ( size_t iW = 0; iW < wires.size(); ++iW )
           {
             StdMeshers_FaceSidePtr wire = wires[ iW ];
             const vector<UVPtStruct>& uvPtVec = wire->GetUVPtStruct();
@@ -668,7 +668,7 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Evaluate(SMESH_Mesh& aMesh,
 
   // compute edge length
   double ELen = 0;
-  if (_hypLengthFromEdges || !_hypLengthFromEdges && !_hypMaxElementArea) {
+  if (( _hypLengthFromEdges ) || ( !_hypLengthFromEdges && !_hypMaxElementArea )) {
     if ( nb1d > 0 )
       ELen = fullLen / nb1d;
   }

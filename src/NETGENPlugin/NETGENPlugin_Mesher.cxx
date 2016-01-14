@@ -276,7 +276,7 @@ void NETGENPlugin_Mesher::SetParameters(const NETGENPlugin_Hypothesis* hyp)
     
     const NETGENPlugin_Hypothesis::TLocalSize localSizes = hyp->GetLocalSizesAndEntries();
     NETGENPlugin_Hypothesis::TLocalSize::const_iterator it = localSizes.begin();
-    for (it ; it != localSizes.end() ; it++)
+    for ( ; it != localSizes.end() ; it++)
       {
         std::string entry = (*it).first;
         double val = (*it).second;
@@ -334,8 +334,8 @@ int HashCode(const Link& aLink, int aLimit)
 
 Standard_Boolean IsEqual(const Link& aLink1, const Link& aLink2)
 {
-  return (aLink1.n1 == aLink2.n1 && aLink1.n2 == aLink2.n2 ||
-          aLink1.n1 == aLink2.n2 && aLink1.n2 == aLink2.n1);
+  return (( aLink1.n1 == aLink2.n1 && aLink1.n2 == aLink2.n2 ) ||
+          ( aLink1.n1 == aLink2.n2 && aLink1.n2 == aLink2.n1 ));
 }
 
 namespace
@@ -381,7 +381,7 @@ namespace
     // get ordered EDGEs
     list< TopoDS_Edge > edges;
     list< int > nbEdgesInWire;
-    int nbWires = SMESH_Block::GetOrderedEdges( face, edges, nbEdgesInWire);
+    /*int nbWires =*/ SMESH_Block::GetOrderedEdges( face, edges, nbEdgesInWire);
 
     // find <edge> within <edges>
     list< TopoDS_Edge >::iterator eItFwd = edges.begin();
@@ -735,7 +735,7 @@ bool NETGENPlugin_Mesher::FillNgMesh(netgen::OCCGeometry&           occgeom,
                                      SMESH_ProxyMesh::Ptr           proxyMesh)
 {
   TNode2IdMap nodeNgIdMap;
-  for ( int i = 1; i < nodeVec.size(); ++i )
+  for ( size_t i = 1; i < nodeVec.size(); ++i )
     nodeNgIdMap.insert( make_pair( nodeVec[i], i ));
 
   TopTools_MapOfShape visitedShapes;
@@ -1116,7 +1116,7 @@ void NETGENPlugin_Mesher::FixIntFaces(const netgen::OCCGeometry& occgeom,
   {
     // duplicate faces
     int i, nbFaces = ngMesh.GetNSE();
-    for (int i = 1; i <= nbFaces; ++i)
+    for ( i = 1; i <= nbFaces; ++i)
     {
       netgen::Element2d elem = ngMesh.SurfaceElement(i);
       if ( ngFaceIds.count( elem.GetIndex() ))
@@ -1155,7 +1155,7 @@ bool NETGENPlugin_Mesher::FixFaceMesh(const netgen::OCCGeometry& occgeom,
 
   if ( occgeom.fmap.Extent() < faceID )
     return false;
-  const TopoDS_Face& face = TopoDS::Face( occgeom.fmap( faceID ));
+  //const TopoDS_Face& face = TopoDS::Face( occgeom.fmap( faceID ));
 
   // find free links on the FACE
   NCollection_Map<Link> linkMap;
@@ -1319,7 +1319,7 @@ void NETGENPlugin_Mesher::AddIntVerticesInFaces(const netgen::OCCGeometry&     o
                                                 vector<const SMDS_MeshNode*>&  nodeVec,
                                                 NETGENPlugin_Internals&        internalShapes)
 {
-  if ( nodeVec.size() < ngMesh.GetNP() )
+  if ((int) nodeVec.size() < ngMesh.GetNP() )
     nodeVec.resize( ngMesh.GetNP(), 0 );
 
   SMESHDS_Mesh* meshDS = internalShapes.getMesh().GetMeshDS();
@@ -1513,7 +1513,7 @@ void NETGENPlugin_Mesher::AddIntVerticesInSolids(const netgen::OCCGeometry&     
      << "smesh = smeshBuilder.New(salome.myStudy)"<<endl
      << "m = smesh.Mesh(name='triangles')" << endl;
 #endif
-  if ( nodeVec.size() < ngMesh.GetNP() )
+  if ((int) nodeVec.size() < ngMesh.GetNP() )
     nodeVec.resize( ngMesh.GetNP(), 0 );
 
   SMESHDS_Mesh* meshDS = internalShapes.getMesh().GetMeshDS();
@@ -1658,7 +1658,7 @@ void NETGENPlugin_Mesher::AddIntVerticesInSolids(const netgen::OCCGeometry&     
       // decide whether to use the closest node and the node with best angle or to create new ones
       for ( int isBestAngleN = 0; isBestAngleN < 2; ++isBestAngleN )
       {
-        bool createNew = !angleOK, distOK = true;
+        bool createNew = !angleOK; //, distOK = true;
         double distFromV;
         int triInd = isBestAngleN ? 2 : 1;
         mp[isBestAngleN] = ngMesh.Point( tri[triInd] );
@@ -1743,7 +1743,7 @@ NETGENPlugin_Mesher::AddSegmentsToMesh(netgen::Mesh&                    ngMesh,
   // Check wires and count nodes
   // ----------------------------
   int nbNodes = 0;
-  for ( int iW = 0; iW < wires.size(); ++iW )
+  for ( size_t iW = 0; iW < wires.size(); ++iW )
   {
     StdMeshers_FaceSidePtr wire = wires[ iW ];
     if ( wire->MissVertexNode() )
@@ -1754,7 +1754,7 @@ NETGENPlugin_Mesher::AddSegmentsToMesh(netgen::Mesh&                    ngMesh,
 //         (new SMESH_ComputeError(COMPERR_BAD_INPUT_MESH, "Missing nodes on vertices"));
     }
     const vector<UVPtStruct>& uvPtVec = wire->GetUVPtStruct();
-    if ( uvPtVec.size() != wire->NbPoints() )
+    if ((int) uvPtVec.size() != wire->NbPoints() )
       return SMESH_ComputeError::New(COMPERR_BAD_INPUT_MESH,
                                      SMESH_Comment("Unexpected nb of points on wire ") << iW
                                      << ": " << uvPtVec.size()<<" != "<<wire->NbPoints());
@@ -1777,7 +1777,7 @@ NETGENPlugin_Mesher::AddSegmentsToMesh(netgen::Mesh&                    ngMesh,
   if ( !wasNgMeshEmpty ) // fill node2ngID with nodes built by NETGEN
   {
     set< int > subIDs; // ids of sub-shapes of the FACE
-    for ( int iW = 0; iW < wires.size(); ++iW )
+    for ( size_t iW = 0; iW < wires.size(); ++iW )
     {
       StdMeshers_FaceSidePtr wire = wires[ iW ];
       for ( int iE = 0, nbE = wire->NbEdges(); iE < nbE; ++iE )
@@ -1795,7 +1795,7 @@ NETGENPlugin_Mesher::AddSegmentsToMesh(netgen::Mesh&                    ngMesh,
   if ( ngMesh.GetNFD() < 1 )
     ngMesh.AddFaceDescriptor (netgen::FaceDescriptor(faceID, solidID, solidID, 0));
 
-  for ( int iW = 0; iW < wires.size(); ++iW )
+  for ( size_t iW = 0; iW < wires.size(); ++iW )
   {
     StdMeshers_FaceSidePtr wire = wires[ iW ];
     const vector<UVPtStruct>& uvPtVec = wire->GetUVPtStruct();
@@ -1814,7 +1814,7 @@ NETGENPlugin_Mesher::AddSegmentsToMesh(netgen::Mesh&                    ngMesh,
     int edgeID = 1, posID = -2;
     bool isInternalWire = false;
     double vertexNormPar = 0;
-    const int prevNbNGSeg = ngMesh.GetNSeg();
+    //const int prevNbNGSeg = ngMesh.GetNSeg();
     for ( int i = 0; i < nbSegments; ++i ) // loop on segments
     {
       // Add the first point of a segment
@@ -2137,7 +2137,7 @@ int NETGENPlugin_Mesher::FillSMesh(const netgen::OCCGeometry&          occgeo,
     for (int j=1; j <= elem.GetNP(); ++j)
     {
       int pind = elem.PNum(j);
-      if ( pind < 1 || pind >= nodeVec.size() )
+      if ( pind < 1 || pind >= (int) nodeVec.size() )
         break;
       if ( SMDS_MeshNode* node = nodeVec_ACCESS(pind))
       {
@@ -2149,7 +2149,7 @@ int NETGENPlugin_Mesher::FillSMesh(const netgen::OCCGeometry&          occgeo,
         }
       }
     }
-    if ( nodes.size() != elem.GetNP() )
+    if ((int) nodes.size() != elem.GetNP() )
     {
       if ( comment.empty() )
         comment << "Invalid netgen 2d element #" << i;
@@ -2218,7 +2218,7 @@ int NETGENPlugin_Mesher::FillSMesh(const netgen::OCCGeometry&          occgeo,
     for (int j=1; j <= elem.GetNP(); ++j)
     {
       int pind = elem.PNum(j);
-      if ( pind < 1 || pind >= nodeVec.size() )
+      if ( pind < 1 || pind >= (int)nodeVec.size() )
         break;
       if ( SMDS_MeshNode* node = nodeVec_ACCESS(pind) )
       {
@@ -2227,7 +2227,7 @@ int NETGENPlugin_Mesher::FillSMesh(const netgen::OCCGeometry&          occgeo,
           meshDS->SetNodeInVolume(node, aSolid);
       }
     }
-    if ( nodes.size() != elem.GetNP() )
+    if ((int) nodes.size() != elem.GetNP() )
     {
       if ( comment.empty() )
         comment << "Invalid netgen 3d element #" << i;
@@ -3398,13 +3398,14 @@ NETGENPlugin_Mesher::ReadErrors(const vector<const SMDS_MeshNode* >& nodeVec)
   vector<int> three1(3), three2(3);
   const char* badEdgeStr = " multiple times in surface mesh";
   const int   badEdgeStrLen = strlen( badEdgeStr );
+  const int   nbNodes = nodeVec.size();
 
   while( !file.eof() )
   {
     if ( strncmp( file, "Edge ", 5 ) == 0 &&
          file.getInts( two ) &&
          strncmp( file, badEdgeStr, badEdgeStrLen ) == 0 &&
-         two[0] < nodeVec.size() && two[1] < nodeVec.size())
+         two[0] < nbNodes  &&  two[1] < nbNodes )
     {
       err->myBadElements.push_back( new SMDS_LinearEdge( nodeVec[ two[0]], nodeVec[ two[1]] ));
       file += badEdgeStrLen;
@@ -3422,9 +3423,9 @@ NETGENPlugin_Mesher::ReadErrors(const vector<const SMDS_MeshNode* >& nodeVec)
       ok = ok && file.getInts( three1 );
       ok = ok && file.getInts( three2 );
       for ( int i = 0; ok && i < 3; ++i )
-        ok = ( three1[i] < nodeVec.size() && nodeVec[ three1[i]]);
+        ok = ( three1[i] < nbNodes && nodeVec[ three1[i]]);
       for ( int i = 0; ok && i < 3; ++i ) 
-        ok = ( three2[i] < nodeVec.size() && nodeVec[ three2[i]]);
+        ok = ( three2[i] < nbNodes && nodeVec[ three2[i]]);
       if ( ok )
       {
         err->myBadElements.push_back( new SMDS_FaceOfNodes( nodeVec[ three1[0]],

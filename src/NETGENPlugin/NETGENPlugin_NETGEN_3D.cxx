@@ -146,7 +146,7 @@ bool NETGENPlugin_NETGEN_3D::CheckHypothesis (SMESH_Mesh&         aMesh,
   _progressByTic = -1.;
 
   list<const SMESHDS_Hypothesis*>::const_iterator itl;
-  const SMESHDS_Hypothesis* theHyp;
+  //const SMESHDS_Hypothesis* theHyp;
 
   const list<const SMESHDS_Hypothesis*>& hyps =
     GetUsedHypothesis(aMesh, aShape, /*ignoreAuxiliary=*/false);
@@ -200,7 +200,7 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
   SMESHDS_Mesh* meshDS = aMesh.GetMeshDS();
 
   SMESH_MesherHelper helper(aMesh);
-  bool _quadraticMesh = helper.IsQuadraticSubMesh(aShape);
+  _quadraticMesh = helper.IsQuadraticSubMesh(aShape);
   helper.SetElementsOnShape( true );
 
   int Netgen_NbOfNodes = 0;
@@ -586,13 +586,8 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
   // ---------------------------------
 
   int Netgen_NbOfNodes = 0;
-  int Netgen_param2ndOrder = 0;
-  double Netgen_paramFine = 1.;
-  double Netgen_paramSize = pow( 72, 1/6. ) * pow( _maxElementVolume, 1/3. );
-
   double Netgen_point[3];
   int Netgen_triangle[3];
-  int Netgen_tetrahedron[4];
 
   NETGENPlugin_NetgenLibWrapper ngLib;
   Ng_Mesh * Netgen_mesh = ngLib._ngMesh;
