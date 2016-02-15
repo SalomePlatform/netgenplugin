@@ -71,7 +71,8 @@ OPTION(SALOME_BUILD_GUI "Enable GUI" ON)
 ##
 
 # Python
-FIND_PACKAGE(SalomePython REQUIRED)
+FIND_PACKAGE(SalomePythonInterp REQUIRED)
+FIND_PACKAGE(SalomePythonLibs REQUIRED)
 # Boost
 FIND_PACKAGE(SalomeBoost REQUIRED)
 # CORBA
