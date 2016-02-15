@@ -67,10 +67,10 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_NETGEN_3D: public SMESH_3D_Algo
 
  protected:
 
-  bool compute(SMESH_Mesh&                     mesh,
-               SMESH_MesherHelper&             helper,
-               vector< const SMDS_MeshNode* >& nodeVec,
-               nglib::Ng_Mesh*                 ngMesh);
+  bool compute(SMESH_Mesh&                          mesh,
+               SMESH_MesherHelper&                  helper,
+               std::vector< const SMDS_MeshNode* >& nodeVec,
+               nglib::Ng_Mesh*                      ngMesh);
 
   double _maxElementVolume;
 
