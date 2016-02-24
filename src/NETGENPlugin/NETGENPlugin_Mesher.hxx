@@ -36,6 +36,8 @@
 #include <SMESH_Algo.hxx>
 #include <SMESH_ProxyMesh.hxx>
 
+#include <TopTools_IndexedMapOfShape.hxx>
+
 namespace nglib {
 #include <nglib.h>
 }
@@ -49,7 +51,6 @@ class SMESH_Comment;
 class SMESH_Mesh;
 class SMESH_MesherHelper;
 class TopoDS_Shape;
-class TopTools_IndexedMapOfShape;
 class NETGENPlugin_Hypothesis;
 class NETGENPlugin_SimpleHypothesis_2D;
 class NETGENPlugin_Internals;
