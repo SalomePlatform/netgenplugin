@@ -266,40 +266,35 @@ void NETGENPlugin_Mesher::SetParameters(const NETGENPlugin_Hypothesis* hyp)
     // create elements of second order
     mparams.secondorder     = hyp->GetSecondOrder() ? 1 : 0;
     // quad-dominated surface meshing
-    // only triangles are allowed for volumic mesh (before realizing IMP 0021676)
-    //if (!_isVolume)
-      mparams.quad          = hyp->GetQuadAllowed() ? 1 : 0;
+    mparams.quad            = hyp->GetQuadAllowed() ? 1 : 0;
     _optimize               = hyp->GetOptimize();
     _fineness               = hyp->GetFineness();
     mparams.uselocalh       = hyp->GetSurfaceCurvature();
     netgen::merge_solids    = hyp->GetFuseEdges();
-    _simpleHyp = NULL;
+    _simpleHyp              = NULL;
 
-    SMESH_Gen_i* smeshGen_i = SMESH_Gen_i::GetSMESHGen();
-    CORBA::Object_var anObject = smeshGen_i->GetNS()->Resolve("/myStudyManager");
+    SMESH_Gen_i*              smeshGen_i = SMESH_Gen_i::GetSMESHGen();
+    CORBA::Object_var           anObject = smeshGen_i->GetNS()->Resolve("/myStudyManager");
     SALOMEDS::StudyManager_var aStudyMgr = SALOMEDS::StudyManager::_narrow(anObject);
-    SALOMEDS::Study_var myStudy = aStudyMgr->GetStudyByID(hyp->GetStudyId());
-    
-    const NETGENPlugin_Hypothesis::TLocalSize localSizes = hyp->GetLocalSizesAndEntries();
+    SALOMEDS::Study_var          myStudy = aStudyMgr->GetStudyByID(hyp->GetStudyId());
+
+    const NETGENPlugin_Hypothesis::TLocalSize   localSizes = hyp->GetLocalSizesAndEntries();
     NETGENPlugin_Hypothesis::TLocalSize::const_iterator it = localSizes.begin();
     for ( ; it != localSizes.end() ; it++)
-      {
-        std::string entry = (*it).first;
-        double val = (*it).second;
-        // --
-        GEOM::GEOM_Object_var aGeomObj;
-        TopoDS_Shape S = TopoDS_Shape();
-        SALOMEDS::SObject_var aSObj = myStudy->FindObjectID( entry.c_str() );
-        if (!aSObj->_is_nil()) {
-          CORBA::Object_var obj = aSObj->GetObject();
-          aGeomObj = GEOM::GEOM_Object::_narrow(obj);
-          aSObj->UnRegister();
-        }
-        if ( !aGeomObj->_is_nil() )
-          S = smeshGen_i->GeomObjectToShape( aGeomObj.in() );
-        // --
-        SetLocalSize(S, val);
+    {
+      std::string entry = (*it).first;
+      double        val = (*it).second;
+      // --
+      GEOM::GEOM_Object_var aGeomObj;
+      SALOMEDS::SObject_var aSObj = myStudy->FindObjectID( entry.c_str() );
+      if ( !aSObj->_is_nil() ) {
+        CORBA::Object_var obj = aSObj->GetObject();
+        aGeomObj = GEOM::GEOM_Object::_narrow(obj);
+        aSObj->UnRegister();
       }
+      TopoDS_Shape S = smeshGen_i->GeomObjectToShape( aGeomObj.in() );
+      SetLocalSize(S, val);
+    }
   }
 }
 
@@ -892,10 +887,10 @@ bool NETGENPlugin_Mesher::FillNgMesh(netgen::OCCGeometry&           occgeom,
               seg.epgeominfo[ 1 ].v = otherSeamParam;
               swap (seg.epgeominfo[0].u, seg.epgeominfo[1].u);
             }
-            swap (seg[0], seg[1]);
-            swap (seg.epgeominfo[0].dist, seg.epgeominfo[1].dist);
+            swap( seg[0], seg[1] );
+            swap( seg.epgeominfo[0].dist, seg.epgeominfo[1].dist );
             seg.edgenr = ngMesh.GetNSeg() + 1; // segment id
-            ngMesh.AddSegment (seg);
+            ngMesh.AddSegment( seg );
 #ifdef DUMP_SEGMENTS
             cout << "Segment: " << seg.edgenr << endl
                  << "\t is SEAM (reverse) of the previous. "
@@ -905,10 +900,10 @@ bool NETGENPlugin_Mesher::FillNgMesh(netgen::OCCGeometry&           occgeom,
           }
           else if ( fOri == TopAbs_INTERNAL )
           {
-            swap (seg[0], seg[1]);
+            swap( seg[0], seg[1] );
             swap( seg.epgeominfo[0], seg.epgeominfo[1] );
             seg.edgenr = ngMesh.GetNSeg() + 1; // segment id
-            ngMesh.AddSegment (seg);
+            ngMesh.AddSegment( seg );
 #ifdef DUMP_SEGMENTS
             cout << "Segment: " << seg.edgenr << endl << "\t is REVERSE of the previous" << endl;
 #endif
@@ -945,7 +940,7 @@ bool NETGENPlugin_Mesher::FillNgMesh(netgen::OCCGeometry&           occgeom,
         solidID1 = occgeom.somap.FindIndex( quadAdaptor->GetShape() );
       }
       else
-      {  
+      {
         PShapeIteratorPtr solidIt = helper.GetAncestors( geomFace, *sm->GetFather(), TopAbs_SOLID);
         while ( const TopoDS_Shape * solid = solidIt->next() )
         {
@@ -956,13 +951,15 @@ bool NETGENPlugin_Mesher::FillNgMesh(netgen::OCCGeometry&           occgeom,
       }
       // Add ng face descriptors of meshed faces
       faceNgID++;
-      ngMesh.AddFaceDescriptor (netgen::FaceDescriptor(faceNgID, solidID1, solidID2, 0));
+      ngMesh.AddFaceDescriptor( netgen::FaceDescriptor( faceNgID, solidID1, solidID2, 0 ));
 
       // if second oreder is required, even already meshed faces must be passed to NETGEN
       int fID = occgeom.fmap.Add( geomFace );
       occgeom.facemeshstatus[ fID-1 ] = netgen::FACE_MESHED_OK;
-      while ( fID < faceNgID ) { // geomFace is already in occgeom.fmap, add a copy
+      while ( fID < faceNgID ) // geomFace is already in occgeom.fmap, add a copy
+      {
         fID = occgeom.fmap.Add( BRepBuilderAPI_Copy( geomFace, /*copyGeom=*/false ));
+        if ( occgeom.facemeshstatus.Size() < fID ) occgeom.facemeshstatus.SetSize( fID );
         occgeom.facemeshstatus[ fID-1 ] = netgen::FACE_MESHED_OK;
       }
       // Problem with the second order in a quadrangular mesh remains.
@@ -970,7 +967,7 @@ bool NETGENPlugin_Mesher::FillNgMesh(netgen::OCCGeometry&           occgeom,
       //    by FillSMesh() (find "AddFaceDescriptor")
       // 2) Temporary triangles generated by StdMeshers_QuadToTriaAdaptor
       //    are on faces where quadrangles were.
-      // Due to these 2 points, wrong geom faces are used while conversion to qudratic
+      // Due to these 2 points, wrong geom faces are used while conversion to quadratic
       // of the mentioned above quadrangles and triangles
 
       // Orient the face correctly in solidID1 (issue 0020206)
@@ -986,7 +983,7 @@ bool NETGENPlugin_Mesher::FillNgMesh(netgen::OCCGeometry&           occgeom,
       // Add surface elements
 
       netgen::Element2d tri(3);
-      tri.SetIndex ( faceNgID );
+      tri.SetIndex( faceNgID );
       SMESH_TNodeXYZ xyz[3];
 
 #ifdef DUMP_TRIANGLES
@@ -1494,7 +1491,7 @@ void NETGENPlugin_Mesher::AddIntVerticesInFaces(const netgen::OCCGeometry&     o
       ngMesh.AddSegment (seg);
 
       // add reverse segment
-      swap (seg[0], seg[1]);
+      swap( seg[0], seg[1] );
       swap( seg.epgeominfo[0], seg.epgeominfo[1] );
       seg.edgenr = ngMesh.GetNSeg() + 1; // segment id
       ngMesh.AddSegment (seg);
@@ -1690,8 +1687,8 @@ void NETGENPlugin_Mesher::AddIntVerticesInSolids(const netgen::OCCGeometry&     
         else
         {
           double segLenHint = ngMesh.GetH( ngMesh.Point( vData.ngId ));
-          bool avgLenOK  = ( avgSegLen < 0.75 * distN1 );
-          bool hintLenOK = ( segLenHint  < 0.75 * distN1 );
+          bool     avgLenOK = ( avgSegLen < 0.75 * distN1 );
+          bool    hintLenOK = ( segLenHint  < 0.75 * distN1 );
           createNew = (createNew || avgLenOK || hintLenOK );
           // we create a new node not closer than 0.5 to the closest face
           // in order not to clash with other close face
@@ -1805,13 +1802,13 @@ NETGENPlugin_Mesher::AddSegmentsToMesh(netgen::Mesh&                    ngMesh,
 
   const int solidID = 0, faceID = geom.fmap.FindIndex( helper.GetSubShape() );
   if ( ngMesh.GetNFD() < 1 )
-    ngMesh.AddFaceDescriptor (netgen::FaceDescriptor(faceID, solidID, solidID, 0));
+    ngMesh.AddFaceDescriptor( netgen::FaceDescriptor( faceID, solidID, solidID, 0 ));
 
   for ( size_t iW = 0; iW < wires.size(); ++iW )
   {
-    StdMeshers_FaceSidePtr wire = wires[ iW ];
+    StdMeshers_FaceSidePtr       wire = wires[ iW ];
     const vector<UVPtStruct>& uvPtVec = wire->GetUVPtStruct();
-    const int nbSegments = wire->NbPoints() - 1;
+    const int              nbSegments = wire->NbPoints() - 1;
 
     // assure the 1st node to be in node2ngID, which is needed to correctly
     // "close chain of segments" (see below) in case if the 1st node is not
@@ -1924,7 +1921,7 @@ NETGENPlugin_Mesher::AddSegmentsToMesh(netgen::Mesh&                    ngMesh,
     // close chain of segments
     if ( nbSegments > 0 )
     {
-      netgen::Segment& lastSeg = ngMesh.LineSegment( ngMesh.GetNSeg() - int( isInternalWire));
+      netgen::Segment& lastSeg = ngMesh.LineSegment( ngMesh.GetNSeg() - int( isInternalWire ));
       const SMDS_MeshNode * lastNode = uvPtVec.back().node;
       lastSeg[1] = node2ngID.insert( make_pair( lastNode, lastSeg[1] )).first->second;
       if ( lastSeg[1] > ngMesh.GetNP() )
@@ -2141,12 +2138,12 @@ int NETGENPlugin_Mesher::FillSMesh(const netgen::OCCGeometry&          occgeo,
   for (i = nbInitFac+1; i <= nbFac; ++i )
   {
     const netgen::Element2d& elem = ngMesh.SurfaceElement(i);
-    int aGeomFaceInd = elem.GetIndex();
+    const int        aGeomFaceInd = elem.GetIndex();
     TopoDS_Face aFace;
     if (aGeomFaceInd > 0 && aGeomFaceInd <= occgeo.fmap.Extent())
       aFace = TopoDS::Face(occgeo.fmap(aGeomFaceInd));
     nodes.clear();
-    for (int j=1; j <= elem.GetNP(); ++j)
+    for ( int j = 1; j <= elem.GetNP(); ++j )
     {
       int pind = elem.PNum(j);
       if ( pind < 1 || pind >= (int) nodeVec.size() )
@@ -2204,30 +2201,30 @@ int NETGENPlugin_Mesher::FillSMesh(const netgen::OCCGeometry&          occgeo,
       MESSAGE("NETGEN created a face of unexpected type, ignoring");
       continue;
     }
-    if (!face)
+    if ( !face )
     {
       if ( comment.empty() ) comment << "Cannot create a mesh face";
       MESSAGE("Cannot create a mesh face");
       nbSeg = nbFac = nbVol = 0;
       break;
     }
-    if (!aFace.IsNull())
-      meshDS->SetMeshElementOnShape(face, aFace);
+    if ( !aFace.IsNull() )
+      meshDS->SetMeshElementOnShape( face, aFace );
   }
 
   // ------------------
   // Create tetrahedra
   // ------------------
 
-  for (i = 1; i <= nbVol; ++i)
+  for ( i = 1; i <= nbVol; ++i )
   {
     const netgen::Element& elem = ngMesh.VolumeElement(i);      
     int aSolidInd = elem.GetIndex();
     TopoDS_Solid aSolid;
-    if (aSolidInd > 0 && aSolidInd <= occgeo.somap.Extent())
+    if ( aSolidInd > 0 && aSolidInd <= occgeo.somap.Extent() )
       aSolid = TopoDS::Solid(occgeo.somap(aSolidInd));
     nodes.clear();
-    for (int j=1; j <= elem.GetNP(); ++j)
+    for ( int j = 1; j <= elem.GetNP(); ++j )
     {
       int pind = elem.PNum(j);
       if ( pind < 1 || pind >= (int)nodeVec.size() )
@@ -2246,7 +2243,7 @@ int NETGENPlugin_Mesher::FillSMesh(const netgen::OCCGeometry&          occgeo,
       continue;
     }
     SMDS_MeshVolume* vol = NULL;
-    switch (elem.GetType())
+    switch ( elem.GetType() )
     {
     case netgen::TET:
       vol = meshDS->AddVolume(nodes[0],nodes[1],nodes[2],nodes[3]);
