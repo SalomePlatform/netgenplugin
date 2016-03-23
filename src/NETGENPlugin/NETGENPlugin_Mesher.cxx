@@ -955,6 +955,7 @@ bool NETGENPlugin_Mesher::FillNgMesh(netgen::OCCGeometry&           occgeom,
 
       // if second oreder is required, even already meshed faces must be passed to NETGEN
       int fID = occgeom.fmap.Add( geomFace );
+      if ( occgeom.facemeshstatus.Size() < fID ) occgeom.facemeshstatus.SetSize( fID );
       occgeom.facemeshstatus[ fID-1 ] = netgen::FACE_MESHED_OK;
       while ( fID < faceNgID ) // geomFace is already in occgeom.fmap, add a copy
       {
