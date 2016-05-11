@@ -572,9 +572,6 @@ void NETGENPlugin_Mesher::PrepareOCCgeometry(netgen::OCCGeometry&     occgeo,
   BRepBndLib::Add (shape, bb);
   double x1,y1,z1,x2,y2,z2;
   bb.Get (x1,y1,z1,x2,y2,z2);
-  MESSAGE("shape bounding box:\n" <<
-          "(" << x1 << " " << y1 << " " << z1 << ") " <<
-          "(" << x2 << " " << y2 << " " << z2 << ")");
   netgen::Point<3> p1 = netgen::Point<3> (x1,y1,z1);
   netgen::Point<3> p2 = netgen::Point<3> (x2,y2,z2);
   occgeo.boundingbox = netgen::Box<3> (p1,p2);
@@ -1824,7 +1821,7 @@ NETGENPlugin_Mesher::AddSegmentsToMesh(netgen::Mesh&                    ngMesh,
     int edgeID = 1, posID = -2;
     bool isInternalWire = false;
     double vertexNormPar = 0;
-    //const int prevNbNGSeg = ngMesh.GetNSeg();
+    const int prevNbNGSeg = ngMesh.GetNSeg();
     for ( int i = 0; i < nbSegments; ++i ) // loop on segments
     {
       // Add the first point of a segment
@@ -1962,6 +1959,8 @@ NETGENPlugin_Mesher::AddSegmentsToMesh(netgen::Mesh&                    ngMesh,
            << "\tp1 edge: " << seg.epgeominfo[ 1 ].edgenr << endl;
     }
     cout << "--END WIRE " << iW << endl;
+#else
+    SMESH_Comment __not_unused_variable( prevNbNGSeg );
 #endif
 
   } // loop on WIREs of a FACE
@@ -2708,7 +2707,8 @@ bool NETGENPlugin_Mesher::Compute()
       }
 
       // Build viscous layers
-      if ( _isViscousLayers2D )
+      if ( _isViscousLayers2D ||
+           StdMeshers_ViscousLayers2D::HasProxyMesh( TopoDS::Face( occgeo.fmap(1) ), *_mesh ))
       {
         if ( !internals.hasInternalVertexInFace() ) {
           FillSMesh( occgeo, *_ngMesh, initState, *_mesh, nodeVec, comment );
@@ -2722,6 +2722,8 @@ bool NETGENPlugin_Mesher::Compute()
           viscousMesh = StdMeshers_ViscousLayers2D::Compute( *_mesh, F );
           if ( !viscousMesh )
             return false;
+          if ( viscousMesh->NbProxySubMeshes() == 0 )
+            continue;
           // exclude from computation ng segments built on EDGEs of F
           for (int i = 1; i <= _ngMesh->GetNSeg(); i++)
           {
@@ -2950,12 +2952,6 @@ bool NETGENPlugin_Mesher::Compute()
   int nbFac = _ngMesh->GetNSE();
   int nbVol = _ngMesh->GetNE();
   bool isOK = ( !err && (_isVolume ? (nbVol > 0) : (nbFac > 0)) );
-
-  MESSAGE((err ? "Mesh Generation failure" : "End of Mesh Generation") <<
-          ", nb nodes: "    << nbNod <<
-          ", nb segments: " << nbSeg <<
-          ", nb faces: "    << nbFac <<
-          ", nb volumes: "  << nbVol);
 
   // Feed back the SMESHDS with the generated Nodes and Elements
   if ( true /*isOK*/ ) // get whatever built
@@ -3370,26 +3366,6 @@ double NETGENPlugin_Mesher::GetProgress(const SMESH_Algo* holder,
   //cout << progress << " "  << *algoProgressTic << " " << netgen::multithread.task << " "<< _ticTime << endl;
 
   return Min( progress, 0.99 );
-}
-
-//================================================================================
-/*!
- * \brief Remove "test.out" and "problemfaces" files in current directory
- */
-//================================================================================
-
-void NETGENPlugin_Mesher::RemoveTmpFiles()
-{
-  bool rm =  SMESH_File("test.out").remove() ;
-#ifndef WIN32
-  if (rm && netgen::testout)
-  {
-    delete netgen::testout;
-    netgen::testout = 0;
-  }
-#endif
-  SMESH_File("problemfaces").remove();
-  SMESH_File("occmesh.rep").remove();
 }
 
 //================================================================================
@@ -3944,20 +3920,39 @@ SMESH_Mesh& NETGENPlugin_Internals::getMesh() const
 
 //================================================================================
 /*!
+ * \brief Access to a counter of NETGENPlugin_NetgenLibWrapper instances
+ */
+//================================================================================
+
+int& NETGENPlugin_NetgenLibWrapper::instanceCounter()
+{
+  static int theCouner = 0;
+  return theCouner;
+}
+
+//================================================================================
+/*!
  * \brief Initialize netgen library
  */
 //================================================================================
 
 NETGENPlugin_NetgenLibWrapper::NETGENPlugin_NetgenLibWrapper()
 {
-  Ng_Init();
+  if ( instanceCounter() == 0 )
+    Ng_Init();
+
+  ++instanceCounter();
 
   _isComputeOk      = false;
   _coutBuffer       = NULL;
+  _ngcout           = NULL;
+  _ngcerr           = NULL;
   if ( !getenv( "KEEP_NETGEN_OUTPUT" ))
   {
     // redirect all netgen output (mycout,myerr,cout) to _outputFileName
     _outputFileName = getOutputFileName();
+    _ngcout         = netgen::mycout;
+    _ngcerr         = netgen::myerr;
     netgen::mycout  = new ofstream ( _outputFileName.c_str() );
     netgen::myerr   = netgen::mycout;
     _coutBuffer     = std::cout.rdbuf();
@@ -3979,9 +3974,11 @@ NETGENPlugin_NetgenLibWrapper::NETGENPlugin_NetgenLibWrapper()
 
 NETGENPlugin_NetgenLibWrapper::~NETGENPlugin_NetgenLibWrapper()
 {
+  --instanceCounter();
+
   Ng_DeleteMesh( _ngMesh );
   Ng_Exit();
-  NETGENPlugin_Mesher::RemoveTmpFiles();
+  RemoveTmpFiles();
   if ( _coutBuffer )
     std::cout.rdbuf( _coutBuffer );
 #ifdef _DEBUG_
@@ -4029,6 +4026,26 @@ std::string NETGENPlugin_NetgenLibWrapper::getOutputFileName()
 
 //================================================================================
 /*!
+ * \brief Remove "test.out" and "problemfaces" files in current directory
+ */
+//================================================================================
+
+void NETGENPlugin_NetgenLibWrapper::RemoveTmpFiles()
+{
+  bool rm =  SMESH_File("test.out").remove() ;
+#ifndef WIN32
+  if ( rm && netgen::testout && instanceCounter() == 0 )
+  {
+    delete netgen::testout;
+    netgen::testout = 0;
+  }
+#endif
+  SMESH_File("problemfaces").remove();
+  SMESH_File("occmesh.rep").remove();
+}
+
+//================================================================================
+/*!
  * \brief Remove file with netgen output
  */
 //================================================================================
@@ -4037,11 +4054,12 @@ void NETGENPlugin_NetgenLibWrapper::removeOutputFile()
 {
   if ( !_outputFileName.empty() )
   {
-    if ( netgen::mycout )
+    if ( _ngcout )
     {
       delete netgen::mycout;
-      netgen::mycout = 0;
-      netgen::myerr = 0;
+      netgen::mycout = _ngcout;
+      netgen::myerr  = _ngcerr;
+      _ngcout        = 0;
     }
     string    tmpDir = SALOMEDS_Tool::GetDirFromPath ( _outputFileName );
     string aFileName = SALOMEDS_Tool::GetNameFromPath( _outputFileName ) + ".out";

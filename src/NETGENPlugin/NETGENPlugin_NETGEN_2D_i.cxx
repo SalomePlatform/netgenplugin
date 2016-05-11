@@ -50,7 +50,6 @@ NETGENPlugin_NETGEN_2D_i::NETGENPlugin_NETGEN_2D_i( PortableServer::POA_ptr theP
        SMESH_Algo_i( thePOA ),
        SMESH_2D_Algo_i( thePOA )
 {
-  MESSAGE( "NETGENPlugin_NETGEN_2D_i::NETGENPlugin_NETGEN_2D_i" );
   myBaseImpl = new ::NETGENPlugin_NETGEN_2D( theGenImpl->GetANewId(),
                                              theStudyId,
                                              theGenImpl );
@@ -66,7 +65,6 @@ NETGENPlugin_NETGEN_2D_i::NETGENPlugin_NETGEN_2D_i( PortableServer::POA_ptr theP
 
 NETGENPlugin_NETGEN_2D_i::~NETGENPlugin_NETGEN_2D_i()
 {
-  MESSAGE( "NETGENPlugin_NETGEN_2D_i::~NETGENPlugin_NETGEN_2D_i" );
 }
 
 //=============================================================================
@@ -79,6 +77,5 @@ NETGENPlugin_NETGEN_2D_i::~NETGENPlugin_NETGEN_2D_i()
 
 ::NETGENPlugin_NETGEN_2D* NETGENPlugin_NETGEN_2D_i::GetImpl()
 {
-  MESSAGE( "NETGENPlugin_NETGEN_2D_i::GetImpl" );
   return ( ::NETGENPlugin_NETGEN_2D* )myBaseImpl;
 }

@@ -96,7 +96,6 @@ NETGENPlugin_NETGEN_3D::NETGENPlugin_NETGEN_3D(int hypId, int studyId,
                              SMESH_Gen* gen)
   : SMESH_3D_Algo(hypId, studyId, gen)
 {
-  MESSAGE("NETGENPlugin_NETGEN_3D::NETGENPlugin_NETGEN_3D");
   _name = "NETGEN_3D";
   _shapeType = (1 << TopAbs_SHELL) | (1 << TopAbs_SOLID);// 1 bit /shape type
   _compatibleHypothesis.push_back("MaxElementVolume");
@@ -120,7 +119,6 @@ NETGENPlugin_NETGEN_3D::NETGENPlugin_NETGEN_3D(int hypId, int studyId,
 
 NETGENPlugin_NETGEN_3D::~NETGENPlugin_NETGEN_3D()
 {
-  MESSAGE("NETGENPlugin_NETGEN_3D::~NETGENPlugin_NETGEN_3D");
 }
 
 //=============================================================================
@@ -133,8 +131,6 @@ bool NETGENPlugin_NETGEN_3D::CheckHypothesis (SMESH_Mesh&         aMesh,
                                               const TopoDS_Shape& aShape,
                                               Hypothesis_Status&  aStatus)
 {
-  MESSAGE("NETGENPlugin_NETGEN_3D::CheckHypothesis");
-
   _hypMaxElementVolume = NULL;
   _hypParameters = NULL;
   _viscousLayersHyp = NULL;

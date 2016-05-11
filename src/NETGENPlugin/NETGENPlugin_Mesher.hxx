@@ -88,11 +88,16 @@ struct NETGENPLUGIN_EXPORT NETGENPlugin_NetgenLibWrapper
   ~NETGENPlugin_NetgenLibWrapper();
   void setMesh( nglib::Ng_Mesh* mesh );
 
+  static void RemoveTmpFiles();
+  static int& instanceCounter();
+
  private:
   std::string getOutputFileName();
   void        removeOutputFile();
   std::string _outputFileName;
 
+  ostream *       _ngcout;
+  ostream *       _ngcerr;
   std::streambuf* _coutBuffer;   // to re-/store cout.rdbuf()
 };
 
@@ -180,8 +185,6 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_Mesher
                       const bool                            overrideMinH=true);
 
   void SetDefaultParameters();
-
-  static void RemoveTmpFiles();
 
   static SMESH_ComputeErrorPtr ReadErrors(const std::vector< const SMDS_MeshNode* >& nodeVec);
 

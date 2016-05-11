@@ -58,7 +58,6 @@ NETGENPlugin_NETGEN_2D::NETGENPlugin_NETGEN_2D(int hypId, int studyId,
                                                SMESH_Gen* gen)
   : SMESH_2D_Algo(hypId, studyId, gen)
 {
-  MESSAGE("NETGENPlugin_NETGEN_2D::NETGENPlugin_NETGEN_2D");
   _name = "NETGEN_2D";
   _shapeType = (1 << TopAbs_FACE); // 1 bit /shape type
   _compatibleHypothesis.push_back("NETGEN_Parameters_2D");
@@ -78,7 +77,6 @@ NETGENPlugin_NETGEN_2D::NETGENPlugin_NETGEN_2D(int hypId, int studyId,
 
 NETGENPlugin_NETGEN_2D::~NETGENPlugin_NETGEN_2D()
 {
-  MESSAGE("NETGENPlugin_NETGEN_2D::~NETGENPlugin_NETGEN_2D");
 }
 
 //=============================================================================
