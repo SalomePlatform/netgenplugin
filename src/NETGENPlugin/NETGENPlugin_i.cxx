@@ -56,8 +56,6 @@ extern "C"
   NETGENPLUGIN_EXPORT
   GenericHypothesisCreator_i* GetHypothesisCreator (const char* aHypName)
   {
-    MESSAGE("GetHypothesisCreator " << aHypName);
-
     GenericHypothesisCreator_i* aCreator = 0;
 
     // Hypotheses

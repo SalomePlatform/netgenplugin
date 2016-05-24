@@ -51,7 +51,6 @@ NETGENPlugin_NETGEN_3D_i::NETGENPlugin_NETGEN_3D_i( PortableServer::POA_ptr theP
        SMESH_Algo_i( thePOA ),
        SMESH_3D_Algo_i( thePOA )
 {
-  MESSAGE( "NETGENPlugin_NETGEN_3D_i::NETGENPlugin_NETGEN_3D_i" );
   myBaseImpl = new ::NETGENPlugin_NETGEN_3D( theGenImpl->GetANewId(),
                                       theStudyId,
                                       theGenImpl );
@@ -67,7 +66,6 @@ NETGENPlugin_NETGEN_3D_i::NETGENPlugin_NETGEN_3D_i( PortableServer::POA_ptr theP
 
 NETGENPlugin_NETGEN_3D_i::~NETGENPlugin_NETGEN_3D_i()
 {
-  MESSAGE( "NETGENPlugin_NETGEN_3D_i::~NETGENPlugin_NETGEN_3D_i" );
 }
 
 //=============================================================================
@@ -80,7 +78,6 @@ NETGENPlugin_NETGEN_3D_i::~NETGENPlugin_NETGEN_3D_i()
 
 ::NETGENPlugin_NETGEN_3D* NETGENPlugin_NETGEN_3D_i::GetImpl()
 {
-  MESSAGE( "NETGENPlugin_NETGEN_3D_i::GetImpl" );
   return ( ::NETGENPlugin_NETGEN_3D* )myBaseImpl;
 }
 
