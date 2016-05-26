@@ -1095,6 +1095,18 @@ diff -Naur netgen-4.9.13_orig/libsrc/stlgeom/stlgeommesh.cpp netgen-4.9.13_new/l
  	    }
  	  else
  	    {
+diff -Naur netgen-4.9.13_orig/ng/Makefile.in netgen-4.9.13_new/ng/Makefile.in
+--- netgen-4.9.13_orig/ng/Makefile.in	2010-05-21 01:29:28.000000000 +0200
++++ netgen-4.9.13_new/ng/Makefile.in	2016-05-26 14:39:47.128141997 +0200
+@@ -287,7 +287,7 @@
+ 	$(top_builddir)/libsrc/gprim/libgprim.la \
+ 	$(top_builddir)/libsrc/linalg/libla.la \
+ 	$(top_builddir)/libsrc/general/libgen.la \
+-	$(OCCLIBS) -L$(TK_BIN_DIR)/Togl1.7 $(TOGLLIBDIR) -lTogl1.7 $(LIBGLU) $(TK_LIB_SPEC) $(TCL_LIB_SPEC) $(MPI_LIBS) $(FFMPEG_LIBS) $(JPEGLIB_LIBS) $(PKG_LIBS) 
++	$(OCCLIBS) -L$(TK_BIN_DIR)/Togl1.7 $(TOGLLIBDIR) -lTogl $(LIBGLU) $(TK_LIB_SPEC) $(TCL_LIB_SPEC) $(MPI_LIBS) $(FFMPEG_LIBS) $(JPEGLIB_LIBS) $(PKG_LIBS) 
+ 
+ 
+ # add for static linkage of ngsolve:
 diff -Naur netgen-4.9.13_orig/nglib/nglib.h netgen-4.9.13_new/nglib/nglib.h
 --- netgen-4.9.13_orig/nglib/nglib.h	2010-05-18 15:20:25.000000000 +0400
 +++ netgen-4.9.13_new/nglib/nglib.h	2014-07-22 13:01:28.000000000 +0400
