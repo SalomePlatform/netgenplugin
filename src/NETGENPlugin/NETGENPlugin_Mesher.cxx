@@ -32,6 +32,7 @@
 #include "NETGENPlugin_SimpleHypothesis_3D.hxx"
 
 #include <SMDS_FaceOfNodes.hxx>
+#include <SMDS_LinearEdge.hxx>
 #include <SMDS_MeshElement.hxx>
 #include <SMDS_MeshNode.hxx>
 #include <SMESHDS_Mesh.hxx>
@@ -530,27 +531,27 @@ namespace
    */
   //================================================================================
 
-  void makeQuadratic( const TopTools_IndexedMapOfShape& shapes,
-                      SMESH_Mesh*                       mesh )
-  {
-    for ( int i = 1; i <= shapes.Extent(); ++i )
-    {
-      SMESHDS_SubMesh* smDS = mesh->GetMeshDS()->MeshElements( shapes(i) );
-      if ( !smDS ) continue;
-      SMDS_ElemIteratorPtr elemIt = smDS->GetElements();
-      if ( !elemIt->more() ) continue;
-      const SMDS_MeshElement* e = elemIt->next();
-      if ( !e || e->IsQuadratic() )
-        continue;
+  // void makeQuadratic( const TopTools_IndexedMapOfShape& shapes,
+  //                     SMESH_Mesh*                       mesh )
+  // {
+  //   for ( int i = 1; i <= shapes.Extent(); ++i )
+  //   {
+  //     SMESHDS_SubMesh* smDS = mesh->GetMeshDS()->MeshElements( shapes(i) );
+  //     if ( !smDS ) continue;
+  //     SMDS_ElemIteratorPtr elemIt = smDS->GetElements();
+  //     if ( !elemIt->more() ) continue;
+  //     const SMDS_MeshElement* e = elemIt->next();
+  //     if ( !e || e->IsQuadratic() )
+  //       continue;
 
-      TIDSortedElemSet elems;
-      elems.insert( e );
-      while ( elemIt->more() )
-        elems.insert( elems.end(), elemIt->next() );
+  //     TIDSortedElemSet elems;
+  //     elems.insert( e );
+  //     while ( elemIt->more() )
+  //       elems.insert( elems.end(), elemIt->next() );
 
-      SMESH_MeshEditor( mesh ).ConvertToQuadratic( /*3d=*/false, elems, /*biQuad=*/false );
-    }
-  }
+  //     SMESH_MeshEditor( mesh ).ConvertToQuadratic( /*3d=*/false, elems, /*biQuad=*/false );
+  //   }
+  // }
 
 }
 
@@ -2947,8 +2948,8 @@ bool NETGENPlugin_Mesher::Compute()
 
   _ticTime = 0.98 / _progressTic;
 
-  int nbNod = _ngMesh->GetNP();
-  int nbSeg = _ngMesh->GetNSeg();
+  //int nbNod = _ngMesh->GetNP();
+  //int nbSeg = _ngMesh->GetNSeg();
   int nbFac = _ngMesh->GetNSE();
   int nbVol = _ngMesh->GetNE();
   bool isOK = ( !err && (_isVolume ? (nbVol > 0) : (nbFac > 0)) );
@@ -3435,7 +3436,7 @@ NETGENPlugin_Mesher::ReadErrors(const vector<const SMDS_MeshNode* >& nodeVec)
 
 #ifdef _DEBUG_
   size_t nbBadElems = err->myBadElements.size();
-  nbBadElems = 0;
+  if ( nbBadElems ) nbBadElems++; // avoid warning: variable set but not used
 #endif
 
   return err;

@@ -26,6 +26,9 @@
 #include "NETGENPlugin_SimpleHypothesis_3D.hxx"
 #include "NETGENPlugin_Hypothesis.hxx"
 
+#include <SMDS_Mesh.hxx>
+#include <SMESHDS_Mesh.hxx>
+#include <SMESHDS_SubMesh.hxx>
 #include <SMESH_ControlsDef.hxx>
 #include <SMESH_Mesh.hxx>
 #include <SMESH_subMesh.hxx>
