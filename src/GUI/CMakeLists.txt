@@ -53,7 +53,7 @@ SET(_link_LIBRARIES
   ${GUI_SalomeObject}
   ${GUI_LightApp}
   ${SMESH_SMESH}
-  ${SMESH_GeomSelectionTools}
+  ${SMESH_PluginUtils}
   ${CAS_KERNEL}
   SalomeIDLNETGENPLUGIN
   NETGENEngine
