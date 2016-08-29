@@ -80,6 +80,7 @@ enum {
   LSZ_VERTEX_BTN,
   LSZ_EDGE_BTN,
   LSZ_FACE_BTN,
+  LSZ_SOLID_BTN,
   LSZ_SEPARATOR2,
   LSZ_REMOVE_BTN
 };
@@ -262,6 +263,8 @@ QFrame* NETGENPluginGUI_HypothesisCreator::buildFrame()
     localSizeLayout->addWidget(addEdgeButton, LSZ_EDGE_BTN, 1, 1, 1);
     QPushButton* addFaceButton = new QPushButton(tr("NETGEN_LSZ_FACE"), localSizeGroup);
     localSizeLayout->addWidget(addFaceButton, LSZ_FACE_BTN, 1, 1, 1);
+    QPushButton* addSolidButton = new QPushButton(tr("NETGEN_LSZ_SOLID"), localSizeGroup);
+    localSizeLayout->addWidget(addSolidButton, LSZ_SOLID_BTN, 1, 1, 1);
 
     QFrame *line2 = new QFrame(localSizeGroup);
     line2->setFrameShape(QFrame::HLine);
@@ -274,6 +277,7 @@ QFrame* NETGENPluginGUI_HypothesisCreator::buildFrame()
     connect( addVertexButton, SIGNAL(clicked()), this, SLOT(onAddLocalSizeOnVertex()));
     connect( addEdgeButton, SIGNAL(clicked()), this, SLOT(onAddLocalSizeOnEdge()));
     connect( addFaceButton, SIGNAL(clicked()), this, SLOT(onAddLocalSizeOnFace()));
+    connect( addSolidButton, SIGNAL(clicked()), this, SLOT(onAddLocalSizeOnSolid()));
     connect( removeButton, SIGNAL(clicked()), this, SLOT(onRemoveLocalSizeOnShape()));
     connect( myLocalSizeTable, SIGNAL(cellChanged(int, int)), this, SLOT(onSetLocalSize(int, int)));
 
@@ -636,6 +640,11 @@ void NETGENPluginGUI_HypothesisCreator::onAddLocalSizeOnEdge()
 void NETGENPluginGUI_HypothesisCreator::onAddLocalSizeOnFace()
 {
   addLocalSizeOnShape(TopAbs_FACE);
+}
+
+void NETGENPluginGUI_HypothesisCreator::onAddLocalSizeOnSolid()
+{
+  addLocalSizeOnShape(TopAbs_SOLID);
 }
 
 void NETGENPluginGUI_HypothesisCreator::addLocalSizeOnShape(TopAbs_ShapeEnum typeShapeAsked)

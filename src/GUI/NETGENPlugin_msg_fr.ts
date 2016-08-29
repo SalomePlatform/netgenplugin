@@ -137,7 +137,11 @@
     </message>
     <message>
         <source>NETGEN_LSZ_FACE</source>
-        <translation>Sur une sous-face</translation>
+        <translation>Sur une face</translation>
+    </message>
+    <message>
+        <source>NETGEN_LSZ_SOLID</source>
+        <translation>Sur une solide</translation>
     </message>
     <message>
         <source>NETGEN_LSZ_REMOVE</source>

@@ -59,12 +59,13 @@ but are topologically different.
 \image html netgen3d_local_size.png
 
 - <b>Local sizes</b> - allows to define size of elements on and
-around specified geometrical edges and vertices. To define the local
-size it is necessary to select a geometrical edge or vertex in the
-object browser or in the viewer, and to click <b>On Edge</b> or <b>On
-Vertex</b> correspondingly. <b>Name</b> of the geometrical object and
-a default <b>Value</b> will be added in the table where the
-<b>Value</b> can be changed.
+around specified geometrical objects. To define the local
+size it is necessary to select a geometrical objects in the
+object browser or in the viewer, and to click a button corresponding
+to the type of the geometrical objects: <b>On Vertex</b>, <b>On
+  Edge</b> etc. <b>Name</b> of the geometrical object and a
+default <b>Value</b> will be added in the table where the <b>Value</b>
+can be changed.
 - <b>Remove</b> - deletes a selected row from the table.
 
 \image html netgen2d3d_simple.png

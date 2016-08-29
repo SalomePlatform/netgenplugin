@@ -80,6 +80,7 @@ protected slots:
   virtual void     onAddLocalSizeOnVertex();
   virtual void     onAddLocalSizeOnEdge();
   virtual void     onAddLocalSizeOnFace();
+  virtual void     onAddLocalSizeOnSolid();
   virtual void     onRemoveLocalSizeOnShape();
   virtual void     onSetLocalSize(int,int);
 
