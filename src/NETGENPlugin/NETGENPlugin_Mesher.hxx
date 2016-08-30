@@ -121,6 +121,7 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_Mesher
   void SetParameters(const NETGENPlugin_Hypothesis*          hyp);
   void SetParameters(const NETGENPlugin_SimpleHypothesis_2D* hyp);
   void SetViscousLayers2DAssigned(bool isAssigned) { _isViscousLayers2D = isAssigned; }
+  static void SetLocalSize( netgen::OCCGeometry& occgeo, netgen::Mesh& ngMesh );
 
   bool Compute();
 

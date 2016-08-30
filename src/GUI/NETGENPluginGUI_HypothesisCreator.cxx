@@ -236,7 +236,7 @@ QFrame* NETGENPluginGUI_HypothesisCreator::buildFrame()
   }
 
   myLocalSizeTable = 0;
-  if ( !myIsONLY )
+  //if ( !myIsONLY )
   {
     QWidget* localSizeGroup = new QWidget();
     QGridLayout* localSizeLayout = new QGridLayout(localSizeGroup);

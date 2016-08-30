@@ -314,6 +314,9 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
         ngMeshes[0]->RestrictLocalH( pi, factor * ( n1 - n2 ).Modulus() );
       }
     }
+
+    // set local size defined on shapes
+    aMesher.SetLocalSize( occgeoComm, *ngMeshes[0] );
   }
   netgen::mparam.uselocalh = toOptimize; // restore as it is used at surface optimization
 
@@ -449,6 +452,7 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
         Box<3> bb = occgeom.GetBoundingBox();
         bb.Increase (bb.Diam()/10);
         ngMesh->SetLocalH (bb.PMin(), bb.PMax(), mparam.grading);
+        aMesher.SetLocalSize( occgeom, *ngMesh );
       }
 
       nodeVec.clear();

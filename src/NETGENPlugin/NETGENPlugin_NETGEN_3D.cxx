@@ -433,10 +433,21 @@ bool NETGENPlugin_NETGEN_3D::compute(SMESH_Mesh&                     aMesh,
 
   NETGENPlugin_Mesher aMesher( &aMesh, helper.GetSubShape(), /*isVolume=*/true );
   netgen::OCCGeometry occgeo;
-  
+
   if ( _hypParameters )
   {
     aMesher.SetParameters( _hypParameters );
+
+    if ( !_hypParameters->GetLocalSizesAndEntries().empty() )
+    {
+      if ( ! &ngMesh->LocalHFunction() )
+      {
+        netgen::Point3d pmin, pmax;
+        ngMesh->GetBox( pmin, pmax, 0 );
+        ngMesh->SetLocalH( pmin, pmax, _hypParameters->GetGrowthRate() );
+      }
+      aMesher.SetLocalSize( occgeo, *ngMesh );
+    }
     if ( !_hypParameters->GetOptimize() )
       endWith = netgen::MESHCONST_MESHVOLUME;
   }
