@@ -140,6 +140,10 @@
       <translation>サブフェース上</translation>
     </message>
     <message>
+      <source>NETGEN_LSZ_SOLID</source>
+      <translation>ソリッド上</translation>
+    </message>
+    <message>
       <source>NETGEN_LSZ_REMOVE</source>
       <translation>削除</translation>
     </message>
