@@ -141,7 +141,7 @@
     </message>
     <message>
         <source>NETGEN_LSZ_SOLID</source>
-        <translation>Sur une solide</translation>
+        <translation>Sur un solide</translation>
     </message>
     <message>
         <source>NETGEN_LSZ_REMOVE</source>
