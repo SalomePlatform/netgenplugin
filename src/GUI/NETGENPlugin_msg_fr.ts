@@ -5,7 +5,7 @@
     <name>@default</name>
     <message>
         <source>NETGEN_2D_HYPOTHESIS</source>
-        <translation>Netgen 2D</translation>
+        <translation>NETGEN 2D</translation>
     </message>
     <message>
         <source>NETGEN_2D_TITLE</source>
@@ -13,7 +13,7 @@
     </message>
     <message>
         <source>NETGEN_3D_HYPOTHESIS</source>
-        <translation>Netgen 3D</translation>
+        <translation>NETGEN 3D</translation>
     </message>
     <message>
         <source>NETGEN_3D_TITLE</source>
@@ -21,7 +21,7 @@
     </message>
     <message>
         <source>NETGEN_SimpleParameters_3D_HYPOTHESIS</source>
-        <translation>Netgen 3D paramètres simplifiés</translation>
+        <translation>NETGEN 3D paramètres simplifiés</translation>
     </message>
     <message>
         <source>NETGEN_SimpleParameters_3D_TITLE</source>
@@ -29,7 +29,7 @@
     </message>
     <message>
         <source>NETGEN_SimpleParameters_2D_HYPOTHESIS</source>
-        <translation>Netgen 2D paramètres simplifiés</translation>
+        <translation>NETGEN 2D paramètres simplifiés</translation>
     </message>
     <message>
         <source>NETGEN_SimpleParameters_2D_TITLE</source>

@@ -1,24 +1,24 @@
 /*!
 
-\page netgen_2d_3d_hypo_page Netgen 2D and 3D hypotheses
+\page netgen_2d_3d_hypo_page NETGEN 2D and 3D hypotheses
 
-<b>Netgen 2D Parameters</b> and <b>Netgen 3D  Parameters</b> hypotheses work only with
-<b>Netgen 1D-2D</b>, <b>Netgen 2D</b>, <b>Netgen 1D-2D-3D</b> and
-<b>Netgen 3D</b> algorithms. <b>Netgen 1D-2D</b> and <b>Netgen
+<b>NETGEN 2D Parameters</b> and <b>NETGEN 3D  Parameters</b> hypotheses work only with
+<b>NETGEN 1D-2D</b>, <b>NETGEN 2D</b>, <b>NETGEN 1D-2D-3D</b> and
+<b>NETGEN 3D</b> algorithms. <b>NETGEN 1D-2D</b> and <b>NETGEN
 1D-2D-3D</b>  algorithms do not require definition of lower-level
 hypotheses and algorithms (2D and 1D for meshing 3D objects and 1D for
 meshing 2D objects).
 
 \image html netgen2d3d.png
-<center><em>Hypothesis dialog boxes of <b>Netgen 1D-2D</b> and <b>Netgen
+<center><em>Hypothesis dialog boxes of <b>NETGEN 1D-2D</b> and <b>NETGEN
       1D-2D-3D</b> algorithms are same</em></center>
 <br>
 
 \image html netgen2d3d_only.png
-<center><em>Dialog boxes of <b>Netgen 2D</b> and <b>Netgen 3D</b>
+<center><em>Dialog boxes of <b>NETGEN 2D</b> and <b>NETGEN 3D</b>
     algorithms </em></center>
 
-- <b>Name</b> - allows to define the name for the algorithm (Netgen
+- <b>Name</b> - allows to define the name for the algorithm (NETGEN
 2D (or 3D) Parameters by default).
 - <b>Max Size</b> - maximum linear dimensions for mesh cells.
 - <b>Min Size</b> - minimum linear dimensions for mesh cells. It is
@@ -70,7 +70,7 @@ can be changed.
 
 \image html netgen2d3d_simple.png
 
-<b>Netgen 2D simple parameters</b> and <b>Netgen 3D simple
+<b>NETGEN 2D simple parameters</b> and <b>NETGEN 3D simple
 parameters</b> allow defining the size of elements for each
 dimension.
 
@@ -94,7 +94,7 @@ volumic elements will be equal to an average area of 2D elements, else
 - <b>Max. Element Volume</b> specifies expected maximum element volume
 of 3d elements.
 
-\note Netgen algorithm does not strictly follow the input
+\note NETGEN algorithm does not strictly follow the input
 parameters. The actual mesh can be more or less dense than
 required. There are several factors in it:
 - NETGEN does not actually use <b>Number of Segments</b> parameter for

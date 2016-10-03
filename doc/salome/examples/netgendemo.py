@@ -18,7 +18,7 @@ geompy.addToStudy(box, "Box")
 # 1. Create a triangular 2D mesh on the box with NETGEN_1D2D algorithm
 triaN = smesh.Mesh(box, "Box : triangular mesh by NETGEN_1D2D")
 
-# create a Netgen_1D2D algorithm for solids
+# create a NETGEN_1D2D algorithm for solids
 algo2D = triaN.Triangle(smeshBuilder.NETGEN_1D2D)
 
 # define hypotheses
@@ -33,7 +33,7 @@ n12_params.SetMaxSize(300)
 # 2. Create a tetrahedral mesh on the box with NETGEN_1D2D3D algorithm (full netgen)
 tetraN = smesh.Mesh(box, "Box : tetrahedrical mesh by NETGEN_1D2D3D")
 
-# create a Netgen_1D2D3D algorithm for solids
+# create a NETGEN_1D2D3D algorithm for solids
 algo3D = tetraN.Tetrahedron(smeshBuilder.FULL_NETGEN)
 
 # define hypotheses
