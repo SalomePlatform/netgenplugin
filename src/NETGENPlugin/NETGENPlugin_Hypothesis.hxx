@@ -90,6 +90,9 @@ public:
   const TLocalSize& GetLocalSizesAndEntries() const { return _localSize; }
   void UnsetLocalSizeOnEntry(const std::string& entry);
 
+  void SetMeshSizeFile(const std::string& fileName);
+  const std::string& GetMeshSizeFile() const { return _meshSizeFile; }
+
   void SetQuadAllowed(bool theVal);
   bool GetQuadAllowed() const { return _quadAllowed; }
 
@@ -141,6 +144,7 @@ private:
   bool          _secondOrder;
   bool          _optimize;
   TLocalSize    _localSize;
+  std::string   _meshSizeFile;
   bool          _quadAllowed;
   bool          _surfaceCurvature;
   bool          _fuseEdges;

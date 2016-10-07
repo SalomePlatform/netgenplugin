@@ -366,6 +366,24 @@ void NETGENPlugin_Hypothesis_i::UnsetLocalSizeOnEntry(const char* entry)
 
 //=============================================================================
 
+void NETGENPlugin_Hypothesis_i::SetMeshSizeFile(const char* fileName)
+{
+  if ( GetImpl()->GetMeshSizeFile() != fileName )
+  {
+    GetImpl()->SetMeshSizeFile( fileName );
+    SMESH::TPythonDump() << _this() << ".SetMeshSizeFile( '" << fileName << "' )";
+  }
+}
+
+//=============================================================================
+
+char* NETGENPlugin_Hypothesis_i::GetMeshSizeFile()
+{
+  return CORBA::string_dup( GetImpl()->GetMeshSizeFile().c_str() );
+}
+
+//=============================================================================
+
 void NETGENPlugin_Hypothesis_i::SetQuadAllowed (CORBA::Boolean theValue)
 {
   if ( NETGENPlugin_Hypothesis_i::isToSetParameter( GetQuadAllowed(),

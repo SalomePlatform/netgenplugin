@@ -159,5 +159,9 @@
         <source>LSZ_LOCALSIZE_COLUMN</source>
         <translation>Value</translation>
     </message>
+    <message>
+        <source>NETGEN_LSZ_FILE</source>
+        <translation>Mesh-size File</translation>
+    </message>
 </context>
 </TS>

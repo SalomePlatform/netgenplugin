@@ -283,6 +283,8 @@ void NETGENPlugin_Mesher::SetParameters(const NETGENPlugin_Hypothesis* hyp)
     mparams.uselocalh       = hyp->GetSurfaceCurvature();
     netgen::merge_solids    = hyp->GetFuseEdges();
     _simpleHyp              = NULL;
+    // mesh size file
+    mparams.meshsizefilename= hyp->GetMeshSizeFile().empty() ? 0 : hyp->GetMeshSizeFile().c_str();
 
     SMESH_Gen_i*              smeshGen_i = SMESH_Gen_i::GetSMESHGen();
     CORBA::Object_var           anObject = smeshGen_i->GetNS()->Resolve("/myStudyManager");
@@ -661,7 +663,7 @@ void NETGENPlugin_Mesher::SetLocalSize( netgen::OCCGeometry& occgeo,
 
   if ( !ControlPoints.empty() )
   {
-    for ( size_t i = 1; i < ControlPoints.size(); ++i )
+    for ( size_t i = 0; i < ControlPoints.size(); ++i )
       NETGENPlugin_Mesher::RestrictLocalSize( ngMesh, ControlPoints[i].XYZ(), ControlPoints[i].Size() );
   }
 }
@@ -2486,16 +2488,6 @@ bool NETGENPlugin_Mesher::Compute()
   NETGENPlugin_NetgenLibWrapper ngLib;
 
   netgen::MeshingParameters& mparams = netgen::mparam;
-  MESSAGE("Compute with:\n"
-          " max size = " << mparams.maxh << "\n"
-          " segments per edge = " << mparams.segmentsperedge);
-  MESSAGE("\n"
-          " growth rate = " << mparams.grading << "\n"
-          " elements per radius = " << mparams.curvaturesafety << "\n"
-          " second order = " << mparams.secondorder << "\n"
-          " quad allowed = " << mparams.quad << "\n"
-          " surface curvature = " << mparams.uselocalh << "\n"
-          " fuse edges = " << netgen::merge_solids);
 
   SMESH_ComputeErrorPtr error = SMESH_ComputeError::New();
   SMESH_MesherHelper quadHelper( *_mesh );
@@ -2585,12 +2577,21 @@ bool NETGENPlugin_Mesher::Compute()
     {
       comment << text(ex);
     }
+    catch (netgen::NgException & ex)
+    {
+      comment << text(ex);
+      if ( mparams.meshsizefilename )
+        throw SMESH_ComputeError(COMPERR_BAD_PARMETERS, comment );
+    }
     err = 0; //- MESHCONST_ANALYSE isn't so important step
     if ( !_ngMesh )
       return false;
     ngLib.setMesh(( Ng_Mesh*) _ngMesh );
 
     _ngMesh->ClearFaceDescriptors(); // we make descriptors our-self
+
+    if ( !mparams.uselocalh ) // mparams.grading is not taken into account yet
+      _ngMesh->LocalHFunction().SetGrading( mparams.grading );
 
     if ( _simpleHyp )
     {
@@ -3475,10 +3476,10 @@ NETGENPlugin_Mesher::ReadErrors(const vector<const SMDS_MeshNode* >& nodeVec)
  */
 //================================================================================
 
-void NETGENPlugin_Mesher::toPython( const netgen::Mesh* ngMesh,
-                                    const std::string&  pyFile)
+void NETGENPlugin_Mesher::toPython( const netgen::Mesh* ngMesh )
 {
-  ofstream outfile(pyFile.c_str(), ios::out);
+  const char*  pyFile = "/tmp/ngMesh.py";
+  ofstream outfile( pyFile, ios::out );
   if ( !outfile ) return;
 
   outfile << "import SMESH" << endl

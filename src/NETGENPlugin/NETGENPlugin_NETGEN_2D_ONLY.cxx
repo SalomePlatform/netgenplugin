@@ -298,8 +298,7 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
     for ( int iE = 1; iE <= edgeMap.Extent(); ++iE )
     {
       const TopoDS_Shape& edge = edgeMap( iE );
-      if ( SMESH_Algo::isDegenerated( TopoDS::Edge( edge ))/* ||
-           helper.IsSubShape( edge, aShape )*/)
+      if ( SMESH_Algo::isDegenerated( TopoDS::Edge( edge )))
         continue;
       SMESHDS_SubMesh* smDS = meshDS->MeshElements( edge );
       if ( !smDS ) continue;
@@ -317,6 +316,11 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
 
     // set local size defined on shapes
     aMesher.SetLocalSize( occgeoComm, *ngMeshes[0] );
+    try {
+      ngMeshes[0]->LoadLocalMeshSize( mparam.meshsizefilename );
+    } catch (NgException & ex) {
+      return error( COMPERR_BAD_PARMETERS, ex.What() );
+    }
   }
   netgen::mparam.uselocalh = toOptimize; // restore as it is used at surface optimization
 
@@ -453,6 +457,11 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
         bb.Increase (bb.Diam()/10);
         ngMesh->SetLocalH (bb.PMin(), bb.PMax(), mparam.grading);
         aMesher.SetLocalSize( occgeom, *ngMesh );
+        try {
+          ngMesh->LoadLocalMeshSize( mparam.meshsizefilename );
+        } catch (NgException & ex) {
+          return error( COMPERR_BAD_PARMETERS, ex.What() );
+        }
       }
 
       nodeVec.clear();

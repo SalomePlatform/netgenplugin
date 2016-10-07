@@ -252,6 +252,20 @@ void NETGENPlugin_Hypothesis::UnsetLocalSizeOnEntry(const std::string& entry)
  *  
  */
 //=============================================================================
+void NETGENPlugin_Hypothesis::SetMeshSizeFile(const std::string& fileName)
+{
+  if ( fileName != _meshSizeFile )
+  {
+    _meshSizeFile = fileName;
+    NotifySubMeshesHypothesisModification();
+  }
+}
+
+//=============================================================================
+/*!
+ *  
+ */
+//=============================================================================
 void NETGENPlugin_Hypothesis::SetQuadAllowed(bool theVal)
 {
   if (theVal != _quadAllowed)
@@ -347,6 +361,8 @@ ostream & NETGENPlugin_Hypothesis::SaveTo(ostream & save)
   save << " " << _surfaceCurvature;
   save << " " << _fuseEdges;
 
+  save << " " << _meshSizeFile.size() << " " << _meshSizeFile;
+
   return save;
 }
 
@@ -432,18 +448,33 @@ istream & NETGENPlugin_Hypothesis::LoadFrom(istream & load)
 
   if ( !hasLocalSize && !option_or_sm.empty() )
     _minSize = atof( option_or_sm.c_str() );
+  else
+    load >> _minSize;
 
-  isOK = static_cast<bool>( load >> _quadAllowed );
-  if ( !isOK )
+  isOK = static_cast<bool>( load >> is );
+  if ( isOK )
+    _quadAllowed = (bool) is;
+  else
     _quadAllowed = GetDefaultQuadAllowed();
 
-  isOK = static_cast<bool>( load >> _surfaceCurvature );
-  if ( !isOK )
+  isOK = static_cast<bool>( load >> is );
+  if ( isOK )
+    _surfaceCurvature = (bool) is;
+  else
     _surfaceCurvature = GetDefaultSurfaceCurvature();
 
-  isOK = static_cast<bool>( load >> _fuseEdges );
-  if ( !isOK )
+  isOK = static_cast<bool>( load >> is );
+  if ( isOK )
+    _fuseEdges = (bool) is;
+  else
     _fuseEdges = GetDefaultFuseEdges();
+
+  isOK = static_cast<bool>( load >> is >> std::ws ); // size of meshSizeFile
+  if ( isOK && is > 0 )
+  {
+    _meshSizeFile.resize( is );
+    load.get( &_meshSizeFile[0], is+1 );
+  }
 
   return load;
 }

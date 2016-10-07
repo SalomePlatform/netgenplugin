@@ -169,6 +169,12 @@ class NETGEN_Algorithm(Mesh_Algorithm):
 
         return self.params
 
+    ## Defines a file specifying size of elements at points and lines
+    #  @param file name of the file
+    def SetMeshSizeFile(self, file):
+        self.Parameters().SetMeshSizeFile(file)
+        pass
+
     pass # end of NETGEN_Algorithm class
 
 

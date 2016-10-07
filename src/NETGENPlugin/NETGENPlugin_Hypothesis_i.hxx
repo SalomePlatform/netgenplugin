@@ -86,6 +86,9 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_Hypothesis_i:
   NETGENPlugin::string_array* GetLocalSizeEntries();
   void UnsetLocalSizeOnEntry(const char* entry);
 
+  void SetMeshSizeFile(const char* fileName);
+  char* GetMeshSizeFile();
+
   void SetQuadAllowed(CORBA::Boolean theVal);
   CORBA::Boolean GetQuadAllowed();
 

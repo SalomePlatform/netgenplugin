@@ -110,6 +110,9 @@ module NETGENPlugin
     double GetLocalSizeOnEntry(in string entry);
     string_array GetLocalSizeEntries();
     void UnsetLocalSizeOnEntry(in string entry);
+
+    void SetMeshSizeFile(in string fileName);
+    string GetMeshSizeFile();
   };
 
   /*!

@@ -71,6 +71,7 @@
 #define OCCGEOMETRY
 #endif
 #include <occgeom.hpp>
+#include <ngexception.hpp>
 namespace nglib {
 #include <nglib.h>
 }
@@ -438,7 +439,8 @@ bool NETGENPlugin_NETGEN_3D::compute(SMESH_Mesh&                     aMesh,
   {
     aMesher.SetParameters( _hypParameters );
 
-    if ( !_hypParameters->GetLocalSizesAndEntries().empty() )
+    if ( !_hypParameters->GetLocalSizesAndEntries().empty() ||
+         !_hypParameters->GetMeshSizeFile().empty() )
     {
       if ( ! &ngMesh->LocalHFunction() )
       {
@@ -447,6 +449,12 @@ bool NETGENPlugin_NETGEN_3D::compute(SMESH_Mesh&                     aMesh,
         ngMesh->SetLocalH( pmin, pmax, _hypParameters->GetGrowthRate() );
       }
       aMesher.SetLocalSize( occgeo, *ngMesh );
+
+      try {
+        ngMesh->LoadLocalMeshSize( netgen::mparam.meshsizefilename );
+      } catch (netgen::NgException & ex) {
+        return error( COMPERR_BAD_PARMETERS, ex.What() );
+      }
     }
     if ( !_hypParameters->GetOptimize() )
       endWith = netgen::MESHCONST_MESHVOLUME;

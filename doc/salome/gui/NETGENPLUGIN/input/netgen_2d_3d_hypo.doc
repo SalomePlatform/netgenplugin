@@ -67,6 +67,25 @@ to the type of the geometrical objects: <b>On Vertex</b>, <b>On
 default <b>Value</b> will be added in the table where the <b>Value</b>
 can be changed.
 - <b>Remove</b> - deletes a selected row from the table.
+- <b>Mesh-size File</b> - opens a dialog to select a file defining
+size of elements. The file includes two obligatory sections. The first
+section defines the size at points. The second section defines the
+size along lines. Let's consider the following sample size file.
+\code
+2
+92.5 92.5 92.5 0.05
+42.5 42.5 42.5 0.04
+1
+25 25 0 25 25 200  0.3
+\endcode
+"2" at the first line means that there are two points in the first
+section.<br>
+"92.5 92.5 92.5 0.05" at the second line means that at the point with
+coordinates (92.5, 92.5, 92.5) size of elements should be 0.05.<br>
+"1" at the fourth line means that there is one line in the second
+section.<br>
+"25 25 0 25 25 200  0.3" means that along the line between points (25,
+25, 0) and (25, 25, 200) size of elements should be 0.3.
 
 \image html netgen2d3d_simple.png
 

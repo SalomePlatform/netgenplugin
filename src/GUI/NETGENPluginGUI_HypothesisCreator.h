@@ -47,7 +47,7 @@ typedef struct
   double              myMaxSize, myMinSize, myGrowthRate, myNbSegPerEdge, myNbSegPerRadius;
   int                 myFineness;
   bool                mySecondOrder, myAllowQuadrangles, myOptimize, mySurfaceCurvature, myFuseEdges;
-  QString             myName;
+  QString             myName, myMeshSizeFile;
   QString             myMaxSizeVar, myMinSizeVar, myGrowthRateVar, myNbSegPerEdgeVar, myNbSegPerRadiusVar;
 } NetgenHypothesisData;
 
@@ -83,6 +83,7 @@ protected slots:
   virtual void     onAddLocalSizeOnSolid();
   virtual void     onRemoveLocalSizeOnShape();
   virtual void     onSetLocalSize(int,int);
+  virtual void     onSetSizeFile();
 
 private:
   bool readParamsFromHypo( NetgenHypothesisData& ) const;
@@ -108,8 +109,9 @@ private:
  bool myIs2D;
  bool myIsONLY;
 
- QTableWidget* myLocalSizeTable;
- GeomSelectionTools* myGeomSelectionTools;
+ QLineEdit*             myMeshSizeFile;
+ QTableWidget*          myLocalSizeTable;
+ GeomSelectionTools*    myGeomSelectionTools;
  QMap<QString, QString> myLocalSizeMap;
 };
 

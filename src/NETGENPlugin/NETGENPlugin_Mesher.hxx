@@ -191,8 +191,7 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_Mesher
   static SMESH_ComputeErrorPtr ReadErrors(const std::vector< const SMDS_MeshNode* >& nodeVec);
 
 
-  static void toPython( const netgen::Mesh* ngMesh,
-                        const std::string&  pyFile); // debug
+  static void toPython( const netgen::Mesh* ngMesh ); // debug
 
  private:
 
