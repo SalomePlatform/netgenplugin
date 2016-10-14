@@ -45,7 +45,7 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_Hypothesis: public SMESH_Hypothesis
 {
 public:
 
-  NETGENPlugin_Hypothesis(int hypId, int studyId, SMESH_Gen * gen);
+  NETGENPlugin_Hypothesis(int hypId, SMESH_Gen * gen);
 
   void SetMaxSize(double theSize);
   double GetMaxSize() const { return _maxSize; }

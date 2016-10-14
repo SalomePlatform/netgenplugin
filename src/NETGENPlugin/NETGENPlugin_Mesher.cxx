@@ -287,9 +287,8 @@ void NETGENPlugin_Mesher::SetParameters(const NETGENPlugin_Hypothesis* hyp)
     mparams.meshsizefilename= hyp->GetMeshSizeFile().empty() ? 0 : hyp->GetMeshSizeFile().c_str();
 
     SMESH_Gen_i*              smeshGen_i = SMESH_Gen_i::GetSMESHGen();
-    CORBA::Object_var           anObject = smeshGen_i->GetNS()->Resolve("/myStudyManager");
-    SALOMEDS::StudyManager_var aStudyMgr = SALOMEDS::StudyManager::_narrow(anObject);
-    SALOMEDS::Study_var          myStudy = aStudyMgr->GetStudyByID(hyp->GetStudyId());
+    CORBA::Object_var           anObject = smeshGen_i->GetNS()->Resolve("/Study");
+    SALOMEDS::Study_var          myStudy = SALOMEDS::Study::_narrow(anObject);
     if ( !myStudy->_is_nil() )
     {
       const NETGENPlugin_Hypothesis::TLocalSize   localSizes = hyp->GetLocalSizesAndEntries();

@@ -53,9 +53,9 @@ using namespace std;
  */
 //=============================================================================
 
-NETGENPlugin_NETGEN_2D3D::NETGENPlugin_NETGEN_2D3D(int hypId, int studyId,
+NETGENPlugin_NETGEN_2D3D::NETGENPlugin_NETGEN_2D3D(int hypId,
                                                    SMESH_Gen* gen)
-  : SMESH_3D_Algo(hypId, studyId, gen)
+  : SMESH_3D_Algo(hypId, gen)
 {
   MESSAGE("NETGENPlugin_NETGEN_2D3D::NETGENPlugin_NETGEN_2D3D");
   _name = "NETGEN_2D3D";
