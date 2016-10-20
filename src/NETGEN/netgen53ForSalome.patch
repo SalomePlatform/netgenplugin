@@ -13,12 +13,14 @@ diff -NaurwB netgen-5.3.1_orig/Makefile.in netgen-5.3.1_new/Makefile.in
 diff -NaurwB netgen-5.3.1_orig/configure.ac netgen-5.3.1_new/configure.ac
 --- netgen-5.3.1_orig/configure.ac	2014-10-06 15:00:17.000000000 +0400
 +++ netgen-5.3.1_new/configure.ac	2016-09-29 14:34:11.957389447 +0300
-@@ -42,7 +42,7 @@
+@@ -42,8 +42,8 @@
  
  if test a$occon = atrue ; then
  
 -	AC_SUBST([OCCFLAGS], ["-DOCCGEOMETRY -I$occdir/inc -I/usr/include/opencascade"])
+-	AC_SUBST([OCCLIBS], ["-L$occdir/lib -lTKernel -lTKGeomBase -lTKMath -lTKG2d -lTKG3d -lTKXSBase -lTKOffset -lTKFillet -lTKShHealing -lTKMesh -lTKMeshVS -lTKTopAlgo -lTKGeomAlgo -lTKBool -lTKPrim -lTKBO -lTKIGES -lTKBRep -lTKSTEPBase -lTKSTEP -lTKSTL -lTKSTEPAttr -lTKSTEP209 -lTKXDESTEP -lTKXDEIGES -lTKXCAF -lTKLCAF -lFWOSPlugin"])
 +	AC_SUBST([OCCFLAGS], ["-DOCCGEOMETRY -I$occdir/include/opencascade"])
++	AC_SUBST([OCCLIBS], ["-L$occdir/lib -lTKernel -lTKGeomBase -lTKMath -lTKG2d -lTKG3d -lTKXSBase -lTKOffset -lTKFillet -lTKShHealing -lTKMesh -lTKMeshVS -lTKTopAlgo -lTKGeomAlgo -lTKBool -lTKPrim -lTKBO -lTKIGES -lTKBRep -lTKSTEPBase -lTKSTEP -lTKSTL -lTKSTEPAttr -lTKSTEP209 -lTKXDESTEP -lTKXDEIGES -lTKXCAF -lTKLCAF"])
  	AC_SUBST([OCCLIBS], ["-L$occdir/lib -lTKernel -lTKGeomBase -lTKMath -lTKG2d -lTKG3d -lTKXSBase -lTKOffset -lTKFillet -lTKShHealing -lTKMesh -lTKMeshVS -lTKTopAlgo -lTKGeomAlgo -lTKBool -lTKPrim -lTKBO -lTKIGES -lTKBRep -lTKSTEPBase -lTKSTEP -lTKSTL -lTKSTEPAttr -lTKSTEP209 -lTKXDESTEP -lTKXDEIGES -lTKXCAF -lTKLCAF -lFWOSPlugin"])
  
  #  -lTKDCAF
