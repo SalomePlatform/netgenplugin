@@ -1,3 +1,15 @@
+diff -NaurwB netgen-5.3.1_orig/Makefile.am netgen-5.3.1_new/Makefile.am
+--- netgen-5.3.1_orig/Makefile.am	2016-10-21 17:32:01.000000000 +0300
++++ netgen-5.3.1_new/Makefile.am	2016-10-21 17:31:54.000000000 +0300
+@@ -2,7 +2,7 @@
+ 
+ METASOURCES = AUTO
+ 
+-SUBDIRS = libsrc ng tutorials doc windows nglib
++SUBDIRS = libsrc nglib #tutorials doc windows nglib
+ 
+ # TESTS = ng/netgen -batchmode
+ 
 diff -NaurwB netgen-5.3.1_orig/Makefile.in netgen-5.3.1_new/Makefile.in
 --- netgen-5.3.1_orig/Makefile.in	2014-10-06 15:04:37.000000000 +0400
 +++ netgen-5.3.1_new/Makefile.in	2016-10-03 16:17:10.164707368 +0300
