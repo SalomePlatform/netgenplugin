@@ -25,6 +25,15 @@ diff -NaurwB netgen-5.3.1_orig/Makefile.in netgen-5.3.1_new/Makefile.in
 diff -NaurwB netgen-5.3.1_orig/configure.ac netgen-5.3.1_new/configure.ac
 --- netgen-5.3.1_orig/configure.ac	2014-10-06 15:00:17.000000000 +0400
 +++ netgen-5.3.1_new/configure.ac	2016-09-29 14:34:11.957389447 +0300
+@@ -20,7 +20,7 @@
+ CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS"
+ # LDFLAGS="$LDFLAGS $OPENMP_CXXFLAGS"
+ 
+-AM_PROG_AR
++m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
+ AC_PROG_LIBTOOL
+ LT_INIT
+ 
 @@ -42,8 +42,8 @@
  
  if test a$occon = atrue ; then
@@ -1302,4 +1311,4 @@ diff -NaurwB netgen-5.3.1_orig/nglib/nglib.h netgen-5.3.1_new/nglib/nglib.h
 +   #if defined NGLIB_EXPORTS || defined nglib_EXPORTS
        #define DLL_HEADER   __declspec(dllexport)
     #else
-       #define DLL_HEADER   __declspec(dllimport)
+       #define DLL_HEADER   __declspec(dllimport)
