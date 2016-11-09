@@ -1311,4 +1311,145 @@ diff -NaurwB netgen-5.3.1_orig/nglib/nglib.h netgen-5.3.1_new/nglib/nglib.h
 +   #if defined NGLIB_EXPORTS || defined nglib_EXPORTS
        #define DLL_HEADER   __declspec(dllexport)
     #else
-       #define DLL_HEADER   __declspec(dllimport)
+       #define DLL_HEADER   __declspec(dllimport)
+diff -Naur netgen-5.3.1_orig/libsrc/csg/Makefile.am netgen-5.3.1_new/libsrc/csg/Makefile.am
+--- netgen-5.3.1_orig/libsrc/csg/Makefile.am	2014-08-29 13:54:06.000000000 +0400
++++ netgen-5.3.1_new/libsrc/csg/Makefile.am	2016-11-08 17:48:02.000000000 +0300
+@@ -8,7 +8,7 @@
+ AM_CPPFLAGS = -I$(top_srcdir)/libsrc/include  $(TCL_INCLUDES)
+ METASOURCES = AUTO
+ 
+-lib_LTLIBRARIES = libcsg.la
++noinst_LTLIBRARIES = libcsg.la
+ 
+ 
+ libcsg_la_SOURCES = algprim.cpp brick.cpp   \
+@@ -17,12 +17,9 @@
+ manifold.cpp meshsurf.cpp polyhedra.cpp revolution.cpp singularref.cpp \
+ solid.cpp specpoin.cpp spline3d.cpp surface.cpp triapprox.cpp
+ 
+-libcsg_la_LIBADD =  $(top_builddir)/libsrc/meshing/libmesh.la
+-
+-
+ 
+ if NGGUI
+-lib_LTLIBRARIES += libcsgvis.la 
++lib_LTLIBRARIES = libcsgvis.la 
+ 
+ libcsgvis_la_SOURCES = vscsg.cpp csgpkg.cpp
+ libcsgvis_la_LIBADD = libcsg.la
+diff -Naur netgen-5.3.1_orig/libsrc/geom2d/Makefile.am netgen-5.3.1_new/libsrc/geom2d/Makefile.am
+--- netgen-5.3.1_orig/libsrc/geom2d/Makefile.am	2014-08-29 13:54:06.000000000 +0400
++++ netgen-5.3.1_new/libsrc/geom2d/Makefile.am	2016-11-08 17:49:13.000000000 +0300
+@@ -4,16 +4,15 @@
+ 
+ METASOURCES = AUTO
+ 
+-lib_LTLIBRARIES = libgeom2d.la 
++noinst_LTLIBRARIES = libgeom2d.la 
+ 
+ if NGGUI
+-lib_LTLIBRARIES += libgeom2dvis.la 
++lib_LTLIBRARIES = libgeom2dvis.la 
+ endif
+ 
+ 
+ 
+ libgeom2d_la_SOURCES = genmesh2d.cpp geom2dmesh.cpp geometry2d.cpp
+-libgeom2d_la_LIBADD = 	$(top_builddir)/libsrc/meshing/libmesh.la
+ 
+ libgeom2dvis_la_SOURCES = geom2dpkg.cpp vsgeom2d.cpp
+ libgeom2dvis_la_LIBADD = libgeom2d.la
+diff -Naur netgen-5.3.1_orig/libsrc/interface/Makefile.am netgen-5.3.1_new/libsrc/interface/Makefile.am
+--- netgen-5.3.1_orig/libsrc/interface/Makefile.am	2014-08-29 13:54:02.000000000 +0400
++++ netgen-5.3.1_new/libsrc/interface/Makefile.am	2016-11-08 17:49:26.000000000 +0300
+@@ -2,14 +2,11 @@
+ 
+ AM_CPPFLAGS = -I$(top_srcdir)/libsrc/include -I$(top_srcdir)/libsrc/interface  $(MPI_INCLUDES) $(TCL_INCLUDES) -DOPENGL
+ METASOURCES = AUTO
+-lib_LTLIBRARIES = libinterface.la
++noinst_LTLIBRARIES = libinterface.la
+ libinterface_la_SOURCES = nginterface.cpp nginterface_v2.cpp \
+ 	read_fnf_mesh.cpp readtetmesh.cpp readuser.cpp writeabaqus.cpp writediffpack.cpp \
+ 	writedolfin.cpp writeelmer.cpp writefeap.cpp writefluent.cpp writegmsh.cpp writejcm.cpp \
+ 	writepermas.cpp writetecplot.cpp writetet.cpp writetochnog.cpp writeuser.cpp \
+ 	wuchemnitz.cpp writegmsh2.cpp writeOpenFOAM15x.cpp 
+ 
+-
+-libinterface_la_LIBADD = $(top_builddir)/libsrc/meshing/libmesh.la
+-
+ # libinterface_la_LDFLAGS = -rdynamic
+diff -Naur netgen-5.3.1_orig/libsrc/meshing/Makefile.am netgen-5.3.1_new/libsrc/meshing/Makefile.am
+--- netgen-5.3.1_orig/libsrc/meshing/Makefile.am	2014-08-29 13:54:05.000000000 +0400
++++ netgen-5.3.1_new/libsrc/meshing/Makefile.am	2016-11-08 17:48:44.000000000 +0300
+@@ -15,7 +15,7 @@
+ 
+ METASOURCES = AUTO
+ 
+-lib_LTLIBRARIES = libmesh.la
++noinst_LTLIBRARIES = libmesh.la
+ 
+ libmesh_la_SOURCES = adfront2.cpp adfront3.cpp bisect.cpp boundarylayer.cpp \
+ 	clusters.cpp curvedelems.cpp delaunay.cpp delaunay2d.cpp	    \
+@@ -30,8 +30,5 @@
+ 	topology.cpp triarls.cpp validate.cpp zrefine.cpp bcfunctions.cpp   \
+ 	parallelmesh.cpp  paralleltop.cpp  paralleltop.hpp basegeom.cpp 
+ 
+-libmesh_la_LIBADD =  $(top_builddir)/libsrc/linalg/libla.la \
+-	$(top_builddir)/libsrc/gprim/libgprim.la \
+-	$(top_builddir)/libsrc/general/libgen.la \
+-	-lz
++libmesh_la_LIBADD = -lz
+ 
+diff -Naur netgen-5.3.1_orig/libsrc/occ/Makefile.am netgen-5.3.1_new/libsrc/occ/Makefile.am
+--- netgen-5.3.1_orig/libsrc/occ/Makefile.am	2014-08-29 13:54:03.000000000 +0400
++++ netgen-5.3.1_new/libsrc/occ/Makefile.am	2016-11-08 17:30:53.000000000 +0300
+@@ -14,10 +14,10 @@
+ 
+ METASOURCES = AUTO
+ 
+-lib_LTLIBRARIES = libocc.la
++noinst_LTLIBRARIES = libocc.la
+ 
+ if NGGUI
+-lib_LTLIBRARIES += liboccvis.la 
++lib_LTLIBRARIES = liboccvis.la 
+ endif
+ 
+ 
+diff -Naur netgen-5.3.1_orig/libsrc/stlgeom/Makefile.am netgen-5.3.1_new/libsrc/stlgeom/Makefile.am
+--- netgen-5.3.1_orig/libsrc/stlgeom/Makefile.am	2014-08-29 13:54:05.000000000 +0400
++++ netgen-5.3.1_new/libsrc/stlgeom/Makefile.am	2016-11-08 18:28:09.000000000 +0300
+@@ -4,10 +4,10 @@
+ AM_CPPFLAGS = -I$(top_srcdir)/libsrc/include $(TCL_INCLUDES)
+ METASOURCES = AUTO
+ 
+-lib_LTLIBRARIES = libstl.la 
++noinst_LTLIBRARIES = libstl.la 
+ 
+ if NGGUI
+-lib_LTLIBRARIES += libstlvis.la 
++lib_LTLIBRARIES = libstlvis.la 
+ endif
+ 
+ libstl_la_SOURCES = meshstlsurface.cpp stlgeom.cpp stlgeomchart.cpp \
+@@ -16,6 +16,5 @@
+ 
+ libstlvis_la_SOURCES = stlpkg.cpp vsstl.cpp
+ libstlvis_la_LIBADD = libstl.la
+-libstl_la_LIBADD =  $(top_builddir)/libsrc/meshing/libmesh.la
+ # libstlvis_la_LIBADD = libstl.la $(top_builddir)/libsrc/linalg/libla.la 
+ 
+diff -Naur netgen-5.3.1_orig/nglib/Makefile.am netgen-5.3.1_new/nglib/Makefile.am
+--- netgen-5.3.1_orig/nglib/Makefile.am	2014-08-29 13:54:00.000000000 +0400
++++ netgen-5.3.1_new/nglib/Makefile.am	2016-11-08 19:01:17.000000000 +0300
+@@ -14,6 +14,9 @@
+ 	$(top_builddir)/libsrc/stlgeom/libstl.la \
+ 	$(top_builddir)/libsrc/occ/libocc.la \
+ 	$(top_builddir)/libsrc/meshing/libmesh.la \
++	$(top_builddir)/libsrc/general/libgen.la \
++	$(top_builddir)/libsrc/gprim/libgprim.la \
++	$(top_builddir)/libsrc/linalg/libla.la
+ 	$(OCCLIBS) $(MPI_LIBS)
+ 
+ libnglib_la_LDFLAGS = -avoid-version
