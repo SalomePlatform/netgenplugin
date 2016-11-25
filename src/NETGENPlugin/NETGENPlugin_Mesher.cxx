@@ -82,8 +82,18 @@ namespace netgen {
   extern int OCCGenerateMesh (OCCGeometry&, Mesh*&, int, int, char*);
 #endif
   //extern void OCCSetLocalMeshSize(OCCGeometry & geom, Mesh & mesh);
+#ifdef NETGEN_V5 && WIN32
+  DLL_HEADER 
+#endif
   extern MeshingParameters mparam;
+#ifdef NETGEN_V5 && WIN32
+  DLL_HEADER 
+#endif
   extern volatile multithreadt multithread;
+
+#ifdef NETGEN_V5 && WIN32
+  DLL_HEADER 
+#endif
   extern bool merge_solids;
 
   // values used for occgeo.facemeshstatus

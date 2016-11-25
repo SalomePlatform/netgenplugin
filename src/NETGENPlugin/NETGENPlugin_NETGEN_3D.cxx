@@ -81,7 +81,13 @@ namespace netgen {
 #else
   extern int OCCGenerateMesh (OCCGeometry&, Mesh*&, int, int, char*);
 #endif
-  extern MeshingParameters mparam;
+#ifdef NETGEN_V5 && WIN32
+  DLL_HEADER 
+#endif
+extern MeshingParameters mparam;
+#ifdef NETGEN_V5 && WIN32
+  DLL_HEADER 
+#endif
   extern volatile multithreadt multithread;
 }
 using namespace nglib;
