@@ -81,12 +81,12 @@ namespace netgen {
 #else
   extern int OCCGenerateMesh (OCCGeometry&, Mesh*&, int, int, char*);
 #endif
-#ifdef NETGEN_V5 && WIN32
+#if defined(NETGEN_V5) && defined(WIN32)
   DLL_HEADER 
 #endif
 extern MeshingParameters mparam;
-#ifdef NETGEN_V5 && WIN32
-  DLL_HEADER 
+#if defined(NETGEN_V5) && defined(WIN32)
+  DLL_HEADER
 #endif
   extern volatile multithreadt multithread;
 }
