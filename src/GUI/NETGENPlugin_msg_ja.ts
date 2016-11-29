@@ -5,7 +5,7 @@
     <name>@default</name>
     <message>
       <source>NETGEN_2D_HYPOTHESIS</source>
-      <translation>NETGEN 2D</translation>
+      <translation>Netgen 2D</translation>
     </message>
     <message>
       <source>NETGEN_2D_TITLE</source>
@@ -13,7 +13,7 @@
     </message>
     <message>
       <source>NETGEN_3D_HYPOTHESIS</source>
-      <translation>NETGEN 3D</translation>
+      <translation>Netgen 3D</translation>
     </message>
     <message>
       <source>NETGEN_3D_TITLE</source>
@@ -21,7 +21,7 @@
     </message>
     <message>
       <source>NETGEN_SimpleParameters_3D_HYPOTHESIS</source>
-      <translation>NETGEN 3D 簡易パラメーター</translation>
+      <translation>Netgen 3D 簡易パラメーター</translation>
     </message>
     <message>
       <source>NETGEN_SimpleParameters_3D_TITLE</source>
@@ -29,7 +29,7 @@
     </message>
     <message>
       <source>NETGEN_SimpleParameters_2D_HYPOTHESIS</source>
-      <translation>NETGEN 2D 簡易パラメーター</translation>
+      <translation>Netgen 2D 簡易パラメーター</translation>
     </message>
     <message>
       <source>NETGEN_SimpleParameters_2D_TITLE</source>
@@ -158,6 +158,10 @@
     <message>
       <source>LSZ_LOCALSIZE_COLUMN</source>
       <translation>値</translation>
+    </message>
+    <message>
+      <source>NETGEN_LSZ_FILE</source>
+      <translation>メッシュサイズファイル</translation>
     </message>
   </context>
 </TS>
