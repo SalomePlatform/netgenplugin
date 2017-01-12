@@ -46,7 +46,7 @@ NETGENPlugin_Hypothesis_3D_i (PortableServer::POA_ptr thePOA,
     SMESH_Hypothesis_i( thePOA ),
     NETGENPlugin_Hypothesis_i( thePOA, theStudyId, theGenImpl )
 {
-  MESSAGE( "NETGENPlugin_Hypothesis_3D_i::NETGENPlugin_Hypothesis_3D_i" );
+  //MESSAGE( "NETGENPlugin_Hypothesis_3D_i::NETGENPlugin_Hypothesis_3D_i" );
 }
 
 //=============================================================================
@@ -56,7 +56,7 @@ NETGENPlugin_Hypothesis_3D_i (PortableServer::POA_ptr thePOA,
 //=============================================================================
 NETGENPlugin_Hypothesis_3D_i::~NETGENPlugin_Hypothesis_3D_i()
 {
-  MESSAGE( "NETGENPlugin_Hypothesis_3D_i::~NETGENPlugin_Hypothesis_3D_i" );
+  //MESSAGE( "NETGENPlugin_Hypothesis_3D_i::~NETGENPlugin_Hypothesis_3D_i" );
 }
 
 //================================================================================

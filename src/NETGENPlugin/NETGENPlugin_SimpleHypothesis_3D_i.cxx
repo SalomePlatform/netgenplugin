@@ -49,7 +49,7 @@ NETGENPlugin_SimpleHypothesis_3D_i (PortableServer::POA_ptr thePOA,
     SMESH_Hypothesis_i( thePOA ),
     NETGENPlugin_SimpleHypothesis_2D_i( thePOA,theStudyId,theGenImpl )
 {
-  MESSAGE( "NETGENPlugin_SimpleHypothesis_3D_i::NETGENPlugin_SimpleHypothesis_3D_i" );
+  //MESSAGE( "NETGENPlugin_SimpleHypothesis_3D_i::NETGENPlugin_SimpleHypothesis_3D_i" );
   if ( myBaseImpl )
     delete myBaseImpl;
   myBaseImpl = new ::NETGENPlugin_SimpleHypothesis_3D (theGenImpl->GetANewId(),
@@ -66,7 +66,7 @@ NETGENPlugin_SimpleHypothesis_3D_i (PortableServer::POA_ptr thePOA,
 //=============================================================================
 NETGENPlugin_SimpleHypothesis_3D_i::~NETGENPlugin_SimpleHypothesis_3D_i()
 {
-  MESSAGE( "NETGENPlugin_SimpleHypothesis_3D_i::~NETGENPlugin_SimpleHypothesis_3D_i" );
+  //MESSAGE( "NETGENPlugin_SimpleHypothesis_3D_i::~NETGENPlugin_SimpleHypothesis_3D_i" );
 }
 
 //=============================================================================
@@ -76,7 +76,6 @@ NETGENPlugin_SimpleHypothesis_3D_i::~NETGENPlugin_SimpleHypothesis_3D_i()
 //=============================================================================
 void NETGENPlugin_SimpleHypothesis_3D_i::LengthFromFaces()
 {
-  MESSAGE("NETGENPlugin_SimpleHypothesis_3D_i::LengthFromFaces");
   ASSERT(myBaseImpl);
   this->GetImpl()->LengthFromFaces();
   SMESH::TPythonDump() << _this() << ".LengthFromFaces()";
@@ -89,7 +88,6 @@ void NETGENPlugin_SimpleHypothesis_3D_i::LengthFromFaces()
 //=============================================================================
 void NETGENPlugin_SimpleHypothesis_3D_i::SetMaxElementVolume(CORBA::Double value)
 {
-  MESSAGE("NETGENPlugin_SimpleHypothesis_3D_i::SetMaxElementVolume");
   ASSERT(myBaseImpl);
   this->GetImpl()->SetMaxElementVolume(value);
   SMESH::TPythonDump() << _this() << ".SetMaxElementVolume( " << SMESH::TVar(value) << " )";
@@ -103,7 +101,6 @@ void NETGENPlugin_SimpleHypothesis_3D_i::SetMaxElementVolume(CORBA::Double value
 //=============================================================================
 CORBA::Double NETGENPlugin_SimpleHypothesis_3D_i::GetMaxElementVolume()
 {
-  MESSAGE("NETGENPlugin_SimpleHypothesis_3D_i::GetMaxElementVolume");
   ASSERT(myBaseImpl);
   return this->GetImpl()->GetMaxElementVolume();
 }
@@ -114,7 +111,6 @@ CORBA::Double NETGENPlugin_SimpleHypothesis_3D_i::GetMaxElementVolume()
 //=============================================================================
 ::NETGENPlugin_SimpleHypothesis_3D* NETGENPlugin_SimpleHypothesis_3D_i::GetImpl()
 {
-  MESSAGE("NETGENPlugin_SimpleHypothesis_3D_i::GetImpl");
   return (::NETGENPlugin_SimpleHypothesis_3D*)myBaseImpl;
 }
 

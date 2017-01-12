@@ -57,7 +57,7 @@ NETGENPlugin_NETGEN_2D3D::NETGENPlugin_NETGEN_2D3D(int hypId, int studyId,
                                                    SMESH_Gen* gen)
   : SMESH_3D_Algo(hypId, studyId, gen)
 {
-  MESSAGE("NETGENPlugin_NETGEN_2D3D::NETGENPlugin_NETGEN_2D3D");
+  //MESSAGE("NETGENPlugin_NETGEN_2D3D::NETGENPlugin_NETGEN_2D3D");
   _name = "NETGEN_2D3D";
   _shapeType = (1 << TopAbs_SHELL) | (1 << TopAbs_SOLID);// 1 bit /shape type
   _compatibleHypothesis.push_back("NETGEN_Parameters");
@@ -76,7 +76,7 @@ NETGENPlugin_NETGEN_2D3D::NETGENPlugin_NETGEN_2D3D(int hypId, int studyId,
 
 NETGENPlugin_NETGEN_2D3D::~NETGENPlugin_NETGEN_2D3D()
 {
-  MESSAGE("NETGENPlugin_NETGEN_2D3D::~NETGENPlugin_NETGEN_2D3D");
+  //MESSAGE("NETGENPlugin_NETGEN_2D3D::~NETGENPlugin_NETGEN_2D3D");
 }
 
 //=============================================================================
@@ -90,8 +90,6 @@ bool NETGENPlugin_NETGEN_2D3D::CheckHypothesis
                           const TopoDS_Shape& aShape,
                           SMESH_Hypothesis::Hypothesis_Status& aStatus)
 {
-  MESSAGE("NETGENPlugin_NETGEN_2D3D::CheckHypothesis");
-
   _hypothesis = NULL;
   _mesher     = NULL;
 

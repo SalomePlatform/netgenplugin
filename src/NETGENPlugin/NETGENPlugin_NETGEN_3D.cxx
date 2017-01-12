@@ -531,10 +531,6 @@ bool NETGENPlugin_NETGEN_3D::compute(SMESH_Mesh&                     aMesh,
   int Netgen_NbOfNodesNew = Ng_GetNP(Netgen_mesh);
   int Netgen_NbOfTetra    = Ng_GetNE(Netgen_mesh);
 
-  MESSAGE("End of Volume Mesh Generation. err=" << err <<
-          ", nb new nodes: " << Netgen_NbOfNodesNew - Netgen_NbOfNodes <<
-          ", nb tetra: " << Netgen_NbOfTetra);
-
   // -------------------------------------------------------------------
   // Feed back the SMESHDS with the generated Nodes and Volume Elements
   // -------------------------------------------------------------------

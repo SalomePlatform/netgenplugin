@@ -50,7 +50,7 @@ NETGENPlugin_SimpleHypothesis_2D_i (PortableServer::POA_ptr thePOA,
   : SALOME::GenericObj_i( thePOA ),
     SMESH_Hypothesis_i( thePOA )
 {
-  MESSAGE( "NETGENPlugin_SimpleHypothesis_2D_i::NETGENPlugin_SimpleHypothesis_2D_i" );
+  //MESSAGE( "NETGENPlugin_SimpleHypothesis_2D_i::NETGENPlugin_SimpleHypothesis_2D_i" );
   myBaseImpl = new ::NETGENPlugin_SimpleHypothesis_2D (theGenImpl->GetANewId(),
                                                        theStudyId,
                                                        theGenImpl);
@@ -65,7 +65,7 @@ NETGENPlugin_SimpleHypothesis_2D_i (PortableServer::POA_ptr thePOA,
 //=============================================================================
 NETGENPlugin_SimpleHypothesis_2D_i::~NETGENPlugin_SimpleHypothesis_2D_i()
 {
-  MESSAGE( "NETGENPlugin_SimpleHypothesis_2D_i::~NETGENPlugin_SimpleHypothesis_2D_i" );
+  //MESSAGE( "NETGENPlugin_SimpleHypothesis_2D_i::~NETGENPlugin_SimpleHypothesis_2D_i" );
 }
 
 //=============================================================================
@@ -76,7 +76,6 @@ NETGENPlugin_SimpleHypothesis_2D_i::~NETGENPlugin_SimpleHypothesis_2D_i()
 void NETGENPlugin_SimpleHypothesis_2D_i::SetNumberOfSegments(CORBA::Short nb)
   throw ( SALOME::SALOME_Exception )
 {
-  MESSAGE("NETGENPlugin_SimpleHypothesis_2D_i::SetNumberOfSegments");
   ASSERT(myBaseImpl);
   try {
     this->GetImpl()->SetNumberOfSegments(nb);
@@ -94,7 +93,6 @@ void NETGENPlugin_SimpleHypothesis_2D_i::SetNumberOfSegments(CORBA::Short nb)
 //=============================================================================
 CORBA::Short NETGENPlugin_SimpleHypothesis_2D_i::GetNumberOfSegments()
 {
-  MESSAGE("NETGENPlugin_SimpleHypothesis_2D_i::GetNumberOfSegments");
   ASSERT(myBaseImpl);
   return this->GetImpl()->GetNumberOfSegments();
 }
@@ -107,7 +105,6 @@ CORBA::Short NETGENPlugin_SimpleHypothesis_2D_i::GetNumberOfSegments()
 
 void NETGENPlugin_SimpleHypothesis_2D_i::SetLocalLength(CORBA::Double segmentLength)
 {
-  MESSAGE("NETGENPlugin_SimpleHypothesis_2D_i::SetLocalLength");
   ASSERT(myBaseImpl);
   try {
     this->GetImpl()->SetLocalLength(segmentLength);
@@ -126,7 +123,6 @@ void NETGENPlugin_SimpleHypothesis_2D_i::SetLocalLength(CORBA::Double segmentLen
 
 CORBA::Double NETGENPlugin_SimpleHypothesis_2D_i::GetLocalLength()
 {
-  MESSAGE("NETGENPlugin_SimpleHypothesis_2D_i::GetLocalLength");
   ASSERT(myBaseImpl);
   return this->GetImpl()->GetLocalLength();
 }
@@ -138,7 +134,6 @@ CORBA::Double NETGENPlugin_SimpleHypothesis_2D_i::GetLocalLength()
 //=============================================================================
 void NETGENPlugin_SimpleHypothesis_2D_i::LengthFromEdges()
 {
-  MESSAGE("NETGENPlugin_SimpleHypothesis_2D_i::LengthFromEdges");
   ASSERT(myBaseImpl);
   this->GetImpl()->LengthFromEdges();
   SMESH::TPythonDump() << _this() << ".LengthFromEdges()";
@@ -151,7 +146,6 @@ void NETGENPlugin_SimpleHypothesis_2D_i::LengthFromEdges()
 //=============================================================================
 void NETGENPlugin_SimpleHypothesis_2D_i::SetMaxElementArea(CORBA::Double area)
 {
-  MESSAGE("NETGENPlugin_SimpleHypothesis_2D_i::SetMaxElementArea");
   ASSERT(myBaseImpl);
   this->GetImpl()->SetMaxElementArea(area);
   SMESH::TPythonDump() << _this() << ".SetMaxElementArea( " << SMESH::TVar(area) << " )";
@@ -166,7 +160,6 @@ void NETGENPlugin_SimpleHypothesis_2D_i::SetMaxElementArea(CORBA::Double area)
 
 CORBA::Double NETGENPlugin_SimpleHypothesis_2D_i::GetMaxElementArea()
 {
-  MESSAGE("NETGENPlugin_SimpleHypothesis_2D_i::GetMaxElementArea");
   ASSERT(myBaseImpl);
   return this->GetImpl()->GetMaxElementArea();
 }
@@ -201,7 +194,6 @@ CORBA::Boolean NETGENPlugin_SimpleHypothesis_2D_i::GetAllowQuadrangles()
 //=============================================================================
 ::NETGENPlugin_SimpleHypothesis_2D* NETGENPlugin_SimpleHypothesis_2D_i::GetImpl() const
 {
-  MESSAGE("NETGENPlugin_SimpleHypothesis_2D_i::GetImpl");
   return (::NETGENPlugin_SimpleHypothesis_2D*)myBaseImpl;
 }
 

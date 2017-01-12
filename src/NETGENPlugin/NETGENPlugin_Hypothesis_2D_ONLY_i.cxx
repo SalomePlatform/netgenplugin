@@ -44,7 +44,6 @@ NETGENPlugin_Hypothesis_2D_ONLY_i (PortableServer::POA_ptr thePOA,
     SMESH_Hypothesis_i( thePOA ),
     NETGENPlugin_Hypothesis_2D_i( thePOA, theStudyId, theGenImpl )
 {
-  MESSAGE( "NETGENPlugin_Hypothesis_2D_ONLY_i::NETGENPlugin_Hypothesis_2D_ONLY_i" );
   myBaseImpl = new ::NETGENPlugin_Hypothesis_2D (theGenImpl->GetANewId(),
                                                  theStudyId,
                                                  theGenImpl);
@@ -58,7 +57,6 @@ NETGENPlugin_Hypothesis_2D_ONLY_i (PortableServer::POA_ptr thePOA,
 
 NETGENPlugin_Hypothesis_2D_ONLY_i::~NETGENPlugin_Hypothesis_2D_ONLY_i()
 {
-  MESSAGE( "NETGENPlugin_Hypothesis_2D_ONLY_i::~NETGENPlugin_Hypothesis_2D_ONLY_i" );
 }
 //================================================================================
 /*!
