@@ -4089,10 +4089,10 @@ void NETGENPlugin_NetgenLibWrapper::removeOutputFile()
     }
     string    tmpDir = SALOMEDS_Tool::GetDirFromPath ( _outputFileName );
     string aFileName = SALOMEDS_Tool::GetNameFromPath( _outputFileName ) + ".out";
-    SALOMEDS::ListOfFileNames_var aFiles = new SALOMEDS::ListOfFileNames;
-    aFiles->length(1);
-    aFiles[0] = aFileName.c_str();
+    SALOMEDS_Tool::ListOfFiles aFiles;
+    aFiles.reserve(1);
+    aFiles.push_back(aFileName.c_str());
 
-    SALOMEDS_Tool::RemoveTemporaryFiles( tmpDir.c_str(), aFiles.in(), true );
+    SALOMEDS_Tool::RemoveTemporaryFiles( tmpDir.c_str(), aFiles, true );
   }
 }
