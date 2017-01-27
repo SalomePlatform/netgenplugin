@@ -808,7 +808,7 @@ double NETGENPlugin_Mesher::GetDefaultMinSize(const TopoDS_Shape& geom,
   }
   else
   {
-    minh = 3 * sqrt( minh ); // triangulation for visualization is rather fine
+    minh = sqrt( minh ); // triangulation for visualization is rather fine
     //cout << "TRIANGULATION minh = " <<minh << endl;
   }
   if ( minh > 0.5 * maxSize )
@@ -2503,8 +2503,6 @@ bool NETGENPlugin_Mesher::Compute()
   SMESH_MesherHelper quadHelper( *_mesh );
   quadHelper.SetIsQuadratic( mparams.secondorder );
 
-  static string debugFile = "/tmp/ngMesh.py"; /* to call toPython( _ngMesh, debugFile )
-                                                 while debugging netgen */
   // -------------------------
   // Prepare OCC geometry
   // -------------------------
@@ -3492,7 +3490,7 @@ void NETGENPlugin_Mesher::toPython( const netgen::Mesh* ngMesh )
   ofstream outfile( pyFile, ios::out );
   if ( !outfile ) return;
 
-  outfile << "import SMESH" << endl
+  outfile << "import salome, SMESH" << endl
           << "from salome.smesh import smeshBuilder" << endl
           << "smesh = smeshBuilder.New(salome.myStudy)" << endl
           << "mesh = smesh.Mesh()" << endl << endl;

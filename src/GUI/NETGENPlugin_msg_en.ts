@@ -161,7 +161,7 @@
     </message>
     <message>
         <source>NETGEN_LSZ_FILE</source>
-        <translation>Fichier de taille du maillage</translation>
+        <translation>Mesh-size File</translation>
     </message>
 </context>
 </TS>
