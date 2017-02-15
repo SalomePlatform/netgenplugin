@@ -23,7 +23,7 @@ INCLUDE_DIRECTORIES(
   ${KERNEL_INCLUDE_DIRS}
   ${GUI_INCLUDE_DIRS}
   ${GEOM_INCLUDE_DIRS}
-  ${CAS_INCLUDE_DIRS}
+  ${OpenCASCADE_INCLUDE_DIR}
   ${VTK_INCLUDE_DIRS}
   ${NETGEN_INCLUDE_DIRS}
   ${SMESH_INCLUDE_DIRS}
@@ -35,7 +35,7 @@ INCLUDE_DIRECTORIES(
 # additional preprocessor / compiler flags
 ADD_DEFINITIONS(  
   ${OMNIORB_DEFINITIONS}
-  ${CAS_DEFINITIONS}
+  ${OpenCASCADE_DEFINITIONS}
   ${BOOST_DEFINITIONS}
   ${NETGEN_DEFINITIONS}
 )
@@ -43,34 +43,12 @@ ADD_DEFINITIONS(
 # libraries to link to
 SET(_link_LIBRARIES
   ${NETGEN_LIBRARIES}
-  ${CAS_TKernel}
-  ${CAS_TKBRep}
-  ${CAS_TKShHealing}
-  ${CAS_TKSTEP}
-  ${CAS_TKXSBase}
-  ${CAS_TKIGES}
-  ${CAS_TKMesh}
-  ${CAS_TKSTL}
-  ${CAS_TKG3d}
-  ${CAS_TKTopAlgo}
-  ${CAS_TKG2d}
-  ${CAS_TKBool}
-  ${CAS_TKGeomAlgo}
-  ${CAS_TKOffset}
-  ${CAS_TKGeomBase}
-  ${CAS_TKBO}
-  ${CAS_TKMath}
-  ${CAS_TKFillet}
-  ${CAS_TKMeshVS}
-  ${CAS_TKPrim}
-  ${CAS_TKSTEPBase}
-  ${CAS_TKSTEPAttr}
-  ${CAS_TKSTEP209}
-  ${CAS_TKXDESTEP}
-  ${CAS_TKXDEIGES}
-  ${CAS_TKXCAF}
-  ${CAS_TKLCAF}
-  ${CAS_FWOSPlugin}
+  ${OpenCASCADE_FoundationClasses_LIBRARIES}
+  ${OpenCASCADE_ModelingData_LIBRARIES}
+  ${OpenCASCADE_ModelingAlgorithms_LIBRARIES}
+  ${OpenCASCADE_DataExchange_LIBRARIES}
+  ${OpenCASCADE_Visualization_LIBRARIES}
+  ${OpenCASCADE_ApplicationFramework_LIBRARIES}
   ${GEOM_GEOMbasic}
   ${SMESH_SMESHimpl}
   ${SMESH_SMESHEngine}
