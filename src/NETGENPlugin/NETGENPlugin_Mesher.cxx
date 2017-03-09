@@ -926,7 +926,7 @@ bool NETGENPlugin_Mesher::FillNgMesh(netgen::OCCGeometry&           occgeom,
 
         // get all nodes from connected <edges>
         const bool isQuad = smDS->IsQuadratic();
-        StdMeshers_FaceSide fSide( face, edges, _mesh, isForwad, isQuad );
+        StdMeshers_FaceSide fSide( face, edges, _mesh, isForwad, isQuad, &helper );
         const vector<UVPtStruct>& points = fSide.GetUVPtStruct();
         if ( points.empty() )
           return false; // invalid node params?
@@ -2789,7 +2789,7 @@ bool NETGENPlugin_Mesher::Compute()
           helper.SetSubShape( F );
           TSideVector wires =
             StdMeshers_FaceSide::GetFaceWires( F, *_mesh, /*skipMediumNodes=*/true,
-                                               error, viscousMesh );
+                                               error, &helper, viscousMesh );
           error = AddSegmentsToMesh( *_ngMesh, occgeo, wires, helper, nodeVec );
 
           if ( !error ) error = SMESH_ComputeError::New();

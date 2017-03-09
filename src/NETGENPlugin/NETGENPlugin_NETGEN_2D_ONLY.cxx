@@ -355,7 +355,7 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
     // get all EDGEs of a FACE
     // ------------------------
     TSideVector wires =
-      StdMeshers_FaceSide::GetFaceWires( F, aMesh, ignoreMediumNodes, faceErr, proxyMesh );
+      StdMeshers_FaceSide::GetFaceWires( F, aMesh, ignoreMediumNodes, faceErr, &helper, proxyMesh );
     if ( faceErr && !faceErr->IsOK() )
       continue;
     int nbWires = wires.size();
