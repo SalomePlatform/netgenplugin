@@ -105,7 +105,7 @@ class NETGEN_Algorithm(Mesh_Algorithm):
     #              if it is @c 0 (default), the algorithm is assigned to the main shape
     def __init__(self, mesh, geom=0):
         Mesh_Algorithm.__init__(self)
-        if noNETGENPlugin: print "Warning: NETGENPlugin module unavailable"
+        if noNETGENPlugin: print("Warning: NETGENPlugin module unavailable")
         self.Create(mesh, geom, self.algoType, LIBRARY)
         self.params = None
         pass
