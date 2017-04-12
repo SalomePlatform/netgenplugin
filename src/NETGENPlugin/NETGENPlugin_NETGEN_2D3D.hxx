@@ -35,6 +35,7 @@
 #include <SMESH_Algo.hxx>
 
 class NETGENPlugin_Mesher;
+class StdMeshers_ViscousLayers;
 
 class NETGENPLUGIN_EXPORT NETGENPlugin_NETGEN_2D3D: public SMESH_3D_Algo
 {
@@ -42,11 +43,11 @@ public:
   NETGENPlugin_NETGEN_2D3D(int hypId, int studyId, SMESH_Gen* gen);
   virtual ~NETGENPlugin_NETGEN_2D3D();
 
-  virtual bool CheckHypothesis(SMESH_Mesh& aMesh,
+  virtual bool CheckHypothesis(SMESH_Mesh&         aMesh,
                                const TopoDS_Shape& aShape,
-                               SMESH_Hypothesis::Hypothesis_Status& aStatus);
+                               Hypothesis_Status&  aStatus);
 
-  virtual bool Compute(SMESH_Mesh& aMesh,
+  virtual bool Compute(SMESH_Mesh&         aMesh,
                        const TopoDS_Shape& aShape);
 
   virtual void CancelCompute();
@@ -54,13 +55,14 @@ public:
   virtual double GetProgress() const;
 
 
-  virtual bool Evaluate(SMESH_Mesh& aMesh,
+  virtual bool Evaluate(SMESH_Mesh&         aMesh,
                         const TopoDS_Shape& aShape,
-                        MapShapeNbElems& aResMap);
+                        MapShapeNbElems&    aResMap);
 
 protected:
-  const SMESHDS_Hypothesis* _hypothesis;
-  NETGENPlugin_Mesher *     _mesher;
+  const SMESHDS_Hypothesis*       _hypothesis;
+  const StdMeshers_ViscousLayers* _viscousLayersHyp;
+  NETGENPlugin_Mesher *           _mesher;
 };
 
 #endif

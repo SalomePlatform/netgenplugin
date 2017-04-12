@@ -46,14 +46,15 @@ namespace nglib {
 #include <vector>
 #include <set>
 
+class NETGENPlugin_Hypothesis;
+class NETGENPlugin_Internals;
+class NETGENPlugin_SimpleHypothesis_2D;
 class SMESHDS_Mesh;
 class SMESH_Comment;
 class SMESH_Mesh;
 class SMESH_MesherHelper;
+class StdMeshers_ViscousLayers;
 class TopoDS_Shape;
-class NETGENPlugin_Hypothesis;
-class NETGENPlugin_SimpleHypothesis_2D;
-class NETGENPlugin_Internals;
 namespace netgen {
   class OCCGeometry;
   class Mesh;
@@ -66,9 +67,10 @@ namespace netgen {
 
 struct NETGENPlugin_ngMeshInfo
 {
-  int _nbNodes, _nbSegments, _nbFaces, _nbVolumes;
+  int   _nbNodes, _nbSegments, _nbFaces, _nbVolumes;
+  bool  _elementsRemoved; // case where netgen can remove free nodes
   char* _copyOfLocalH;
-  NETGENPlugin_ngMeshInfo( netgen::Mesh* ngMesh=0);
+  NETGENPlugin_ngMeshInfo( netgen::Mesh* ngMesh=0, bool checkRemovedElems=false );
   void transferLocalH( netgen::Mesh* fromMesh, netgen::Mesh* toMesh );
   void restoreLocalH ( netgen::Mesh* ngMesh);
 };
@@ -120,6 +122,7 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_Mesher
 
   void SetParameters(const NETGENPlugin_Hypothesis*          hyp);
   void SetParameters(const NETGENPlugin_SimpleHypothesis_2D* hyp);
+  void SetParameters(const StdMeshers_ViscousLayers*         hyp );
   void SetViscousLayers2DAssigned(bool isAssigned) { _isViscousLayers2D = isAssigned; }
   static void SetLocalSize( netgen::OCCGeometry& occgeo, netgen::Mesh& ngMesh );
 
@@ -210,6 +213,7 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_Mesher
   volatile double      _totalTime;
 
   const NETGENPlugin_SimpleHypothesis_2D * _simpleHyp;
+  const StdMeshers_ViscousLayers*   _viscousLayersHyp;
 
   // a pointer to NETGENPlugin_Mesher* field of the holder, that will be
   // nullified at destruction of this

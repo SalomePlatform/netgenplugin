@@ -152,6 +152,7 @@
                group-id         ="1"
                priority         ="10"
                hypos            ="NETGEN_Parameters, NETGEN_SimpleParameters_3D"
+               opt-hypos        ="ViscousLayers"
                output           ="TETRA,PYRAMID"
                dim              ="3"
                support-submeshes="true">
@@ -159,6 +160,7 @@
         <algo>NETGEN_2D3D=Tetrahedron(algo=smeshBuilder.NETGEN_1D2D3D)</algo>
         <hypo>NETGEN_Parameters=Parameters()</hypo>
         <hypo>NETGEN_SimpleParameters_3D=Parameters(smeshBuilder.SIMPLE)</hypo>
+        <hypo>ViscousLayers=ViscousLayers(SetTotalThickness(),SetNumberLayers(),SetStretchFactor(),SetFaces(1),SetFaces(2),SetMethod())</hypo>
       </python-wrap>
     </algorithm>
 

@@ -32,10 +32,12 @@
 #include "NETGENPlugin_SimpleHypothesis_3D.hxx"
 #include "NETGENPlugin_Mesher.hxx"
 
+#include <SMESHDS_Mesh.hxx>
+#include <SMESH_ControlsDef.hxx>
 #include <SMESH_Gen.hxx>
 #include <SMESH_Mesh.hxx>
-#include <SMESH_ControlsDef.hxx>
-#include <SMESHDS_Mesh.hxx>
+#include <StdMeshers_ViscousLayers.hxx>
+
 #include <utilities.h>
 
 #include <list>
@@ -62,6 +64,7 @@ NETGENPlugin_NETGEN_2D3D::NETGENPlugin_NETGEN_2D3D(int hypId, int studyId,
   _shapeType = (1 << TopAbs_SHELL) | (1 << TopAbs_SOLID);// 1 bit /shape type
   _compatibleHypothesis.push_back("NETGEN_Parameters");
   _compatibleHypothesis.push_back("NETGEN_SimpleParameters_3D");
+  _compatibleHypothesis.push_back( StdMeshers_ViscousLayers::GetHypType() );
   _requireDiscreteBoundary = false;
   _onlyUnaryInput = false;
   _hypothesis = NULL;
@@ -70,7 +73,7 @@ NETGENPlugin_NETGEN_2D3D::NETGENPlugin_NETGEN_2D3D(int hypId, int studyId,
 
 //=============================================================================
 /*!
- *  
+ *
  */
 //=============================================================================
 
@@ -81,39 +84,45 @@ NETGENPlugin_NETGEN_2D3D::~NETGENPlugin_NETGEN_2D3D()
 
 //=============================================================================
 /*!
- *  
+ *
  */
 //=============================================================================
 
-bool NETGENPlugin_NETGEN_2D3D::CheckHypothesis
-                         (SMESH_Mesh& aMesh,
-                          const TopoDS_Shape& aShape,
-                          SMESH_Hypothesis::Hypothesis_Status& aStatus)
+bool NETGENPlugin_NETGEN_2D3D::CheckHypothesis (SMESH_Mesh&         aMesh,
+                                                const TopoDS_Shape& aShape,
+                                                Hypothesis_Status&  aStatus)
 {
-  _hypothesis = NULL;
-  _mesher     = NULL;
+  _hypothesis       = NULL;
+  _viscousLayersHyp = NULL;
+  _mesher           = NULL;
 
-  const list<const SMESHDS_Hypothesis*>& hyps = GetUsedHypothesis(aMesh, aShape);
-  int nbHyp = hyps.size();
-  if (!nbHyp)
+  const list<const SMESHDS_Hypothesis*>& hyps = GetUsedHypothesis(aMesh, aShape, /*noAux=*/false);
+  if ( hyps.empty() )
   {
     aStatus = SMESH_Hypothesis::HYP_OK;
     return true;  // can work with no hypothesis
   }
 
-  const SMESHDS_Hypothesis* theHyp = hyps.front(); // use only the first hypothesis
-
-  string hypName = theHyp->GetName();
-
-  if ( find( _compatibleHypothesis.begin(), _compatibleHypothesis.end(),
-             hypName ) != _compatibleHypothesis.end() )
+  list<const SMESHDS_Hypothesis*>::const_iterator h = hyps.begin();
+  for ( ; h != hyps.end(); ++h )
   {
-    _hypothesis = theHyp;
-    aStatus = SMESH_Hypothesis::HYP_OK;
-  }
-  else
-  {
-    aStatus = SMESH_Hypothesis::HYP_INCOMPATIBLE;
+    const SMESHDS_Hypothesis* aHyp = *h;
+    std::string            hypName = aHyp->GetName();
+
+    if ( std::find( _compatibleHypothesis.begin(), _compatibleHypothesis.end(),
+                    hypName ) != _compatibleHypothesis.end() )
+    {
+      if ( hypName == StdMeshers_ViscousLayers::GetHypType() )
+        _viscousLayersHyp = dynamic_cast<const StdMeshers_ViscousLayers*>( aHyp );
+      else
+        _hypothesis = aHyp;
+      aStatus = SMESH_Hypothesis::HYP_OK;
+    }
+    else
+    {
+      aStatus = SMESH_Hypothesis::HYP_INCOMPATIBLE;
+      break;
+    }
   }
 
   return aStatus == SMESH_Hypothesis::HYP_OK;
@@ -133,6 +142,7 @@ bool NETGENPlugin_NETGEN_2D3D::Compute(SMESH_Mesh&         aMesh,
   NETGENPlugin_Mesher mesher(&aMesh, aShape, true);
   mesher.SetParameters(dynamic_cast<const NETGENPlugin_Hypothesis*>(_hypothesis));
   mesher.SetParameters(dynamic_cast<const NETGENPlugin_SimpleHypothesis_3D*>(_hypothesis));
+  mesher.SetParameters(_viscousLayersHyp);
   mesher.SetSelfPointer( &_mesher );
   return mesher.Compute();
 }
