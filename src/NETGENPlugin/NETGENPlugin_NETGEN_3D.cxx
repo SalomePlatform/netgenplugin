@@ -99,9 +99,8 @@ using namespace std;
  */
 //=============================================================================
 
-NETGENPlugin_NETGEN_3D::NETGENPlugin_NETGEN_3D(int hypId, int studyId,
-                             SMESH_Gen* gen)
-  : SMESH_3D_Algo(hypId, studyId, gen)
+NETGENPlugin_NETGEN_3D::NETGENPlugin_NETGEN_3D(int hypId, SMESH_Gen* gen)
+  : SMESH_3D_Algo(hypId, gen)
 {
   _name = "NETGEN_3D";
   _shapeType = (1 << TopAbs_SHELL) | (1 << TopAbs_SOLID);// 1 bit /shape type

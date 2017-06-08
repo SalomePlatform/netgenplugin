@@ -43,7 +43,6 @@ using namespace std;
 //=============================================================================
 
 NETGENPlugin_NETGEN_2D3D_i::NETGENPlugin_NETGEN_2D3D_i( PortableServer::POA_ptr thePOA,
-                                                        int                     theStudyId,
                                                         ::SMESH_Gen*            theGenImpl )
      : SALOME::GenericObj_i( thePOA ), 
        SMESH_Hypothesis_i( thePOA ), 
@@ -52,7 +51,6 @@ NETGENPlugin_NETGEN_2D3D_i::NETGENPlugin_NETGEN_2D3D_i( PortableServer::POA_ptr 
 {
   //MESSAGE( "NETGENPlugin_NETGEN_2D3D_i::NETGENPlugin_NETGEN_2D3D_i" );
   myBaseImpl = new ::NETGENPlugin_NETGEN_2D3D( theGenImpl->GetANewId(),
-                                               theStudyId,
                                                theGenImpl );
 }
 

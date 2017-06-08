@@ -37,9 +37,9 @@ using namespace std;
  *  
  */
 //=============================================================================
-NETGENPlugin_Hypothesis_2D::NETGENPlugin_Hypothesis_2D (int hypId, int studyId,
+NETGENPlugin_Hypothesis_2D::NETGENPlugin_Hypothesis_2D (int hypId,
                                                         SMESH_Gen * gen)
-  : NETGENPlugin_Hypothesis(hypId, studyId, gen)/*,
+  : NETGENPlugin_Hypothesis(hypId, gen)/*,
     _quadAllowed (GetDefaultQuadAllowed())*/
 {
   _name = "NETGEN_Parameters_2D";

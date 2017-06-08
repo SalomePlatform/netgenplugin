@@ -40,7 +40,7 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_SimpleHypothesis_2D: public SMESH_Hypothe
 {
 public:
 
-  NETGENPlugin_SimpleHypothesis_2D(int hypId, int studyId, SMESH_Gen * gen);
+  NETGENPlugin_SimpleHypothesis_2D(int hypId, SMESH_Gen * gen);
 
   /*!
    * Sets <number of segments> value

@@ -86,9 +86,8 @@ using namespace nglib;
 //=============================================================================
 
 NETGENPlugin_NETGEN_2D_ONLY::NETGENPlugin_NETGEN_2D_ONLY(int        hypId,
-                                                         int        studyId,
                                                          SMESH_Gen* gen)
-  : SMESH_2D_Algo(hypId, studyId, gen)
+  : SMESH_2D_Algo(hypId, gen)
 {
   _name = "NETGEN_2D_ONLY";
   

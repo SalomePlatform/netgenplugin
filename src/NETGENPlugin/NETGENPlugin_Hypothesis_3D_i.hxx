@@ -46,7 +46,6 @@ class NETGENPLUGIN_EXPORT  NETGENPlugin_Hypothesis_3D_i:
  public:
   // Constructor
   NETGENPlugin_Hypothesis_3D_i (PortableServer::POA_ptr thePOA,
-                                int                     theStudyId,
                                 ::SMESH_Gen*            theGenImpl);
 
   // Get type name of hypothesis

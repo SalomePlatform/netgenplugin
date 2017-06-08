@@ -43,9 +43,8 @@ using namespace std;
  */
 //=============================================================================
 NETGENPlugin_SimpleHypothesis_2D::NETGENPlugin_SimpleHypothesis_2D (int         hypId,
-                                                                    int         studyId,
                                                                     SMESH_Gen * gen)
-  : SMESH_Hypothesis(hypId, studyId, gen),
+  : SMESH_Hypothesis(hypId, gen),
     _nbSegments ((int)NETGENPlugin_Hypothesis::GetDefaultNbSegPerEdge()),
     _segmentLength(0),
     _area         (0.),

@@ -767,10 +767,9 @@ void NETGENPluginGUI_HypothesisCreator::onSetSizeFile()
 
 GeomSelectionTools* NETGENPluginGUI_HypothesisCreator::getGeomSelectionTools()
 {
-  _PTR(Study) aStudy = SMESH::GetActiveStudyDocument();
-  if (myGeomSelectionTools == NULL || myGeomSelectionTools->getMyStudy() != aStudy) {
+  if (myGeomSelectionTools == NULL) {
     delete myGeomSelectionTools;
-    myGeomSelectionTools = new GeomSelectionTools(aStudy);
+    myGeomSelectionTools = new GeomSelectionTools();
   }
   return myGeomSelectionTools;
 }

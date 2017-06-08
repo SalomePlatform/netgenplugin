@@ -46,7 +46,6 @@ class NETGENPLUGIN_EXPORT  NETGENPlugin_Hypothesis_2D_ONLY_i:
  public:
   // Constructor
   NETGENPlugin_Hypothesis_2D_ONLY_i (PortableServer::POA_ptr thePOA,
-                                     int                     theStudyId,
                                      ::SMESH_Gen*            theGenImpl);
   // Destructor
   virtual ~NETGENPlugin_Hypothesis_2D_ONLY_i();

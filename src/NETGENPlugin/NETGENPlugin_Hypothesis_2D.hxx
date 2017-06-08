@@ -43,7 +43,7 @@ class NETGENPLUGIN_EXPORT  NETGENPlugin_Hypothesis_2D: public NETGENPlugin_Hypot
 {
 public:
 
-  NETGENPlugin_Hypothesis_2D(int hypId, int studyId, SMESH_Gen * gen);
+  NETGENPlugin_Hypothesis_2D(int hypId, SMESH_Gen * gen);
 
   // void SetQuadAllowed(bool theVal);
   // bool GetQuadAllowed() const { return _quadAllowed; }
