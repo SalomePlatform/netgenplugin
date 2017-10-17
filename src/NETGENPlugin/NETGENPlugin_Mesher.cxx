@@ -52,21 +52,29 @@
 
 #include <utilities.h>
 
+#include <BRepAdaptor_Surface.hxx>
 #include <BRepBuilderAPI_Copy.hxx>
+#include <BRepLProp_SLProps.hxx>
+#include <BRepMesh_IncrementalMesh.hxx>
+#include <BRep_Builder.hxx>
 #include <BRep_Tool.hxx>
 #include <Bnd_B3d.hxx>
+#include <GeomLib_IsPlanarSurface.hxx>
 #include <NCollection_Map.hxx>
+#include <Poly_Triangulation.hxx>
 #include <Standard_ErrorHandler.hxx>
 #include <Standard_ProgramError.hxx>
 #include <TColStd_MapOfInteger.hxx>
 #include <TopExp.hxx>
 #include <TopExp_Explorer.hxx>
+#include <TopLoc_Location.hxx>
 #include <TopTools_DataMapIteratorOfDataMapOfShapeInteger.hxx>
 #include <TopTools_DataMapIteratorOfDataMapOfShapeShape.hxx>
 #include <TopTools_DataMapOfShapeInteger.hxx>
 #include <TopTools_DataMapOfShapeShape.hxx>
 #include <TopTools_MapOfShape.hxx>
 #include <TopoDS.hxx>
+#include <TopoDS_Compound.hxx>
 
 // Netgen include files
 #ifndef OCCGEOMETRY
@@ -151,6 +159,7 @@ NETGENPlugin_Mesher::NETGENPlugin_Mesher (SMESH_Mesh*         mesh,
     _optimize(true),
     _fineness(NETGENPlugin_Hypothesis::GetDefaultFineness()),
     _isViscousLayers2D(false),
+    _chordalError(-1), // means disabled
     _ngMesh(NULL),
     _occgeom(NULL),
     _curShapeIndex(-1),
@@ -293,32 +302,36 @@ void NETGENPlugin_Mesher::SetParameters(const NETGENPlugin_Hypothesis* hyp)
     _fineness               = hyp->GetFineness();
     mparams.uselocalh       = hyp->GetSurfaceCurvature();
     netgen::merge_solids    = hyp->GetFuseEdges();
+    _chordalError           = hyp->GetChordalErrorEnabled() ? hyp->GetChordalError() : -1.;
     _simpleHyp              = NULL;
     // mesh size file
     mparams.meshsizefilename= hyp->GetMeshSizeFile().empty() ? 0 : hyp->GetMeshSizeFile().c_str();
 
-    SMESH_Gen_i*              smeshGen_i = SMESH_Gen_i::GetSMESHGen();
-    CORBA::Object_var           anObject = smeshGen_i->GetNS()->Resolve("/myStudyManager");
-    SALOMEDS::StudyManager_var aStudyMgr = SALOMEDS::StudyManager::_narrow(anObject);
-    SALOMEDS::Study_var          myStudy = aStudyMgr->GetStudyByID(hyp->GetStudyId());
-    if ( !myStudy->_is_nil() )
+    const NETGENPlugin_Hypothesis::TLocalSize& localSizes = hyp->GetLocalSizesAndEntries();
+    if ( !localSizes.empty() )
     {
-      const NETGENPlugin_Hypothesis::TLocalSize   localSizes = hyp->GetLocalSizesAndEntries();
-      NETGENPlugin_Hypothesis::TLocalSize::const_iterator it = localSizes.begin();
-      for ( ; it != localSizes.end() ; it++)
+      SMESH_Gen_i*              smeshGen_i = SMESH_Gen_i::GetSMESHGen();
+      CORBA::Object_var           anObject = smeshGen_i->GetNS()->Resolve("/myStudyManager");
+      SALOMEDS::StudyManager_var aStudyMgr = SALOMEDS::StudyManager::_narrow(anObject);
+      SALOMEDS::Study_var          myStudy = aStudyMgr->GetStudyByID(hyp->GetStudyId());
+      if ( !myStudy->_is_nil() )
       {
-        std::string entry = (*it).first;
-        double        val = (*it).second;
-        // --
-        GEOM::GEOM_Object_var aGeomObj;
-        SALOMEDS::SObject_var aSObj = myStudy->FindObjectID( entry.c_str() );
-        if ( !aSObj->_is_nil() ) {
-          CORBA::Object_var obj = aSObj->GetObject();
-          aGeomObj = GEOM::GEOM_Object::_narrow(obj);
-          aSObj->UnRegister();
+        NETGENPlugin_Hypothesis::TLocalSize::const_iterator it = localSizes.begin();
+        for ( ; it != localSizes.end() ; it++)
+        {
+          std::string entry = (*it).first;
+          double        val = (*it).second;
+          // --
+          GEOM::GEOM_Object_var aGeomObj;
+          SALOMEDS::SObject_var aSObj = myStudy->FindObjectID( entry.c_str() );
+          if ( !aSObj->_is_nil() ) {
+            CORBA::Object_var obj = aSObj->GetObject();
+            aGeomObj = GEOM::GEOM_Object::_narrow(obj);
+            aSObj->UnRegister();
+          }
+          TopoDS_Shape S = smeshGen_i->GeomObjectToShape( aGeomObj.in() );
+          ::SetLocalSize(S, val);
         }
-        TopoDS_Shape S = smeshGen_i->GeomObjectToShape( aGeomObj.in() );
-        ::SetLocalSize(S, val);
       }
     }
   }
@@ -597,7 +610,8 @@ namespace
 
   void setLocalSize(const TopoDS_Edge& edge,
                     double             size,
-                    netgen::Mesh&      mesh)
+                    netgen::Mesh&      mesh,
+                    const bool         overrideMinH = true)
   {
     if ( size <= std::numeric_limits<double>::min() )
       return;
@@ -608,7 +622,7 @@ namespace
       TopoDS_Iterator vIt( edge );
       if ( !vIt.More() ) return;
       gp_Pnt p = BRep_Tool::Pnt( TopoDS::Vertex( vIt.Value() ));
-      NETGENPlugin_Mesher::RestrictLocalSize( mesh, p.XYZ(), size );
+      NETGENPlugin_Mesher::RestrictLocalSize( mesh, p.XYZ(), size, overrideMinH );
     }
     else
     {
@@ -618,15 +632,29 @@ namespace
       {
         Standard_Real u = u1 + delta*i;
         gp_Pnt p = curve->Value(u);
-        NETGENPlugin_Mesher::RestrictLocalSize( mesh, p.XYZ(), size );
+        NETGENPlugin_Mesher::RestrictLocalSize( mesh, p.XYZ(), size, overrideMinH );
         netgen::Point3d pi(p.X(), p.Y(), p.Z());
         double resultSize = mesh.GetH(pi);
         if ( resultSize - size > 0.1*size )
           // netgen does restriction iff oldH/newH > 1.2 (localh.cpp:136)
-          NETGENPlugin_Mesher::RestrictLocalSize( mesh, p.XYZ(), resultSize/1.201 );
+          NETGENPlugin_Mesher::RestrictLocalSize( mesh, p.XYZ(), resultSize/1.201, overrideMinH );
       }
     }
   }
+
+  //================================================================================
+  /*!
+   * \brief Return triangle size for a given chordalError and radius of curvature
+   */
+  //================================================================================
+
+  double elemSizeForChordalError( double chordalError, double radius )
+  {
+    if ( 2 * radius < chordalError )
+      return 1.5 * radius;
+    return Sqrt( 3 ) * Sqrt( chordalError * ( 2 * radius - chordalError ));
+  }
+
 } // namespace
 
 //================================================================================
@@ -636,16 +664,19 @@ namespace
 //================================================================================
 
 void NETGENPlugin_Mesher::SetLocalSize( netgen::OCCGeometry& occgeo,
-                                        netgen::Mesh&        ngMesh )
+                                        netgen::Mesh&        ngMesh)
 {
-  for(std::map<int,double>::const_iterator it=EdgeId2LocalSize.begin(); it!=EdgeId2LocalSize.end(); it++)
+  // edges
+  std::map<int,double>::const_iterator it;
+  for( it=EdgeId2LocalSize.begin(); it!=EdgeId2LocalSize.end(); it++)
   {
     int   key = (*it).first;
     double hi = (*it).second;
     const TopoDS_Shape& shape = ShapesWithLocalSize.FindKey(key);
     setLocalSize( TopoDS::Edge(shape), hi, ngMesh );
   }
-  for(std::map<int,double>::const_iterator it=VertexId2LocalSize.begin(); it!=VertexId2LocalSize.end(); it++)
+  // vertices
+  for(it=VertexId2LocalSize.begin(); it!=VertexId2LocalSize.end(); it++)
   {
     int   key = (*it).first;
     double hi = (*it).second;
@@ -653,7 +684,8 @@ void NETGENPlugin_Mesher::SetLocalSize( netgen::OCCGeometry& occgeo,
     gp_Pnt p = BRep_Tool::Pnt( TopoDS::Vertex(shape) );
     NETGENPlugin_Mesher::RestrictLocalSize( ngMesh, p.XYZ(), hi );
   }
-  for(map<int,double>::const_iterator it=FaceId2LocalSize.begin(); it!=FaceId2LocalSize.end(); it++)
+  // faces
+  for(it=FaceId2LocalSize.begin(); it!=FaceId2LocalSize.end(); it++)
   {
     int    key = (*it).first;
     double val = (*it).second;
@@ -671,7 +703,8 @@ void NETGENPlugin_Mesher::SetLocalSize( netgen::OCCGeometry& occgeo,
       ShapesWithControlPoints.insert( key );
     }
   }
-  for(map<int,double>::const_iterator it=SolidId2LocalSize.begin(); it!=SolidId2LocalSize.end(); it++)
+  //solids
+  for(it=SolidId2LocalSize.begin(); it!=SolidId2LocalSize.end(); it++)
   {
     int    key = (*it).first;
     double val = (*it).second;
@@ -687,6 +720,146 @@ void NETGENPlugin_Mesher::SetLocalSize( netgen::OCCGeometry& occgeo,
   {
     for ( size_t i = 0; i < ControlPoints.size(); ++i )
       NETGENPlugin_Mesher::RestrictLocalSize( ngMesh, ControlPoints[i].XYZ(), ControlPoints[i].Size() );
+  }
+  return;
+}
+
+//================================================================================
+/*!
+ * \brief Restrict local size to achieve a required _chordalError
+ */
+//================================================================================
+
+void NETGENPlugin_Mesher::SetLocalSizeForChordalError( netgen::OCCGeometry& occgeo,
+                                                       netgen::Mesh&        ngMesh)
+{
+  if ( _chordalError <= 0. )
+    return;
+
+  TopLoc_Location loc;
+  BRepLProp_SLProps surfProp( 2, 1e-6 );
+  const double sizeCoef = 0.95;
+
+  // find non-planar FACEs with non-constant curvature
+  std::vector<int> fInd;
+  for ( int i = 1; i <= occgeo.fmap.Extent(); ++i )
+  {
+    const TopoDS_Face& face = TopoDS::Face( occgeo.fmap( i ));
+    BRepAdaptor_Surface surfAd( face, false );
+    switch ( surfAd.GetType() )
+    {
+    case GeomAbs_Plane:
+      continue;
+    case GeomAbs_Cylinder:
+    case GeomAbs_Sphere:
+    case GeomAbs_Torus: // constant curvature
+    {
+      surfProp.SetSurface( surfAd );
+      surfProp.SetParameters( 0, 0 );
+      double maxCurv = Max( Abs( surfProp.MaxCurvature()), Abs( surfProp.MinCurvature() ));
+      double    size = elemSizeForChordalError( _chordalError, 1 / maxCurv );
+      occgeo.SetFaceMaxH( i, size * sizeCoef );
+      // limit size one edges
+      TopTools_MapOfShape edgeMap;
+      for ( TopExp_Explorer eExp( face, TopAbs_EDGE ); eExp.More(); eExp.Next() )
+        if ( edgeMap.Add( eExp.Current() ))
+          setLocalSize( TopoDS::Edge( eExp.Current() ), size, ngMesh, /*overrideMinH=*/false );
+      break;
+    }
+    default:
+      Handle(Geom_Surface) surf = BRep_Tool::Surface( face, loc );
+      if ( GeomLib_IsPlanarSurface( surf ).IsPlanar() )
+        continue;
+      fInd.push_back( i );
+    }
+  }
+  // set local size
+  if ( !fInd.empty() )
+  {
+    BRep_Builder b;
+    TopoDS_Compound allFacesComp;
+    b.MakeCompound( allFacesComp );
+    for ( size_t i = 0; i < fInd.size(); ++i )
+      b.Add( allFacesComp, occgeo.fmap( fInd[i] ));
+
+    // copy the shape to avoid spoiling its triangulation
+    TopoDS_Shape allFacesCompCopy = BRepBuilderAPI_Copy( allFacesComp );
+
+    // create triangulation with desired chordal error
+    BRepMesh_IncrementalMesh( allFacesCompCopy,
+                              _chordalError,
+                              /*isRelative = */Standard_False,
+                              /*theAngDeflection = */ 0.5,
+                              /*isInParallel = */Standard_True);
+
+    // loop on FACEs
+    for ( TopExp_Explorer fExp( allFacesCompCopy, TopAbs_FACE ); fExp.More(); fExp.Next() )
+    {
+      const TopoDS_Face& face = TopoDS::Face( fExp.Current() );
+      Handle(Poly_Triangulation) triangulation = BRep_Tool::Triangulation ( face, loc );
+      if ( triangulation.IsNull() ) continue;
+
+      BRepAdaptor_Surface surf( face, false );
+      surfProp.SetSurface( surf );
+
+      gp_XY    uv[3];
+      gp_XYZ    p[3];
+      double size[3];
+      for ( int i = 1; i <= triangulation->NbTriangles(); ++i )
+      {
+        Standard_Integer n1,n2,n3;
+        triangulation->Triangles()(i).Get( n1,n2,n3 );
+        p [0] = triangulation->Nodes()(n1).Transformed(loc).XYZ();
+        p [1] = triangulation->Nodes()(n2).Transformed(loc).XYZ();
+        p [2] = triangulation->Nodes()(n3).Transformed(loc).XYZ();
+        uv[0] = triangulation->UVNodes()(n1).XY();
+        uv[1] = triangulation->UVNodes()(n2).XY();
+        uv[2] = triangulation->UVNodes()(n3).XY();
+        surfProp.SetParameters( uv[0].X(), uv[0].Y() );
+        if ( !surfProp.IsCurvatureDefined() )
+          break;
+
+        for ( int n = 0; n < 3; ++n ) // get size at triangle nodes
+        {
+          surfProp.SetParameters( uv[n].X(), uv[n].Y() );
+          double maxCurv = Max( Abs( surfProp.MaxCurvature()), Abs( surfProp.MinCurvature() ));
+          size[n] = elemSizeForChordalError( _chordalError, 1 / maxCurv );
+        }
+        for ( int n1 = 0; n1 < 3; ++n1 ) // limit size along each triangle edge
+        {
+          int n2 = ( n1 + 1 ) % 3;
+          double minSize = size[n1], maxSize = size[n2];
+          if ( size[n1] > size[n2] )
+            minSize = size[n2], maxSize = size[n1];
+
+          if ( maxSize / minSize < 1.2 ) // netgen ignores size difference < 1.2
+          {
+            ngMesh.RestrictLocalHLine ( netgen::Point3d( p[n1].X(), p[n1].Y(), p[n1].Z() ),
+                                        netgen::Point3d( p[n2].X(), p[n2].Y(), p[n2].Z() ),
+                                        sizeCoef * minSize );
+          }
+          else
+          {
+            gp_XY uvVec( uv[n2] - uv[n1] );
+            double len = ( p[n1] - p[n2] ).Modulus();
+            int     nb = int( len / minSize ) + 1;
+            for ( int j = 0; j <= nb; ++j )
+            {
+              double r = double( j ) / nb;
+              gp_XY uvj = uv[n1] + r * uvVec;
+
+              surfProp.SetParameters( uvj.X(), uvj.Y() );
+              double maxCurv = Max( Abs( surfProp.MaxCurvature()), Abs( surfProp.MinCurvature() ));
+              double       h = elemSizeForChordalError( _chordalError, 1 / maxCurv );
+
+              const gp_Pnt& pj = surfProp.Value();
+              netgen::Point3d ngP( pj.X(), pj.Y(), pj.Z());
+              ngMesh.RestrictLocalH( ngP, h * sizeCoef );
+            }
+          }
+        }
+      }
+    }
   }
 }
 
@@ -2724,6 +2897,7 @@ bool NETGENPlugin_Mesher::Compute()
     {
       // Local size on shapes
       SetLocalSize( occgeo, *_ngMesh );
+      SetLocalSizeForChordalError( occgeo, *_ngMesh );
     }
 
     // Precompute internal edges (issue 0020676) in order to
@@ -3290,25 +3464,25 @@ bool NETGENPlugin_Mesher::Evaluate(MapShapeNbElems& aResMap)
       sm->GetComputeError().reset( new SMESH_ComputeError( COMPERR_ALGO_FAILED ));
     return false;
   }
-  if ( _simpleHyp )
-  {
-    // Pass 1D simple parameters to NETGEN
-    // --------------------------------
-    int      nbSeg = _simpleHyp->GetNumberOfSegments();
-    double segSize = _simpleHyp->GetLocalLength();
-    for ( int iE = 1; iE <= occgeo.emap.Extent(); ++iE )
-    {
-      const TopoDS_Edge& e = TopoDS::Edge( occgeo.emap(iE));
-      if ( nbSeg )
-        segSize = SMESH_Algo::EdgeLength( e ) / ( nbSeg - 0.4 );
-      setLocalSize( e, segSize, *ngMesh );
-    }
-  }
-  else // if ( ! _simpleHyp )
-  {
-    // Local size on shapes
-    SetLocalSize( occgeo, *ngMesh );
-  }
+  // if ( _simpleHyp )
+  // {
+  //   // Pass 1D simple parameters to NETGEN
+  //   // --------------------------------
+  //   int      nbSeg = _simpleHyp->GetNumberOfSegments();
+  //   double segSize = _simpleHyp->GetLocalLength();
+  //   for ( int iE = 1; iE <= occgeo.emap.Extent(); ++iE )
+  //   {
+  //     const TopoDS_Edge& e = TopoDS::Edge( occgeo.emap(iE));
+  //     if ( nbSeg )
+  //       segSize = SMESH_Algo::EdgeLength( e ) / ( nbSeg - 0.4 );
+  //     setLocalSize( e, segSize, *ngMesh );
+  //   }
+  // }
+  // else // if ( ! _simpleHyp )
+  // {
+  //   // Local size on shapes
+  //   SetLocalSize( occgeo, *ngMesh );
+  // }
   // calculate total nb of segments and length of edges
   double fullLen = 0.0;
   int fullNbSeg = 0;

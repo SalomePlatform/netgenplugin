@@ -67,6 +67,14 @@ module NETGENPlugin
   };
 
   /*!
+   * NETGENPlugin_Remesher_2D: interface of "NETGEN Remesher" algorithm,
+   * generating 2D elements basing on an existing 2D mesh
+   */
+  interface NETGENPlugin_Remesher_2D : SMESH::SMESH_2D_Algo
+  {
+  };
+
+  /*!
    * NETGENPlugin_Hypothesis: interface of "NETGEN parameters" hypothesis
    */
   interface NETGENPlugin_Hypothesis : SMESH::SMESH_Hypothesis
@@ -91,6 +99,11 @@ module NETGENPlugin
 
     void SetNbSegPerEdge(in double value);
     double GetNbSegPerEdge();
+
+    void SetChordalErrorEnabled(in boolean value);
+    boolean GetChordalErrorEnabled();
+    void SetChordalError(in double value);
+    double GetChordalError();
 
     void SetNbSegPerRadius(in double value);
     double GetNbSegPerRadius();
@@ -134,6 +147,18 @@ module NETGENPlugin
    */
   interface NETGENPlugin_Hypothesis_3D : NETGENPlugin_Hypothesis
   {
+  };
+
+  /*!
+   * interface of "NETGEN Remesher parameters" hypothesis used by NETGENPlugin_Remesher_2D algoritm
+   */
+  interface NETGENPlugin_RemesherHypothesis_2D : NETGENPlugin_Hypothesis_2D
+  {
+    /*!
+     * \brief Set/get ridge angle
+     */
+    void SetRidgeAngle(in double angle );
+    double GetRidgeAngle();
   };
 
   /*!

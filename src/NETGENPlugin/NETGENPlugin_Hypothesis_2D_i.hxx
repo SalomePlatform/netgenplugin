@@ -70,4 +70,27 @@ class NETGENPLUGIN_EXPORT  NETGENPlugin_Hypothesis_2D_i:
   // };
 };
 
+// NETGENPlugin_Remesher_2D parameters hypothesis
+
+class NETGENPLUGIN_EXPORT  NETGENPlugin_RemesherHypothesis_2D_i:
+  public virtual POA_NETGENPlugin::NETGENPlugin_RemesherHypothesis_2D,
+  public NETGENPlugin_Hypothesis_2D_i
+{
+ public:
+  // Constructor
+  NETGENPlugin_RemesherHypothesis_2D_i( PortableServer::POA_ptr thePOA,
+                                        int                     theStudyId,
+                                        ::SMESH_Gen*            theGenImpl);
+
+  void SetRidgeAngle( CORBA::Double angle );
+
+  CORBA::Double GetRidgeAngle();
+
+  // Get implementation
+  ::NETGENPlugin_RemesherHypothesis_2D* GetImpl();
+
+  // Verify whether hypothesis supports given entity type
+  CORBA::Boolean IsDimSupported( SMESH::Dimension type );
+};
+
 #endif

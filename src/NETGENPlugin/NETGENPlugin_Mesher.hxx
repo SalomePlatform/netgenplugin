@@ -124,6 +124,8 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_Mesher
   void SetParameters(const NETGENPlugin_SimpleHypothesis_2D* hyp);
   void SetParameters(const StdMeshers_ViscousLayers*         hyp );
   void SetViscousLayers2DAssigned(bool isAssigned) { _isViscousLayers2D = isAssigned; }
+
+  void SetLocalSizeForChordalError( netgen::OCCGeometry& occgeo, netgen::Mesh& ngMesh );
   static void SetLocalSize( netgen::OCCGeometry& occgeo, netgen::Mesh& ngMesh );
 
   bool Compute();
@@ -204,6 +206,7 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_Mesher
   bool                 _optimize;
   int                  _fineness;
   bool                 _isViscousLayers2D;
+  double               _chordalError;
   netgen::Mesh*        _ngMesh;
   netgen::OCCGeometry* _occgeom;
 
@@ -217,7 +220,7 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_Mesher
 
   // a pointer to NETGENPlugin_Mesher* field of the holder, that will be
   // nullified at destruction of this
-  NETGENPlugin_Mesher ** _ptrToMe; 
+  NETGENPlugin_Mesher ** _ptrToMe;
 };
 
 //=============================================================================

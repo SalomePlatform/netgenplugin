@@ -83,6 +83,11 @@ public:
   void SetNbSegPerRadius(double theVal);
   double GetNbSegPerRadius() const { return _nbSegPerRadius; }
 
+  void SetChordalErrorEnabled(bool value);
+  double GetChordalErrorEnabled() const { return _chordalErrorEnabled; }
+  void SetChordalError(double value);
+  double GetChordalError() const { return _chordalError; }
+
   typedef std::map<std::string, double> TLocalSize;
   static TLocalSize GetDefaultLocalSize() { return TLocalSize(); }
   void SetLocalSizeOnEntry(const std::string& entry, double localSize);
@@ -109,6 +114,7 @@ public:
   static double GetDefaultGrowthRate();
   static double GetDefaultNbSegPerEdge();
   static double GetDefaultNbSegPerRadius();
+  static double GetDefaultChordalError();
   static bool GetDefaultSecondOrder();
   static bool GetDefaultOptimize();
   static bool GetDefaultQuadAllowed();
@@ -116,10 +122,8 @@ public:
   static bool GetDefaultFuseEdges();
 
   // Persistence
-  virtual ostream & SaveTo(ostream & save);
-  virtual istream & LoadFrom(istream & load);
-  friend NETGENPLUGIN_EXPORT ostream & operator <<(ostream & save, NETGENPlugin_Hypothesis & hyp);
-  friend NETGENPLUGIN_EXPORT istream & operator >>(istream & load, NETGENPlugin_Hypothesis & hyp);
+  virtual std::ostream & SaveTo(std::ostream & save);
+  virtual std::istream & LoadFrom(std::istream & load);
 
   /*!
    * \brief Does nothing
@@ -141,6 +145,8 @@ private:
   double        _nbSegPerEdge;
   double        _nbSegPerRadius;
   Fineness      _fineness;
+  bool          _chordalErrorEnabled;
+  double        _chordalError;
   bool          _secondOrder;
   bool          _optimize;
   TLocalSize    _localSize;

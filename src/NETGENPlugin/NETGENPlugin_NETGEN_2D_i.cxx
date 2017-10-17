@@ -27,12 +27,8 @@
 //  $Header$
 //
 #include "NETGENPlugin_NETGEN_2D_i.hxx"
+#include "NETGENPlugin_Remesher_2D.hxx"
 #include "SMESH_Gen.hxx"
-
-#include "Utils_CorbaException.hxx"
-#include "utilities.h"
-
-using namespace std;
 
 //=============================================================================
 /*!
@@ -78,4 +74,39 @@ NETGENPlugin_NETGEN_2D_i::~NETGENPlugin_NETGEN_2D_i()
 ::NETGENPlugin_NETGEN_2D* NETGENPlugin_NETGEN_2D_i::GetImpl()
 {
   return ( ::NETGENPlugin_NETGEN_2D* )myBaseImpl;
+}
+
+
+
+//=============================================================================
+/*!
+ *  NETGENPlugin_Remesher_2D_i::NETGENPlugin_Remesher_2D_i
+ *
+ *  Constructor
+ */
+//=============================================================================
+
+NETGENPlugin_Remesher_2D_i::NETGENPlugin_Remesher_2D_i( PortableServer::POA_ptr thePOA,
+                                                        int                     theStudyId,
+                                                        ::SMESH_Gen*            theGenImpl )
+  : SALOME::GenericObj_i( thePOA ),
+    SMESH_Hypothesis_i( thePOA ),
+    SMESH_Algo_i( thePOA ),
+    SMESH_2D_Algo_i( thePOA )
+{
+  myBaseImpl = new ::NETGENPlugin_Remesher_2D( theGenImpl->GetANewId(),
+                                               theStudyId,
+                                               theGenImpl );
+}
+
+//=============================================================================
+/*!
+ *  NETGENPlugin_Remesher_2D_i::~NETGENPlugin_Remesher_2D_i
+ *
+ *  Destructor
+ */
+//=============================================================================
+
+NETGENPlugin_Remesher_2D_i::~NETGENPlugin_Remesher_2D_i()
+{
 }

@@ -79,6 +79,11 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_Hypothesis_i:
   void SetNbSegPerRadius(CORBA::Double theVal);
   CORBA::Double GetNbSegPerRadius();
 
+  void SetChordalErrorEnabled(CORBA::Boolean value);
+  CORBA::Boolean GetChordalErrorEnabled();
+  void SetChordalError(CORBA::Double value);
+  CORBA::Double GetChordalError();
+
   void SetLocalSizeOnShape(GEOM::GEOM_Object_ptr GeomObj, CORBA::Double localSize)
     throw (SALOME::SALOME_Exception);
   void SetLocalSizeOnEntry(const char* entry, CORBA::Double localSize);
@@ -109,19 +114,21 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_Hypothesis_i:
   // to remember whether a parameter is already set (issue 0021364)
   enum SettingMethod
   {
-    METH_SetMaxSize          = 1,
-    METH_SetMinSize          = 2,
-    METH_SetSecondOrder      = 4,
-    METH_SetOptimize         = 8,
-    METH_SetFineness         = 16,
-    METH_SetGrowthRate       = 32,
-    METH_SetNbSegPerEdge     = 64,
-    METH_SetNbSegPerRadius   = 128,
-    METH_SetLocalSizeOnEntry = 256,
-    METH_SetQuadAllowed      = METH_SetLocalSizeOnEntry * 2,
-    METH_SetSurfaceCurvature = METH_SetQuadAllowed * 2,
-    METH_SetFuseEdges        = METH_SetSurfaceCurvature * 2,
-    METH_LAST                = METH_SetFuseEdges
+    METH_SetMaxSize             = 1,
+    METH_SetMinSize             = 2,
+    METH_SetSecondOrder         = 4,
+    METH_SetOptimize            = 8,
+    METH_SetFineness            = 16,
+    METH_SetGrowthRate          = 32,
+    METH_SetNbSegPerEdge        = 64,
+    METH_SetNbSegPerRadius      = 128,
+    METH_SetLocalSizeOnEntry    = 256,
+    METH_SetQuadAllowed         = METH_SetLocalSizeOnEntry * 2,
+    METH_SetSurfaceCurvature    = METH_SetQuadAllowed * 2,
+    METH_SetFuseEdges           = METH_SetSurfaceCurvature * 2,
+    METH_SetChordalErrorEnabled = METH_SetFuseEdges * 2,
+    METH_SetChordalError        = METH_SetChordalErrorEnabled * 2,
+    METH_LAST                   = METH_SetFuseEdges
   };
   int mySetMethodFlags;
 

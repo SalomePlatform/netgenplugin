@@ -41,10 +41,11 @@ extern "C"
   SMESHGUI_GenericHypothesisCreator* GetHypothesisCreator( const QString& aHypType )
   {
     SMESHGUI_GenericHypothesisCreator* aCreator = NULL;
-    if( aHypType=="NETGEN_Parameters_2D"      || // 1D-2D
-        aHypType=="NETGEN_Parameters"         || // 1D-2D-3D
-        aHypType=="NETGEN_Parameters_2D_ONLY" || // 2D
-        aHypType=="NETGEN_Parameters_3D"       ) // 3D
+    if( aHypType=="NETGEN_Parameters_2D"      ||   // 1D-2D
+        aHypType=="NETGEN_Parameters"         ||   // 1D-2D-3D
+        aHypType=="NETGEN_Parameters_2D_ONLY" ||   // 2D
+        aHypType=="NETGEN_Parameters_3D"      ||   // 3D
+        aHypType=="NETGEN_RemesherParameters_2D" ) // 2D
     {
       aCreator =  new NETGENPluginGUI_HypothesisCreator( aHypType );
     }

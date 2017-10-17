@@ -92,6 +92,14 @@
         <translation>Nb. Segs per Radius</translation>
     </message>
     <message>
+        <source>NETGEN_CHORDAL_ERROR</source>
+        <translation>Chordal Error</translation>
+    </message>
+    <message>
+        <source>NETGEN_RIDGE_ANGLE</source>
+        <translation>Ridge Angle</translation>
+    </message>
+    <message>
         <source>NETGEN_SURFACE_CURVATURE</source>
         <translation>Limit Size by Surface Curvature</translation>
     </message>

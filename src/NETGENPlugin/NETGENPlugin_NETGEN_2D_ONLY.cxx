@@ -319,6 +319,7 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
 
     // set local size defined on shapes
     aMesher.SetLocalSize( occgeoComm, *ngMeshes[0] );
+    aMesher.SetLocalSizeForChordalError( occgeoComm, *ngMeshes[0] );
     try {
       ngMeshes[0]->LoadLocalMeshSize( mparam.meshsizefilename );
     } catch (NgException & ex) {
@@ -460,6 +461,7 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
         bb.Increase (bb.Diam()/10);
         ngMesh->SetLocalH (bb.PMin(), bb.PMax(), mparam.grading);
         aMesher.SetLocalSize( occgeom, *ngMesh );
+        aMesher.SetLocalSizeForChordalError( occgeoComm, *ngMesh );
         try {
           ngMesh->LoadLocalMeshSize( mparam.meshsizefilename );
         } catch (NgException & ex) {

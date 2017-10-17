@@ -69,6 +69,8 @@ extern "C"
       aCreator = new NETGENPlugin_Creator_i<NETGENPlugin_NETGEN_2D_ONLY_i>;
     else if (strcmp(aHypName, "NETGEN_2D3D") == 0)
       aCreator = new NETGENPlugin_Creator_i<NETGENPlugin_NETGEN_2D3D_i>;
+    else if (strcmp(aHypName, "NETGEN_Remesher_2D") == 0)
+      aCreator = new NETGENPlugin_Creator_i<NETGENPlugin_Remesher_2D_i>;
     // Hypotheses
     else if (strcmp(aHypName, "NETGEN_Parameters") == 0)
       aCreator = new NETGENPlugin_Creator_i<NETGENPlugin_Hypothesis_i>;
@@ -82,6 +84,8 @@ extern "C"
       aCreator = new NETGENPlugin_Creator_i<NETGENPlugin_SimpleHypothesis_2D_i>;
     else if (strcmp(aHypName, "NETGEN_SimpleParameters_3D") == 0)
       aCreator = new NETGENPlugin_Creator_i<NETGENPlugin_SimpleHypothesis_3D_i>;
+    else if (strcmp(aHypName, "NETGEN_RemesherParameters_2D") == 0)
+      aCreator = new NETGENPlugin_Creator_i<NETGENPlugin_RemesherHypothesis_2D_i>;
     else ;
 
     return aCreator;
