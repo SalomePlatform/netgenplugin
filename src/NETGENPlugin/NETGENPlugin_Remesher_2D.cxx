@@ -70,12 +70,14 @@ namespace
     HoleFiller( SMESH_Mesh& meshDS );
     ~HoleFiller();
     void AddHoleBorders( Ng_STL_Geometry * ngStlGeo );
-    void KeepHole() { myHole.clear(); }
+    void KeepHole() { myHole.clear(); myCapElems.clear(); }
+    void ClearCapElements() { myCapElems.clear(); }
 
   private:
-    SMESHDS_Mesh*                        myMeshDS;
-    std::vector< std::vector< gp_XYZ > > myHole;      // initial border nodes
-    std::vector< gp_XYZ >                myInHolePos; // position inside each hole
+    SMESHDS_Mesh*                          myMeshDS;
+    std::vector< std::vector< gp_XYZ > >   myHole;      // initial border nodes
+    std::vector< gp_XYZ >                  myInHolePos; // position inside each hole
+    std::vector< const SMDS_MeshElement* > myCapElems;  // elements closing holes
   };
 
   //================================================================================
@@ -106,9 +108,8 @@ namespace
     if ( !isManifold )
     {
       // set bad faces into a compute error
-      SMESH_ComputeErrorPtr error =
-        SMESH_ComputeError::New( COMPERR_BAD_INPUT_MESH,
-                                 "Non-manifold mesh. Only manifold mesh can be re-meshed");
+      const char* text = "Non-manifold mesh. Only manifold mesh can be re-meshed";
+      SMESH_ComputeErrorPtr error = SMESH_ComputeError::New( COMPERR_BAD_INPUT_MESH, text );
       SMESH::Controls::MultiConnection2D fun;
       fun.SetMesh( myMeshDS );
       SMDS_ElemIteratorPtr fIt = myMeshDS->elementsIterator( SMDSAbs_Face );
@@ -119,8 +120,47 @@ namespace
           error->myBadElements.push_back( f );
       }
       theMesh.GetSubMesh( theMesh.GetShapeToMesh() )->GetComputeError() = error;
+      throw SALOME_Exception( text );
+    }
 
-      throw SALOME_Exception("Non-manifold mesh. Only manifold mesh can be re-meshed");
+    // don't want to sew coincident borders
+    if ( !holes.empty() )
+    {
+      // define tolerance
+      double tol, len, sumLen = 0, minLen = 1e100;
+      int     nbSeg = 0;
+      for ( size_t i = 0; i < holes.size(); ++i )
+      {
+        nbSeg += holes[i].size();
+        SMESH_NodeXYZ p1 = holes[i][0];
+        for ( size_t iP = 1; iP < holes[i].size(); ++iP )
+        {
+          SMESH_NodeXYZ p2 = holes[i][iP];
+          len = ( p1 - p2 ).Modulus();
+          sumLen += len;
+          minLen = Min( minLen, len );
+          p1 = p2;
+        }
+      }
+      double avgLen = sumLen / nbSeg;
+      if ( minLen > 1e-5 * avgLen )
+        tol = 0.1 * minLen; // minLen is not degenerate
+      else
+        tol = 0.1 * avgLen;
+
+      SMESH_MeshAlgos::CoincidentFreeBorders freeBords;
+      SMESH_MeshAlgos::FindCoincidentFreeBorders( *myMeshDS, tol, freeBords );
+      if ( !freeBords._coincidentGroups.empty() )
+      {
+        const char* text = "Can't re-meshed a mesh with coincident free edges";
+        SMESH_ComputeErrorPtr error = SMESH_ComputeError::New( COMPERR_BAD_INPUT_MESH, text );
+        for ( size_t i = 0; i < freeBords._borders.size(); ++i )
+          error->myBadElements.insert( error->myBadElements.end(),
+                                       freeBords._borders[i].begin(),
+                                       freeBords._borders[i].end() );
+        theMesh.GetSubMesh( theMesh.GetShapeToMesh() )->GetComputeError() = error;
+        throw SALOME_Exception( text );
+      }
     }
 
     // fill holes
@@ -142,9 +182,10 @@ namespace
         myInHolePos[i] = ( SMESH_NodeXYZ( newFaces[0]->GetNode(0)) +
                            SMESH_NodeXYZ( newFaces[0]->GetNode(1)) +
                            SMESH_NodeXYZ( newFaces[0]->GetNode(2)) ) / 3.;
+        myCapElems.insert( myCapElems.end(), newFaces.begin(), newFaces.end() );
         // unmark to be able to remove them if meshing is canceled
-        for ( size_t iF = 0; iF < newFaces.size(); ++iF )
-          newFaces[iF]->setIsMarked( false );
+        // for ( size_t iF = 0; iF < newFaces.size(); ++iF )
+        //   newFaces[iF]->setIsMarked( false );
       }
     }
     // fix orientation
@@ -190,6 +231,13 @@ namespace
   {
     if ( myMeshDS->NbNodes() < 3 )
       return;
+
+    if ( !myCapElems.empty() ) // old mesh not removed; simply remove myCapElems
+    {
+      for ( size_t i = 0; i < myCapElems.size(); ++i )
+        myMeshDS->RemoveFreeElement( myCapElems[i], /*sm=*/0 );
+      return;
+    }
 
     bool hasOrphanNodes = true;
 
@@ -572,6 +620,7 @@ bool NETGENPlugin_Remesher_2D::Compute(SMESH_Mesh&         theMesh,
     return error( "Error in Surface Meshing" );
 
   // remove existing mesh
+  holeFiller.ClearCapElements();
   SMDS_ElemIteratorPtr eIt = meshDS->elementsIterator();
   while ( eIt->more() )
     meshDS->RemoveFreeElement( eIt->next(), /*sm=*/0 );
