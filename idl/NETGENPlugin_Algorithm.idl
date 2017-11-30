@@ -136,7 +136,7 @@ module NETGENPlugin
   };
 
   /*!
-   * interface of "NETGEN 2D parameters" hypothesis used by NETGENPlugin_NETGEN_2D_ONLY algoritm
+   * interface of "NETGEN 2D parameters" hypothesis used by NETGENPlugin_NETGEN_2D_ONLY algorithm
    */
   interface NETGENPlugin_Hypothesis_2D_ONLY : NETGENPlugin_Hypothesis_2D
   {
@@ -150,7 +150,7 @@ module NETGENPlugin
   };
 
   /*!
-   * interface of "NETGEN Remesher parameters" hypothesis used by NETGENPlugin_Remesher_2D algoritm
+   * interface of "NETGEN Remesher parameters" hypothesis used by NETGENPlugin_Remesher_2D algorithm
    */
   interface NETGENPlugin_RemesherHypothesis_2D : NETGENPlugin_Hypothesis_2D
   {
