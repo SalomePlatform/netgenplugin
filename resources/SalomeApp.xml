@@ -30,6 +30,6 @@
     <parameter name="plugins" value="NETGENPlugin,GHS3DPlugin"/>
   </section>
   <section name="smesh_help">
-    <parameter name="Plug-ins/NETGEN plugin User's Guide" value="${NETGENPLUGIN_ROOT_DIR}/share/doc/salome/gui/NETGENPLUGIN/index.html"/>
+    <parameter name="User's Guide/Mesh module/Plug-ins/NETGEN plugin" value="${NETGENPLUGIN_ROOT_DIR}/share/doc/salome/gui/NETGENPLUGIN/index.html"/>
   </section>
 </document>
