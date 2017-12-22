@@ -1375,9 +1375,11 @@ bool NETGENPlugin_Mesher::FillNgMesh(netgen::OCCGeometry&           occgeom,
           PShapeIteratorPtr solidIt=helper.GetAncestors(geomFace,*sm->GetFather(),TopAbs_SOLID);
           if ( const TopoDS_Shape * solid = solidIt->next() )
             sm = _mesh->GetSubMesh( *solid );
-          SMESH_ComputeErrorPtr& smError = sm->GetComputeError();
-          smError.reset( new SMESH_ComputeError(COMPERR_BAD_INPUT_MESH,"Not triangle sub-mesh"));
-          smError->myBadElements.push_back( f );
+          SMESH_BadInputElements* badElems =
+            new SMESH_BadInputElements( helper.GetMeshDS(), COMPERR_BAD_INPUT_MESH,
+                                        "Not triangle sub-mesh");
+          badElems->add( f );
+          sm->GetComputeError().reset( badElems );
           return false;
         }
 
@@ -3318,7 +3320,7 @@ bool NETGENPlugin_Mesher::Compute()
           _mesh->GetMeshDS()->RemoveFreeNode( nodeVec[i], 0, /*fromGroups=*/false );
   }
   SMESH_ComputeErrorPtr readErr = ReadErrors(nodeVec);
-  if ( readErr && !readErr->myBadElements.empty() )
+  if ( readErr && readErr->HasBadElems() )
   {
     error = readErr;
     if ( !comment.empty() && !readErr->myComment.empty() ) comment += "\n";
@@ -3380,9 +3382,10 @@ bool NETGENPlugin_Mesher::Compute()
             {
               smError->myName = COMPERR_WARNING;
             }
-            else if ( !smError->myBadElements.empty() ) // bad surface mesh
+            else if ( smError->HasBadElems() ) // bad surface mesh
             {
-              if ( !hasBadElemOnSolid( smError->myBadElements, sm ))
+              if ( !hasBadElemOnSolid
+                   ( static_cast<SMESH_BadInputElements*>( smError.get() )->myBadElements, sm ))
                 smError.reset();
             }
           }
@@ -3712,8 +3715,10 @@ double NETGENPlugin_Mesher::GetProgress(const SMESH_Algo* holder,
 SMESH_ComputeErrorPtr
 NETGENPlugin_Mesher::ReadErrors(const vector<const SMDS_MeshNode* >& nodeVec)
 {
-  SMESH_ComputeErrorPtr err = SMESH_ComputeError::New
-    (COMPERR_BAD_INPUT_MESH, "Some edges multiple times in surface mesh");
+  if ( nodeVec.size() < 2 ) return SMESH_ComputeErrorPtr();
+  SMESH_BadInputElements* err =
+    new SMESH_BadInputElements( nodeVec.back()->GetMesh(), COMPERR_BAD_INPUT_MESH,
+                                "Some edges multiple times in surface mesh");
   SMESH_File file("test.out");
   vector<int> two(2);
   vector<int> three1(3), three2(3);
@@ -3773,7 +3778,7 @@ NETGENPlugin_Mesher::ReadErrors(const vector<const SMDS_MeshNode* >& nodeVec)
   if ( nbBadElems ) nbBadElems++; // avoid warning: variable set but not used
 #endif
 
-  return err;
+  return SMESH_ComputeErrorPtr( err );
 }
 
 //================================================================================

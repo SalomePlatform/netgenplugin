@@ -538,7 +538,7 @@ bool NETGENPlugin_NETGEN_3D::compute(SMESH_Mesh&                     aMesh,
   if ( err )
   {
     SMESH_ComputeErrorPtr ce = NETGENPlugin_Mesher::ReadErrors(nodeVec);
-    if ( ce && !ce->myBadElements.empty() )
+    if ( ce && ce->HasBadElems() )
       error( ce );
   }
 

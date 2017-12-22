@@ -109,7 +109,8 @@ namespace
     {
       // set bad faces into a compute error
       const char* text = "Non-manifold mesh. Only manifold mesh can be re-meshed";
-      SMESH_ComputeErrorPtr error = SMESH_ComputeError::New( COMPERR_BAD_INPUT_MESH, text );
+      SMESH_BadInputElements* error =
+        new SMESH_BadInputElements( myMeshDS, COMPERR_BAD_INPUT_MESH, text );
       SMESH::Controls::MultiConnection2D fun;
       fun.SetMesh( myMeshDS );
       SMDS_ElemIteratorPtr fIt = myMeshDS->elementsIterator( SMDSAbs_Face );
@@ -119,7 +120,7 @@ namespace
         if ( fun.GetValue( f->GetID() ) > 2 )
           error->myBadElements.push_back( f );
       }
-      theMesh.GetSubMesh( theMesh.GetShapeToMesh() )->GetComputeError() = error;
+      theMesh.GetSubMesh( theMesh.GetShapeToMesh() )->GetComputeError().reset( error );
       throw SALOME_Exception( text );
     }
 
@@ -153,12 +154,13 @@ namespace
       if ( !freeBords._coincidentGroups.empty() )
       {
         const char* text = "Can't re-meshed a mesh with coincident free edges";
-        SMESH_ComputeErrorPtr error = SMESH_ComputeError::New( COMPERR_BAD_INPUT_MESH, text );
+        SMESH_BadInputElements* error =
+          new SMESH_BadInputElements( myMeshDS, COMPERR_BAD_INPUT_MESH, text );
         for ( size_t i = 0; i < freeBords._borders.size(); ++i )
           error->myBadElements.insert( error->myBadElements.end(),
                                        freeBords._borders[i].begin(),
                                        freeBords._borders[i].end() );
-        theMesh.GetSubMesh( theMesh.GetShapeToMesh() )->GetComputeError() = error;
+        theMesh.GetSubMesh( theMesh.GetShapeToMesh() )->GetComputeError().reset( error );
         throw SALOME_Exception( text );
       }
     }
