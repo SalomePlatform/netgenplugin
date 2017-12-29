@@ -38,7 +38,7 @@
 #include "NETGENPlugin_NETGEN_2D.hxx"
 
 // ======================================================
-// NETGEN 3d algorithm
+// NETGEN 1D2D algorithm
 // ======================================================
 class NETGENPLUGIN_EXPORT NETGENPlugin_NETGEN_2D_i:
   public virtual POA_NETGENPlugin::NETGENPlugin_NETGEN_2D,
@@ -53,6 +53,24 @@ public:
  
   // Get implementation
   ::NETGENPlugin_NETGEN_2D* GetImpl();
+};
+
+// ======================================================
+// NETGEN 2D remesher algorithm
+// ======================================================
+class NETGENPLUGIN_EXPORT NETGENPlugin_Remesher_2D_i:
+  public virtual POA_NETGENPlugin::NETGENPlugin_Remesher_2D,
+  public virtual SMESH_2D_Algo_i
+{
+public:
+  // Constructor
+  NETGENPlugin_Remesher_2D_i( PortableServer::POA_ptr thePOA,
+                              ::SMESH_Gen*            theGenImpl );
+  // Destructor
+  virtual ~NETGENPlugin_Remesher_2D_i();
+
+  // Get implementation
+  //::NETGENPlugin_NETGEN_2D* GetImpl();
 };
 
 #endif

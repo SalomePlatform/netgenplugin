@@ -5,7 +5,7 @@
 \n <b>Additional Hypotheses</b> can be applied as a supplement to
 introducing additional concepts to mesh creation.
 
-Following additional hypotheses can be used together with NETGEN algoritm:
+Following additional hypotheses can be used together with NETGEN algorithm:
 <ul>
 
 <li><b>Viscous Layers</b> additional hypothesis can be used together

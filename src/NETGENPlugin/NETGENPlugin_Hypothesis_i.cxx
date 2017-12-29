@@ -305,6 +305,36 @@ CORBA::Double NETGENPlugin_Hypothesis_i::GetNbSegPerRadius()
 
 //=============================================================================
 
+void NETGENPlugin_Hypothesis_i::SetChordalErrorEnabled(CORBA::Boolean theValue)
+{
+  if ( isToSetParameter( GetChordalErrorEnabled(), theValue, METH_SetChordalErrorEnabled ))
+  {
+    this->GetImpl()->SetChordalErrorEnabled(theValue);
+    SMESH::TPythonDump() << _this() << ".SetChordalErrorEnabled( " << theValue << " )";
+  }
+}
+
+CORBA::Boolean NETGENPlugin_Hypothesis_i::GetChordalErrorEnabled()
+{
+  return GetImpl()->GetChordalErrorEnabled();
+}
+
+void NETGENPlugin_Hypothesis_i::SetChordalError(CORBA::Double theValue)
+{
+  if ( isToSetParameter( GetChordalError(), theValue, METH_SetChordalError ))
+  {
+    this->GetImpl()->SetChordalError(theValue);
+    SMESH::TPythonDump() << _this() << ".SetChordalError( " << SMESH::TVar(theValue) << " )";
+  }
+}
+
+CORBA::Double NETGENPlugin_Hypothesis_i::GetChordalError()
+{
+  return GetImpl()->GetChordalError();
+}
+
+//=============================================================================
+
 void NETGENPlugin_Hypothesis_i::SetLocalSizeOnShape(GEOM::GEOM_Object_ptr GeomObj,
                                                     CORBA::Double         localSize)
   throw (SALOME::SALOME_Exception)

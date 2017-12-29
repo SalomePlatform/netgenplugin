@@ -57,4 +57,27 @@ public:
 //   bool _quadAllowed;
 };
 
+
+//  Parameters of NETGEN remesher
+//
+
+class NETGENPLUGIN_EXPORT NETGENPlugin_RemesherHypothesis_2D: public NETGENPlugin_Hypothesis
+{
+ public:
+
+  NETGENPlugin_RemesherHypothesis_2D(int hypId, SMESH_Gen * gen);
+
+  void SetRidgeAngle( double angle );
+  double GetRidgeAngle() const;
+
+  static double DefaultRidgeAngle() { return 30.; }
+
+  virtual std::ostream & SaveTo(std::ostream & save);
+  virtual std::istream & LoadFrom(std::istream & load);
+
+ private:
+
+  double _ridgeAngle; // in degrees
+};
+
 #endif

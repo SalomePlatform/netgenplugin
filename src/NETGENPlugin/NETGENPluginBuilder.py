@@ -106,7 +106,11 @@ class NETGEN_Algorithm(Mesh_Algorithm):
     def __init__(self, mesh, geom=0):
         Mesh_Algorithm.__init__(self)
         if noNETGENPlugin: print("Warning: NETGENPlugin module unavailable")
-        self.Create(mesh, geom, self.algoType, LIBRARY)
+        if not mesh.GetMesh().HasShapeToMesh() and \
+           self.meshMethod == "Triangle": # create a 2D remesher
+            self.Create(mesh, geom, "NETGEN_Remesher_2D", LIBRARY)
+        else:
+            self.Create(mesh, geom, self.algoType, LIBRARY)
         self.params = None
         pass
 
@@ -160,6 +164,9 @@ class NETGEN_Algorithm(Mesh_Algorithm):
             hypType = "NETGEN_Parameters_2D_ONLY"
         else:
             hypType = "NETGEN_Parameters_3D"
+
+        if self.algo.GetName() == "NETGEN_Remesher_2D":
+            hypType = "NETGEN_RemesherParameters_2D"
 
         if self.params and self.params.GetName() != hypType:
             self.mesh.RemoveHypothesis( self.params, self.geom )
@@ -219,6 +226,21 @@ class NETGEN_1D2D3D_Algorithm(NETGEN_Algorithm):
     #  @param theVal new value of the @c NbSegPerRadius parameter
     def SetNbSegPerRadius(self, theVal):
         if self.Parameters(): self.params.SetNbSegPerRadius(theVal)
+        pass
+
+    ## Sets @c ChordalError parameter
+    #  @param theVal new value of the @c ChordalError parameter
+    def SetChordalError(self, theVal):
+        if self.Parameters():
+            self.params.SetChordalError(theVal)
+            self.params.SetChordalErrorEnabled( theVal > 0 )
+        pass
+
+    ## Sets @c RidgeAngle parameter
+    #  @param theVal new value of the @c RidgeAngle parameter
+    def SetRidgeAngle(self, theVal):
+        if self.Parameters():
+            self.params.SetRidgeAngle(theVal)
         pass
 
     ## Sets @c QuadAllowed flag

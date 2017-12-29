@@ -42,19 +42,22 @@ using namespace std;
 //=============================================================================
 NETGENPlugin_Hypothesis::NETGENPlugin_Hypothesis (int hypId,
                                                   SMESH_Gen * gen)
+
   : SMESH_Hypothesis(hypId, gen),
-    _maxSize         (GetDefaultMaxSize()),
-    _minSize         (0),
-    _growthRate      (GetDefaultGrowthRate()),
-    _nbSegPerEdge    (GetDefaultNbSegPerEdge()),
-    _nbSegPerRadius  (GetDefaultNbSegPerRadius()),
-    _fineness        (GetDefaultFineness()),
-    _secondOrder     (GetDefaultSecondOrder()),
-    _optimize        (GetDefaultOptimize()),
-    _localSize       (GetDefaultLocalSize()),
-    _quadAllowed     (GetDefaultQuadAllowed()),
-    _surfaceCurvature(GetDefaultSurfaceCurvature()),
-    _fuseEdges       (GetDefaultFuseEdges())
+    _maxSize            (GetDefaultMaxSize()),
+    _minSize            (0),
+    _growthRate         (GetDefaultGrowthRate()),
+    _nbSegPerEdge       (GetDefaultNbSegPerEdge()),
+    _nbSegPerRadius     (GetDefaultNbSegPerRadius()),
+    _fineness           (GetDefaultFineness()),
+    _chordalErrorEnabled(GetDefaultChordalError() > 0),
+    _chordalError       (GetDefaultChordalError() ),
+    _secondOrder        (GetDefaultSecondOrder()),
+    _optimize           (GetDefaultOptimize()),
+    _localSize          (GetDefaultLocalSize()),
+    _quadAllowed        (GetDefaultQuadAllowed()),
+    _surfaceCurvature   (GetDefaultSurfaceCurvature()),
+    _fuseEdges          (GetDefaultFuseEdges())
 {
   _name = "NETGEN_Parameters";
   _param_algo_dim = 3;
@@ -213,6 +216,34 @@ void NETGENPlugin_Hypothesis::SetNbSegPerRadius(double theVal)
  *  
  */
 //=============================================================================
+void NETGENPlugin_Hypothesis::SetChordalErrorEnabled(bool theVal)
+{
+  if (theVal != _chordalErrorEnabled)
+  {
+    _chordalErrorEnabled = theVal;
+    NotifySubMeshesHypothesisModification();
+  }
+}
+
+//=============================================================================
+/*!
+ *  
+ */
+//=============================================================================
+void NETGENPlugin_Hypothesis::SetChordalError(double theVal)
+{
+  if (theVal != _chordalError)
+  {
+    _chordalError = theVal;
+    NotifySubMeshesHypothesisModification();
+  }
+}
+
+//=============================================================================
+/*!
+ *  
+ */
+//=============================================================================
 void NETGENPlugin_Hypothesis::SetLocalSizeOnEntry(const std::string& entry, double localSize)
 {
   if(_localSize[entry] != localSize)
@@ -351,8 +382,8 @@ ostream & NETGENPlugin_Hypothesis::SaveTo(ostream & save)
   if (it_sm != _localSize.end()) {
     save << " " << "__LOCALSIZE_BEGIN__";
     for ( ; it_sm != _localSize.end(); ++it_sm ) {
-        save << " " << it_sm->first
-             << " " << it_sm->second << "%#"; // "%#" is a mark of value end
+      save << " " << it_sm->first
+           << " " << it_sm->second << "%#"; // "%#" is a mark of value end
     }
     save << " " << "__LOCALSIZE_END__";
   }
@@ -362,6 +393,8 @@ ostream & NETGENPlugin_Hypothesis::SaveTo(ostream & save)
   save << " " << _fuseEdges;
 
   save << " " << _meshSizeFile.size() << " " << _meshSizeFile;
+
+  save << " " << ( _chordalErrorEnabled ? _chordalError : 0. );
 
   return save;
 }
@@ -476,12 +509,19 @@ istream & NETGENPlugin_Hypothesis::LoadFrom(istream & load)
     load.get( &_meshSizeFile[0], is+1 );
   }
 
+  isOK = static_cast<bool>(load >> val);
+  if (isOK)
+    _chordalError = val;
+  else
+    load.clear(ios::badbit | load.rdstate());
+  _chordalErrorEnabled = ( _chordalError > 0 );
+
   return load;
 }
 
 //=============================================================================
 /*!
- *  
+ *
  */
 //=============================================================================
 ostream & operator <<(ostream & save, NETGENPlugin_Hypothesis & hyp)
@@ -491,7 +531,7 @@ ostream & operator <<(ostream & save, NETGENPlugin_Hypothesis & hyp)
 
 //=============================================================================
 /*!
- *  
+ *
  */
 //=============================================================================
 istream & operator >>(istream & load, NETGENPlugin_Hypothesis & hyp)
@@ -583,6 +623,15 @@ double NETGENPlugin_Hypothesis::GetDefaultNbSegPerEdge()
 double NETGENPlugin_Hypothesis::GetDefaultNbSegPerRadius()
 {
   return 2;
+}
+//=============================================================================
+/*!
+ *  
+ */
+//=============================================================================
+double NETGENPlugin_Hypothesis::GetDefaultChordalError()
+{
+  return -1; // disabled by default
 }
 
 //=============================================================================

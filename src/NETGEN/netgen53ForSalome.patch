@@ -1,6 +1,6 @@
-diff -NaurwB netgen-5.3.1_orig/Makefile.am netgen-5.3.1_new/Makefile.am
---- netgen-5.3.1_orig/Makefile.am	2016-10-21 17:32:01.000000000 +0300
-+++ netgen-5.3.1_new/Makefile.am	2016-10-21 17:31:54.000000000 +0300
+diff -Naur netgen-5.3.1_SRC_orig/Makefile.am netgen-5.3.1_SRC_modif/Makefile.am
+--- netgen-5.3.1_SRC_orig/Makefile.am	2014-08-29 13:55:03.000000000 +0400
++++ netgen-5.3.1_SRC_modif/Makefile.am	2017-09-11 18:08:21.217313702 +0300
 @@ -2,7 +2,7 @@
  
  METASOURCES = AUTO
@@ -10,9 +10,9 @@ diff -NaurwB netgen-5.3.1_orig/Makefile.am netgen-5.3.1_new/Makefile.am
  
  # TESTS = ng/netgen -batchmode
  
-diff -NaurwB netgen-5.3.1_orig/Makefile.in netgen-5.3.1_new/Makefile.in
---- netgen-5.3.1_orig/Makefile.in	2014-10-06 15:04:37.000000000 +0400
-+++ netgen-5.3.1_new/Makefile.in	2016-10-03 16:17:10.164707368 +0300
+diff -Naur netgen-5.3.1_SRC_orig/Makefile.in netgen-5.3.1_SRC_modif/Makefile.in
+--- netgen-5.3.1_SRC_orig/Makefile.in	2014-10-06 15:04:37.000000000 +0400
++++ netgen-5.3.1_SRC_modif/Makefile.in	2017-09-11 18:08:21.225312838 +0300
 @@ -280,7 +280,7 @@
  top_srcdir = @top_srcdir@
  ACLOCAL_AMFLAGS = -I m4
@@ -22,9 +22,9 @@ diff -NaurwB netgen-5.3.1_orig/Makefile.in netgen-5.3.1_new/Makefile.in
  all: config.h
  	$(MAKE) $(AM_MAKEFLAGS) all-recursive
  
-diff -NaurwB netgen-5.3.1_orig/configure.ac netgen-5.3.1_new/configure.ac
---- netgen-5.3.1_orig/configure.ac	2014-10-06 15:00:17.000000000 +0400
-+++ netgen-5.3.1_new/configure.ac	2016-09-29 14:34:11.957389447 +0300
+diff -Naur netgen-5.3.1_SRC_orig/configure.ac netgen-5.3.1_SRC_modif/configure.ac
+--- netgen-5.3.1_SRC_orig/configure.ac	2014-10-06 15:00:17.000000000 +0400
++++ netgen-5.3.1_SRC_modif/configure.ac	2017-09-11 18:08:21.226312730 +0300
 @@ -20,7 +20,7 @@
  CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS"
  # LDFLAGS="$LDFLAGS $OPENMP_CXXFLAGS"
@@ -45,9 +45,98 @@ diff -NaurwB netgen-5.3.1_orig/configure.ac netgen-5.3.1_new/configure.ac
  
  #  -lTKDCAF
  
-diff -NaurwB netgen-5.3.1_orig/libsrc/meshing/findip.hpp netgen-5.3.1_new/libsrc/meshing/findip.hpp
---- netgen-5.3.1_orig/libsrc/meshing/findip.hpp	2014-08-29 13:54:05.000000000 +0400
-+++ netgen-5.3.1_new/libsrc/meshing/findip.hpp	2016-09-30 20:38:56.662234111 +0300
+diff -Naur netgen-5.3.1_SRC_orig/libsrc/csg/Makefile.am netgen-5.3.1_SRC_modif/libsrc/csg/Makefile.am
+--- netgen-5.3.1_SRC_orig/libsrc/csg/Makefile.am	2014-08-29 13:54:06.000000000 +0400
++++ netgen-5.3.1_SRC_modif/libsrc/csg/Makefile.am	2017-09-11 18:08:21.234311865 +0300
+@@ -8,7 +8,7 @@
+ AM_CPPFLAGS = -I$(top_srcdir)/libsrc/include  $(TCL_INCLUDES)
+ METASOURCES = AUTO
+ 
+-lib_LTLIBRARIES = libcsg.la
++noinst_LTLIBRARIES = libcsg.la
+ 
+ 
+ libcsg_la_SOURCES = algprim.cpp brick.cpp   \
+@@ -17,12 +17,9 @@
+ manifold.cpp meshsurf.cpp polyhedra.cpp revolution.cpp singularref.cpp \
+ solid.cpp specpoin.cpp spline3d.cpp surface.cpp triapprox.cpp
+ 
+-libcsg_la_LIBADD =  $(top_builddir)/libsrc/meshing/libmesh.la
+-
+-
+ 
+ if NGGUI
+-lib_LTLIBRARIES += libcsgvis.la 
++lib_LTLIBRARIES = libcsgvis.la 
+ 
+ libcsgvis_la_SOURCES = vscsg.cpp csgpkg.cpp
+ libcsgvis_la_LIBADD = libcsg.la
+diff -Naur netgen-5.3.1_SRC_orig/libsrc/geom2d/Makefile.am netgen-5.3.1_SRC_modif/libsrc/geom2d/Makefile.am
+--- netgen-5.3.1_SRC_orig/libsrc/geom2d/Makefile.am	2014-08-29 13:54:06.000000000 +0400
++++ netgen-5.3.1_SRC_modif/libsrc/geom2d/Makefile.am	2017-09-11 18:08:21.234311865 +0300
+@@ -4,16 +4,15 @@
+ 
+ METASOURCES = AUTO
+ 
+-lib_LTLIBRARIES = libgeom2d.la 
++noinst_LTLIBRARIES = libgeom2d.la 
+ 
+ if NGGUI
+-lib_LTLIBRARIES += libgeom2dvis.la 
++lib_LTLIBRARIES = libgeom2dvis.la 
+ endif
+ 
+ 
+ 
+ libgeom2d_la_SOURCES = genmesh2d.cpp geom2dmesh.cpp geometry2d.cpp
+-libgeom2d_la_LIBADD = 	$(top_builddir)/libsrc/meshing/libmesh.la
+ 
+ libgeom2dvis_la_SOURCES = geom2dpkg.cpp vsgeom2d.cpp
+ libgeom2dvis_la_LIBADD = libgeom2d.la
+diff -Naur netgen-5.3.1_SRC_orig/libsrc/interface/Makefile.am netgen-5.3.1_SRC_modif/libsrc/interface/Makefile.am
+--- netgen-5.3.1_SRC_orig/libsrc/interface/Makefile.am	2014-08-29 13:54:02.000000000 +0400
++++ netgen-5.3.1_SRC_modif/libsrc/interface/Makefile.am	2017-09-11 18:08:21.234311865 +0300
+@@ -2,14 +2,11 @@
+ 
+ AM_CPPFLAGS = -I$(top_srcdir)/libsrc/include -I$(top_srcdir)/libsrc/interface  $(MPI_INCLUDES) $(TCL_INCLUDES) -DOPENGL
+ METASOURCES = AUTO
+-lib_LTLIBRARIES = libinterface.la
++noinst_LTLIBRARIES = libinterface.la
+ libinterface_la_SOURCES = nginterface.cpp nginterface_v2.cpp \
+ 	read_fnf_mesh.cpp readtetmesh.cpp readuser.cpp writeabaqus.cpp writediffpack.cpp \
+ 	writedolfin.cpp writeelmer.cpp writefeap.cpp writefluent.cpp writegmsh.cpp writejcm.cpp \
+ 	writepermas.cpp writetecplot.cpp writetet.cpp writetochnog.cpp writeuser.cpp \
+ 	wuchemnitz.cpp writegmsh2.cpp writeOpenFOAM15x.cpp 
+ 
+-
+-libinterface_la_LIBADD = $(top_builddir)/libsrc/meshing/libmesh.la
+-
+ # libinterface_la_LDFLAGS = -rdynamic
+diff -Naur netgen-5.3.1_SRC_orig/libsrc/meshing/Makefile.am netgen-5.3.1_SRC_modif/libsrc/meshing/Makefile.am
+--- netgen-5.3.1_SRC_orig/libsrc/meshing/Makefile.am	2014-08-29 13:54:05.000000000 +0400
++++ netgen-5.3.1_SRC_modif/libsrc/meshing/Makefile.am	2017-09-11 18:08:21.234311865 +0300
+@@ -15,7 +15,7 @@
+ 
+ METASOURCES = AUTO
+ 
+-lib_LTLIBRARIES = libmesh.la
++noinst_LTLIBRARIES = libmesh.la
+ 
+ libmesh_la_SOURCES = adfront2.cpp adfront3.cpp bisect.cpp boundarylayer.cpp \
+ 	clusters.cpp curvedelems.cpp delaunay.cpp delaunay2d.cpp	    \
+@@ -30,8 +30,5 @@
+ 	topology.cpp triarls.cpp validate.cpp zrefine.cpp bcfunctions.cpp   \
+ 	parallelmesh.cpp  paralleltop.cpp  paralleltop.hpp basegeom.cpp 
+ 
+-libmesh_la_LIBADD =  $(top_builddir)/libsrc/linalg/libla.la \
+-	$(top_builddir)/libsrc/gprim/libgprim.la \
+-	$(top_builddir)/libsrc/general/libgen.la \
+-	-lz
++libmesh_la_LIBADD = -lz
+ 
+diff -Naur netgen-5.3.1_SRC_orig/libsrc/meshing/findip.hpp netgen-5.3.1_SRC_modif/libsrc/meshing/findip.hpp
+--- netgen-5.3.1_SRC_orig/libsrc/meshing/findip.hpp	2014-08-29 13:54:05.000000000 +0400
++++ netgen-5.3.1_SRC_modif/libsrc/meshing/findip.hpp	2017-09-11 18:08:21.226312730 +0300
 @@ -75,6 +75,9 @@
    static int timer = NgProfiler::CreateTimer ("FindInnerPoint");
    NgProfiler::RegionTimer reg (timer);
@@ -58,9 +147,9 @@ diff -NaurwB netgen-5.3.1_orig/libsrc/meshing/findip.hpp netgen-5.3.1_new/libsrc
    Array<Vec3d> a;
    Array<double> c;
    Mat<3> m, inv;
-diff -NaurwB netgen-5.3.1_orig/libsrc/meshing/improve3.cpp netgen-5.3.1_new/libsrc/meshing/improve3.cpp
---- netgen-5.3.1_orig/libsrc/meshing/improve3.cpp	2014-08-29 13:54:05.000000000 +0400
-+++ netgen-5.3.1_new/libsrc/meshing/improve3.cpp	2016-10-03 16:16:57.636639300 +0300
+diff -Naur netgen-5.3.1_SRC_orig/libsrc/meshing/improve3.cpp netgen-5.3.1_SRC_modif/libsrc/meshing/improve3.cpp
+--- netgen-5.3.1_SRC_orig/libsrc/meshing/improve3.cpp	2014-08-29 13:54:05.000000000 +0400
++++ netgen-5.3.1_SRC_modif/libsrc/meshing/improve3.cpp	2017-09-11 18:08:21.227312622 +0300
 @@ -1219,6 +1219,7 @@
  
  	      tetused = 0;
@@ -83,9 +172,9 @@ diff -NaurwB netgen-5.3.1_orig/libsrc/meshing/improve3.cpp netgen-5.3.1_new/libs
  	      
  	      bad1 = 0;
  	      for (int k = 0; k < nsuround; k++)
-diff -NaurwB netgen-5.3.1_orig/libsrc/meshing/meshtype.cpp netgen-5.3.1_new/libsrc/meshing/meshtype.cpp
---- netgen-5.3.1_orig/libsrc/meshing/meshtype.cpp	2014-08-29 13:54:05.000000000 +0400
-+++ netgen-5.3.1_new/libsrc/meshing/meshtype.cpp	2016-09-29 14:04:51.500148293 +0300
+diff -Naur netgen-5.3.1_SRC_orig/libsrc/meshing/meshtype.cpp netgen-5.3.1_SRC_modif/libsrc/meshing/meshtype.cpp
+--- netgen-5.3.1_SRC_orig/libsrc/meshing/meshtype.cpp	2014-08-29 13:54:05.000000000 +0400
++++ netgen-5.3.1_SRC_modif/libsrc/meshing/meshtype.cpp	2017-09-11 18:08:21.227312622 +0300
 @@ -1,4 +1,5 @@
  #include <mystdlib.h>
 +#include <float.h> // to get DBL_MIN defined
@@ -171,9 +260,9 @@ diff -NaurwB netgen-5.3.1_orig/libsrc/meshing/meshtype.cpp netgen-5.3.1_new/libs
            err += 1e12;
          else
            {
-diff -NaurwB netgen-5.3.1_orig/libsrc/meshing/meshtype.hpp netgen-5.3.1_new/libsrc/meshing/meshtype.hpp
---- netgen-5.3.1_orig/libsrc/meshing/meshtype.hpp	2014-08-29 13:54:05.000000000 +0400
-+++ netgen-5.3.1_new/libsrc/meshing/meshtype.hpp	2016-09-30 14:28:09.147575801 +0300
+diff -Naur netgen-5.3.1_SRC_orig/libsrc/meshing/meshtype.hpp netgen-5.3.1_SRC_modif/libsrc/meshing/meshtype.hpp
+--- netgen-5.3.1_SRC_orig/libsrc/meshing/meshtype.hpp	2014-08-29 13:54:05.000000000 +0400
++++ netgen-5.3.1_SRC_modif/libsrc/meshing/meshtype.hpp	2017-09-11 18:08:21.228312514 +0300
 @@ -15,6 +15,7 @@
      Classes for NETGEN
    */
@@ -209,9 +298,25 @@ diff -NaurwB netgen-5.3.1_orig/libsrc/meshing/meshtype.hpp netgen-5.3.1_new/libs
  #endif
  	    ;
  	}
-diff -NaurwB netgen-5.3.1_orig/libsrc/occ/Partition_Inter2d.cxx netgen-5.3.1_new/libsrc/occ/Partition_Inter2d.cxx
---- netgen-5.3.1_orig/libsrc/occ/Partition_Inter2d.cxx	2014-08-29 13:54:03.000000000 +0400
-+++ netgen-5.3.1_new/libsrc/occ/Partition_Inter2d.cxx	2016-09-29 14:44:01.996464598 +0300
+diff -Naur netgen-5.3.1_SRC_orig/libsrc/occ/Makefile.am netgen-5.3.1_SRC_modif/libsrc/occ/Makefile.am
+--- netgen-5.3.1_SRC_orig/libsrc/occ/Makefile.am	2014-08-29 13:54:03.000000000 +0400
++++ netgen-5.3.1_SRC_modif/libsrc/occ/Makefile.am	2017-09-11 18:08:21.234311865 +0300
+@@ -14,10 +14,10 @@
+ 
+ METASOURCES = AUTO
+ 
+-lib_LTLIBRARIES = libocc.la
++noinst_LTLIBRARIES = libocc.la
+ 
+ if NGGUI
+-lib_LTLIBRARIES += liboccvis.la 
++lib_LTLIBRARIES = liboccvis.la 
+ endif
+ 
+ 
+diff -Naur netgen-5.3.1_SRC_orig/libsrc/occ/Partition_Inter2d.cxx netgen-5.3.1_SRC_modif/libsrc/occ/Partition_Inter2d.cxx
+--- netgen-5.3.1_SRC_orig/libsrc/occ/Partition_Inter2d.cxx	2014-08-29 13:54:03.000000000 +0400
++++ netgen-5.3.1_SRC_modif/libsrc/occ/Partition_Inter2d.cxx	2017-09-11 18:08:21.228312514 +0300
 @@ -47,9 +47,7 @@
  #include <TopOpeBRep_EdgesIntersector.hxx>
  #include <TopOpeBRep_Point2d.hxx>
@@ -222,9 +327,9 @@ diff -NaurwB netgen-5.3.1_orig/libsrc/occ/Partition_Inter2d.cxx netgen-5.3.1_new
  #include <TopoDS.hxx>
  #include <TopoDS_Edge.hxx>
  #include <TopoDS_Vertex.hxx>
-diff -NaurwB netgen-5.3.1_orig/libsrc/occ/Partition_Inter2d.hxx netgen-5.3.1_new/libsrc/occ/Partition_Inter2d.hxx
---- netgen-5.3.1_orig/libsrc/occ/Partition_Inter2d.hxx	2014-08-29 13:54:03.000000000 +0400
-+++ netgen-5.3.1_new/libsrc/occ/Partition_Inter2d.hxx	2016-09-29 14:44:01.996464598 +0300
+diff -Naur netgen-5.3.1_SRC_orig/libsrc/occ/Partition_Inter2d.hxx netgen-5.3.1_SRC_modif/libsrc/occ/Partition_Inter2d.hxx
+--- netgen-5.3.1_SRC_orig/libsrc/occ/Partition_Inter2d.hxx	2014-08-29 13:54:03.000000000 +0400
++++ netgen-5.3.1_SRC_modif/libsrc/occ/Partition_Inter2d.hxx	2017-09-11 18:08:21.228312514 +0300
 @@ -27,7 +27,9 @@
  #ifndef _Partition_Inter2d_HeaderFile
  #define _Partition_Inter2d_HeaderFile
@@ -252,9 +357,9 @@ diff -NaurwB netgen-5.3.1_orig/libsrc/occ/Partition_Inter2d.hxx netgen-5.3.1_new
  class TopoDS_Edge;
  
  
-diff -NaurwB netgen-5.3.1_orig/libsrc/occ/Partition_Inter3d.cxx netgen-5.3.1_new/libsrc/occ/Partition_Inter3d.cxx
---- netgen-5.3.1_orig/libsrc/occ/Partition_Inter3d.cxx	2014-08-29 13:54:03.000000000 +0400
-+++ netgen-5.3.1_new/libsrc/occ/Partition_Inter3d.cxx	2016-09-29 14:44:02.000464619 +0300
+diff -Naur netgen-5.3.1_SRC_orig/libsrc/occ/Partition_Inter3d.cxx netgen-5.3.1_SRC_modif/libsrc/occ/Partition_Inter3d.cxx
+--- netgen-5.3.1_SRC_orig/libsrc/occ/Partition_Inter3d.cxx	2014-08-29 13:54:03.000000000 +0400
++++ netgen-5.3.1_SRC_modif/libsrc/occ/Partition_Inter3d.cxx	2017-09-11 18:08:21.229312406 +0300
 @@ -48,7 +48,6 @@
  #include <TopOpeBRepTool_BoxSort.hxx>
  #include <TopTools_DataMapIteratorOfDataMapOfShapeListOfShape.hxx>
@@ -272,9 +377,9 @@ diff -NaurwB netgen-5.3.1_orig/libsrc/occ/Partition_Inter3d.cxx netgen-5.3.1_new
    }
    if (!S->IsUPeriodic() && !S->IsVPeriodic())
      return;
-diff -NaurwB netgen-5.3.1_orig/libsrc/occ/Partition_Inter3d.hxx netgen-5.3.1_new/libsrc/occ/Partition_Inter3d.hxx
---- netgen-5.3.1_orig/libsrc/occ/Partition_Inter3d.hxx	2014-08-29 13:54:03.000000000 +0400
-+++ netgen-5.3.1_new/libsrc/occ/Partition_Inter3d.hxx	2016-09-29 14:44:02.000464619 +0300
+diff -Naur netgen-5.3.1_SRC_orig/libsrc/occ/Partition_Inter3d.hxx netgen-5.3.1_SRC_modif/libsrc/occ/Partition_Inter3d.hxx
+--- netgen-5.3.1_SRC_orig/libsrc/occ/Partition_Inter3d.hxx	2014-08-29 13:54:03.000000000 +0400
++++ netgen-5.3.1_SRC_modif/libsrc/occ/Partition_Inter3d.hxx	2017-09-11 18:08:21.229312406 +0300
 @@ -27,7 +27,9 @@
  #ifndef _Partition_Inter3d_HeaderFile
  #define _Partition_Inter3d_HeaderFile
@@ -337,9 +442,9 @@ diff -NaurwB netgen-5.3.1_orig/libsrc/occ/Partition_Inter3d.hxx netgen-5.3.1_new
     TopTools_DataMapOfShapeListOfShape mySameDomainFM;
     TopTools_DataMapOfShapeShape mySameDomainVM;
  
-diff -NaurwB netgen-5.3.1_orig/libsrc/occ/Partition_Loop.hxx netgen-5.3.1_new/libsrc/occ/Partition_Loop.hxx
---- netgen-5.3.1_orig/libsrc/occ/Partition_Loop.hxx	2014-08-29 13:54:03.000000000 +0400
-+++ netgen-5.3.1_new/libsrc/occ/Partition_Loop.hxx	2016-09-29 14:44:02.000464619 +0300
+diff -Naur netgen-5.3.1_SRC_orig/libsrc/occ/Partition_Loop.hxx netgen-5.3.1_SRC_modif/libsrc/occ/Partition_Loop.hxx
+--- netgen-5.3.1_SRC_orig/libsrc/occ/Partition_Loop.hxx	2014-08-29 13:54:03.000000000 +0400
++++ netgen-5.3.1_SRC_modif/libsrc/occ/Partition_Loop.hxx	2017-09-11 18:08:21.229312406 +0300
 @@ -38,8 +38,6 @@
  #endif
  class TopoDS_Face;
@@ -349,9 +454,9 @@ diff -NaurwB netgen-5.3.1_orig/libsrc/occ/Partition_Loop.hxx netgen-5.3.1_new/li
  
  #ifndef _Standard_HeaderFile
  #include <Standard.hxx>
-diff -NaurwB netgen-5.3.1_orig/libsrc/occ/Partition_Loop2d.cxx netgen-5.3.1_new/libsrc/occ/Partition_Loop2d.cxx
---- netgen-5.3.1_orig/libsrc/occ/Partition_Loop2d.cxx	2014-08-29 13:54:03.000000000 +0400
-+++ netgen-5.3.1_new/libsrc/occ/Partition_Loop2d.cxx	2016-09-29 14:04:51.504148314 +0300
+diff -Naur netgen-5.3.1_SRC_orig/libsrc/occ/Partition_Loop2d.cxx netgen-5.3.1_SRC_modif/libsrc/occ/Partition_Loop2d.cxx
+--- netgen-5.3.1_SRC_orig/libsrc/occ/Partition_Loop2d.cxx	2014-08-29 13:54:03.000000000 +0400
++++ netgen-5.3.1_SRC_modif/libsrc/occ/Partition_Loop2d.cxx	2017-09-11 18:08:21.229312406 +0300
 @@ -210,7 +210,7 @@
      Cc->D1(uc, PC, CTg1);
      if (!isForward) CTg1.Reverse();
@@ -370,9 +475,9 @@ diff -NaurwB netgen-5.3.1_orig/libsrc/occ/Partition_Loop2d.cxx netgen-5.3.1_new/
        {
          // an angle is too close to PI; assure that an angle sign really
          // reflects an edge position: +PI - an edge is worst,
-diff -NaurwB netgen-5.3.1_orig/libsrc/occ/Partition_Loop2d.hxx netgen-5.3.1_new/libsrc/occ/Partition_Loop2d.hxx
---- netgen-5.3.1_orig/libsrc/occ/Partition_Loop2d.hxx	2014-08-29 13:54:03.000000000 +0400
-+++ netgen-5.3.1_new/libsrc/occ/Partition_Loop2d.hxx	2016-09-29 14:44:02.000464619 +0300
+diff -Naur netgen-5.3.1_SRC_orig/libsrc/occ/Partition_Loop2d.hxx netgen-5.3.1_SRC_modif/libsrc/occ/Partition_Loop2d.hxx
+--- netgen-5.3.1_SRC_orig/libsrc/occ/Partition_Loop2d.hxx	2014-08-29 13:54:03.000000000 +0400
++++ netgen-5.3.1_SRC_modif/libsrc/occ/Partition_Loop2d.hxx	2017-09-11 18:08:21.230312298 +0300
 @@ -24,7 +24,6 @@
  #endif
  class TopoDS_Face;
@@ -381,9 +486,9 @@ diff -NaurwB netgen-5.3.1_orig/libsrc/occ/Partition_Loop2d.hxx netgen-5.3.1_new/
  class BRepAlgo_Image;
  
  
-diff -NaurwB netgen-5.3.1_orig/libsrc/occ/Partition_Loop3d.hxx netgen-5.3.1_new/libsrc/occ/Partition_Loop3d.hxx
---- netgen-5.3.1_orig/libsrc/occ/Partition_Loop3d.hxx	2014-08-29 13:54:03.000000000 +0400
-+++ netgen-5.3.1_new/libsrc/occ/Partition_Loop3d.hxx	2016-09-29 14:44:02.000464619 +0300
+diff -Naur netgen-5.3.1_SRC_orig/libsrc/occ/Partition_Loop3d.hxx netgen-5.3.1_SRC_modif/libsrc/occ/Partition_Loop3d.hxx
+--- netgen-5.3.1_SRC_orig/libsrc/occ/Partition_Loop3d.hxx	2014-08-29 13:54:03.000000000 +0400
++++ netgen-5.3.1_SRC_modif/libsrc/occ/Partition_Loop3d.hxx	2017-09-11 18:08:21.230312298 +0300
 @@ -13,6 +13,9 @@
  #ifndef _TopTools_ListOfShape_HeaderFile
  #include <TopTools_ListOfShape.hxx>
@@ -403,9 +508,9 @@ diff -NaurwB netgen-5.3.1_orig/libsrc/occ/Partition_Loop3d.hxx netgen-5.3.1_new/
  class TopoDS_Edge;
  class TopoDS_Face;
  class gp_Vec;
-diff -NaurwB netgen-5.3.1_orig/libsrc/occ/Partition_Spliter.cxx netgen-5.3.1_new/libsrc/occ/Partition_Spliter.cxx
---- netgen-5.3.1_orig/libsrc/occ/Partition_Spliter.cxx	2014-08-29 13:54:03.000000000 +0400
-+++ netgen-5.3.1_new/libsrc/occ/Partition_Spliter.cxx	2016-09-29 14:44:02.000464619 +0300
+diff -Naur netgen-5.3.1_SRC_orig/libsrc/occ/Partition_Spliter.cxx netgen-5.3.1_SRC_modif/libsrc/occ/Partition_Spliter.cxx
+--- netgen-5.3.1_SRC_orig/libsrc/occ/Partition_Spliter.cxx	2014-08-29 13:54:03.000000000 +0400
++++ netgen-5.3.1_SRC_modif/libsrc/occ/Partition_Spliter.cxx	2017-09-11 18:08:21.230312298 +0300
 @@ -48,7 +48,6 @@
  #include <TopTools_IndexedDataMapOfShapeListOfShape.hxx>
  #include <TopTools_IndexedMapOfShape.hxx>
@@ -414,9 +519,9 @@ diff -NaurwB netgen-5.3.1_orig/libsrc/occ/Partition_Spliter.cxx netgen-5.3.1_new
  #include <TopTools_MapIteratorOfMapOfShape.hxx>
  #include <TopTools_SequenceOfShape.hxx>
  
-diff -NaurwB netgen-5.3.1_orig/libsrc/occ/Partition_Spliter.hxx netgen-5.3.1_new/libsrc/occ/Partition_Spliter.hxx
---- netgen-5.3.1_orig/libsrc/occ/Partition_Spliter.hxx	2014-08-29 13:54:03.000000000 +0400
-+++ netgen-5.3.1_new/libsrc/occ/Partition_Spliter.hxx	2016-09-29 14:44:02.004464639 +0300
+diff -Naur netgen-5.3.1_SRC_orig/libsrc/occ/Partition_Spliter.hxx netgen-5.3.1_SRC_modif/libsrc/occ/Partition_Spliter.hxx
+--- netgen-5.3.1_SRC_orig/libsrc/occ/Partition_Spliter.hxx	2014-08-29 13:54:03.000000000 +0400
++++ netgen-5.3.1_SRC_modif/libsrc/occ/Partition_Spliter.hxx	2017-09-11 18:08:21.231312190 +0300
 @@ -28,9 +28,6 @@
  #ifndef _TopTools_DataMapOfShapeShape_HeaderFile
  #include <TopTools_DataMapOfShapeShape.hxx>
@@ -444,9 +549,9 @@ diff -NaurwB netgen-5.3.1_orig/libsrc/occ/Partition_Spliter.hxx netgen-5.3.1_new
     BRepAlgo_Image myImagesFaces;
     BRepAlgo_Image myImagesEdges;
     BRepAlgo_Image myImageShape;
-diff -NaurwB netgen-5.3.1_orig/libsrc/occ/occconstruction.cpp netgen-5.3.1_new/libsrc/occ/occconstruction.cpp
---- netgen-5.3.1_orig/libsrc/occ/occconstruction.cpp	2014-08-29 13:54:03.000000000 +0400
-+++ netgen-5.3.1_new/libsrc/occ/occconstruction.cpp	2016-09-29 14:04:51.500148293 +0300
+diff -Naur netgen-5.3.1_SRC_orig/libsrc/occ/occconstruction.cpp netgen-5.3.1_SRC_modif/libsrc/occ/occconstruction.cpp
+--- netgen-5.3.1_SRC_orig/libsrc/occ/occconstruction.cpp	2014-08-29 13:54:03.000000000 +0400
++++ netgen-5.3.1_SRC_modif/libsrc/occ/occconstruction.cpp	2017-09-11 18:08:21.231312190 +0300
 @@ -28,7 +28,7 @@
  #include <BRepAlgoAPI_Common.hxx>
  #include <BRepAlgoAPI_Fuse.hxx>
@@ -456,9 +561,9 @@ diff -NaurwB netgen-5.3.1_orig/libsrc/occ/occconstruction.cpp netgen-5.3.1_new/l
  //#include <BRepAlgo_Sewing.hxx>
  #include <BRepOffsetAPI_MakeOffsetShape.hxx>
  #include <ShapeFix_Shape.hxx>
-diff -NaurwB netgen-5.3.1_orig/libsrc/occ/occgenmesh.cpp netgen-5.3.1_new/libsrc/occ/occgenmesh.cpp
---- netgen-5.3.1_orig/libsrc/occ/occgenmesh.cpp	2014-08-29 13:54:03.000000000 +0400
-+++ netgen-5.3.1_new/libsrc/occ/occgenmesh.cpp	2016-09-29 14:04:51.500148293 +0300
+diff -Naur netgen-5.3.1_SRC_orig/libsrc/occ/occgenmesh.cpp netgen-5.3.1_SRC_modif/libsrc/occ/occgenmesh.cpp
+--- netgen-5.3.1_SRC_orig/libsrc/occ/occgenmesh.cpp	2014-08-29 13:54:03.000000000 +0400
++++ netgen-5.3.1_SRC_modif/libsrc/occ/occgenmesh.cpp	2017-09-11 18:08:21.231312190 +0300
 @@ -171,8 +171,8 @@
           if(h < 1e-4*maxside)
              return;
@@ -702,9 +807,9 @@ diff -NaurwB netgen-5.3.1_orig/libsrc/occ/occgenmesh.cpp netgen-5.3.1_new/libsrc
  
        mesh.CalcSurfacesOfNode();
        multithread.task = savetask;
-diff -NaurwB netgen-5.3.1_orig/libsrc/occ/occgeom.cpp netgen-5.3.1_new/libsrc/occ/occgeom.cpp
---- netgen-5.3.1_orig/libsrc/occ/occgeom.cpp	2014-08-29 13:54:03.000000000 +0400
-+++ netgen-5.3.1_new/libsrc/occ/occgeom.cpp	2016-09-29 16:22:31.636328123 +0300
+diff -Naur netgen-5.3.1_SRC_orig/libsrc/occ/occgeom.cpp netgen-5.3.1_SRC_modif/libsrc/occ/occgeom.cpp
+--- netgen-5.3.1_SRC_orig/libsrc/occ/occgeom.cpp	2014-08-29 13:54:03.000000000 +0400
++++ netgen-5.3.1_SRC_modif/libsrc/occ/occgeom.cpp	2017-09-11 18:08:32.836058020 +0300
 @@ -8,6 +8,8 @@
  #include "ShapeAnalysis_CheckSmallFace.hxx"
  #include "ShapeAnalysis_DataMapOfShapeListOfReal.hxx"
@@ -732,7 +837,7 @@ diff -NaurwB netgen-5.3.1_orig/libsrc/occ/occgeom.cpp netgen-5.3.1_new/libsrc/oc
     void OCCGeometry :: PrintNrShapes ()
     {
        TopExp_Explorer e;
-@@ -112,7 +121,7 @@
+@@ -112,13 +121,13 @@
        double surfacecont = 0;
  
        {
@@ -741,6 +846,13 @@ diff -NaurwB netgen-5.3.1_orig/libsrc/occ/occgeom.cpp netgen-5.3.1_new/libsrc/oc
           rebuild->Apply(shape);
           for (exp1.Init (shape, TopAbs_EDGE); exp1.More(); exp1.Next())
           {
+             TopoDS_Edge edge = TopoDS::Edge(exp1.Current());
+             if ( BRep_Tool::Degenerated(edge) )
+-               rebuild->Remove(edge, false);
++               rebuild->Remove(edge);
+          }
+          shape = rebuild->Apply(shape);
+       }
 @@ -143,7 +152,7 @@
           cout << endl << "- repairing faces" << endl;
  
@@ -750,7 +862,16 @@ diff -NaurwB netgen-5.3.1_orig/libsrc/occ/occgeom.cpp netgen-5.3.1_new/libsrc/oc
           rebuild->Apply(shape);
  
  
-@@ -200,7 +209,7 @@
+@@ -187,7 +196,7 @@
+                   cout << "(natural bounds added)" <<endl;
+                TopoDS_Face newface = sff->Face();
+ 
+-               rebuild->Replace(face, newface, Standard_False);
++               rebuild->Replace(face, newface);
+             }
+ 
+             // Set the original colour of the face to the newly created 
+@@ -200,13 +209,13 @@
  
  
        {
@@ -759,6 +880,13 @@ diff -NaurwB netgen-5.3.1_orig/libsrc/occ/occgeom.cpp netgen-5.3.1_new/libsrc/oc
           rebuild->Apply(shape);
           for (exp1.Init (shape, TopAbs_EDGE); exp1.More(); exp1.Next())
           {
+             TopoDS_Edge edge = TopoDS::Edge(exp1.Current());
+             if ( BRep_Tool::Degenerated(edge) )
+-               rebuild->Remove(edge, false);
++               rebuild->Remove(edge);
+          }
+          shape = rebuild->Apply(shape);
+       }
 @@ -217,7 +226,7 @@
           cout << endl << "- fixing small edges" << endl;
  
@@ -768,6 +896,15 @@ diff -NaurwB netgen-5.3.1_orig/libsrc/occ/occgeom.cpp netgen-5.3.1_new/libsrc/oc
           rebuild->Apply(shape);
  
  
+@@ -270,7 +279,7 @@
+                if(replace)
+                {
+                   TopoDS_Wire newwire = sfw->Wire();
+-                  rebuild->Replace(oldwire, newwire, Standard_False);
++                  rebuild->Replace(oldwire, newwire);
+                }
+ 
+                //delete sfw; sfw = NULL;
 @@ -284,7 +293,7 @@
  
           {
@@ -777,7 +914,16 @@ diff -NaurwB netgen-5.3.1_orig/libsrc/occ/occgeom.cpp netgen-5.3.1_new/libsrc/oc
              rebuild->Apply(shape);
  
              for (exp1.Init (shape, TopAbs_EDGE); exp1.More(); exp1.Next())
-@@ -312,7 +321,7 @@
+@@ -300,7 +309,7 @@
+                      cout << "removing degenerated edge " << emap.FindIndex(edge)
+                         << " from vertex " << vmap.FindIndex(TopExp::FirstVertex (edge))
+                         << " to vertex " << vmap.FindIndex(TopExp::LastVertex (edge)) << endl;
+-                     rebuild->Remove(edge, false);
++                     rebuild->Remove(edge);
+                   }
+                }
+             }
+@@ -312,13 +321,13 @@
  
  
           {
@@ -786,7 +932,14 @@ diff -NaurwB netgen-5.3.1_orig/libsrc/occ/occgeom.cpp netgen-5.3.1_new/libsrc/oc
              rebuild->Apply(shape);
              for (exp1.Init (shape, TopAbs_EDGE); exp1.More(); exp1.Next())
              {
-@@ -438,7 +447,7 @@
+                TopoDS_Edge edge = TopoDS::Edge(exp1.Current());
+                if ( BRep_Tool::Degenerated(edge) )
+-                  rebuild->Remove(edge, false);
++                  rebuild->Remove(edge);
+             }
+             shape = rebuild->Apply(shape);
+          }
+@@ -438,13 +447,13 @@
  
  
        {
@@ -795,24 +948,36 @@ diff -NaurwB netgen-5.3.1_orig/libsrc/occ/occgeom.cpp netgen-5.3.1_new/libsrc/oc
           rebuild->Apply(shape);
           for (exp1.Init (shape, TopAbs_EDGE); exp1.More(); exp1.Next())
           {
-@@ -483,7 +492,7 @@
+             TopoDS_Edge edge = TopoDS::Edge(exp1.Current());
+             if ( BRep_Tool::Degenerated(edge) )
+-               rebuild->Remove(edge, false);
++               rebuild->Remove(edge);
+          }
+          shape = rebuild->Apply(shape);
+       }
+@@ -483,9 +492,9 @@
                    TopoDS_Solid solid = TopoDS::Solid(exp0.Current());
                    TopoDS_Solid newsolid = solid;
                    BRepLib::OrientClosedSolid (newsolid);
 -                  Handle_ShapeBuild_ReShape rebuild = new ShapeBuild_ReShape;
 +                  Handle(ShapeBuild_ReShape) rebuild = new ShapeBuild_ReShape;
                    //		  rebuild->Apply(shape);
-                   rebuild->Replace(solid, newsolid, Standard_False);
+-                  rebuild->Replace(solid, newsolid, Standard_False);
++                  rebuild->Replace(solid, newsolid);
                    TopoDS_Shape newshape = rebuild->Apply(shape, TopAbs_COMPSOLID);//, 1);
-@@ -906,7 +915,7 @@
+                   //		  TopoDS_Shape newshape = rebuild->Apply(shape);
+                   shape = newshape;
+@@ -906,8 +915,8 @@
              TopoDS_Solid solid = TopoDS::Solid(exp0.Current());
              TopoDS_Solid newsolid = solid;
              BRepLib::OrientClosedSolid (newsolid);
 -            Handle_ShapeBuild_ReShape rebuild = new ShapeBuild_ReShape;
+-            rebuild->Replace(solid, newsolid, Standard_False);
 +            Handle(ShapeBuild_ReShape) rebuild = new ShapeBuild_ReShape;
-             rebuild->Replace(solid, newsolid, Standard_False);
++            rebuild->Replace(solid, newsolid);
  
              TopoDS_Shape newshape = rebuild->Apply(shape, TopAbs_SHAPE, 1);
+             shape = newshape;
 @@ -951,25 +960,58 @@
     }
  
@@ -854,6 +1019,7 @@ diff -NaurwB netgen-5.3.1_orig/libsrc/occ/occgeom.cpp netgen-5.3.1_new/libsrc/oc
 -      gp_Pnt2d suval = su->ValueOfUV ( pnt, BRep_Tool::Tolerance( TopoDS::Face(fmap(surfi)) ) );
 -      suval.Coord( u, v);
 -      pnt = thesurf->Value( u, v );
+-
 +      // -- Optimization: use cached projector and classifier
 +      // double u,v;
 +      // Handle( Geom_Surface ) thesurf = BRep_Tool::Surface(TopoDS::Face(fmap(surfi)));
@@ -865,7 +1031,7 @@ diff -NaurwB netgen-5.3.1_orig/libsrc/occ/occgeom.cpp netgen-5.3.1_new/libsrc/oc
 +      Handle(ShapeAnalysis_Surface) proj;
 +      BRepTopAdaptor_FClass2d *cls;
 +      GetFaceTools(surfi, proj, cls);
- 
++
 +      gp_Pnt2d p2d = proj->ValueOfUV(pnt, Precision::Confusion());
 +      if (cls->Perform(p2d) == TopAbs_OUT)
 +      {
@@ -891,6 +1057,47 @@ diff -NaurwB netgen-5.3.1_orig/libsrc/occ/occgeom.cpp netgen-5.3.1_new/libsrc/oc
 -      if (p.SquareDistance(x) <= sqr(PROJECTION_TOLERANCE)) return true;
 -
 -      gp_Vec du, dv;
+-
+-      surface->D1(u,v,x,du,dv);
+-
+-      int count = 0;
+-
+-      gp_Pnt xold;
+-      gp_Vec n;
+-      double det, lambda, mu;
+-
+-      do {
+-         count++;
+-
+-         n = du^dv;
+-
+-         det = Det3 (n.X(), du.X(), dv.X(),
+-            n.Y(), du.Y(), dv.Y(),
+-            n.Z(), du.Z(), dv.Z());
+-
+-         if (det < 1e-15) return false;
+-
+-         lambda = Det3 (n.X(), p.X()-x.X(), dv.X(),
+-            n.Y(), p.Y()-x.Y(), dv.Y(),
+-            n.Z(), p.Z()-x.Z(), dv.Z())/det;
+-
+-         mu     = Det3 (n.X(), du.X(), p.X()-x.X(),
+-            n.Y(), du.Y(), p.Y()-x.Y(),
+-            n.Z(), du.Z(), p.Z()-x.Z())/det;
+-
+-         u += lambda;
+-         v += mu;
+-
+-         xold = x;
+-         surface->D1(u,v,x,du,dv);
+-
+-      } while (xold.SquareDistance(x) > sqr(PROJECTION_TOLERANCE) && count < 50);
+-
+-      //    (*testout) << "FastProject count: " << count << endl;
+-
+-      if (count == 50) return false;
+-
+-      ap = Point<3> (x.X(), x.Y(), x.Z());
 +      // -- Optimization: use cached projector and classifier
 +      // Handle(Geom_Surface) surface = BRep_Tool::Surface(TopoDS::Face(fmap(surfi)));
 +      // 
@@ -943,53 +1150,14 @@ diff -NaurwB netgen-5.3.1_orig/libsrc/occ/occgeom.cpp netgen-5.3.1_new/libsrc/oc
 +      Handle(ShapeAnalysis_Surface) proj;
 +      BRepTopAdaptor_FClass2d *cls;
 +      GetFaceTools(surfi, proj, cls);
- 
--      surface->D1(u,v,x,du,dv);
--
--      int count = 0;
--
--      gp_Pnt xold;
--      gp_Vec n;
--      double det, lambda, mu;
--
--      do {
--         count++;
--
--         n = du^dv;
--
--         det = Det3 (n.X(), du.X(), dv.X(),
--            n.Y(), du.Y(), dv.Y(),
--            n.Z(), du.Z(), dv.Z());
--
--         if (det < 1e-15) return false;
--
--         lambda = Det3 (n.X(), p.X()-x.X(), dv.X(),
--            n.Y(), p.Y()-x.Y(), dv.Y(),
--            n.Z(), p.Z()-x.Z(), dv.Z())/det;
--
--         mu     = Det3 (n.X(), du.X(), p.X()-x.X(),
--            n.Y(), du.Y(), p.Y()-x.Y(),
--            n.Z(), du.Z(), p.Z()-x.Z())/det;
--
--         u += lambda;
--         v += mu;
--
--         xold = x;
--         surface->D1(u,v,x,du,dv);
--
--      } while (xold.SquareDistance(x) > sqr(PROJECTION_TOLERANCE) && count < 50);
--
--      //    (*testout) << "FastProject count: " << count << endl;
--
--      if (count == 50) return false;
++
 +      gp_Pnt2d p2d = proj->NextValueOfUV(gp_Pnt2d(u,v), p, Precision::Confusion());
 +      if (cls->Perform(p2d) == TopAbs_OUT)
 +      {
 +        //cout << "Projection fails" << endl;
 +        return false;
 +      }
- 
--      ap = Point<3> (x.X(), x.Y(), x.Z());
++
 +      p = proj->Value(p2d);
 +      p2d.Coord(u, v);
 +      ap = Point<3> (p.X(), p.Y(), p.Z());
@@ -1065,9 +1233,9 @@ diff -NaurwB netgen-5.3.1_orig/libsrc/occ/occgeom.cpp netgen-5.3.1_new/libsrc/oc
        occgeo->face_colours.Nullify();
        occgeo->changed = 1;
        occgeo->BuildFMap();
-diff -NaurwB netgen-5.3.1_orig/libsrc/occ/occgeom.hpp netgen-5.3.1_new/libsrc/occ/occgeom.hpp
---- netgen-5.3.1_orig/libsrc/occ/occgeom.hpp	2014-08-29 13:54:03.000000000 +0400
-+++ netgen-5.3.1_new/libsrc/occ/occgeom.hpp	2016-09-29 14:44:01.996464598 +0300
+diff -Naur netgen-5.3.1_SRC_orig/libsrc/occ/occgeom.hpp netgen-5.3.1_SRC_modif/libsrc/occ/occgeom.hpp
+--- netgen-5.3.1_SRC_orig/libsrc/occ/occgeom.hpp	2014-08-29 13:54:03.000000000 +0400
++++ netgen-5.3.1_SRC_modif/libsrc/occ/occgeom.hpp	2017-09-11 18:08:21.233311974 +0300
 @@ -15,8 +15,8 @@
  #include "Geom_Curve.hxx"
  #include "Geom2d_Curve.hxx"
@@ -1162,9 +1330,9 @@ diff -NaurwB netgen-5.3.1_orig/libsrc/occ/occgeom.hpp netgen-5.3.1_new/libsrc/oc
        OCCSurface GetSurface (int surfi)
        {
           cout << "OCCGeometry::GetSurface using PLANESPACE" << endl;
-diff -NaurwB netgen-5.3.1_orig/libsrc/occ/occmeshsurf.cpp netgen-5.3.1_new/libsrc/occ/occmeshsurf.cpp
---- netgen-5.3.1_orig/libsrc/occ/occmeshsurf.cpp	2014-08-29 13:54:03.000000000 +0400
-+++ netgen-5.3.1_new/libsrc/occ/occmeshsurf.cpp	2016-09-29 14:08:00.045144560 +0300
+diff -Naur netgen-5.3.1_SRC_orig/libsrc/occ/occmeshsurf.cpp netgen-5.3.1_SRC_modif/libsrc/occ/occmeshsurf.cpp
+--- netgen-5.3.1_SRC_orig/libsrc/occ/occmeshsurf.cpp	2014-08-29 13:54:03.000000000 +0400
++++ netgen-5.3.1_SRC_modif/libsrc/occ/occmeshsurf.cpp	2017-09-11 18:08:21.233311974 +0300
 @@ -6,6 +6,7 @@
  #include <meshing.hpp>
  #include <GeomLProp_SLProps.hxx>
@@ -1192,7 +1360,7 @@ diff -NaurwB netgen-5.3.1_orig/libsrc/occ/occmeshsurf.cpp netgen-5.3.1_new/libsr
      if(glob_testout)
        {
  	(*testout) << "u " << geominfo.u << " v " << geominfo.v 
-@@ -434,23 +435,33 @@
+@@ -434,23 +438,33 @@
  
    void MeshOptimize2dOCCSurfaces :: ProjectPoint (INDEX surfind, Point<3> & p) const
    {
@@ -1235,7 +1403,7 @@ diff -NaurwB netgen-5.3.1_orig/libsrc/occ/occmeshsurf.cpp netgen-5.3.1_new/libsr
    }
  
  
-@@ -680,7 +691,8 @@
+@@ -680,7 +694,8 @@
  	if (!geometry.FastProject (surfi, hnewp, u, v))
  	  {
  	  //  cout << "Fast projection to surface fails! Using OCC projection" << endl;
@@ -1245,7 +1413,7 @@ diff -NaurwB netgen-5.3.1_orig/libsrc/occ/occmeshsurf.cpp netgen-5.3.1_new/libsr
  	  }
  
  	newgi.trignum = 1;
-@@ -689,7 +701,7 @@
+@@ -689,7 +704,7 @@
        }
    
      newp = hnewp;
@@ -1254,7 +1422,7 @@ diff -NaurwB netgen-5.3.1_orig/libsrc/occ/occmeshsurf.cpp netgen-5.3.1_new/libsr
  
  
    void OCCRefinementSurfaces :: 
-@@ -708,14 +720,18 @@
+@@ -708,14 +723,18 @@
      hnewp = Point<3> (pnt.X(), pnt.Y(), pnt.Z());
      newp = hnewp;
      newgi = ap1;
@@ -1276,7 +1444,7 @@ diff -NaurwB netgen-5.3.1_orig/libsrc/occ/occmeshsurf.cpp netgen-5.3.1_new/libsr
  
    void OCCRefinementSurfaces :: ProjectToSurface (Point<3> & p, int surfi, PointGeomInfo & gi) const
    {
-@@ -723,9 +739,10 @@
+@@ -723,9 +742,10 @@
        if (!geometry.FastProject (surfi, p, gi.u, gi.v))
  	{
  	  cout << "Fast projection to surface fails! Using OCC projection" << endl;
@@ -1289,9 +1457,21 @@ diff -NaurwB netgen-5.3.1_orig/libsrc/occ/occmeshsurf.cpp netgen-5.3.1_new/libsr
  
  
  
-diff -NaurwB netgen-5.3.1_orig/libsrc/occ/utilities.h netgen-5.3.1_new/libsrc/occ/utilities.h
---- netgen-5.3.1_orig/libsrc/occ/utilities.h	2014-08-29 13:54:03.000000000 +0400
-+++ netgen-5.3.1_new/libsrc/occ/utilities.h	2016-09-29 14:04:51.504148314 +0300
+diff -Naur netgen-5.3.1_SRC_orig/libsrc/occ/occpkg.cpp netgen-5.3.1_SRC_modif/libsrc/occ/occpkg.cpp
+--- netgen-5.3.1_SRC_orig/libsrc/occ/occpkg.cpp	2014-08-29 13:54:03.000000000 +0400
++++ netgen-5.3.1_SRC_modif/libsrc/occ/occpkg.cpp	2017-09-11 18:08:32.837057913 +0300
+@@ -485,7 +485,7 @@
+ 		  if (strcmp (argv[2], "Wire") == 0) sh = occgeometry->wmap(nr);
+ 		  if (strcmp (argv[2], "Edge") == 0) sh = occgeometry->emap(nr);
+ 
+-		  rebuild->Replace(sh, sh.Reversed(), Standard_False);
++		  rebuild->Replace(sh, sh.Reversed());
+ 
+ 		  TopoDS_Shape newshape = rebuild->Apply(occgeometry->shape, TopAbs_SHELL, 1);
+ 		  occgeometry->shape = newshape;
+diff -Naur netgen-5.3.1_SRC_orig/libsrc/occ/utilities.h netgen-5.3.1_SRC_modif/libsrc/occ/utilities.h
+--- netgen-5.3.1_SRC_orig/libsrc/occ/utilities.h	2014-08-29 13:54:03.000000000 +0400
++++ netgen-5.3.1_SRC_modif/libsrc/occ/utilities.h	2017-09-11 18:08:21.233311974 +0300
 @@ -33,6 +33,7 @@
  
  #include <string>
@@ -1300,126 +1480,9 @@ diff -NaurwB netgen-5.3.1_orig/libsrc/occ/utilities.h netgen-5.3.1_new/libsrc/oc
  #include <cstdlib>
  // #include "SALOME_Log.hxx"
  
-diff -NaurwB netgen-5.3.1_orig/nglib/nglib.h netgen-5.3.1_new/nglib/nglib.h
---- netgen-5.3.1_orig/nglib/nglib.h	2014-08-29 13:54:00.000000000 +0400
-+++ netgen-5.3.1_new/nglib/nglib.h	2016-09-29 14:04:51.504148314 +0300
-@@ -24,7 +24,7 @@
- // Philippose - 14.02.2009
- // Modifications for creating a DLL in Windows
- #ifdef WIN32
--   #ifdef NGLIB_EXPORTS || nglib_EXPORTS
-+   #if defined NGLIB_EXPORTS || defined nglib_EXPORTS
-       #define DLL_HEADER   __declspec(dllexport)
-    #else
-       #define DLL_HEADER   __declspec(dllimport)
-diff -Naur netgen-5.3.1_orig/libsrc/csg/Makefile.am netgen-5.3.1_new/libsrc/csg/Makefile.am
---- netgen-5.3.1_orig/libsrc/csg/Makefile.am	2014-08-29 13:54:06.000000000 +0400
-+++ netgen-5.3.1_new/libsrc/csg/Makefile.am	2016-11-08 17:48:02.000000000 +0300
-@@ -8,7 +8,7 @@
- AM_CPPFLAGS = -I$(top_srcdir)/libsrc/include  $(TCL_INCLUDES)
- METASOURCES = AUTO
- 
--lib_LTLIBRARIES = libcsg.la
-+noinst_LTLIBRARIES = libcsg.la
- 
- 
- libcsg_la_SOURCES = algprim.cpp brick.cpp   \
-@@ -17,12 +17,9 @@
- manifold.cpp meshsurf.cpp polyhedra.cpp revolution.cpp singularref.cpp \
- solid.cpp specpoin.cpp spline3d.cpp surface.cpp triapprox.cpp
- 
--libcsg_la_LIBADD =  $(top_builddir)/libsrc/meshing/libmesh.la
--
--
- 
- if NGGUI
--lib_LTLIBRARIES += libcsgvis.la 
-+lib_LTLIBRARIES = libcsgvis.la 
- 
- libcsgvis_la_SOURCES = vscsg.cpp csgpkg.cpp
- libcsgvis_la_LIBADD = libcsg.la
-diff -Naur netgen-5.3.1_orig/libsrc/geom2d/Makefile.am netgen-5.3.1_new/libsrc/geom2d/Makefile.am
---- netgen-5.3.1_orig/libsrc/geom2d/Makefile.am	2014-08-29 13:54:06.000000000 +0400
-+++ netgen-5.3.1_new/libsrc/geom2d/Makefile.am	2016-11-08 17:49:13.000000000 +0300
-@@ -4,16 +4,15 @@
- 
- METASOURCES = AUTO
- 
--lib_LTLIBRARIES = libgeom2d.la 
-+noinst_LTLIBRARIES = libgeom2d.la 
- 
- if NGGUI
--lib_LTLIBRARIES += libgeom2dvis.la 
-+lib_LTLIBRARIES = libgeom2dvis.la 
- endif
- 
- 
- 
- libgeom2d_la_SOURCES = genmesh2d.cpp geom2dmesh.cpp geometry2d.cpp
--libgeom2d_la_LIBADD = 	$(top_builddir)/libsrc/meshing/libmesh.la
- 
- libgeom2dvis_la_SOURCES = geom2dpkg.cpp vsgeom2d.cpp
- libgeom2dvis_la_LIBADD = libgeom2d.la
-diff -Naur netgen-5.3.1_orig/libsrc/interface/Makefile.am netgen-5.3.1_new/libsrc/interface/Makefile.am
---- netgen-5.3.1_orig/libsrc/interface/Makefile.am	2014-08-29 13:54:02.000000000 +0400
-+++ netgen-5.3.1_new/libsrc/interface/Makefile.am	2016-11-08 17:49:26.000000000 +0300
-@@ -2,14 +2,11 @@
- 
- AM_CPPFLAGS = -I$(top_srcdir)/libsrc/include -I$(top_srcdir)/libsrc/interface  $(MPI_INCLUDES) $(TCL_INCLUDES) -DOPENGL
- METASOURCES = AUTO
--lib_LTLIBRARIES = libinterface.la
-+noinst_LTLIBRARIES = libinterface.la
- libinterface_la_SOURCES = nginterface.cpp nginterface_v2.cpp \
- 	read_fnf_mesh.cpp readtetmesh.cpp readuser.cpp writeabaqus.cpp writediffpack.cpp \
- 	writedolfin.cpp writeelmer.cpp writefeap.cpp writefluent.cpp writegmsh.cpp writejcm.cpp \
- 	writepermas.cpp writetecplot.cpp writetet.cpp writetochnog.cpp writeuser.cpp \
- 	wuchemnitz.cpp writegmsh2.cpp writeOpenFOAM15x.cpp 
- 
--
--libinterface_la_LIBADD = $(top_builddir)/libsrc/meshing/libmesh.la
--
- # libinterface_la_LDFLAGS = -rdynamic
-diff -Naur netgen-5.3.1_orig/libsrc/meshing/Makefile.am netgen-5.3.1_new/libsrc/meshing/Makefile.am
---- netgen-5.3.1_orig/libsrc/meshing/Makefile.am	2014-08-29 13:54:05.000000000 +0400
-+++ netgen-5.3.1_new/libsrc/meshing/Makefile.am	2016-11-08 17:48:44.000000000 +0300
-@@ -15,7 +15,7 @@
- 
- METASOURCES = AUTO
- 
--lib_LTLIBRARIES = libmesh.la
-+noinst_LTLIBRARIES = libmesh.la
- 
- libmesh_la_SOURCES = adfront2.cpp adfront3.cpp bisect.cpp boundarylayer.cpp \
- 	clusters.cpp curvedelems.cpp delaunay.cpp delaunay2d.cpp	    \
-@@ -30,8 +30,5 @@
- 	topology.cpp triarls.cpp validate.cpp zrefine.cpp bcfunctions.cpp   \
- 	parallelmesh.cpp  paralleltop.cpp  paralleltop.hpp basegeom.cpp 
- 
--libmesh_la_LIBADD =  $(top_builddir)/libsrc/linalg/libla.la \
--	$(top_builddir)/libsrc/gprim/libgprim.la \
--	$(top_builddir)/libsrc/general/libgen.la \
--	-lz
-+libmesh_la_LIBADD = -lz
- 
-diff -Naur netgen-5.3.1_orig/libsrc/occ/Makefile.am netgen-5.3.1_new/libsrc/occ/Makefile.am
---- netgen-5.3.1_orig/libsrc/occ/Makefile.am	2014-08-29 13:54:03.000000000 +0400
-+++ netgen-5.3.1_new/libsrc/occ/Makefile.am	2016-11-08 17:30:53.000000000 +0300
-@@ -14,10 +14,10 @@
- 
- METASOURCES = AUTO
- 
--lib_LTLIBRARIES = libocc.la
-+noinst_LTLIBRARIES = libocc.la
- 
- if NGGUI
--lib_LTLIBRARIES += liboccvis.la 
-+lib_LTLIBRARIES = liboccvis.la 
- endif
- 
- 
-diff -Naur netgen-5.3.1_orig/libsrc/stlgeom/Makefile.am netgen-5.3.1_new/libsrc/stlgeom/Makefile.am
---- netgen-5.3.1_orig/libsrc/stlgeom/Makefile.am	2014-08-29 13:54:05.000000000 +0400
-+++ netgen-5.3.1_new/libsrc/stlgeom/Makefile.am	2016-11-08 18:28:09.000000000 +0300
+diff -Naur netgen-5.3.1_SRC_orig/libsrc/stlgeom/Makefile.am netgen-5.3.1_SRC_modif/libsrc/stlgeom/Makefile.am
+--- netgen-5.3.1_SRC_orig/libsrc/stlgeom/Makefile.am	2014-08-29 13:54:05.000000000 +0400
++++ netgen-5.3.1_SRC_modif/libsrc/stlgeom/Makefile.am	2017-09-11 18:08:21.235311757 +0300
 @@ -4,10 +4,10 @@
  AM_CPPFLAGS = -I$(top_srcdir)/libsrc/include $(TCL_INCLUDES)
  METASOURCES = AUTO
@@ -1440,9 +1503,9 @@ diff -Naur netgen-5.3.1_orig/libsrc/stlgeom/Makefile.am netgen-5.3.1_new/libsrc/
 -libstl_la_LIBADD =  $(top_builddir)/libsrc/meshing/libmesh.la
  # libstlvis_la_LIBADD = libstl.la $(top_builddir)/libsrc/linalg/libla.la 
  
-diff -Naur netgen-5.3.1_orig/nglib/Makefile.am netgen-5.3.1_new/nglib/Makefile.am
---- netgen-5.3.1_orig/nglib/Makefile.am	2014-08-29 13:54:00.000000000 +0400
-+++ netgen-5.3.1_new/nglib/Makefile.am	2016-11-08 19:01:17.000000000 +0300
+diff -Naur netgen-5.3.1_SRC_orig/nglib/Makefile.am netgen-5.3.1_SRC_modif/nglib/Makefile.am
+--- netgen-5.3.1_SRC_orig/nglib/Makefile.am	2014-08-29 13:54:00.000000000 +0400
++++ netgen-5.3.1_SRC_modif/nglib/Makefile.am	2017-09-11 18:08:21.235311757 +0300
 @@ -14,6 +14,9 @@
  	$(top_builddir)/libsrc/stlgeom/libstl.la \
  	$(top_builddir)/libsrc/occ/libocc.la \
@@ -1453,3 +1516,15 @@ diff -Naur netgen-5.3.1_orig/nglib/Makefile.am netgen-5.3.1_new/nglib/Makefile.a
  	$(OCCLIBS) $(MPI_LIBS)
  
  libnglib_la_LDFLAGS = -avoid-version
+diff -Naur netgen-5.3.1_SRC_orig/nglib/nglib.h netgen-5.3.1_SRC_modif/nglib/nglib.h
+--- netgen-5.3.1_SRC_orig/nglib/nglib.h	2014-08-29 13:54:00.000000000 +0400
++++ netgen-5.3.1_SRC_modif/nglib/nglib.h	2017-09-11 18:08:21.233311974 +0300
+@@ -24,7 +24,7 @@
+ // Philippose - 14.02.2009
+ // Modifications for creating a DLL in Windows
+ #ifdef WIN32
+-   #ifdef NGLIB_EXPORTS || nglib_EXPORTS
++   #if defined NGLIB_EXPORTS || defined nglib_EXPORTS
+       #define DLL_HEADER   __declspec(dllexport)
+    #else
+       #define DLL_HEADER   __declspec(dllimport)

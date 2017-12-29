@@ -44,11 +44,11 @@ class QTableWidget;
 
 typedef struct
 {
-  double              myMaxSize, myMinSize, myGrowthRate, myNbSegPerEdge, myNbSegPerRadius;
-  int                 myFineness;
-  bool                mySecondOrder, myAllowQuadrangles, myOptimize, mySurfaceCurvature, myFuseEdges;
-  QString             myName, myMeshSizeFile;
-  QString             myMaxSizeVar, myMinSizeVar, myGrowthRateVar, myNbSegPerEdgeVar, myNbSegPerRadiusVar;
+  double  myMaxSize, myMinSize, myGrowthRate, myNbSegPerEdge, myNbSegPerRadius, myRidgeAngle, myChordalError;
+  int     myFineness;
+  bool    mySecondOrder, myAllowQuadrangles, myOptimize, mySurfaceCurvature, myFuseEdges, myChordalErrorEnabled;
+  QString myName, myMeshSizeFile;
+  QString myMaxSizeVar, myMinSizeVar, myGrowthRateVar, myNbSegPerEdgeVar, myNbSegPerRadiusVar, myRidgeAngleVar, myChordalErrorVar;
 } NetgenHypothesisData;
 
 /*!
@@ -76,6 +76,7 @@ protected:
 
 protected slots:
   virtual void     onFinenessChanged();
+  virtual void     onChordalErrorEnabled();
   virtual void     onSurfaceCurvatureChanged();
   virtual void     onAddLocalSizeOnVertex();
   virtual void     onAddLocalSizeOnEdge();
@@ -102,12 +103,15 @@ private:
  SMESHGUI_SpinBox* myGrowthRate;
  SMESHGUI_SpinBox* myNbSegPerEdge;
  SMESHGUI_SpinBox* myNbSegPerRadius;
+ SMESHGUI_SpinBox* myRidgeAngle;
+ QCheckBox*        myChordalErrorEnabled;
+ SMESHGUI_SpinBox* myChordalError;
  QCheckBox*        myAllowQuadrangles;
  QCheckBox*        mySurfaceCurvature;
  QCheckBox*        myFuseEdges;
 
- bool myIs2D;
- bool myIsONLY;
+ bool myIs2D;   // 2D or 3D
+ bool myIsONLY; // one dim or several
 
  QLineEdit*             myMeshSizeFile;
  QTableWidget*          myLocalSizeTable;

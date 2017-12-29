@@ -31,11 +31,6 @@
 #include "SMESH_Gen.hxx"
 #include "SMESH_PythonDump.hxx"
 
-#include "Utils_CorbaException.hxx"
-#include "utilities.h"
-
-using namespace std;
-
 //=============================================================================
 /*!
  *  NETGENPlugin_Hypothesis_2D_i::NETGENPlugin_Hypothesis_2D_i
@@ -69,36 +64,6 @@ NETGENPlugin_Hypothesis_2D_i::~NETGENPlugin_Hypothesis_2D_i()
 
 //=============================================================================
 /*!
- *  NETGENPlugin_Hypothesis_2D_i::SetQuadAllowed
- *
- *  Set QuadAllowed flag
- */
-//=============================================================================
-// void NETGENPlugin_Hypothesis_2D_i::SetQuadAllowed (CORBA::Boolean theValue)
-// {
-//   if ( NETGENPlugin_Hypothesis_i::isToSetParameter( GetQuadAllowed(),
-//                                                     theValue,
-//                                                     METH_SetQuadAllowed ))
-//   {
-//     this->GetImpl()->SetQuadAllowed(theValue);
-//     SMESH::TPythonDump() << _this() << ".SetQuadAllowed( " << theValue << " )";
-//   }
-// }
-
-//=============================================================================
-/*!
- *  NETGENPlugin_Hypothesis_2D_i::GetQuadAllowed
- *
- *  Get QuadAllowed flag
- */
-//=============================================================================
-// CORBA::Boolean NETGENPlugin_Hypothesis_2D_i::GetQuadAllowed()
-// {
-//   return this->GetImpl()->GetQuadAllowed();
-// }
-
-//=============================================================================
-/*!
  *  NETGENPlugin_Hypothesis_2D_i::GetImpl
  *
  *  Get implementation
@@ -121,4 +86,73 @@ NETGENPlugin_Hypothesis_2D_i::~NETGENPlugin_Hypothesis_2D_i()
 CORBA::Boolean NETGENPlugin_Hypothesis_2D_i::IsDimSupported( SMESH::Dimension type )
 {
   return type == SMESH::DIM_2D;
+}
+
+
+//=============================================================================
+/*!
+ *  NETGENPlugin_RemesherHypothesis_2D_i::NETGENPlugin_RemesherHypothesis_2D_i
+ *
+ *  Constructor
+ */
+//=============================================================================
+NETGENPlugin_RemesherHypothesis_2D_i::
+NETGENPlugin_RemesherHypothesis_2D_i (PortableServer::POA_ptr thePOA,
+                                      ::SMESH_Gen*            theGenImpl)
+  : SALOME::GenericObj_i( thePOA ),
+    SMESH_Hypothesis_i( thePOA ),
+    NETGENPlugin_Hypothesis_2D_i( thePOA, theGenImpl )
+{
+  myBaseImpl = new ::NETGENPlugin_RemesherHypothesis_2D (theGenImpl->GetANewId(),
+                                                         theGenImpl);
+}
+
+//================================================================================
+/*!
+ * \brief Verify whether hypothesis supports given entity type
+ * \param type - dimension (see SMESH::Dimension enumeration)
+ * \retval CORBA::Boolean - TRUE if dimension is supported, FALSE otherwise
+ *
+ * Verify whether hypothesis supports given entity type (see SMESH::Dimension enumeration)
+ */
+//================================================================================
+CORBA::Boolean NETGENPlugin_RemesherHypothesis_2D_i::IsDimSupported( SMESH::Dimension type )
+{
+  return type == SMESH::DIM_2D;
+}
+
+//=============================================================================
+/*!
+ *  NETGENPlugin_RemesherHypothesis_2D_i::GetImpl
+ *
+ *  Get implementation
+ */
+//=============================================================================
+::NETGENPlugin_RemesherHypothesis_2D* NETGENPlugin_RemesherHypothesis_2D_i::GetImpl()
+{
+  return (::NETGENPlugin_RemesherHypothesis_2D*)myBaseImpl;
+}
+
+//================================================================================
+/*!
+ * \brief Set ridge angle
+ */
+//================================================================================
+
+void NETGENPlugin_RemesherHypothesis_2D_i::SetRidgeAngle( CORBA::Double angle )
+{
+  GetImpl()->SetRidgeAngle( angle );
+
+  SMESH::TPythonDump() << _this() << ".SetRidgeAngle( " << SMESH::TVar(angle) << " )";
+}
+
+//================================================================================
+/*!
+ * \brief Return ridge angle
+ */
+//================================================================================
+
+CORBA::Double NETGENPlugin_RemesherHypothesis_2D_i::GetRidgeAngle()
+{
+  return GetImpl()->GetRidgeAngle();
 }

@@ -92,9 +92,11 @@ NETGENPluginGUI_HypothesisCreator::NETGENPluginGUI_HypothesisCreator( const QStr
 {
   myGeomSelectionTools = NULL;
   myLocalSizeMap.clear();
-  myIs2D   = ( theHypType.startsWith("NETGEN_Parameters_2D"));
+  myIs2D   = ( theHypType.startsWith("NETGEN_Parameters_2D") ||
+               theHypType == "NETGEN_RemesherParameters_2D");
   myIsONLY = ( theHypType == "NETGEN_Parameters_2D_ONLY" ||
-               theHypType == "NETGEN_Parameters_3D");
+               theHypType == "NETGEN_Parameters_3D" ||
+               theHypType == "NETGEN_RemesherParameters_2D");
 }
 
 NETGENPluginGUI_HypothesisCreator::~NETGENPluginGUI_HypothesisCreator()
@@ -116,6 +118,8 @@ bool NETGENPluginGUI_HypothesisCreator::checkParams(QString& msg) const
     res = myNbSegPerEdge->isValid(msg,true) && res;
   if ( myNbSegPerRadius )
     res = myNbSegPerRadius->isValid(msg,true) && res;
+  if ( myRidgeAngle )
+    res = myRidgeAngle->isValid(msg,true) && res;
 
   if ( !res ) //  -- issue 0021364: Dump of netgen parameters has duplicate lines
     storeParamsToHypo( data_old );
@@ -125,6 +129,8 @@ bool NETGENPluginGUI_HypothesisCreator::checkParams(QString& msg) const
 
 QFrame* NETGENPluginGUI_HypothesisCreator::buildFrame()
 {
+  const bool isRemesher = ( hypType() == "NETGEN_RemesherParameters_2D" );
+
   QFrame* fr = new QFrame( 0 );
   fr->setObjectName( "myframe" );
   QVBoxLayout* lay = new QVBoxLayout( fr );
@@ -177,7 +183,7 @@ QFrame* NETGENPluginGUI_HypothesisCreator::buildFrame()
   myFineness = new QComboBox( GroupC1 );
   QStringList types;
   types << tr( "NETGEN_VERYCOARSE" ) << tr( "NETGEN_COARSE" )   << tr( "NETGEN_MODERATE" ) <<
-           tr( "NETGEN_FINE" )       << tr( "NETGEN_VERYFINE" ) << tr( "NETGEN_CUSTOM" );
+    tr( "NETGEN_FINE" )       << tr( "NETGEN_VERYFINE" ) << tr( "NETGEN_CUSTOM" );
   myFineness->addItems( types );
   aGroupLayout->addWidget( myFineness, row, 1 );
   connect( myFineness, SIGNAL( activated( int ) ), this, SLOT( onFinenessChanged() ) );
@@ -208,8 +214,31 @@ QFrame* NETGENPluginGUI_HypothesisCreator::buildFrame()
     row++;
   }
 
+  myChordalErrorEnabled = 0;
+  myChordalError = 0;
+  if (( myIs2D && !isRemesher ) || !myIsONLY )
+  {
+    myChordalErrorEnabled = new QCheckBox( tr( "NETGEN_CHORDAL_ERROR" ), GroupC1 );
+    aGroupLayout->addWidget( myChordalErrorEnabled, row, 0 );
+    myChordalError = new SMESHGUI_SpinBox( GroupC1 );
+    myChordalError->RangeStepAndValidator( COORD_MIN, COORD_MAX, .1, "length_precision" );
+    aGroupLayout->addWidget( myChordalError, row, 1 );
+    connect( myChordalErrorEnabled, SIGNAL( stateChanged(int)), SLOT( onChordalErrorEnabled()));
+    row++;
+  }
+
+  myRidgeAngle = 0;
+  if ( isRemesher )
+  {
+    aGroupLayout->addWidget( new QLabel( tr( "NETGEN_RIDGE_ANGLE" ), GroupC1 ), row, 0 );
+    myRidgeAngle = new SMESHGUI_SpinBox( GroupC1 );
+    myRidgeAngle->RangeStepAndValidator( 0, 90, 10, "angle_precision" );
+    aGroupLayout->addWidget( myRidgeAngle, row, 1 );
+    row++;
+  }
+
   mySurfaceCurvature = 0;
-  if ( myIs2D || !myIsONLY )
+  if (( myIs2D && !isRemesher ) || !myIsONLY )
   {
     mySurfaceCurvature = new QCheckBox( tr( "NETGEN_SURFACE_CURVATURE" ), GroupC1 );
     aGroupLayout->addWidget( mySurfaceCurvature, row, 0, 1, 2 );
@@ -225,12 +254,16 @@ QFrame* NETGENPluginGUI_HypothesisCreator::buildFrame()
     row++;
   }
 
-  myOptimize = new QCheckBox( tr( "NETGEN_OPTIMIZE" ), GroupC1 );
-  aGroupLayout->addWidget( myOptimize, row, 0, 1, 2 );
-  row++;
+  myOptimize = 0;
+  if ( !isRemesher )
+  {
+    myOptimize = new QCheckBox( tr( "NETGEN_OPTIMIZE" ), GroupC1 );
+    aGroupLayout->addWidget( myOptimize, row, 0, 1, 2 );
+    row++;
+  }
 
   myFuseEdges = 0;
-  if (!myIsONLY)
+  if ( !myIsONLY )
   {
     myFuseEdges = new QCheckBox( tr( "NETGEN_FUSE_EDGES" ), GroupC1 );
     aGroupLayout->addWidget( myFuseEdges, row, 0, 1, 2 );
@@ -337,6 +370,22 @@ void NETGENPluginGUI_HypothesisCreator::retrieveParams() const
     else
       myNbSegPerRadius->setText( data.myNbSegPerRadiusVar );
   }
+  if ( myChordalError )
+  {
+    myChordalErrorEnabled->setChecked( data.myChordalErrorEnabled && data.myChordalError > 0 );
+    if(data.myChordalErrorVar.isEmpty())
+      myChordalError->setValue( data.myChordalError > 0 ? data.myChordalError : 0.1 );
+    else
+      myChordalError->setText( data.myChordalErrorVar );
+    myChordalError->setEnabled( myChordalErrorEnabled->isChecked() );
+  }
+  if ( myRidgeAngle )
+  {
+    if ( data.myRidgeAngleVar.isEmpty() )
+      myRidgeAngle->setValue( data.myRidgeAngle );
+    else
+      myRidgeAngle->setText( data.myRidgeAngleVar );
+  }
   if (myAllowQuadrangles)
     myAllowQuadrangles->setChecked( data.myAllowQuadrangles );
 
@@ -381,26 +430,26 @@ QString NETGENPluginGUI_HypothesisCreator::storeParams() const
   readParamsFromWidgets( data );
   storeParamsToHypo( data );
 
-  QString valStr = tr("NETGEN_MAX_SIZE") + " = " + QString::number( data.myMaxSize ) + "; ";
-  valStr += tr("NETGEN_MIN_SIZE") + " = " + QString::number( data.myMinSize ) + "; ";
-  if ( data.mySecondOrder )
-    valStr +=  tr("NETGEN_SECOND_ORDER") + "; ";
-  if ( data.myOptimize )
-    valStr +=  tr("NETGEN_OPTIMIZE") + "; ";
-  valStr += myFineness->currentText() + "(" +  QString::number( data.myGrowthRate )     + ", " +
-    QString::number( data.myNbSegPerEdge )   + ", " +
-    QString::number( data.myNbSegPerRadius ) + ")";
+  // QString valStr = tr("NETGEN_MAX_SIZE") + " = " + QString::number( data.myMaxSize ) + "; ";
+  // valStr += tr("NETGEN_MIN_SIZE") + " = " + QString::number( data.myMinSize ) + "; ";
+  // if ( data.mySecondOrder )
+  //   valStr +=  tr("NETGEN_SECOND_ORDER") + "; ";
+  // if ( data.myOptimize )
+  //   valStr +=  tr("NETGEN_OPTIMIZE") + "; ";
+  // valStr += myFineness->currentText() + "(" +  QString::number( data.myGrowthRate )     + ", " +
+  //   QString::number( data.myNbSegPerEdge )   + ", " +
+  //   QString::number( data.myNbSegPerRadius ) + ")";
 
-  if ( myIs2D && data.myAllowQuadrangles )
-    valStr += "; " + tr("NETGEN_ALLOW_QUADRANGLES");
+  // if ( myIs2D && data.myAllowQuadrangles )
+  //   valStr += "; " + tr("NETGEN_ALLOW_QUADRANGLES");
 
-  if ( data.mySurfaceCurvature )
-    valStr += "; " + tr("NETGEN_SURFACE_CURVATURE");
+  // if ( data.mySurfaceCurvature )
+  //   valStr += "; " + tr("NETGEN_SURFACE_CURVATURE");
 
-  if ( data.myFuseEdges )
-    valStr += "; " + tr("NETGEN_FUSE_EDGES");
+  // if ( data.myFuseEdges )
+  //   valStr += "; " + tr("NETGEN_FUSE_EDGES");
 
-  return valStr;
+  return QString();
 }
 
 bool NETGENPluginGUI_HypothesisCreator::readParamsFromHypo( NetgenHypothesisData& h_data ) const
@@ -408,34 +457,44 @@ bool NETGENPluginGUI_HypothesisCreator::readParamsFromHypo( NetgenHypothesisData
   NETGENPlugin::NETGENPlugin_Hypothesis_var h =
     NETGENPlugin::NETGENPlugin_Hypothesis::_narrow( initParamsHypothesis() );
 
-  //HypothesisData* data = SMESH::GetHypothesisData( hypType() );
   h_data.myName = isCreation() ? hypName() : "";
 
-  h_data.myMaxSize = h->GetMaxSize();
-  h_data.myMaxSizeVar = getVariableName("SetMaxSize");
+  h_data.myMaxSize     = h->GetMaxSize();
+  h_data.myMaxSizeVar  = getVariableName("SetMaxSize");
   h_data.mySecondOrder = h->GetSecondOrder();
-  h_data.myOptimize = h->GetOptimize();
+  h_data.myOptimize    = h->GetOptimize();
 
-  h_data.myFineness = (int) h->GetFineness();
-  h_data.myGrowthRate = h->GetGrowthRate();
-  h_data.myGrowthRateVar = getVariableName("SetGrowthRate");
-  h_data.myNbSegPerEdge = h->GetNbSegPerEdge();
-  h_data.myNbSegPerEdgeVar  = getVariableName("SetNbSegPerEdge");
-  h_data.myNbSegPerRadius = h->GetNbSegPerRadius();
-  h_data.myNbSegPerRadiusVar = getVariableName("SetNbSegPerRadius");
-  h_data.myMinSize = h->GetMinSize();
-  h_data.myMinSizeVar = getVariableName("SetMinSize");
-  h_data.mySurfaceCurvature = h->GetUseSurfaceCurvature();
-  h_data.myFuseEdges = h->GetFuseEdges();
-  h_data.myMeshSizeFile = h->GetMeshSizeFile();
+  h_data.myFineness            = (int) h->GetFineness();
+  h_data.myGrowthRate          = h->GetGrowthRate();
+  h_data.myGrowthRateVar       = getVariableName("SetGrowthRate");
+  h_data.myNbSegPerEdge        = h->GetNbSegPerEdge();
+  h_data.myNbSegPerEdgeVar     = getVariableName("SetNbSegPerEdge");
+  h_data.myNbSegPerRadius      = h->GetNbSegPerRadius();
+  h_data.myNbSegPerRadiusVar   = getVariableName("SetNbSegPerRadius");
+  h_data.myChordalError        = h->GetChordalError();
+  h_data.myChordalErrorVar     = getVariableName("SetChordalError");
+  h_data.myChordalErrorEnabled = h->GetChordalErrorEnabled();
+  h_data.myMinSize             = h->GetMinSize();
+  h_data.myMinSizeVar          = getVariableName("SetMinSize");
+  h_data.mySurfaceCurvature    = h->GetUseSurfaceCurvature();
+  h_data.myFuseEdges           = h->GetFuseEdges();
+  h_data.myMeshSizeFile        = h->GetMeshSizeFile();
 
   //if ( myIs2D )
   {
-    NETGENPlugin::NETGENPlugin_Hypothesis_var h =
-      NETGENPlugin::NETGENPlugin_Hypothesis::_narrow( initParamsHypothesis() );
+    // NETGENPlugin::NETGENPlugin_Hypothesis_var h =
+    //   NETGENPlugin::NETGENPlugin_Hypothesis::_narrow( initParamsHypothesis() );
 
     if ( !h->_is_nil() )
       h_data.myAllowQuadrangles = h->GetQuadAllowed();
+  }
+  if ( myIs2D )
+  {
+    NETGENPlugin::NETGENPlugin_RemesherHypothesis_2D_var rh =
+      NETGENPlugin::NETGENPlugin_RemesherHypothesis_2D::_narrow( h );
+
+    if ( !rh->_is_nil() )
+      h_data.myRidgeAngle = rh->GetRidgeAngle();
   }
 
   NETGENPluginGUI_HypothesisCreator*  that = (NETGENPluginGUI_HypothesisCreator*)this;
@@ -472,8 +531,10 @@ bool NETGENPluginGUI_HypothesisCreator::storeParamsToHypo( const NetgenHypothesi
       SMESH::SetName( SMESH::FindSObject( h ), h_data.myName.toLatin1().data() );
     h->SetVarParameter( h_data.myMaxSizeVar.toLatin1().constData(), "SetMaxSize");
     h->SetMaxSize     ( h_data.myMaxSize );
-    h->SetSecondOrder ( h_data.mySecondOrder );
-    h->SetOptimize    ( h_data.myOptimize );
+    if ( mySecondOrder )
+      h->SetSecondOrder ( h_data.mySecondOrder );
+    if ( myOptimize )
+      h->SetOptimize    ( h_data.myOptimize );
     int fineness = h_data.myFineness;
     h->SetFineness    ( fineness );
 
@@ -481,31 +542,53 @@ bool NETGENPluginGUI_HypothesisCreator::storeParamsToHypo( const NetgenHypothesi
     {
       h->SetVarParameter  ( h_data.myGrowthRateVar.toLatin1().constData(), "SetGrowthRate");
       h->SetGrowthRate    ( h_data.myGrowthRate );
-      h->SetVarParameter  ( h_data.myNbSegPerEdgeVar.toLatin1().constData(), "SetNbSegPerEdge");
-      h->SetNbSegPerEdge  ( h_data.myNbSegPerEdge );
-      h->SetVarParameter  ( h_data.myNbSegPerRadiusVar.toLatin1().constData(), "SetNbSegPerRadius");
-      h->SetNbSegPerRadius( h_data.myNbSegPerRadius );
+      if ( myNbSegPerEdge )
+      {
+        h->SetVarParameter  ( h_data.myNbSegPerEdgeVar.toLatin1().constData(), "SetNbSegPerEdge");
+        h->SetNbSegPerEdge  ( h_data.myNbSegPerEdge );
+      }
+      if ( myNbSegPerRadius )
+      {
+        h->SetVarParameter  ( h_data.myNbSegPerRadiusVar.toLatin1().constData(), "SetNbSegPerRadius");
+        h->SetNbSegPerRadius( h_data.myNbSegPerRadius );
+      }
+    }
+    if ( myChordalError )
+    {
+      h->SetVarParameter       ( h_data.myChordalErrorVar.toLatin1().constData(), "SetChordalError");
+      h->SetChordalError       ( h_data.myChordalError );
+      h->SetChordalErrorEnabled( h_data.myChordalErrorEnabled );
     }
     h->SetVarParameter       ( h_data.myMinSizeVar.toLatin1().constData(), "SetMinSize");
     h->SetMinSize            ( h_data.myMinSize );
-    h->SetUseSurfaceCurvature( h_data.mySurfaceCurvature );
-    h->SetFuseEdges          ( h_data.myFuseEdges );
+    if ( mySurfaceCurvature )
+      h->SetUseSurfaceCurvature( h_data.mySurfaceCurvature );
+    if ( myFuseEdges )
+      h->SetFuseEdges          ( h_data.myFuseEdges );
     h->SetMeshSizeFile       ( h_data.myMeshSizeFile.toUtf8().constData() );
 
     //if ( myIs2D )
     {
       // NETGENPlugin::NETGENPlugin_Hypothesis_2D_var h_2d =
       //   NETGENPlugin::NETGENPlugin_Hypothesis_2D::_narrow( h );
-
       // if ( !h_2d->_is_nil() )
       //   h_2d->SetQuadAllowed( h_data.myAllowQuadrangles );
-      h->SetQuadAllowed( h_data.myAllowQuadrangles );
+      if ( myAllowQuadrangles )
+        h->SetQuadAllowed( h_data.myAllowQuadrangles );
     }
-
-    QMapIterator<QString,QString> i(myLocalSizeMap);
-    while (i.hasNext()) {
-      i.next();
-      const QString entry = i.key();
+    if ( myIs2D )
+    {
+      NETGENPlugin::NETGENPlugin_RemesherHypothesis_2D_var rh =
+        NETGENPlugin::NETGENPlugin_RemesherHypothesis_2D::_narrow( h );
+      if ( !rh->_is_nil() )
+      {
+        rh->SetVarParameter( h_data.myRidgeAngleVar.toLatin1().constData(), "SetRidgeAngle");
+        rh->SetRidgeAngle  ( h_data.myRidgeAngle );
+      }
+    }
+    for ( QMapIterator<QString,QString> i(myLocalSizeMap); i.hasNext(); i.next() )
+    {
+      const QString     entry = i.key();
       const QString localSize = i.value();
       if (localSize == "__TO_DELETE__")
       {
@@ -513,10 +596,7 @@ bool NETGENPluginGUI_HypothesisCreator::storeParamsToHypo( const NetgenHypothesi
       }
       else
       {
-        std::istringstream tmp(localSize.toLatin1().constData());
-        double val;
-        tmp >> val;
-        h->SetLocalSizeOnEntry(entry.toLatin1().constData(), val);
+        h->SetLocalSizeOnEntry(entry.toLatin1().constData(), localSize.toDouble());
       }
     }
   }
@@ -551,8 +631,18 @@ bool NETGENPluginGUI_HypothesisCreator::readParamsFromWidgets( NetgenHypothesisD
     h_data.myNbSegPerEdgeVar = myNbSegPerEdge->text();
   if ( myNbSegPerRadius )
     h_data.myNbSegPerRadiusVar = myNbSegPerRadius->text();
+  if ( myChordalError )
+  {
+    h_data.myChordalErrorVar = myChordalError->text();
+    h_data.myChordalError    = myChordalError->value();
+    h_data.myChordalErrorEnabled = myChordalError->isEnabled();
+  }
+  if ( myRidgeAngle )
+  {
+    h_data.myRidgeAngleVar = myRidgeAngle->text();
+    h_data.myRidgeAngle    = myRidgeAngle->value();
+  }
 
-  
   if ( myAllowQuadrangles )
     h_data.myAllowQuadrangles = myAllowQuadrangles->isChecked();
 
@@ -577,6 +667,11 @@ bool NETGENPluginGUI_HypothesisCreator::readParamsFromWidgets( NetgenHypothesisD
   return true;
 }
 
+void NETGENPluginGUI_HypothesisCreator::onChordalErrorEnabled()
+{
+  myChordalError->setEnabled( myChordalErrorEnabled->isChecked() );
+}
+
 void NETGENPluginGUI_HypothesisCreator::onSurfaceCurvatureChanged()
 {
   bool isSurfaceCurvature = (mySurfaceCurvature ? mySurfaceCurvature->isChecked() : true);
@@ -587,12 +682,17 @@ void NETGENPluginGUI_HypothesisCreator::onSurfaceCurvatureChanged()
     myNbSegPerEdge->setEnabled(isCustom && isSurfaceCurvature);
   if ( myNbSegPerRadius )
     myNbSegPerRadius->setEnabled(isCustom && isSurfaceCurvature);
+  // if ( myChordalError )
+  // {
+  //   myChordalError->setEnabled( isSurfaceCurvature );
+  //   myChordalErrorEnabled->setEnabled( isSurfaceCurvature );
+  // }
 }
 
 void NETGENPluginGUI_HypothesisCreator::onFinenessChanged()
 {
   bool isCustom = (myFineness->currentIndex() == UserDefined);
-  
+
   myGrowthRate->setEnabled(isCustom);
   if ( myNbSegPerEdge )
     myNbSegPerEdge->setEnabled(isCustom);
@@ -600,45 +700,45 @@ void NETGENPluginGUI_HypothesisCreator::onFinenessChanged()
     myNbSegPerRadius->setEnabled(isCustom);
 
   if (!isCustom)
+  {
+    double aGrowthRate, aNbSegPerEdge, aNbSegPerRadius;
+
+    switch ( myFineness->currentIndex() )
     {
-      double aGrowthRate, aNbSegPerEdge, aNbSegPerRadius;
-      
-      switch ( myFineness->currentIndex() )
-        {
-        case VeryCoarse:
-          aGrowthRate = 0.7;
-          aNbSegPerEdge = 0.3;
-          aNbSegPerRadius = 1;
-          break;
-        case Coarse:
-          aGrowthRate = 0.5;
-          aNbSegPerEdge = 0.5;
-          aNbSegPerRadius = 1.5;
-          break;
-        case Fine:
-          aGrowthRate = 0.2;
-          aNbSegPerEdge = 2;
-          aNbSegPerRadius = 3;
-          break;
-        case VeryFine:
-          aGrowthRate = 0.1;
-          aNbSegPerEdge = 3;
-          aNbSegPerRadius = 5;
-          break;
-        case Moderate:
-        default:
-          aGrowthRate = 0.3;
-          aNbSegPerEdge = 1;
-          aNbSegPerRadius = 2;
-          break;
-        }
-      
-      myGrowthRate->setValue( aGrowthRate );
-      if ( myNbSegPerEdge )
-        myNbSegPerEdge->setValue( aNbSegPerEdge );
-      if ( myNbSegPerRadius )
-        myNbSegPerRadius->setValue( aNbSegPerRadius );
+    case VeryCoarse:
+      aGrowthRate     = 0.7;
+      aNbSegPerEdge   = 0.3;
+      aNbSegPerRadius = 1;
+      break;
+    case Coarse:
+      aGrowthRate     = 0.5;
+      aNbSegPerEdge   = 0.5;
+      aNbSegPerRadius = 1.5;
+      break;
+    case Fine:
+      aGrowthRate     = 0.2;
+      aNbSegPerEdge   = 2;
+      aNbSegPerRadius = 3;
+      break;
+    case VeryFine:
+      aGrowthRate     = 0.1;
+      aNbSegPerEdge   = 3;
+      aNbSegPerRadius = 5;
+      break;
+    case Moderate:
+    default:
+      aGrowthRate     = 0.3;
+      aNbSegPerEdge   = 1;
+      aNbSegPerRadius = 2;
+      break;
     }
+
+    myGrowthRate->setValue( aGrowthRate );
+    if ( myNbSegPerEdge )
+      myNbSegPerEdge->setValue( aNbSegPerEdge );
+    if ( myNbSegPerRadius )
+      myNbSegPerRadius->setValue( aNbSegPerRadius );
+  }
 }
 
 void NETGENPluginGUI_HypothesisCreator::onAddLocalSizeOnVertex()
@@ -670,54 +770,54 @@ void NETGENPluginGUI_HypothesisCreator::addLocalSizeOnShape(TopAbs_ShapeEnum typ
   mySel->selectedObjects(ListSelectedObjects, NULL, false );
   SALOME_ListIteratorOfListIO Object_It(ListSelectedObjects);
   for ( ; Object_It.More() ; Object_It.Next())
+  {
+    Handle(SALOME_InteractiveObject) anObject = Object_It.Value();
+    std::string entry, shapeName;
+    entry = geomSelectionTools->getEntryOfObject(anObject);
+    shapeName = anObject->getName();
+    TopAbs_ShapeEnum shapeType;
+    shapeType = geomSelectionTools->entryToShapeType(entry);
+    if (shapeType == TopAbs_SHAPE)
     {
-      Handle(SALOME_InteractiveObject) anObject = Object_It.Value();
-      std::string entry, shapeName;
-      entry = geomSelectionTools->getEntryOfObject(anObject);
-      shapeName = anObject->getName();
-      TopAbs_ShapeEnum shapeType;
-      shapeType = geomSelectionTools->entryToShapeType(entry);
-      if (shapeType == TopAbs_SHAPE)
-        {
-          // E.A. if shapeType == TopAbs_SHAPE, it is NOT a TopoDS_Shape !!!
-          continue;
-        }
-      // --
-      if(shapeType != typeShapeAsked)
-        {
-          continue;
-        }
-      // --
-      myLocalSizeTable->setFocus();
-      QString shapeEntry;
-      shapeEntry = QString::fromStdString(entry);
-      if (myLocalSizeMap.contains(shapeEntry))
-        {
-          if (myLocalSizeMap[shapeEntry] != "__TO_DELETE__")
-            {
-              continue;
-            }
-        }
-      double phySize = h->GetMaxSize();
-      std::ostringstream oss;
-      oss << phySize;
-      QString localSize;
-      localSize  = QString::fromStdString(oss.str());
-      // --
-      int row = myLocalSizeTable->rowCount() ;
-      myLocalSizeTable->setRowCount(row+1);
-      myLocalSizeTable->setItem(row, LSZ_ENTRY_COLUMN, new QTableWidgetItem(shapeEntry));
-      myLocalSizeTable->item(row, LSZ_ENTRY_COLUMN )->setFlags(0);
-      myLocalSizeTable->setItem(row, LSZ_NAME_COLUMN, new QTableWidgetItem(QString::fromStdString(shapeName)));
-      myLocalSizeTable->item(row, LSZ_NAME_COLUMN )->setFlags(0);
-      myLocalSizeTable->setItem(row, LSZ_LOCALSIZE_COLUMN, new QTableWidgetItem(localSize));
-      myLocalSizeTable->item(row, LSZ_LOCALSIZE_COLUMN )->setFlags(Qt::ItemIsSelectable|Qt::ItemIsEditable|Qt::ItemIsEnabled);
-      myLocalSizeTable->resizeColumnToContents(LSZ_NAME_COLUMN);
-      myLocalSizeTable->resizeColumnToContents(LSZ_LOCALSIZE_COLUMN);
-      myLocalSizeTable->clearSelection();
-      myLocalSizeTable->scrollToItem( myLocalSizeTable->item( row, LSZ_LOCALSIZE_COLUMN ) );
-      // --
+      // E.A. if shapeType == TopAbs_SHAPE, it is NOT a TopoDS_Shape !!!
+      continue;
     }
+    // --
+    if(shapeType != typeShapeAsked)
+    {
+      continue;
+    }
+    // --
+    myLocalSizeTable->setFocus();
+    QString shapeEntry;
+    shapeEntry = QString::fromStdString(entry);
+    if (myLocalSizeMap.contains(shapeEntry))
+    {
+      if (myLocalSizeMap[shapeEntry] != "__TO_DELETE__")
+      {
+        continue;
+      }
+    }
+    double phySize = h->GetMaxSize();
+    std::ostringstream oss;
+    oss << phySize;
+    QString localSize;
+    localSize  = QString::fromStdString(oss.str());
+    // --
+    int row = myLocalSizeTable->rowCount() ;
+    myLocalSizeTable->setRowCount(row+1);
+    myLocalSizeTable->setItem(row, LSZ_ENTRY_COLUMN, new QTableWidgetItem(shapeEntry));
+    myLocalSizeTable->item(row, LSZ_ENTRY_COLUMN )->setFlags(0);
+    myLocalSizeTable->setItem(row, LSZ_NAME_COLUMN, new QTableWidgetItem(QString::fromStdString(shapeName)));
+    myLocalSizeTable->item(row, LSZ_NAME_COLUMN )->setFlags(0);
+    myLocalSizeTable->setItem(row, LSZ_LOCALSIZE_COLUMN, new QTableWidgetItem(localSize));
+    myLocalSizeTable->item(row, LSZ_LOCALSIZE_COLUMN )->setFlags(Qt::ItemIsSelectable|Qt::ItemIsEditable|Qt::ItemIsEnabled);
+    myLocalSizeTable->resizeColumnToContents(LSZ_NAME_COLUMN);
+    myLocalSizeTable->resizeColumnToContents(LSZ_LOCALSIZE_COLUMN);
+    myLocalSizeTable->clearSelection();
+    myLocalSizeTable->scrollToItem( myLocalSizeTable->item( row, LSZ_LOCALSIZE_COLUMN ) );
+    // --
+  }
 }
 
 void NETGENPluginGUI_HypothesisCreator::onRemoveLocalSizeOnShape()
@@ -735,15 +835,15 @@ void NETGENPluginGUI_HypothesisCreator::onRemoveLocalSizeOnShape()
   QListIterator<int> it( selectedRows );
   it.toBack();
   while (it.hasPrevious())
+  {
+    row = it.previous();
+    QString entry = myLocalSizeTable->item(row,LSZ_ENTRY_COLUMN)->text();
+    if (myLocalSizeMap.contains(entry))
     {
-      row = it.previous();
-      QString entry = myLocalSizeTable->item(row,LSZ_ENTRY_COLUMN)->text();
-      if (myLocalSizeMap.contains(entry))
-        {
-          myLocalSizeMap[entry] = "__TO_DELETE__";
-        }
-      myLocalSizeTable->removeRow(row );
+      myLocalSizeMap[entry] = "__TO_DELETE__";
     }
+    myLocalSizeTable->removeRow(row );
+  }
   myLocalSizeTable->resizeColumnToContents(LSZ_NAME_COLUMN);
   myLocalSizeTable->resizeColumnToContents(LSZ_LOCALSIZE_COLUMN);
 }
@@ -776,18 +876,20 @@ GeomSelectionTools* NETGENPluginGUI_HypothesisCreator::getGeomSelectionTools()
 
 QString NETGENPluginGUI_HypothesisCreator::caption() const
 {
-  return tr( QString( "NETGEN_%1_TITLE" ).arg(myIs2D?QString("2D"):QString("3D")).toLatin1().data() );
+  return tr( myIs2D ? "NETGEN_2D_TITLE" : "NETGEN_3D_TITLE");
 }
 
 QPixmap NETGENPluginGUI_HypothesisCreator::icon() const
 {
-  QString hypIconName = tr( QString("ICON_DLG_NETGEN_PARAMETERS%1").arg(myIs2D?QString("_2D"):QString("")).toLatin1().data() );
+  QString hypIconName = tr( myIs2D ?
+                            "ICON_DLG_NETGEN_PARAMETERS_2D" :
+                            "ICON_DLG_NETGEN_PARAMETERS");
   return SUIT_Session::session()->resourceMgr()->loadPixmap( "NETGENPlugin", hypIconName );
 }
 
 QString NETGENPluginGUI_HypothesisCreator::type() const
 {
-  return tr( QString( "NETGEN_%1_HYPOTHESIS" ).arg(myIs2D?QString("2D"):QString("3D")).toLatin1().data() );
+  return tr( myIs2D ? "NETGEN_2D_HYPOTHESIS" : "NETGEN_3D_HYPOTHESIS");
 }
 
 QString NETGENPluginGUI_HypothesisCreator::helpPage() const

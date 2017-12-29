@@ -28,7 +28,6 @@
 //=============================================================================
 //
 #include "NETGENPlugin_Hypothesis_2D.hxx"
-#include <utilities.h>
 
 using namespace std;
 
@@ -51,56 +50,72 @@ NETGENPlugin_Hypothesis_2D::NETGENPlugin_Hypothesis_2D (int hypId,
  *  
  */
 //=============================================================================
-// void NETGENPlugin_Hypothesis_2D::SetQuadAllowed(bool theVal)
-// {
-//   if (theVal != _quadAllowed)
-//   {
-//     _quadAllowed = theVal;
-//     NotifySubMeshesHypothesisModification();
-//   }
-// }
+NETGENPlugin_RemesherHypothesis_2D::
+NETGENPlugin_RemesherHypothesis_2D (int hypId, SMESH_Gen * gen)
+  : NETGENPlugin_Hypothesis(hypId, gen)
+{
+  _name = "NETGEN_RemesherParameters_2D";
+  _param_algo_dim = 2;
 
-// //=============================================================================
-// /*!
-//  *  
-//  */
-// //=============================================================================
-// bool NETGENPlugin_Hypothesis_2D::GetDefaultQuadAllowed()
-// {
-//   return false;
-// }
+  _ridgeAngle = DefaultRidgeAngle();
+}
 
-// //=============================================================================
-// /*!
-//  *  
-//  */
-// //=============================================================================
-// ostream & NETGENPlugin_Hypothesis_2D::SaveTo(ostream & save)
-// {
-//   NETGENPlugin_Hypothesis::SaveTo(save);
+//=============================================================================
+/*!
+ *  
+ */
+//=============================================================================
 
-//   save << " " << (int)_quadAllowed;
+void NETGENPlugin_RemesherHypothesis_2D::SetRidgeAngle( double angle )
+{
+  if ( _ridgeAngle != angle )
+  {
+    _ridgeAngle = angle;
+    NotifySubMeshesHypothesisModification();
+  }
+}
 
-//   return save;
-// }
+//=============================================================================
+/*!
+ *
+ */
+//=============================================================================
 
-// //=============================================================================
-// /*!
-//  *  
-//  */
-// //=============================================================================
-// istream & NETGENPlugin_Hypothesis_2D::LoadFrom(istream & load)
-// {
-//   NETGENPlugin_Hypothesis::LoadFrom(load);
+double NETGENPlugin_RemesherHypothesis_2D::GetRidgeAngle() const
+{
+  return _ridgeAngle;
+}
 
-//   bool isOK = true;
-//   int is;
+//=============================================================================
+/*!
+ *
+ */
+//=============================================================================
 
-//   isOK = (load >> is);
-//   if (isOK)
-//     _quadAllowed = (bool) is;
-//   else
-//     load.clear(ios::badbit | load.rdstate());
+std::ostream & NETGENPlugin_RemesherHypothesis_2D::SaveTo(std::ostream & save)
+{
+  NETGENPlugin_Hypothesis::SaveTo( save );
+  save << " " << _ridgeAngle;
 
-//   return load;
-// }
+  return save;
+}
+
+//=============================================================================
+/*!
+ *
+ */
+//=============================================================================
+
+std::istream & NETGENPlugin_RemesherHypothesis_2D::LoadFrom(std::istream & load)
+{
+  NETGENPlugin_Hypothesis::LoadFrom( load );
+  if ( !load )
+    load.clear(ios::badbit | load.rdstate());
+
+  load >> _ridgeAngle;
+
+  if ( !load )
+    _ridgeAngle = DefaultRidgeAngle();
+
+  return load;
+}

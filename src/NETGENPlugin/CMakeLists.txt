@@ -110,6 +110,7 @@ SET(NETGENEngine_HEADERS
   NETGENPlugin_SimpleHypothesis_2D_i.hxx 
   NETGENPlugin_SimpleHypothesis_3D_i.hxx 
   NETGENPlugin_Mesher.hxx 
+  NETGENPlugin_Remesher_2D.hxx
   NETGENPlugin_Defs.hxx
 )
 
@@ -136,6 +137,7 @@ SET(NETGENEngine_SOURCES
   NETGENPlugin_SimpleHypothesis_3D.cxx
   NETGENPlugin_SimpleHypothesis_2D_i.cxx
   NETGENPlugin_SimpleHypothesis_3D_i.cxx
+  NETGENPlugin_Remesher_2D.cxx
   NETGENPlugin_i.cxx
 )
 
