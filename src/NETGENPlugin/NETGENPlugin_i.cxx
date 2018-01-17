@@ -20,7 +20,7 @@
 // See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
 //
 
-//  SMESH NETGENPlugin : implementaion of SMESH idl descriptions
+//  SMESH NETGENPlugin : implementation of SMESH idl descriptions
 //  File   : NETGENPlugin.cxx
 //  Author : Julia DOROVSKIKH
 //  Module : SMESH

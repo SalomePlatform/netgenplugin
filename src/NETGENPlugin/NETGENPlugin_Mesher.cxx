@@ -3960,7 +3960,7 @@ NETGENPlugin_Internals::NETGENPlugin_Internals( SMESH_Mesh&         mesh,
       {
         _intShapes.insert( meshDS->ShapeToIndex( f.Current() ));
 
-        // egdes
+        // edges
         list< TopoDS_Shape > edges;
         for ( e.Init( f.Current(), TopAbs_EDGE ); e.More(); e.Next())
           if ( SMESH_MesherHelper::NbAncestors( e.Current(), mesh, TopAbs_FACE ) > 1 )
