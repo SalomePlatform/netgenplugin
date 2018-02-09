@@ -3561,9 +3561,9 @@ bool NETGENPlugin_Mesher::Evaluate(MapShapeNbElems& aResMap)
     int nb1d = 0;
     if ( !tooManyElems )
     {
-      TopTools_MapOfShape egdes;
+      TopTools_MapOfShape edges;
       for (TopExp_Explorer exp1(F,TopAbs_EDGE); exp1.More(); exp1.Next())
-        if ( egdes.Add( exp1.Current() ))
+        if ( edges.Add( exp1.Current() ))
           nb1d += Edge2NbSeg.Find(exp1.Current());
     }
     int nbFaces = tooManyElems ? hugeNb : int( 4*anArea / (mparams.maxh*mparams.maxh*sqrt(3.)));
