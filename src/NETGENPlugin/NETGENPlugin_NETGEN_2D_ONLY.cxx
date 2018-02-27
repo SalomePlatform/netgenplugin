@@ -170,7 +170,7 @@ bool NETGENPlugin_NETGEN_2D_ONLY::CheckHypothesis (SMESH_Mesh&         aMesh,
 
   int nbHyps = bool(_hypMaxElementArea) + bool(_hypLengthFromEdges) + bool(_hypParameters );
   if ( nbHyps > 1 )
-    aStatus = HYP_CONCURENT;
+    aStatus = HYP_CONCURRENT;
   else if ( hasVL )
     error( StdMeshers_ViscousLayers2D::CheckHypothesis( aMesh, aShape, aStatus ));
   else
