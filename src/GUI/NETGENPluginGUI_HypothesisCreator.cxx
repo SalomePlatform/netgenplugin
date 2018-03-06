@@ -430,25 +430,6 @@ QString NETGENPluginGUI_HypothesisCreator::storeParams() const
   readParamsFromWidgets( data );
   storeParamsToHypo( data );
 
-  // QString valStr = tr("NETGEN_MAX_SIZE") + " = " + QString::number( data.myMaxSize ) + "; ";
-  // valStr += tr("NETGEN_MIN_SIZE") + " = " + QString::number( data.myMinSize ) + "; ";
-  // if ( data.mySecondOrder )
-  //   valStr +=  tr("NETGEN_SECOND_ORDER") + "; ";
-  // if ( data.myOptimize )
-  //   valStr +=  tr("NETGEN_OPTIMIZE") + "; ";
-  // valStr += myFineness->currentText() + "(" +  QString::number( data.myGrowthRate )     + ", " +
-  //   QString::number( data.myNbSegPerEdge )   + ", " +
-  //   QString::number( data.myNbSegPerRadius ) + ")";
-
-  // if ( myIs2D && data.myAllowQuadrangles )
-  //   valStr += "; " + tr("NETGEN_ALLOW_QUADRANGLES");
-
-  // if ( data.mySurfaceCurvature )
-  //   valStr += "; " + tr("NETGEN_SURFACE_CURVATURE");
-
-  // if ( data.myFuseEdges )
-  //   valStr += "; " + tr("NETGEN_FUSE_EDGES");
-
   return QString();
 }
 
@@ -502,18 +483,13 @@ bool NETGENPluginGUI_HypothesisCreator::readParamsFromHypo( NetgenHypothesisData
   for ( size_t i = 0; i < myEntries->length(); i++ )
   {
     QString entry = myEntries[i].in();
-    double val = h->GetLocalSizeOnEntry(entry.toStdString().c_str());
+    if (myLocalSizeMap.contains(entry) &&
+        myLocalSizeMap[entry] == "__TO_DELETE__")
+      continue;
+    double val = h->GetLocalSizeOnEntry( myEntries[i] );
     std::ostringstream tmp;
     tmp << val;
-    QString valstring = QString::fromStdString(tmp.str());
-    if (myLocalSizeMap.contains(entry))
-    {
-      if (myLocalSizeMap[entry] == "__TO_DELETE__")
-      {
-        continue;
-      }
-    }
-    that->myLocalSizeMap[entry] = valstring;
+    that->myLocalSizeMap[entry] = tmp.str().c_str();
   }
 
   return true;
@@ -586,10 +562,11 @@ bool NETGENPluginGUI_HypothesisCreator::storeParamsToHypo( const NetgenHypothesi
         rh->SetRidgeAngle  ( h_data.myRidgeAngle );
       }
     }
-    for ( QMapIterator<QString,QString> i(myLocalSizeMap); i.hasNext(); i.next() )
+    for ( QMapIterator<QString,QString> i(myLocalSizeMap); i.hasNext(); )
     {
-      const QString     entry = i.key();
-      const QString localSize = i.value();
+      i.next();
+      const QString&     entry = i.key();
+      const QString& localSize = i.value();
       if (localSize == "__TO_DELETE__")
       {
         h->UnsetLocalSizeOnEntry(entry.toLatin1().constData());
@@ -772,11 +749,9 @@ void NETGENPluginGUI_HypothesisCreator::addLocalSizeOnShape(TopAbs_ShapeEnum typ
   for ( ; Object_It.More() ; Object_It.Next())
   {
     Handle(SALOME_InteractiveObject) anObject = Object_It.Value();
-    std::string entry, shapeName;
-    entry = geomSelectionTools->getEntryOfObject(anObject);
-    shapeName = anObject->getName();
-    TopAbs_ShapeEnum shapeType;
-    shapeType = geomSelectionTools->entryToShapeType(entry);
+    std::string          entry = geomSelectionTools->getEntryOfObject(anObject);
+    std::string      shapeName = anObject->getName();
+    TopAbs_ShapeEnum shapeType = geomSelectionTools->entryToShapeType(entry);
     if (shapeType == TopAbs_SHAPE)
     {
       // E.A. if shapeType == TopAbs_SHAPE, it is NOT a TopoDS_Shape !!!
@@ -789,15 +764,11 @@ void NETGENPluginGUI_HypothesisCreator::addLocalSizeOnShape(TopAbs_ShapeEnum typ
     }
     // --
     myLocalSizeTable->setFocus();
-    QString shapeEntry;
-    shapeEntry = QString::fromStdString(entry);
-    if (myLocalSizeMap.contains(shapeEntry))
-    {
-      if (myLocalSizeMap[shapeEntry] != "__TO_DELETE__")
-      {
-        continue;
-      }
-    }
+    QString shapeEntry = QString::fromStdString(entry);
+    if (myLocalSizeMap.contains(shapeEntry) &&
+        myLocalSizeMap[shapeEntry] != "__TO_DELETE__")
+      continue;
+
     double phySize = h->GetMaxSize();
     std::ostringstream oss;
     oss << phySize;
@@ -851,7 +822,7 @@ void NETGENPluginGUI_HypothesisCreator::onRemoveLocalSizeOnShape()
 void NETGENPluginGUI_HypothesisCreator::onSetLocalSize(int row,int col)
 {
   if (col == LSZ_LOCALSIZE_COLUMN) {
-    QString entry = myLocalSizeTable->item(row, LSZ_ENTRY_COLUMN)->text();
+    QString     entry = myLocalSizeTable->item(row, LSZ_ENTRY_COLUMN)->text();
     QString localSize = myLocalSizeTable->item(row, LSZ_LOCALSIZE_COLUMN)->text().trimmed();
     myLocalSizeMap[entry] = localSize;
     myLocalSizeTable->resizeColumnToContents(LSZ_LOCALSIZE_COLUMN);
