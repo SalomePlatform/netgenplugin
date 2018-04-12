@@ -3042,8 +3042,9 @@ bool NETGENPlugin_Mesher::Compute()
       }
 
       // Build viscous layers
-      if ( _isViscousLayers2D ||
-           StdMeshers_ViscousLayers2D::HasProxyMesh( TopoDS::Face( occgeo.fmap(1) ), *_mesh ))
+      if (( _isViscousLayers2D ) ||
+          ( !occgeo.fmap.IsEmpty() &&
+            StdMeshers_ViscousLayers2D::HasProxyMesh( TopoDS::Face( occgeo.fmap(1) ), *_mesh )))
       {
         if ( !internals.hasInternalVertexInFace() ) {
           FillSMesh( occgeo, *_ngMesh, initState, *_mesh, nodeVec, comment );
