@@ -39,7 +39,6 @@
 //=============================================================================
 
 NETGENPlugin_NETGEN_2D_i::NETGENPlugin_NETGEN_2D_i( PortableServer::POA_ptr thePOA,
-                                                    int                     theStudyId,
                                                     ::SMESH_Gen*            theGenImpl )
      : SALOME::GenericObj_i( thePOA ), 
        SMESH_Hypothesis_i( thePOA ), 
@@ -47,7 +46,6 @@ NETGENPlugin_NETGEN_2D_i::NETGENPlugin_NETGEN_2D_i( PortableServer::POA_ptr theP
        SMESH_2D_Algo_i( thePOA )
 {
   myBaseImpl = new ::NETGENPlugin_NETGEN_2D( theGenImpl->GetANewId(),
-                                             theStudyId,
                                              theGenImpl );
 }
 
@@ -87,7 +85,6 @@ NETGENPlugin_NETGEN_2D_i::~NETGENPlugin_NETGEN_2D_i()
 //=============================================================================
 
 NETGENPlugin_Remesher_2D_i::NETGENPlugin_Remesher_2D_i( PortableServer::POA_ptr thePOA,
-                                                        int                     theStudyId,
                                                         ::SMESH_Gen*            theGenImpl )
   : SALOME::GenericObj_i( thePOA ),
     SMESH_Hypothesis_i( thePOA ),
@@ -95,7 +92,6 @@ NETGENPlugin_Remesher_2D_i::NETGENPlugin_Remesher_2D_i( PortableServer::POA_ptr 
     SMESH_2D_Algo_i( thePOA )
 {
   myBaseImpl = new ::NETGENPlugin_Remesher_2D( theGenImpl->GetANewId(),
-                                               theStudyId,
                                                theGenImpl );
 }
 

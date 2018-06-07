@@ -40,9 +40,10 @@ using namespace std;
  *  
  */
 //=============================================================================
-NETGENPlugin_Hypothesis::NETGENPlugin_Hypothesis (int hypId, int studyId,
+NETGENPlugin_Hypothesis::NETGENPlugin_Hypothesis (int hypId,
                                                   SMESH_Gen * gen)
-  : SMESH_Hypothesis(hypId, studyId, gen),
+
+  : SMESH_Hypothesis(hypId, gen),
     _maxSize            (GetDefaultMaxSize()),
     _minSize            (0),
     _growthRate         (GetDefaultGrowthRate()),

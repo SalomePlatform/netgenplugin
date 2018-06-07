@@ -40,11 +40,10 @@ using namespace std;
 //=============================================================================
 NETGENPlugin_Hypothesis_3D_i::
 NETGENPlugin_Hypothesis_3D_i (PortableServer::POA_ptr thePOA,
-                              int                     theStudyId,
                               ::SMESH_Gen*            theGenImpl)
   : SALOME::GenericObj_i( thePOA ),
     SMESH_Hypothesis_i( thePOA ),
-    NETGENPlugin_Hypothesis_i( thePOA, theStudyId, theGenImpl )
+    NETGENPlugin_Hypothesis_i( thePOA, theGenImpl )
 {
   //MESSAGE( "NETGENPlugin_Hypothesis_3D_i::NETGENPlugin_Hypothesis_3D_i" );
 }

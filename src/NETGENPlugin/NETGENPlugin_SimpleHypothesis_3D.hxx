@@ -40,7 +40,7 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_SimpleHypothesis_3D: public NETGENPlugin_
 {
 public:
 
-  NETGENPlugin_SimpleHypothesis_3D(int hypId, int studyId, SMESH_Gen * gen);
+  NETGENPlugin_SimpleHypothesis_3D(int hypId, SMESH_Gen * gen);
 
   void LengthFromFaces();
 

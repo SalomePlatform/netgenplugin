@@ -42,7 +42,7 @@ class NETGENPlugin_Hypothesis_2D;
 class NETGENPlugin_NETGEN_2D_ONLY: public SMESH_2D_Algo
 {
 public:
-  NETGENPlugin_NETGEN_2D_ONLY(int hypId, int studyId, SMESH_Gen* gen);
+  NETGENPlugin_NETGEN_2D_ONLY(int hypId, SMESH_Gen* gen);
   virtual ~NETGENPlugin_NETGEN_2D_ONLY();
 
   virtual bool CheckHypothesis(SMESH_Mesh&         aMesh,

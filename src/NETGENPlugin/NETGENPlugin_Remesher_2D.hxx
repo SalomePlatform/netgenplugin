@@ -35,7 +35,7 @@
 class NETGENPLUGIN_EXPORT NETGENPlugin_Remesher_2D: public SMESH_2D_Algo
 {
  public:
-  NETGENPlugin_Remesher_2D(int hypId, int studyId, SMESH_Gen* gen);
+  NETGENPlugin_Remesher_2D(int hypId, SMESH_Gen* gen);
 
   virtual bool CheckHypothesis(SMESH_Mesh&                          theMesh,
                                const TopoDS_Shape&                  theShape,

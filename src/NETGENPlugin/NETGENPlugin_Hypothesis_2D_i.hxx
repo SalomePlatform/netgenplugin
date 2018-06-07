@@ -49,7 +49,6 @@ class NETGENPLUGIN_EXPORT  NETGENPlugin_Hypothesis_2D_i:
  public:
   // Constructor
   NETGENPlugin_Hypothesis_2D_i (PortableServer::POA_ptr thePOA,
-                                int                     theStudyId,
                                 ::SMESH_Gen*            theGenImpl);
   // Destructor
   virtual ~NETGENPlugin_Hypothesis_2D_i();
@@ -79,7 +78,6 @@ class NETGENPLUGIN_EXPORT  NETGENPlugin_RemesherHypothesis_2D_i:
  public:
   // Constructor
   NETGENPlugin_RemesherHypothesis_2D_i( PortableServer::POA_ptr thePOA,
-                                        int                     theStudyId,
                                         ::SMESH_Gen*            theGenImpl);
 
   void SetRidgeAngle( CORBA::Double angle );

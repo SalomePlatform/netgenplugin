@@ -36,9 +36,9 @@ using namespace std;
  *  
  */
 //=============================================================================
-NETGENPlugin_Hypothesis_2D::NETGENPlugin_Hypothesis_2D (int hypId, int studyId,
+NETGENPlugin_Hypothesis_2D::NETGENPlugin_Hypothesis_2D (int hypId,
                                                         SMESH_Gen * gen)
-  : NETGENPlugin_Hypothesis(hypId, studyId, gen)/*,
+  : NETGENPlugin_Hypothesis(hypId, gen)/*,
     _quadAllowed (GetDefaultQuadAllowed())*/
 {
   _name = "NETGEN_Parameters_2D";
@@ -51,8 +51,8 @@ NETGENPlugin_Hypothesis_2D::NETGENPlugin_Hypothesis_2D (int hypId, int studyId,
  */
 //=============================================================================
 NETGENPlugin_RemesherHypothesis_2D::
-NETGENPlugin_RemesherHypothesis_2D (int hypId, int studyId, SMESH_Gen * gen)
-  : NETGENPlugin_Hypothesis(hypId, studyId, gen)
+NETGENPlugin_RemesherHypothesis_2D (int hypId, SMESH_Gen * gen)
+  : NETGENPlugin_Hypothesis(hypId, gen)
 {
   _name = "NETGEN_RemesherParameters_2D";
   _param_algo_dim = 2;

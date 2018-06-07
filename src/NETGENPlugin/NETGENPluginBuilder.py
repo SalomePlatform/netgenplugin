@@ -105,7 +105,7 @@ class NETGEN_Algorithm(Mesh_Algorithm):
     #              if it is @c 0 (default), the algorithm is assigned to the main shape
     def __init__(self, mesh, geom=0):
         Mesh_Algorithm.__init__(self)
-        if noNETGENPlugin: print "Warning: NETGENPlugin module unavailable"
+        if noNETGENPlugin: print("Warning: NETGENPlugin module unavailable")
         if not mesh.GetMesh().HasShapeToMesh() and \
            self.meshMethod == "Triangle": # create a 2D remesher
             self.Create(mesh, geom, "NETGEN_Remesher_2D", LIBRARY)

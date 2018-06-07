@@ -45,9 +45,8 @@ using namespace std;
  */
 //=============================================================================
 NETGENPlugin_SimpleHypothesis_3D::NETGENPlugin_SimpleHypothesis_3D (int         hypId,
-                                                                    int         studyId,
                                                                     SMESH_Gen * gen)
-  : NETGENPlugin_SimpleHypothesis_2D(hypId, studyId, gen),
+  : NETGENPlugin_SimpleHypothesis_2D(hypId, gen),
   _volume(0)
 {
   _name = "NETGEN_SimpleParameters_3D";
