@@ -181,7 +181,7 @@ NETGENPlugin_Mesher::NETGENPlugin_Mesher (SMESH_Mesh*         mesh,
 
 //================================================================================
 /*!
- * Destuctor
+ * Destructor
  */
 //================================================================================
 
@@ -918,7 +918,7 @@ void NETGENPlugin_Mesher::PrepareOCCgeometry(netgen::OCCGeometry&     occgeo,
         if ( shape.ShapeType() != TopAbs_VERTEX )
           shape = subShapes( subShapes.FindIndex( shape ));// shape -> index -> oriented shape
         if ( shape.Orientation() >= TopAbs_INTERNAL )
-          shape.Orientation( TopAbs_FORWARD ); // isuue 0020676
+          shape.Orientation( TopAbs_FORWARD ); // issue 0020676
         switch ( shape.ShapeType() ) {
         case TopAbs_FACE  : occgeo.fmap.Add( shape ); break;
         case TopAbs_EDGE  : occgeo.emap.Add( shape ); break;
@@ -1659,7 +1659,7 @@ namespace
   struct TIntVData
   {
     gp_XY uv;        //!< UV in face parametric space
-    int   ngId;      //!< ng id of corrsponding node
+    int   ngId;      //!< ng id of corresponding node
     gp_XY uvClose;   //!< UV of closest boundary node
     int   ngIdClose; //!< ng id of closest boundary node
   };
@@ -3210,18 +3210,18 @@ bool NETGENPlugin_Mesher::Compute()
         if(netgen::multithread.terminate)
           return false;
 
-        if ( comment.empty() ) // do not overwrite a previos error
+        if ( comment.empty() ) // do not overwrite a previous error
           comment << text(err);
       }
       catch (Standard_Failure& ex)
       {
-        if ( comment.empty() ) // do not overwrite a previos error
+        if ( comment.empty() ) // do not overwrite a previous error
           comment << text(ex);
         err = 1;
       }
       catch (netgen::NgException exc)
       {
-        if ( comment.empty() ) // do not overwrite a previos error
+        if ( comment.empty() ) // do not overwrite a previous error
           comment << text(exc);
         err = 1;
       }
@@ -3242,17 +3242,17 @@ bool NETGENPlugin_Mesher::Compute()
           if(netgen::multithread.terminate)
             return false;
 
-          if ( comment.empty() ) // do not overwrite a previos error
+          if ( comment.empty() ) // do not overwrite a previous error
             comment << text(err);
         }
         catch (Standard_Failure& ex)
         {
-          if ( comment.empty() ) // do not overwrite a previos error
+          if ( comment.empty() ) // do not overwrite a previous error
             comment << text(ex);
         }
         catch (netgen::NgException exc)
         {
-          if ( comment.empty() ) // do not overwrite a previos error
+          if ( comment.empty() ) // do not overwrite a previous error
             comment << text(exc);
         }
       }
@@ -3285,12 +3285,12 @@ bool NETGENPlugin_Mesher::Compute()
       }
       catch (Standard_Failure& ex)
       {
-        if ( comment.empty() ) // do not overwrite a previos error
+        if ( comment.empty() ) // do not overwrite a previous error
           comment << "Exception in netgen at passing to 2nd order ";
       }
       catch (netgen::NgException exc)
       {
-        if ( comment.empty() ) // do not overwrite a previos error
+        if ( comment.empty() ) // do not overwrite a previous error
           comment << exc.What();
       }
     }
