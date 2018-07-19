@@ -325,7 +325,7 @@ void NETGENPlugin_Mesher::SetParameters(const NETGENPlugin_Hypothesis* hyp)
           aSObj->UnRegister();
         }
         TopoDS_Shape S = smeshGen_i->GeomObjectToShape( aGeomObj.in() );
-	::SetLocalSize(S, val);
+        ::SetLocalSize(S, val);
       }
     }
   }
@@ -3310,9 +3310,19 @@ bool NETGENPlugin_Mesher::Compute()
     FillSMesh( occgeo, *_ngMesh, initState, *_mesh, nodeVec, comment, &quadHelper );
 
     if ( quadHelper.GetIsQuadratic() ) // remove free nodes
+    {
       for ( size_t i = 0; i < nodeVec.size(); ++i )
         if ( nodeVec[i] && nodeVec[i]->NbInverseElements() == 0 )
+        {
           _mesh->GetMeshDS()->RemoveFreeNode( nodeVec[i], 0, /*fromGroups=*/false );
+          nodeVec[i]=0;
+        }
+      for ( size_t i = nodeVec.size()-1; i > 0; --i ) // remove trailing removed nodes
+        if ( !nodeVec[i] )
+          nodeVec.resize( i );
+        else
+          break;
+    }
   }
   SMESH_ComputeErrorPtr readErr = ReadErrors(nodeVec);
   if ( readErr && readErr->HasBadElems() )
