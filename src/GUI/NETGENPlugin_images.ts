@@ -48,6 +48,10 @@
             <translation>mesh_tree_hypo_netgen_2d.png</translation>
         </message>
         <message>
+            <source>ICON_SMESH_TREE_HYPO_NETGEN_RemesherParameters_2D</source>
+            <translation>mesh_tree_hypo_netgen_2d.png</translation>
+        </message>
+        <message>
             <source>ICON_SMESH_TREE_HYPO_NETGEN_Parameters_2D_ONLY</source>
             <translation>mesh_tree_hypo_netgen_2d.png</translation>
         </message>

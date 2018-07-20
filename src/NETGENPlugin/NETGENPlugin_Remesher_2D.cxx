@@ -43,7 +43,7 @@
 #include <occgeom.hpp>
 #include <meshing.hpp>
 #include <stlgeom.hpp>
-//#include <stltool.hxx>
+//#include <stltool.hpp>
 
 #include <boost/container/flat_set.hpp>
 
@@ -56,6 +56,10 @@ using namespace nglib;
 // #endif
 //   extern STLParameters stlparam;
 // }
+namespace nglib
+{
+  extern netgen::Array<netgen::Point<3> > readedges;
+}
 
 namespace
 {
@@ -215,6 +219,8 @@ namespace
 
   void HoleFiller::AddHoleBorders( Ng_STL_Geometry * ngStlGeo )
   {
+    nglib::readedges.SetSize(0);
+
     for ( size_t i = 0; i < myHole.size(); ++i )
       for ( size_t iP = 1; iP < myHole[i].size(); ++iP )
       {
@@ -590,6 +596,12 @@ bool NETGENPlugin_Remesher_2D::Compute(SMESH_Mesh&         theMesh,
     netgen::mparam.maxh = diagSize / GetGen()->GetBoundaryBoxSegmentation();
     netgen::mparam.minh = netgen::mparam.maxh;
   }
+
+  // TODO: expose stlparam.resth* to the user
+  // netgen::stlparam.resthcloseedgeenable = 0; // Restrict H due to close edges
+  // netgen::stlparam.resthlinelengthenable = 0; // Restrict H due to line-length
+  // netgen::stlparam.resthatlasenable = 0;
+  // //netgen::stlparam.resthchartdistenable = 0;
 
   double h = netgen::mparam.maxh;
   ngMesh->SetGlobalH( h );
