@@ -3419,9 +3419,8 @@ bool NETGENPlugin_Mesher::Evaluate(MapShapeNbElems& aResMap)
   // Prepare OCC geometry
   // -------------------------
   netgen::OCCGeometry occgeo;
-  list< SMESH_subMesh* > meshedSM[4]; // for 0-3 dimensions
   NETGENPlugin_Internals internals( *_mesh, _shape, _isVolume );
-  PrepareOCCgeometry( occgeo, _shape, *_mesh, meshedSM, &internals );
+  PrepareOCCgeometry( occgeo, _shape, *_mesh, 0, &internals );
 
   bool tooManyElems = false;
   const int hugeNb = std::numeric_limits<int>::max() / 100;
