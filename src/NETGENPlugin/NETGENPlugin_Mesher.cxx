@@ -2398,7 +2398,7 @@ int NETGENPlugin_Mesher::FillSMesh(const netgen::OCCGeometry&          occgeo,
     for ( ngID = i = 1; i < nodeVecSize; ++ngID, ++i )
     {
       gp_Pnt ngPnt( NGPOINT_COORDS( ngMesh.Point( ngID )));
-      gp_Pnt node ( SMESH_NodeXYZ ( nodeVec[ i ]));
+      gp_Pnt node ( SMESH_NodeXYZ (nodeVec_ACCESS(i) ));
       if ( ngPnt.SquareDistance( node ) < eps )
       {
         nodeVec[ ngID ] = nodeVec[ i ];

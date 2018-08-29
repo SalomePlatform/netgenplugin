@@ -49,15 +49,18 @@
 
 using namespace nglib;
 
-// namespace netgen
-// {
-// #if defined(NETGEN_V5) && defined(WIN32)
-//   DLL_HEADER 
-// #endif
-//   extern STLParameters stlparam;
-// }
+namespace netgen {
+
+#if defined(NETGEN_V5) && defined(WIN32)
+   DLL_HEADER 
+ #endif
+   extern STLParameters stlparam;
+}
 namespace nglib
 {
+#if defined(NETGEN_V5) && defined(WIN32)
+	DLL_HEADER
+#endif
   extern netgen::Array<netgen::Point<3> > readedges;
 }
 
