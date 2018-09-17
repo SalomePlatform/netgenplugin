@@ -534,3 +534,51 @@ std::string NETGENPlugin_Hypothesis_i::getMethodOfParameter(const int paramIndex
   }
   return "";
 }
+
+//================================================================================
+/*!
+ * \brief Return geometry this hypothesis depends on. Return false if there is no geometry parameter
+ */
+//================================================================================
+
+bool
+NETGENPlugin_Hypothesis_i::getObjectsDependOn( std::vector< std::string > & entryArray,
+                                               std::vector< int >         & subIDArray ) const
+{
+  typedef ::NETGENPlugin_Hypothesis THyp;
+
+  const THyp* h = static_cast< ::NETGENPlugin_Hypothesis* >( myBaseImpl );
+  const THyp::TLocalSize& ls = h->GetLocalSizesAndEntries();
+
+  THyp::TLocalSize::const_iterator entry2size = ls.cbegin();
+  for ( ; entry2size != ls.cend(); ++entry2size )
+    entryArray.push_back( entry2size->first );
+
+  return true;
+}
+
+//================================================================================
+/*!
+ * \brief Set new geometry instead of that returned by getObjectsDependOn()
+ */
+//================================================================================
+
+bool
+NETGENPlugin_Hypothesis_i::setObjectsDependOn( std::vector< std::string > & entryArray,
+                                               std::vector< int >         & subIDArray )
+{
+  typedef ::NETGENPlugin_Hypothesis THyp;
+
+  const THyp* h = static_cast< ::NETGENPlugin_Hypothesis* >( myBaseImpl );
+
+  THyp::TLocalSize& lsNew = const_cast< THyp::TLocalSize& >( h->GetLocalSizesAndEntries() );
+  THyp::TLocalSize ls;
+  lsNew.swap( ls );
+
+  THyp::TLocalSize::const_iterator entry2size = ls.cbegin();
+  for ( int i = 0; entry2size != ls.cend(); ++entry2size, ++i )
+    if ( !entryArray[ i ].empty() )
+      lsNew[ entryArray[ i ]] = entry2size->second;
+
+  return true;
+}

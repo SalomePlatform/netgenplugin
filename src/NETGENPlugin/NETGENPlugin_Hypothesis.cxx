@@ -54,7 +54,6 @@ NETGENPlugin_Hypothesis::NETGENPlugin_Hypothesis (int hypId,
     _chordalError       (GetDefaultChordalError() ),
     _secondOrder        (GetDefaultSecondOrder()),
     _optimize           (GetDefaultOptimize()),
-    _localSize          (GetDefaultLocalSize()),
     _quadAllowed        (GetDefaultQuadAllowed()),
     _surfaceCurvature   (GetDefaultSurfaceCurvature()),
     _fuseEdges          (GetDefaultFuseEdges())

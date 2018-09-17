@@ -182,6 +182,14 @@ class NETGEN_Algorithm(Mesh_Algorithm):
         self.Parameters().SetMeshSizeFile(file)
         pass
 
+    ## Set size of elements on a shape
+    #  @param shape - geometry
+    #  @param size - element size
+    def SetLocalSizeOnShape(self, shape, size ):
+        self.Parameters().SetLocalSizeOnShape(shape, size)
+        pass
+        
+
     pass # end of NETGEN_Algorithm class
 
 

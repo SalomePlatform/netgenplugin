@@ -108,6 +108,17 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_Hypothesis_i:
   // Verify whether hypothesis supports given entity type 
   CORBA::Boolean IsDimSupported( SMESH::Dimension type );
 
+
+  // Methods for copying mesh definition to other geometry
+
+  // Return geometry this hypothesis depends on. Return false if there is no geometry parameter
+  virtual bool getObjectsDependOn( std::vector< std::string > & entryArray,
+                                   std::vector< int >         & subIDArray ) const;
+
+  // Set new geometry instead of that returned by getObjectsDependOn()
+  virtual bool setObjectsDependOn( std::vector< std::string > & entryArray,
+                                   std::vector< int >         & subIDArray );
+
  protected:
 
   // to remember whether a parameter is already set (issue 0021364)
@@ -127,7 +138,7 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_Hypothesis_i:
     METH_SetFuseEdges           = METH_SetSurfaceCurvature * 2,
     METH_SetChordalErrorEnabled = METH_SetFuseEdges * 2,
     METH_SetChordalError        = METH_SetChordalErrorEnabled * 2,
-    METH_LAST                   = METH_SetFuseEdges
+    METH_LAST                   = METH_SetChordalError
   };
   int mySetMethodFlags;
 

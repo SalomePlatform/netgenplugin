@@ -89,8 +89,7 @@ public:
   double GetChordalError() const { return _chordalError; }
 
   typedef std::map<std::string, double> TLocalSize;
-  static TLocalSize GetDefaultLocalSize() { return TLocalSize(); }
-  void SetLocalSizeOnEntry(const std::string& entry, double localSize);
+  void   SetLocalSizeOnEntry(const std::string& entry, double localSize);
   double GetLocalSizeOnEntry(const std::string& entry);
   const TLocalSize& GetLocalSizesAndEntries() const { return _localSize; }
   void UnsetLocalSizeOnEntry(const std::string& entry);
