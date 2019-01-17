@@ -37,7 +37,7 @@
     </message>
     <message>
         <source>NETGEN_ALLOW_QUADRANGLES</source>
-        <translation>Allow Quadrangles</translation>
+        <translation>Quad-dominated</translation>
     </message>
     <message>
         <source>NETGEN_COARSE</source>
@@ -57,19 +57,19 @@
     </message>
     <message>
         <source>NETGEN_FUSE_EDGES</source>
-        <translation>Fuse Coincident Nodes on Edges and Vertices</translation>
+        <translation>Fuse coincident nodes on edges and vertices</translation>
     </message>
     <message>
         <source>NETGEN_GROWTH_RATE</source>
-        <translation>Growth Rate</translation>
+        <translation>Growth rate</translation>
     </message>
     <message>
         <source>NETGEN_MAX_SIZE</source>
-        <translation>Max. Size</translation>
+        <translation>Max. size</translation>
     </message>
     <message>
         <source>NETGEN_MIN_SIZE</source>
-        <translation>Min. Size</translation>
+        <translation>Min. size</translation>
     </message>
     <message>
         <source>NETGEN_MODERATE</source>
@@ -80,36 +80,48 @@
         <translation>Optimize</translation>
     </message>
     <message>
+        <source>NETGEN_OPTIMIZER</source>
+        <translation>Optimizer</translation>
+    </message>
+    <message>
         <source>NETGEN_SECOND_ORDER</source>
-        <translation>Second Order</translation>
+        <translation>Second order</translation>
     </message>
     <message>
         <source>NETGEN_SEG_PER_EDGE</source>
-        <translation>Nb. Segs per Edge</translation>
+        <translation>Nb. segs per edge</translation>
     </message>
     <message>
         <source>NETGEN_SEG_PER_RADIUS</source>
-        <translation>Nb. Segs per Radius</translation>
+        <translation>Nb. segs per radius</translation>
     </message>
     <message>
         <source>NETGEN_CHORDAL_ERROR</source>
-        <translation>Chordal Error</translation>
+        <translation>Chordal error</translation>
     </message>
     <message>
         <source>NETGEN_RIDGE_ANGLE</source>
-        <translation>Ridge Angle</translation>
+        <translation>Ridge angle</translation>
+    </message>
+    <message>
+        <source>NETGEN_KEEP_EXISTING_EDGES</source>
+        <translation>Keep existing edges</translation>
+    </message>
+    <message>
+        <source>NETGEN_MAKE_SURFACE_GROUPS</source>
+        <translation>Create groups of surfaces</translation>
     </message>
     <message>
         <source>NETGEN_SURFACE_CURVATURE</source>
-        <translation>Limit Size by Surface Curvature</translation>
+        <translation>Limit size by surface curvature</translation>
     </message>
     <message>
         <source>NETGEN_VERYCOARSE</source>
-        <translation>Very Coarse</translation>
+        <translation>Very coarse</translation>
     </message>
     <message>
         <source>NETGEN_VERYFINE</source>
-        <translation>Very Fine</translation>
+        <translation>Very fine</translation>
     </message>
     <message>
         <source>NG_1D</source>
@@ -137,19 +149,19 @@
     </message>
     <message>
         <source>NETGEN_LSZ_VERTEX</source>
-        <translation>On Vertex</translation>
+        <translation>On vertex</translation>
     </message>
     <message>
         <source>NETGEN_LSZ_EDGE</source>
-        <translation>On Edge</translation>
+        <translation>On edge</translation>
     </message>
     <message>
         <source>NETGEN_LSZ_FACE</source>
-        <translation>On Face</translation>
+        <translation>On face</translation>
     </message>
     <message>
         <source>NETGEN_LSZ_SOLID</source>
-        <translation>On Solid</translation>
+        <translation>On solid</translation>
     </message>
     <message>
         <source>NETGEN_LSZ_REMOVE</source>
@@ -169,7 +181,91 @@
     </message>
     <message>
         <source>NETGEN_LSZ_FILE</source>
-        <translation>Mesh-size File</translation>
+        <translation>Mesh-size file</translation>
+    </message>
+    <message>
+        <source>NETGEN_MESH_SIZE</source>
+        <translation>Mesh size</translation>
+    </message>
+    <message>
+        <source>NETGEN_INSIDER</source>
+        <translation>Insider</translation>
+    </message>
+    <message>
+        <source>NETGEN_WORST_ELEM_MEASURE</source>
+        <translation>Worst element measure</translation>
+    </message>
+    <message>
+        <source>NETGEN_USE_DELAUNEY</source>
+        <translation>Use Delaunay</translation>
+    </message>
+    <message>
+        <source>NETGEN_CHECK_OVERLAPPING</source>
+        <translation>Check overlapping</translation>
+    </message>
+    <message>
+        <source>NETGEN_CHECK_CHART_BOUNDARY</source>
+        <translation>Check chart boundary</translation>
+    </message>
+    <message>
+        <source>NETGEN_ELEM_SIZE_WEIGHT</source>
+        <translation>Element size weight</translation>
+    </message>
+    <message>
+        <source>NETGEN_NB_SURF_OPT_STEPS</source>
+        <translation>Nb. surface optimization steps</translation>
+    </message>
+    <message>
+        <source>NETGEN_NB_VOL_OPT_STEPS</source>
+        <translation>Nb. volume optimization steps</translation>
+    </message>
+    <message>
+        <source>NETGEN_STL</source>
+        <translation>STL</translation>
+    </message>
+    <message>
+        <source>NETGEN_STL_CHARTS</source>
+        <translation>Charts</translation>
+    </message>
+    <message>
+        <source>NETGEN_STL_SIZE</source>
+        <translation>Mesh size depends on... (enable and factor)</translation>
+    </message>
+    <message>
+        <source>NETGEN_EDGE_CORNER_ANGLE</source>
+        <translation>Edge corner angle</translation>
+    </message>
+    <message>
+        <source>NETGEN_CHART_ANGLE</source>
+        <translation>Chart angle</translation>
+    </message>
+    <message>
+        <source>NETGEN_OUTER_CHART_ANGLE</source>
+        <translation>Outer chart angle</translation>
+    </message>
+    <message>
+        <source>NETGEN_RESTH_CHART_DIST</source>
+        <translation>Chart distance</translation>
+    </message>
+    <message>
+        <source>NETGEN_RESTH_LINE_LENGTH</source>
+        <translation>Line length</translation>
+    </message>
+    <message>
+        <source>NETGEN_RESTH_CLOSE_EDGE</source>
+        <translation>Close edges</translation>
+    </message>
+    <message>
+        <source>NETGEN_RESTH_SURF_CURV</source>
+        <translation>Surface curvature</translation>
+    </message>
+    <message>
+        <source>NETGEN_RESTH_EDGE_ANGLE</source>
+        <translation>Edge angle</translation>
+    </message>
+    <message>
+        <source>NETGEN_RESTH_SURF_MESH_CURV</source>
+        <translation>Surface mesh curvature</translation>
     </message>
 </context>
 </TS>

@@ -28,13 +28,24 @@
 #define _NETGENPlugin_DEFS_HXX_
 
 #ifdef WIN32
+
   #if defined NETGENPLUGIN_EXPORTS || defined NETGENEngine_EXPORTS
     #define NETGENPLUGIN_EXPORT __declspec( dllexport )
   #else
     #define NETGENPLUGIN_EXPORT __declspec( dllimport )
   #endif
+
+  #if defined(NETGEN_V5)
+    #define NETGENPLUGIN_DLL_HEADER DLL_HEADER
+  #else
+    #define NETGENPLUGIN_DLL_HEADER
+  #endif
+
 #else
+
   #define NETGENPLUGIN_EXPORT
+  #define NETGENPLUGIN_DLL_HEADER
+
 #endif
 
 #endif

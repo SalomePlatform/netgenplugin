@@ -102,9 +102,30 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_Hypothesis_i:
   void SetFuseEdges(CORBA::Boolean theVal);
   CORBA::Boolean GetFuseEdges();
 
+  void    SetNbSurfOptSteps(CORBA::Short nb );
+  CORBA::Short GetNbSurfOptSteps();
+
+  void    SetNbVolOptSteps(CORBA::Short nb );
+  CORBA::Short GetNbVolOptSteps();
+
+  void    SetElemSizeWeight(CORBA::Double size );
+  CORBA::Double GetElemSizeWeight();
+
+  void    SetWorstElemMeasure(CORBA::Short val );
+  CORBA::Short GetWorstElemMeasure();
+
+  void    SetUseDelauney(CORBA::Boolean toUse);
+  CORBA::Boolean GetUseDelauney();
+
+  void    SetCheckOverlapping(CORBA::Boolean toCheck );
+  CORBA::Boolean GetCheckOverlapping();
+
+  void    SetCheckChartBoundary(CORBA::Boolean toCheck );
+  CORBA::Boolean GetCheckChartBoundary();
+
   // Get implementation
   ::NETGENPlugin_Hypothesis* GetImpl();
-  
+
   // Verify whether hypothesis supports given entity type 
   CORBA::Boolean IsDimSupported( SMESH::Dimension type );
 

@@ -35,20 +35,21 @@
 
 #include <TopAbs_ShapeEnum.hxx>
 
-class SMESHGUI_SpinBox;
 class GeomSelectionTools;
-class QComboBox;
 class QCheckBox;
+class QComboBox;
 class QLineEdit;
 class QTableWidget;
+class SMESHGUI_SpinBox;
+class SalomeApp_IntSpinBox;
 
 typedef struct
 {
-  double  myMaxSize, myMinSize, myGrowthRate, myNbSegPerEdge, myNbSegPerRadius, myRidgeAngle, myChordalError;
-  int     myFineness;
-  bool    mySecondOrder, myAllowQuadrangles, myOptimize, mySurfaceCurvature, myFuseEdges, myChordalErrorEnabled;
+  double  myMaxSize, myMinSize, myGrowthRate, myNbSegPerEdge, myNbSegPerRadius, myRidgeAngle, myChordalError, myElemSizeWeight, myEdgeCornerAngle, myChartAngle, myOuterChartAngle, myRestHChartDistFactor, myRestHLineLengthFactor, myRestHCloseEdgeFactor, myRestHSurfCurvFactor, myRestHEdgeAngleFactor, myRestHSurfMeshCurvFactor;
+  int     myFineness, myNbSurfOptSteps, myNbVolOptSteps, myWorstElemMeasure;
+  bool    mySecondOrder, myAllowQuadrangles, myOptimize, mySurfaceCurvature, myFuseEdges, myChordalErrorEnabled, myUseDelauney, myCheckOverlapping, myCheckChartBoundary, myRestHChartDistEnable, myRestHLineLengthEnable, myRestHCloseEdgeEnable, myRestHSurfCurvEnable, myRestHEdgeAngleEnable, myRestHSurfMeshCurvEnable, myKeepExistingEdges, myMakeGroupsOfSurfaces;
   QString myName, myMeshSizeFile;
-  QString myMaxSizeVar, myMinSizeVar, myGrowthRateVar, myNbSegPerEdgeVar, myNbSegPerRadiusVar, myRidgeAngleVar, myChordalErrorVar;
+  QString myMaxSizeVar, myMinSizeVar, myGrowthRateVar, myNbSegPerEdgeVar, myNbSegPerRadiusVar, myRidgeAngleVar, myChordalErrorVar, myNbSurfOptStepsVar, myNbVolOptStepsVar, myElemSizeWeightVar, myWorstElemMeasureVar, myEdgeCornerAngleVar, myChartAngleVar, myOuterChartAngleVar, myRestHChartDistFactorVar, myRestHLineLengthFactorVar, myRestHCloseEdgeFactorVar, myRestHSurfCurvFactorVar, myRestHEdgeAngleFactorVar, myRestHSurfMeshCurvFactorVar;
 } NetgenHypothesisData;
 
 /*!
@@ -85,6 +86,7 @@ protected slots:
   virtual void     onRemoveLocalSizeOnShape();
   virtual void     onSetLocalSize(int,int);
   virtual void     onSetSizeFile();
+  virtual void     onSTLEnable();
 
 private:
   bool readParamsFromHypo( NetgenHypothesisData& ) const;
@@ -94,21 +96,50 @@ private:
   void addLocalSizeOnShape(TopAbs_ShapeEnum);
 
 private:
- QLineEdit*        myName;
- SMESHGUI_SpinBox* myMaxSize;
- SMESHGUI_SpinBox* myMinSize;
- QCheckBox*        mySecondOrder;
- QCheckBox*        myOptimize;
- QComboBox*        myFineness;
- SMESHGUI_SpinBox* myGrowthRate;
- SMESHGUI_SpinBox* myNbSegPerEdge;
- SMESHGUI_SpinBox* myNbSegPerRadius;
- SMESHGUI_SpinBox* myRidgeAngle;
- QCheckBox*        myChordalErrorEnabled;
- SMESHGUI_SpinBox* myChordalError;
- QCheckBox*        myAllowQuadrangles;
- QCheckBox*        mySurfaceCurvature;
- QCheckBox*        myFuseEdges;
+ QLineEdit*            myName;
+ SMESHGUI_SpinBox*     myMaxSize;
+ SMESHGUI_SpinBox*     myMinSize;
+ QCheckBox*            mySecondOrder;
+ QCheckBox*            myOptimize;
+ QComboBox*            myFineness;
+ SMESHGUI_SpinBox*     myGrowthRate;
+ SMESHGUI_SpinBox*     myNbSegPerEdge;
+ SMESHGUI_SpinBox*     myNbSegPerRadius;
+ QCheckBox*            myChordalErrorEnabled;
+ SMESHGUI_SpinBox*     myChordalError;
+ QCheckBox*            myAllowQuadrangles;
+ QCheckBox*            mySurfaceCurvature;
+ // optimizer
+ SMESHGUI_SpinBox*     myElemSizeWeight;
+ SalomeApp_IntSpinBox* myNbSurfOptSteps;
+ SalomeApp_IntSpinBox* myNbVolOptSteps;
+ // insider
+ QCheckBox*            myFuseEdges;
+ SalomeApp_IntSpinBox* myWorstElemMeasure;
+ QCheckBox*            myUseDelauney;
+ QCheckBox*            myCheckOverlapping;
+ QCheckBox*            myCheckChartBoundary;
+ // stl options
+ QCheckBox*            myKeepExistingEdges;
+ QCheckBox*            myMakeGroupsOfSurfaces;
+ // stl charts
+ SMESHGUI_SpinBox*     myRidgeAngle;
+ SMESHGUI_SpinBox*     myEdgeCornerAngle;
+ SMESHGUI_SpinBox*     myChartAngle;
+ SMESHGUI_SpinBox*     myOuterChartAngle;
+ // stl size
+ SMESHGUI_SpinBox*     myRestHChartDistFactor;
+ SMESHGUI_SpinBox*     myRestHLineLengthFactor;
+ SMESHGUI_SpinBox*     myRestHCloseEdgeFactor;
+ SMESHGUI_SpinBox*     myRestHSurfCurvFactor;
+ SMESHGUI_SpinBox*     myRestHEdgeAngleFactor;
+ SMESHGUI_SpinBox*     myRestHSurfMeshCurvFactor;
+ QCheckBox*            myRestHChartDistEnable;
+ QCheckBox*            myRestHLineLengthEnable;
+ QCheckBox*            myRestHCloseEdgeEnable;
+ QCheckBox*            myRestHSurfCurvEnable;
+ QCheckBox*            myRestHEdgeAngleEnable;
+ QCheckBox*            myRestHSurfMeshCurvEnable;
 
  bool myIs2D;   // 2D or 3D
  bool myIsONLY; // one dim or several

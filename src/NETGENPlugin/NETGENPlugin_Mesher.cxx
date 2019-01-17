@@ -90,18 +90,14 @@ namespace netgen {
   extern int OCCGenerateMesh (OCCGeometry&, Mesh*&, int, int, char*);
 #endif
   //extern void OCCSetLocalMeshSize(OCCGeometry & geom, Mesh & mesh);
-#if defined(NETGEN_V5) && defined(WIN32)
-  DLL_HEADER 
-#endif
+
+  NETGENPLUGIN_DLL_HEADER
   extern MeshingParameters mparam;
-#if defined(NETGEN_V5) && defined(WIN32)
-  DLL_HEADER 
-#endif
+
+  NETGENPLUGIN_DLL_HEADER
   extern volatile multithreadt multithread;
 
-#if defined(NETGEN_V5) && defined(WIN32)
-  DLL_HEADER 
-#endif
+  NETGENPLUGIN_DLL_HEADER
   extern bool merge_solids;
 
   // values used for occgeo.facemeshstatus
@@ -285,25 +281,32 @@ void NETGENPlugin_Mesher::SetParameters(const NETGENPlugin_Hypothesis* hyp)
     netgen::MeshingParameters& mparams = netgen::mparam;
     // Initialize global NETGEN parameters:
     // maximal mesh segment size
-    mparams.maxh            = hyp->GetMaxSize();
+    mparams.maxh               = hyp->GetMaxSize();
     // maximal mesh element linear size
-    mparams.minh            = hyp->GetMinSize();
+    mparams.minh               = hyp->GetMinSize();
     // minimal number of segments per edge
-    mparams.segmentsperedge = hyp->GetNbSegPerEdge();
+    mparams.segmentsperedge    = hyp->GetNbSegPerEdge();
     // rate of growth of size between elements
-    mparams.grading         = hyp->GetGrowthRate();
+    mparams.grading            = hyp->GetGrowthRate();
     // safety factor for curvatures (elements per radius)
-    mparams.curvaturesafety = hyp->GetNbSegPerRadius();
+    mparams.curvaturesafety    = hyp->GetNbSegPerRadius();
     // create elements of second order
-    mparams.secondorder     = hyp->GetSecondOrder() ? 1 : 0;
+    mparams.secondorder        = hyp->GetSecondOrder() ? 1 : 0;
     // quad-dominated surface meshing
-    mparams.quad            = hyp->GetQuadAllowed() ? 1 : 0;
-    _optimize               = hyp->GetOptimize();
-    _fineness               = hyp->GetFineness();
-    mparams.uselocalh       = hyp->GetSurfaceCurvature();
-    netgen::merge_solids    = hyp->GetFuseEdges();
-    _chordalError           = hyp->GetChordalErrorEnabled() ? hyp->GetChordalError() : -1.;
-    _simpleHyp              = NULL;
+    mparams.quad               = hyp->GetQuadAllowed() ? 1 : 0;
+    _optimize                  = hyp->GetOptimize();
+    _fineness                  = hyp->GetFineness();
+    mparams.uselocalh          = hyp->GetSurfaceCurvature();
+    netgen::merge_solids       = hyp->GetFuseEdges();
+    _chordalError              = hyp->GetChordalErrorEnabled() ? hyp->GetChordalError() : -1.;
+    mparams.optsteps2d         = hyp->GetNbSurfOptSteps();
+    mparams.optsteps3d         = hyp->GetNbVolOptSteps();
+    mparams.elsizeweight       = hyp->GetElemSizeWeight();
+    mparams.opterrpow          = hyp->GetWorstElemMeasure();
+    mparams.delaunay           = hyp->GetUseDelauney();
+    mparams.checkoverlap       = hyp->GetCheckOverlapping();
+    mparams.checkchartboundary = hyp->GetCheckChartBoundary();
+    _simpleHyp                 = NULL;
     // mesh size file
     mparams.meshsizefilename= hyp->GetMeshSizeFile().empty() ? 0 : hyp->GetMeshSizeFile().c_str();
 
@@ -3382,7 +3385,7 @@ bool NETGENPlugin_Mesher::Compute()
           SMESH_ComputeErrorPtr& smError = sm->GetComputeError();
           if ( !smComputed && ( !smError || smError->IsOK() ))
           {
-            smError.reset( new SMESH_ComputeError( *error ));
+            smError = error;
             if ( nbVol && SMESH_Algo::GetMeshError( sm ) == SMESH_Algo::MEr_OK )
             {
               smError->myName = COMPERR_WARNING;

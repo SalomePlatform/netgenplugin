@@ -34,13 +34,13 @@
 
 #include CORBA_SERVER_HEADER(NETGENPlugin_Algorithm)
 
+#include <LightApp_SelectionMgr.h>
+#include <SALOME_ListIO.hxx>
 #include <SUIT_FileDlg.h>
 #include <SUIT_ResourceMgr.h>
 #include <SUIT_Session.h>
-
+#include <SalomeApp_IntSpinBox.h>
 #include <SalomeApp_Tools.h>
-#include <LightApp_SelectionMgr.h>
-#include <SALOME_ListIO.hxx>
 
 #include <QComboBox>
 #include <QLabel>
@@ -54,19 +54,20 @@
 #include <QHeaderView>
 #include <QPushButton>
 
-enum Fineness
-  {
-    VeryCoarse,
-    Coarse,
-    Moderate,
-    Fine,
-    VeryFine,
-    UserDefined
-  };
+enum Fineness {
+  VeryCoarse,
+  Coarse,
+  Moderate,
+  Fine,
+  VeryFine,
+  UserDefined
+};
 
 enum {
   STD_TAB = 0,
-  LSZ_TAB
+  STL_TAB,
+  LSZ_TAB,
+  ADV_TAB
 };
 
 enum {
@@ -86,6 +87,18 @@ enum {
   LSZ_REMOVE_BTN,
   LSZ_FILE_LE = 9
 };
+
+template<class SPINBOX, typename VALUETYPE>
+void setTextOrVar( SPINBOX* spin, VALUETYPE value, const QString& variable )
+{
+  if ( spin )
+  {
+    if ( variable.isEmpty() )
+      spin->setValue( value );
+    else
+      spin->setText( variable );
+  }
+}
 
 NETGENPluginGUI_HypothesisCreator::NETGENPluginGUI_HypothesisCreator( const QString& theHypType )
   : SMESHGUI_GenericHypothesisCreator( theHypType )
@@ -109,17 +122,6 @@ bool NETGENPluginGUI_HypothesisCreator::checkParams(QString& msg) const
   readParamsFromHypo( data_old );
   readParamsFromWidgets( data_new );
   bool res = storeParamsToHypo( data_new );
-  //storeParamsToHypo( data_old ); -- issue 0021364: Dump of netgen parameters has duplicate lines
-  
-  res = myMaxSize->isValid(msg,true) && res;
-  res = myMinSize->isValid(msg,true) && res;
-  res = myGrowthRate->isValid(msg,true) && res; ;
-  if ( myNbSegPerEdge )
-    res = myNbSegPerEdge->isValid(msg,true) && res;
-  if ( myNbSegPerRadius )
-    res = myNbSegPerRadius->isValid(msg,true) && res;
-  if ( myRidgeAngle )
-    res = myRidgeAngle->isValid(msg,true) && res;
 
   if ( !res ) //  -- issue 0021364: Dump of netgen parameters has duplicate lines
     storeParamsToHypo( data_old );
@@ -141,134 +143,263 @@ QFrame* NETGENPluginGUI_HypothesisCreator::buildFrame()
   tab->setTabShape( QTabWidget::Rounded );
   tab->setTabPosition( QTabWidget::North );
   lay->addWidget( tab );
+
+  // ==============
+  // Arguments TAB
+  // ==============
+
   QWidget* GroupC1 = new QWidget();
   tab->insertTab( STD_TAB, GroupC1, tr( "SMESH_ARGUMENTS" ) );
-  
+
   QGridLayout* aGroupLayout = new QGridLayout( GroupC1 );
-  aGroupLayout->setSpacing( 6 );
-  aGroupLayout->setMargin( 11 );
-  
-  int row = 0;
+  aGroupLayout->setMargin( 6 );
+  aGroupLayout->setSpacing( 11 );
+
+  int row0 = 0;
   myName = 0;
-  if( isCreation() )
+  if ( isCreation() )
   {
-    aGroupLayout->addWidget( new QLabel( tr( "SMESH_NAME" ), GroupC1 ), row, 0 );
+    aGroupLayout->addWidget( new QLabel( tr( "SMESH_NAME" ), GroupC1 ), row0, 0 );
     myName = new QLineEdit( GroupC1 );
     myName->setMinimumWidth(160);
-    aGroupLayout->addWidget( myName, row, 1 );
-    row++;
+    aGroupLayout->addWidget( myName, row0, 1 );
+    row0++;
   }
 
-  aGroupLayout->addWidget( new QLabel( tr( "NETGEN_MAX_SIZE" ), GroupC1 ), row, 0 );
-  myMaxSize = new SMESHGUI_SpinBox( GroupC1 );
-  myMaxSize->RangeStepAndValidator( 1e-07, 1e+06, 10., "length_precision" );
-  aGroupLayout->addWidget( myMaxSize, row, 1 );
-  row++;
-
-  aGroupLayout->addWidget( new QLabel( tr( "NETGEN_MIN_SIZE" ), GroupC1 ), row, 0 );
-  myMinSize = new SMESHGUI_SpinBox( GroupC1 );
-  myMinSize->RangeStepAndValidator( 0.0, 1e+06, 10., "length_precision" );
-  aGroupLayout->addWidget( myMinSize, row, 1 );
-  row++;
-
-  mySecondOrder = 0;
-  if ( !myIsONLY )
+  // Mesh size group
+  // ----------------
   {
-    mySecondOrder = new QCheckBox( tr( "NETGEN_SECOND_ORDER" ), GroupC1 );
-    aGroupLayout->addWidget( mySecondOrder, row, 0, 1, 2 );
-    row++;
-  }
+    QGroupBox* aSizeBox = new QGroupBox( tr("NETGEN_MESH_SIZE"), GroupC1 );
+    aGroupLayout->addWidget( aSizeBox, row0, 0, 1, 2 );
+    row0++;
 
-  aGroupLayout->addWidget( new QLabel( tr( "NETGEN_FINENESS" ), GroupC1 ), row, 0 );
-  myFineness = new QComboBox( GroupC1 );
-  QStringList types;
-  types << tr( "NETGEN_VERYCOARSE" ) << tr( "NETGEN_COARSE" )   << tr( "NETGEN_MODERATE" ) <<
-    tr( "NETGEN_FINE" )       << tr( "NETGEN_VERYFINE" ) << tr( "NETGEN_CUSTOM" );
-  myFineness->addItems( types );
-  aGroupLayout->addWidget( myFineness, row, 1 );
-  connect( myFineness, SIGNAL( activated( int ) ), this, SLOT( onFinenessChanged() ) );
-  row++;
+    QGridLayout* aSizeLayout = new QGridLayout( aSizeBox );
+    aSizeLayout->setSpacing( 6 );
+    aSizeLayout->setMargin( 11 );
+    int row = 0;
 
-  aGroupLayout->addWidget( new QLabel( tr( "NETGEN_GROWTH_RATE" ), GroupC1 ), row, 0 );
-  myGrowthRate = new SMESHGUI_SpinBox( GroupC1 );
-  myGrowthRate->RangeStepAndValidator( .0001, 10., .1, "parametric_precision" );
-  aGroupLayout->addWidget( myGrowthRate, row, 1 );
-  row++;
-
-  myNbSegPerEdge = 0;
-  myNbSegPerRadius = 0;
-  if ( !myIsONLY )
-  {
-    const double VALUE_MAX = 1.0e+6;
-
-    aGroupLayout->addWidget( new QLabel( tr( "NETGEN_SEG_PER_EDGE" ), GroupC1 ), row, 0 );
-    myNbSegPerEdge = new SMESHGUI_SpinBox( GroupC1 );
-    myNbSegPerEdge->RangeStepAndValidator( .2, VALUE_MAX, .1, "parametric_precision" );
-    aGroupLayout->addWidget( myNbSegPerEdge, row, 1 );
+    aSizeLayout->addWidget( new QLabel( tr( "NETGEN_MAX_SIZE" ), aSizeBox ), row, 0 );
+    myMaxSize = new SMESHGUI_SpinBox( aSizeBox );
+    myMaxSize->RangeStepAndValidator( 1e-07, 1e+06, 10., "length_precision" );
+    aSizeLayout->addWidget( myMaxSize, row, 1 );
     row++;
 
-    aGroupLayout->addWidget( new QLabel( tr( "NETGEN_SEG_PER_RADIUS" ), GroupC1 ), row, 0 );
-    myNbSegPerRadius = new SMESHGUI_SpinBox( GroupC1 );
-    myNbSegPerRadius->RangeStepAndValidator( .2, VALUE_MAX, .1, "parametric_precision" );
-    aGroupLayout->addWidget( myNbSegPerRadius, row, 1 );
+    aSizeLayout->addWidget( new QLabel( tr( "NETGEN_MIN_SIZE" ), aSizeBox ), row, 0 );
+    myMinSize = new SMESHGUI_SpinBox( aSizeBox );
+    myMinSize->RangeStepAndValidator( 0.0, 1e+06, 10., "length_precision" );
+    aSizeLayout->addWidget( myMinSize, row, 1 );
     row++;
-  }
 
-  myChordalErrorEnabled = 0;
-  myChordalError = 0;
-  if (( myIs2D && !isRemesher ) || !myIsONLY )
-  {
-    myChordalErrorEnabled = new QCheckBox( tr( "NETGEN_CHORDAL_ERROR" ), GroupC1 );
-    aGroupLayout->addWidget( myChordalErrorEnabled, row, 0 );
-    myChordalError = new SMESHGUI_SpinBox( GroupC1 );
-    myChordalError->RangeStepAndValidator( COORD_MIN, COORD_MAX, .1, "length_precision" );
-    aGroupLayout->addWidget( myChordalError, row, 1 );
-    connect( myChordalErrorEnabled, SIGNAL( stateChanged(int)), SLOT( onChordalErrorEnabled()));
+    aSizeLayout->addWidget( new QLabel( tr( "NETGEN_FINENESS" ), aSizeBox ), row, 0 );
+    myFineness = new QComboBox( aSizeBox );
+    QStringList types;
+    types << tr( "NETGEN_VERYCOARSE" ) << tr( "NETGEN_COARSE" )   << tr( "NETGEN_MODERATE" ) <<
+      tr( "NETGEN_FINE" )       << tr( "NETGEN_VERYFINE" ) << tr( "NETGEN_CUSTOM" );
+    myFineness->addItems( types );
+    aSizeLayout->addWidget( myFineness, row, 1 );
+    connect( myFineness, SIGNAL( activated( int ) ), this, SLOT( onFinenessChanged() ) );
     row++;
-  }
 
-  myRidgeAngle = 0;
-  if ( isRemesher )
-  {
-    aGroupLayout->addWidget( new QLabel( tr( "NETGEN_RIDGE_ANGLE" ), GroupC1 ), row, 0 );
-    myRidgeAngle = new SMESHGUI_SpinBox( GroupC1 );
-    myRidgeAngle->RangeStepAndValidator( 0, 90, 10, "angle_precision" );
-    aGroupLayout->addWidget( myRidgeAngle, row, 1 );
+    aSizeLayout->addWidget( new QLabel( tr( "NETGEN_GROWTH_RATE" ), aSizeBox ), row, 0 );
+    myGrowthRate = new SMESHGUI_SpinBox( aSizeBox );
+    myGrowthRate->RangeStepAndValidator( .0001, 10., .1, "parametric_precision" );
+    aSizeLayout->addWidget( myGrowthRate, row, 1 );
     row++;
-  }
 
-  mySurfaceCurvature = 0;
-  if (( myIs2D && !isRemesher ) || !myIsONLY )
-  {
-    mySurfaceCurvature = new QCheckBox( tr( "NETGEN_SURFACE_CURVATURE" ), GroupC1 );
-    aGroupLayout->addWidget( mySurfaceCurvature, row, 0, 1, 2 );
-    connect( mySurfaceCurvature, SIGNAL( stateChanged( int ) ), this, SLOT( onSurfaceCurvatureChanged() ) );
-    row++;
-  }
+    myNbSegPerEdge = 0;
+    myNbSegPerRadius = 0;
+    if ( !myIsONLY )
+    {
+      const double VALUE_MAX = 1.0e+6;
+
+      aSizeLayout->addWidget( new QLabel( tr( "NETGEN_SEG_PER_EDGE" ), aSizeBox ), row, 0 );
+      myNbSegPerEdge = new SMESHGUI_SpinBox( aSizeBox );
+      myNbSegPerEdge->RangeStepAndValidator( .2, VALUE_MAX, .1, "parametric_precision" );
+      aSizeLayout->addWidget( myNbSegPerEdge, row, 1 );
+      row++;
+
+      aSizeLayout->addWidget( new QLabel( tr( "NETGEN_SEG_PER_RADIUS" ), aSizeBox ), row, 0 );
+      myNbSegPerRadius = new SMESHGUI_SpinBox( aSizeBox );
+      myNbSegPerRadius->RangeStepAndValidator( .2, VALUE_MAX, .1, "parametric_precision" );
+      aSizeLayout->addWidget( myNbSegPerRadius, row, 1 );
+      row++;
+    }
+
+    myChordalErrorEnabled = 0;
+    myChordalError = 0;
+    if (( myIs2D && !isRemesher ) || !myIsONLY )
+    {
+      myChordalErrorEnabled = new QCheckBox( tr( "NETGEN_CHORDAL_ERROR" ), aSizeBox );
+      aSizeLayout->addWidget( myChordalErrorEnabled, row, 0 );
+      myChordalError = new SMESHGUI_SpinBox( aSizeBox );
+      myChordalError->RangeStepAndValidator( COORD_MIN, COORD_MAX, .1, "length_precision" );
+      aSizeLayout->addWidget( myChordalError, row, 1 );
+      connect( myChordalErrorEnabled, SIGNAL( stateChanged(int)), SLOT( onChordalErrorEnabled()));
+      row++;
+    }
+
+    mySurfaceCurvature = 0;
+    if (( myIs2D && !isRemesher ) || !myIsONLY )
+    {
+      mySurfaceCurvature = new QCheckBox( tr( "NETGEN_SURFACE_CURVATURE" ), aSizeBox );
+      aSizeLayout->addWidget( mySurfaceCurvature, row, 0, 1, 2 );
+      connect( mySurfaceCurvature, SIGNAL( stateChanged( int ) ), this, SLOT( onSurfaceCurvatureChanged() ) );
+      row++;
+    }
+  } // end Mesh Size box
 
   myAllowQuadrangles = 0;
   if ( myIs2D || !myIsONLY ) // disable only for NETGEN 3D
   {
     myAllowQuadrangles = new QCheckBox( tr( "NETGEN_ALLOW_QUADRANGLES" ), GroupC1 );
-    aGroupLayout->addWidget( myAllowQuadrangles, row, 0, 1, 2 );
-    row++;
+    aGroupLayout->addWidget( myAllowQuadrangles, row0, 0, 1, 2 );
+    row0++;
+  }
+
+  mySecondOrder = 0;
+  if ( !myIsONLY )
+  {
+    mySecondOrder = new QCheckBox( tr( "NETGEN_SECOND_ORDER" ), GroupC1 );
+    aGroupLayout->addWidget( mySecondOrder, row0, 0, 1, 2 );
+    row0++;
   }
 
   myOptimize = 0;
-  if ( !isRemesher )
+  // if ( !isRemesher ) ???
   {
     myOptimize = new QCheckBox( tr( "NETGEN_OPTIMIZE" ), GroupC1 );
-    aGroupLayout->addWidget( myOptimize, row, 0, 1, 2 );
-    row++;
+    aGroupLayout->addWidget( myOptimize, row0, 0, 1, 2 );
+    row0++;
   }
 
-  myFuseEdges = 0;
-  if ( !myIsONLY )
+  myKeepExistingEdges = myMakeGroupsOfSurfaces = 0;
+  if ( isRemesher )
   {
-    myFuseEdges = new QCheckBox( tr( "NETGEN_FUSE_EDGES" ), GroupC1 );
-    aGroupLayout->addWidget( myFuseEdges, row, 0, 1, 2 );
+    myKeepExistingEdges = new QCheckBox( tr( "NETGEN_KEEP_EXISTING_EDGES" ), GroupC1 );
+    aGroupLayout->addWidget( myKeepExistingEdges, row0, 0, 1, 2 );
+    row0++;
+
+    myMakeGroupsOfSurfaces = new QCheckBox( tr( "NETGEN_MAKE_SURFACE_GROUPS" ), GroupC1 );
+    aGroupLayout->addWidget( myMakeGroupsOfSurfaces, row0, 0, 1, 2 );
+    row0++;
+  }
+
+  aGroupLayout->setRowStretch( row0, 1 );
+
+  // ========
+  // STL TAB
+  // ========
+
+  QWidget* stlGroup = new QWidget();
+  QVBoxLayout* stlLay = new QVBoxLayout( stlGroup );
+  stlLay->setMargin( 5 );
+  stlLay->setSpacing( 10 );
+
+  // Charts group
+  {
+    QGroupBox* chaGroup = new QGroupBox( tr("NETGEN_STL_CHARTS"), stlGroup );
+    stlLay->addWidget( chaGroup );
+
+    QGridLayout* chaLayout = new QGridLayout( chaGroup );
+    chaLayout->setMargin( 6 );
+    chaLayout->setSpacing( 6 );
+
+    int row = 0;
+    chaLayout->addWidget( new QLabel( tr( "NETGEN_RIDGE_ANGLE" ), chaGroup ), row, 0 );
+    myRidgeAngle = new SMESHGUI_SpinBox( chaGroup );
+    myRidgeAngle->RangeStepAndValidator( 0, 90, 10, "angle_precision" );
+    chaLayout->addWidget( myRidgeAngle, row, 1 );
+    row++;
+
+    chaLayout->addWidget( new QLabel( tr( "NETGEN_EDGE_CORNER_ANGLE" ), chaGroup ), row, 0 );
+    myEdgeCornerAngle = new SMESHGUI_SpinBox( chaGroup );
+    myEdgeCornerAngle->RangeStepAndValidator( 0., 180., 20., "angle_precision" );
+    chaLayout->addWidget( myEdgeCornerAngle, row, 1 );
+    row++;
+
+    chaLayout->addWidget( new QLabel( tr( "NETGEN_CHART_ANGLE" ), chaGroup ), row, 0 );
+    myChartAngle = new SMESHGUI_SpinBox( chaGroup );
+    myChartAngle->RangeStepAndValidator( 0., 180., 20., "angle_precision" );
+    chaLayout->addWidget( myChartAngle, row, 1 );
+    row++;
+
+    chaLayout->addWidget( new QLabel( tr( "NETGEN_OUTER_CHART_ANGLE" ), chaGroup ), row, 0 );
+    myOuterChartAngle = new SMESHGUI_SpinBox( chaGroup );
+    myOuterChartAngle->RangeStepAndValidator( 0., 180., 20., "angle_precision" );
+    chaLayout->addWidget( myOuterChartAngle, row, 1 );
     row++;
   }
+  // STL size group
+  {
+    QGroupBox* sizeGroup = new QGroupBox( tr("NETGEN_STL_SIZE"), stlGroup );
+    stlLay->addWidget( sizeGroup );
+
+    QGridLayout* sizeLayout = new QGridLayout( sizeGroup );
+    sizeLayout->setMargin( 6 );
+    sizeLayout->setSpacing( 6 );
+
+    int row = 0;
+    myRestHChartDistEnable = new QCheckBox( tr("NETGEN_RESTH_CHART_DIST"), sizeGroup );
+    sizeLayout->addWidget( myRestHChartDistEnable, row, 0 );
+    myRestHChartDistFactor = new SMESHGUI_SpinBox( sizeGroup );
+    myRestHChartDistFactor->RangeStepAndValidator( 0.2, 5., 0.1, "length_precision" );
+    sizeLayout->addWidget( myRestHChartDistFactor, row, 1 );
+    row++;
+
+    myRestHLineLengthEnable = new QCheckBox( tr("NETGEN_RESTH_LINE_LENGTH"), sizeGroup );
+    sizeLayout->addWidget( myRestHLineLengthEnable, row, 0 );
+    myRestHLineLengthFactor = new SMESHGUI_SpinBox( sizeGroup );
+    myRestHLineLengthFactor->RangeStepAndValidator( 0.2, 5., 0.1, "length_precision" );
+    sizeLayout->addWidget( myRestHLineLengthFactor, row, 1 );
+    row++;
+
+    myRestHCloseEdgeEnable = new QCheckBox( tr("NETGEN_RESTH_CLOSE_EDGE"), sizeGroup );
+    sizeLayout->addWidget( myRestHCloseEdgeEnable, row, 0 );
+    myRestHCloseEdgeFactor = new SMESHGUI_SpinBox( sizeGroup );
+    myRestHCloseEdgeFactor->RangeStepAndValidator( 0.2, 8., 0.1, "length_precision" );
+    sizeLayout->addWidget( myRestHCloseEdgeFactor, row, 1 );
+    row++;
+
+    myRestHSurfCurvEnable = new QCheckBox( tr("NETGEN_RESTH_SURF_CURV"), sizeGroup );
+    sizeLayout->addWidget( myRestHSurfCurvEnable, row, 0 );
+    myRestHSurfCurvFactor = new SMESHGUI_SpinBox( sizeGroup );
+    myRestHSurfCurvFactor->RangeStepAndValidator( 0.2, 5., 0.1, "length_precision" );
+    sizeLayout->addWidget( myRestHSurfCurvFactor, row, 1 );
+    row++;
+
+    myRestHEdgeAngleEnable = new QCheckBox( tr("NETGEN_RESTH_EDGE_ANGLE"), sizeGroup );
+    sizeLayout->addWidget( myRestHEdgeAngleEnable, row, 0 );
+    myRestHEdgeAngleFactor = new SMESHGUI_SpinBox( sizeGroup );
+    myRestHEdgeAngleFactor->RangeStepAndValidator( 0.2, 5., 0.1, "length_precision" );
+    sizeLayout->addWidget( myRestHEdgeAngleFactor, row, 1 );
+    row++;
+
+    myRestHSurfMeshCurvEnable = new QCheckBox( tr("NETGEN_RESTH_SURF_MESH_CURV"), sizeGroup );
+    sizeLayout->addWidget( myRestHSurfMeshCurvEnable, row, 0 );
+    myRestHSurfMeshCurvFactor = new SMESHGUI_SpinBox( sizeGroup );
+    myRestHSurfMeshCurvFactor->RangeStepAndValidator( 0.2, 5., 0.1, "length_precision" );
+    sizeLayout->addWidget( myRestHSurfMeshCurvFactor, row, 1 );
+    row++;
+  }
+  if ( isRemesher )
+  {
+    tab->insertTab( STL_TAB, stlGroup, tr( "NETGEN_STL" ));
+    connect( myRestHChartDistEnable   , SIGNAL( toggled(bool) ), this, SLOT( onSTLEnable() ));
+    connect( myRestHLineLengthEnable  , SIGNAL( toggled(bool) ), this, SLOT( onSTLEnable() ));
+    connect( myRestHCloseEdgeEnable   , SIGNAL( toggled(bool) ), this, SLOT( onSTLEnable() ));
+    connect( myRestHSurfCurvEnable    , SIGNAL( toggled(bool) ), this, SLOT( onSTLEnable() ));
+    connect( myRestHEdgeAngleEnable   , SIGNAL( toggled(bool) ), this, SLOT( onSTLEnable() ));
+    connect( myRestHSurfMeshCurvEnable, SIGNAL( toggled(bool) ), this, SLOT( onSTLEnable() ));
+  }
+  else
+  {
+    delete stlGroup;
+    myRidgeAngle = 0;
+  }
+
+  // ===============
+  // Local Size TAB
+  // ===============
 
   myLocalSizeTable = 0;
   //if ( !myIsONLY )
@@ -325,6 +456,94 @@ QFrame* NETGENPluginGUI_HypothesisCreator::buildFrame()
 
     tab->insertTab(LSZ_TAB, localSizeGroup, tr("NETGEN_LOCAL_SIZE"));
   }
+
+  // =============
+  // Advanced TAB
+  // =============
+
+  QWidget* advGroup = new QWidget();
+  tab->insertTab( ADV_TAB, advGroup, tr( "SMESH_ADVANCED" ));
+  QVBoxLayout* advLay = new QVBoxLayout( advGroup );
+  advLay->setSpacing( 6 );
+  advLay->setMargin( 5 );
+
+  // Optimizer group
+  // ----------------
+  {
+    QGroupBox* optBox = new QGroupBox( tr("NETGEN_OPTIMIZER"), advGroup );
+    advLay->addWidget( optBox );
+
+    QGridLayout* optLayout = new QGridLayout( optBox );
+    optLayout->setMargin( 6 );
+    optLayout->setSpacing( 6 );
+
+    int row = 0;
+    optLayout->addWidget( new QLabel( tr( "NETGEN_ELEM_SIZE_WEIGHT" ), optBox ), row, 0 );
+    myElemSizeWeight = new SMESHGUI_SpinBox( optBox );
+    myElemSizeWeight->RangeStepAndValidator( 0., 1., 0.1, "parametric_precision" );
+    optLayout->addWidget( myElemSizeWeight, row, 1 );
+    row++;
+
+    myNbSurfOptSteps = 0;
+    if ( myIs2D || !myIsONLY )
+    {
+      optLayout->addWidget( new QLabel( tr( "NETGEN_NB_SURF_OPT_STEPS" ), optBox ), row, 0 );
+      myNbSurfOptSteps = new SalomeApp_IntSpinBox( optBox );
+      myNbSurfOptSteps->setMinimum( 0 );
+      myNbSurfOptSteps->setMaximum( 99 );
+      optLayout->addWidget( myNbSurfOptSteps, row, 1 );
+      row++;
+    }
+
+    myNbVolOptSteps = 0;
+    if ( !myIs2D )
+    {
+      optLayout->addWidget( new QLabel( tr( "NETGEN_NB_VOL_OPT_STEPS" ), optBox ), row, 0 );
+      myNbVolOptSteps = new SalomeApp_IntSpinBox( optBox );
+      myNbVolOptSteps->setMinimum( 0 );
+      myNbVolOptSteps->setMaximum( 99 );
+      optLayout->addWidget( myNbVolOptSteps, row, 1 );
+    }
+  }
+  // Insider group
+  {
+    QGroupBox* insGroup = new QGroupBox( tr("NETGEN_INSIDER"), advGroup );
+    advLay->addWidget( insGroup );
+
+    QGridLayout* insLayout = new QGridLayout( insGroup );
+    insLayout->setMargin( 6 );
+    insLayout->setSpacing( 6 );
+
+    int row = 0;
+    insLayout->addWidget( new QLabel( tr( "NETGEN_WORST_ELEM_MEASURE" ), insGroup ), row, 0 );
+    myWorstElemMeasure = new SalomeApp_IntSpinBox( insGroup );
+    myWorstElemMeasure->setMinimum( 1 );
+    myWorstElemMeasure->setMaximum( 10 );
+    insLayout->addWidget( myWorstElemMeasure, row, 1, 1, 2 );
+    row++;
+
+    myUseDelauney = new QCheckBox( tr( "NETGEN_USE_DELAUNEY" ), insGroup );
+    insLayout->addWidget( myUseDelauney, row, 0, 1, 2 );
+    row++;
+
+    myCheckOverlapping = new QCheckBox( tr( "NETGEN_CHECK_OVERLAPPING" ), insGroup );
+    insLayout->addWidget( myCheckOverlapping, row, 0, 1, 2 );
+    row++;
+
+    myCheckChartBoundary = new QCheckBox( tr( "NETGEN_CHECK_CHART_BOUNDARY" ), insGroup );
+    insLayout->addWidget( myCheckChartBoundary, row, 0, 1, 2 );
+    row++;
+
+    myFuseEdges = 0;
+    if ( !myIsONLY && !isRemesher )
+    {
+      myFuseEdges = new QCheckBox( tr( "NETGEN_FUSE_EDGES" ), insGroup );
+      insLayout->addWidget( myFuseEdges, row, 0, 1, 2 );
+      row++;
+    }
+    insLayout->setRowStretch( row, 1 );
+  }
+
   return fr;
 }
 
@@ -335,65 +554,72 @@ void NETGENPluginGUI_HypothesisCreator::retrieveParams() const
 
   if( myName )
     myName->setText( data.myName );
-  if(data.myMaxSizeVar.isEmpty())
-    myMaxSize->setValue( data.myMaxSize );
-  else
-    myMaxSize->setText( data.myMaxSizeVar );
 
-  if(data.myMinSizeVar.isEmpty())
-    myMinSize->setValue( data.myMinSize );
-  else
-    myMinSize->setText( data.myMinSizeVar );
-
+  setTextOrVar( myMaxSize, data.myMaxSize, data.myMaxSizeVar );
+  setTextOrVar( myMinSize, data.myMinSize, data.myMinSizeVar );
   if ( mySecondOrder )
     mySecondOrder->setChecked( data.mySecondOrder );
   if ( myOptimize )
     myOptimize->setChecked( data.myOptimize );
   myFineness->setCurrentIndex( data.myFineness );
+  setTextOrVar( myGrowthRate, data.myGrowthRate, data.myGrowthRateVar );
+  setTextOrVar( myNbSegPerEdge, data.myNbSegPerEdge, data.myNbSegPerEdgeVar );
+  setTextOrVar( myNbSegPerRadius, data.myNbSegPerRadius, data.myNbSegPerRadiusVar );
 
-  if(data.myGrowthRateVar.isEmpty())
-    myGrowthRate->setValue( data.myGrowthRate );
-  else
-    myGrowthRate->setText( data.myGrowthRateVar );
-
-  if ( myNbSegPerEdge )
-  {
-    if(data.myNbSegPerEdgeVar.isEmpty())
-      myNbSegPerEdge->setValue( data.myNbSegPerEdge );
-    else
-      myNbSegPerEdge->setText( data.myNbSegPerEdgeVar );
-  }
-  if ( myNbSegPerRadius )
-  {
-    if(data.myNbSegPerRadiusVar.isEmpty())
-      myNbSegPerRadius->setValue( data.myNbSegPerRadius );
-    else
-      myNbSegPerRadius->setText( data.myNbSegPerRadiusVar );
-  }
   if ( myChordalError )
   {
     myChordalErrorEnabled->setChecked( data.myChordalErrorEnabled && data.myChordalError > 0 );
-    if(data.myChordalErrorVar.isEmpty())
-      myChordalError->setValue( data.myChordalError > 0 ? data.myChordalError : 0.1 );
-    else
-      myChordalError->setText( data.myChordalErrorVar );
+    setTextOrVar( myChordalError, data.myChordalError, data.myChordalErrorVar );
     myChordalError->setEnabled( myChordalErrorEnabled->isChecked() );
-  }
-  if ( myRidgeAngle )
-  {
-    if ( data.myRidgeAngleVar.isEmpty() )
-      myRidgeAngle->setValue( data.myRidgeAngle );
-    else
-      myRidgeAngle->setText( data.myRidgeAngleVar );
   }
   if (myAllowQuadrangles)
     myAllowQuadrangles->setChecked( data.myAllowQuadrangles );
-
   if (mySurfaceCurvature)
     mySurfaceCurvature->setChecked( data.mySurfaceCurvature );
 
+  if ( myKeepExistingEdges )
+  {
+    myKeepExistingEdges->setChecked( data.myKeepExistingEdges );
+    myMakeGroupsOfSurfaces->setChecked( data.myMakeGroupsOfSurfaces );
+  }
+
+  setTextOrVar( myElemSizeWeight, data.myElemSizeWeight, data.myElemSizeWeightVar );
+  setTextOrVar( myNbSurfOptSteps, data.myNbSurfOptSteps, data.myNbSurfOptStepsVar );
+  setTextOrVar( myNbVolOptSteps,  data.myNbVolOptSteps,  data.myNbVolOptStepsVar );
+
   if (myFuseEdges)
     myFuseEdges->setChecked( data.myFuseEdges );
+  setTextOrVar( myWorstElemMeasure, data.myWorstElemMeasure, data.myWorstElemMeasureVar );
+  myUseDelauney->setChecked( data.myUseDelauney );
+  myCheckOverlapping->setChecked( data.myCheckOverlapping );
+  myCheckChartBoundary->setChecked( data.myCheckChartBoundary );
+
+  if ( myRidgeAngle )
+  {
+    setTextOrVar( myRidgeAngle, data.myRidgeAngle, data.myRidgeAngleVar );
+    setTextOrVar( myEdgeCornerAngle, data.myEdgeCornerAngle, data.myEdgeCornerAngleVar );
+    setTextOrVar( myChartAngle, data.myChartAngle, data.myChartAngleVar );
+    setTextOrVar( myOuterChartAngle, data.myOuterChartAngle, data.myOuterChartAngleVar );
+    setTextOrVar( myRestHChartDistFactor, data.myRestHChartDistFactor,
+                  data.myRestHChartDistFactorVar );
+    setTextOrVar( myRestHLineLengthFactor, data.myRestHLineLengthFactor,
+                  data.myRestHLineLengthFactorVar );
+    setTextOrVar( myRestHCloseEdgeFactor, data.myRestHCloseEdgeFactor,
+                  data.myRestHCloseEdgeFactorVar );
+    setTextOrVar( myRestHSurfCurvFactor, data.myRestHSurfCurvFactor,
+                  data.myRestHSurfCurvFactorVar );
+    setTextOrVar( myRestHEdgeAngleFactor, data.myRestHEdgeAngleFactor,
+                  data.myRestHEdgeAngleFactorVar );
+    setTextOrVar( myRestHSurfMeshCurvFactor, data.myRestHSurfMeshCurvFactor,
+                  data.myRestHSurfMeshCurvFactorVar );
+
+    myRestHChartDistEnable->setChecked( data.myRestHChartDistEnable );
+    myRestHLineLengthEnable->setChecked( data.myRestHLineLengthEnable );
+    myRestHCloseEdgeEnable->setChecked( data.myRestHCloseEdgeEnable );
+    myRestHSurfCurvEnable->setChecked( data.myRestHSurfCurvEnable );
+    myRestHEdgeAngleEnable->setChecked( data.myRestHEdgeAngleEnable );
+    myRestHSurfMeshCurvEnable->setChecked( data.myRestHSurfMeshCurvEnable );
+  }
 
   // update widgets
   ((NETGENPluginGUI_HypothesisCreator*) this )-> onSurfaceCurvatureChanged();
@@ -440,10 +666,12 @@ bool NETGENPluginGUI_HypothesisCreator::readParamsFromHypo( NetgenHypothesisData
 
   h_data.myName = isCreation() ? hypName() : "";
 
-  h_data.myMaxSize     = h->GetMaxSize();
-  h_data.myMaxSizeVar  = getVariableName("SetMaxSize");
-  h_data.mySecondOrder = h->GetSecondOrder();
-  h_data.myOptimize    = h->GetOptimize();
+  h_data.myMaxSize             = h->GetMaxSize();
+  h_data.myMaxSizeVar          = getVariableName("SetMaxSize");
+  h_data.myMinSize             = h->GetMinSize();
+  h_data.myMinSizeVar          = getVariableName("SetMinSize");
+  h_data.mySecondOrder         = h->GetSecondOrder();
+  h_data.myOptimize            = h->GetOptimize();
 
   h_data.myFineness            = (int) h->GetFineness();
   h_data.myGrowthRate          = h->GetGrowthRate();
@@ -455,10 +683,21 @@ bool NETGENPluginGUI_HypothesisCreator::readParamsFromHypo( NetgenHypothesisData
   h_data.myChordalError        = h->GetChordalError();
   h_data.myChordalErrorVar     = getVariableName("SetChordalError");
   h_data.myChordalErrorEnabled = h->GetChordalErrorEnabled();
-  h_data.myMinSize             = h->GetMinSize();
-  h_data.myMinSizeVar          = getVariableName("SetMinSize");
   h_data.mySurfaceCurvature    = h->GetUseSurfaceCurvature();
+
+  h_data.myElemSizeWeight      = h->GetElemSizeWeight    ();
+  h_data.myElemSizeWeightVar   = getVariableName("SetElemSizeWeight");
+  h_data.myNbSurfOptSteps      = h->GetNbSurfOptSteps    ();
+  h_data.myNbSurfOptStepsVar   = getVariableName("SetNbSurfOptSteps");
+  h_data.myNbVolOptSteps       = h->GetNbVolOptSteps     ();
+  h_data.myNbVolOptStepsVar    = getVariableName("SetNbVolOptSteps");
   h_data.myFuseEdges           = h->GetFuseEdges();
+  h_data.myWorstElemMeasure    = h->GetWorstElemMeasure  ();
+  h_data.myWorstElemMeasureVar = getVariableName("SetWorstElemMeasure");
+  h_data.myUseDelauney         = h->GetUseDelauney       ();
+  h_data.myCheckOverlapping    = h->GetCheckOverlapping  ();
+  h_data.myCheckChartBoundary  = h->GetCheckChartBoundary();
+
   h_data.myMeshSizeFile        = h->GetMeshSizeFile();
 
   //if ( myIs2D )
@@ -473,9 +712,37 @@ bool NETGENPluginGUI_HypothesisCreator::readParamsFromHypo( NetgenHypothesisData
   {
     NETGENPlugin::NETGENPlugin_RemesherHypothesis_2D_var rh =
       NETGENPlugin::NETGENPlugin_RemesherHypothesis_2D::_narrow( h );
-
     if ( !rh->_is_nil() )
-      h_data.myRidgeAngle = rh->GetRidgeAngle();
+    {
+      h_data.myRidgeAngle                 = rh->GetRidgeAngle();
+      h_data.myRidgeAngleVar              = getVariableName("SetRidgeAngle");
+      h_data.myEdgeCornerAngle            = rh->GetEdgeCornerAngle        ();
+      h_data.myEdgeCornerAngleVar         = getVariableName("SetEdgeCornerAngle");
+      h_data.myChartAngle                 = rh->GetChartAngle             ();
+      h_data.myChartAngleVar              = getVariableName("SetChartAngle");
+      h_data.myOuterChartAngle            = rh->GetOuterChartAngle        ();
+      h_data.myOuterChartAngleVar         = getVariableName("SetOuterChartAngle");
+      h_data.myRestHChartDistFactor       = rh->GetRestHChartDistFactor   ();
+      h_data.myRestHChartDistFactorVar    = getVariableName("SetRestHChartDistFactor");
+      h_data.myRestHLineLengthFactor      = rh->GetRestHLineLengthFactor  ();
+      h_data.myRestHLineLengthFactorVar   = getVariableName("SetRestHLineLengthFactor");
+      h_data.myRestHCloseEdgeFactor       = rh->GetRestHCloseEdgeFactor   ();
+      h_data.myRestHCloseEdgeFactorVar    = getVariableName("SetRestHCloseEdgeFactor");
+      h_data.myRestHSurfCurvFactor        = rh->GetRestHSurfCurvFactor    ();
+      h_data.myRestHSurfCurvFactorVar     = getVariableName("SetRestHSurfCurvFactor");
+      h_data.myRestHEdgeAngleFactor       = rh->GetRestHEdgeAngleFactor   ();
+      h_data.myRestHEdgeAngleFactorVar    = getVariableName("SetRestHEdgeAngleFactor");
+      h_data.myRestHSurfMeshCurvFactor    = rh->GetRestHSurfMeshCurvFactor();
+      h_data.myRestHSurfMeshCurvFactorVar = getVariableName("SetRestHSurfMeshCurvFactor");
+      h_data.myRestHChartDistEnable       = rh->GetRestHChartDistEnable   ();
+      h_data.myRestHLineLengthEnable      = rh->GetRestHLineLengthEnable  ();
+      h_data.myRestHCloseEdgeEnable       = rh->GetRestHCloseEdgeEnable   ();
+      h_data.myRestHSurfCurvEnable        = rh->GetRestHSurfCurvEnable    ();
+      h_data.myRestHEdgeAngleEnable       = rh->GetRestHEdgeAngleEnable   ();
+      h_data.myRestHSurfMeshCurvEnable    = rh->GetRestHSurfMeshCurvEnable();
+      h_data.myKeepExistingEdges          = rh->GetKeepExistingEdges      ();
+      h_data.myMakeGroupsOfSurfaces       = rh->GetMakeGroupsOfSurfaces   ();
+    }
   }
 
   NETGENPluginGUI_HypothesisCreator*  that = (NETGENPluginGUI_HypothesisCreator*)this;
@@ -503,18 +770,19 @@ bool NETGENPluginGUI_HypothesisCreator::storeParamsToHypo( const NetgenHypothesi
   bool ok = true;
   try
   {
-    if( isCreation() )
+    if ( isCreation() )
       SMESH::SetName( SMESH::FindSObject( h ), h_data.myName.toLatin1().data() );
     h->SetVarParameter( h_data.myMaxSizeVar.toLatin1().constData(), "SetMaxSize");
     h->SetMaxSize     ( h_data.myMaxSize );
+    h->SetVarParameter( h_data.myMinSizeVar.toLatin1().constData(), "SetMinSize");
+    h->SetMinSize     ( h_data.myMinSize );
     if ( mySecondOrder )
       h->SetSecondOrder ( h_data.mySecondOrder );
     if ( myOptimize )
       h->SetOptimize    ( h_data.myOptimize );
-    int fineness = h_data.myFineness;
-    h->SetFineness    ( fineness );
+    h->SetFineness    ( h_data.myFineness );
 
-    if( fineness==UserDefined )
+    if ( h_data.myFineness == UserDefined )
     {
       h->SetVarParameter  ( h_data.myGrowthRateVar.toLatin1().constData(), "SetGrowthRate");
       h->SetGrowthRate    ( h_data.myGrowthRate );
@@ -535,14 +803,31 @@ bool NETGENPluginGUI_HypothesisCreator::storeParamsToHypo( const NetgenHypothesi
       h->SetChordalError       ( h_data.myChordalError );
       h->SetChordalErrorEnabled( h_data.myChordalErrorEnabled );
     }
-    h->SetVarParameter       ( h_data.myMinSizeVar.toLatin1().constData(), "SetMinSize");
-    h->SetMinSize            ( h_data.myMinSize );
     if ( mySurfaceCurvature )
       h->SetUseSurfaceCurvature( h_data.mySurfaceCurvature );
-    if ( myFuseEdges )
-      h->SetFuseEdges          ( h_data.myFuseEdges );
-    h->SetMeshSizeFile       ( h_data.myMeshSizeFile.toUtf8().constData() );
+    h->SetMeshSizeFile         ( h_data.myMeshSizeFile.toUtf8().constData() );
 
+    h->SetVarParameter  ( h_data.myElemSizeWeightVar.toLatin1().constData(), "SetElemSizeWeight");
+    h->SetElemSizeWeight( h_data.myElemSizeWeight );
+    if ( myNbSurfOptSteps )
+    {
+      h->SetVarParameter  ( h_data.myNbSurfOptStepsVar.toLatin1().constData(), "SetNbSurfOptSteps");
+      h->SetNbSurfOptSteps( h_data.myNbSurfOptSteps );
+    }
+    if ( myNbVolOptSteps )
+    {
+      h->SetVarParameter ( h_data.myNbVolOptStepsVar.toLatin1().constData(), "SetNbVolOptSteps");
+      h->SetNbVolOptSteps( h_data.myNbVolOptSteps );
+    }
+    if ( myFuseEdges )
+      h->SetFuseEdges( h_data.myFuseEdges );
+    h->SetVarParameter    ( h_data.myWorstElemMeasureVar.toLatin1().constData(), "SetWorstElemMeasure");
+    h->SetWorstElemMeasure( h_data.myWorstElemMeasure );
+
+    h->SetUseDelauney( myUseDelauney );
+    h->SetCheckOverlapping( myCheckOverlapping );
+    h->SetCheckChartBoundary( myCheckChartBoundary );
+    
     //if ( myIs2D )
     {
       // NETGENPlugin::NETGENPlugin_Hypothesis_2D_var h_2d =
@@ -558,8 +843,38 @@ bool NETGENPluginGUI_HypothesisCreator::storeParamsToHypo( const NetgenHypothesi
         NETGENPlugin::NETGENPlugin_RemesherHypothesis_2D::_narrow( h );
       if ( !rh->_is_nil() )
       {
-        rh->SetVarParameter( h_data.myRidgeAngleVar.toLatin1().constData(), "SetRidgeAngle");
-        rh->SetRidgeAngle  ( h_data.myRidgeAngle );
+        rh->SetVarParameter   ( h_data.myRidgeAngleVar.toLatin1().constData(), "SetRidgeAngle");
+        rh->SetRidgeAngle     ( h_data.myRidgeAngle );
+        rh->SetVarParameter   ( h_data.myEdgeCornerAngleVar.toLatin1().constData(), "SetEdgeCornerAngle");
+        rh->SetEdgeCornerAngle( h_data.myEdgeCornerAngle );
+        rh->SetVarParameter   ( h_data.myChartAngleVar.toLatin1().constData(), "SetChartAngle");
+        rh->SetChartAngle     ( h_data.myChartAngle );
+        rh->SetVarParameter   ( h_data.myOuterChartAngleVar.toLatin1().constData(), "SetOuterChartAngle");
+        rh->SetOuterChartAngle( h_data.myOuterChartAngle );
+
+        rh->SetVarParameter           ( h_data.myRestHChartDistFactorVar.toLatin1().constData(), "SetRestHChartDistFactor");
+        rh->SetRestHChartDistFactor   ( h_data.myRestHChartDistFactor );
+        rh->SetVarParameter           ( h_data.myRestHLineLengthFactorVar.toLatin1().constData(), "SetRestHLineLengthFactor");
+        rh->SetRestHLineLengthFactor  ( h_data.myRestHLineLengthFactor );
+        rh->SetVarParameter           ( h_data.myRestHCloseEdgeFactorVar.toLatin1().constData(), "SetRestHCloseEdgeFactor");
+        rh->SetRestHCloseEdgeFactor   ( h_data.myRestHCloseEdgeFactor );
+        rh->SetVarParameter           ( h_data.myRestHSurfCurvFactorVar.toLatin1().constData(), "SetRestHSurfCurvFactor");
+        rh->SetRestHSurfCurvFactor    ( h_data.myRestHSurfCurvFactor );
+        rh->SetVarParameter           ( h_data.myRestHEdgeAngleFactorVar.toLatin1().constData(), "SetRestHEdgeAngleFactor");
+        rh->SetRestHEdgeAngleFactor   ( h_data.myRestHEdgeAngleFactor );
+        rh->SetVarParameter           ( h_data.myRestHSurfMeshCurvFactorVar.toLatin1().constData(), "SetRestHSurfMeshCurvFactor");
+        rh->SetRestHSurfMeshCurvFactor( h_data.myRestHSurfMeshCurvFactor );
+
+        rh->SetRestHChartDistEnable   ( h_data.myRestHChartDistEnable );
+        rh->SetRestHLineLengthEnable  ( h_data.myRestHLineLengthEnable );
+        rh->SetRestHCloseEdgeEnable   ( h_data.myRestHCloseEdgeEnable );
+        rh->SetRestHSurfCurvEnable    ( h_data.myRestHSurfCurvEnable );
+        rh->SetRestHEdgeAngleEnable   ( h_data.myRestHEdgeAngleEnable );
+        rh->SetRestHSurfMeshCurvEnable( h_data.myRestHSurfMeshCurvEnable );
+
+        rh->SetKeepExistingEdges      ( h_data.myKeepExistingEdges );
+        rh->SetMakeGroupsOfSurfaces   ( h_data.myMakeGroupsOfSurfaces );
+        rh->SetFixedEdgeGroup         ( 0 );
       }
     }
     for ( QMapIterator<QString,QString> i(myLocalSizeMap); i.hasNext(); )
@@ -614,12 +929,6 @@ bool NETGENPluginGUI_HypothesisCreator::readParamsFromWidgets( NetgenHypothesisD
     h_data.myChordalError    = myChordalError->value();
     h_data.myChordalErrorEnabled = myChordalError->isEnabled();
   }
-  if ( myRidgeAngle )
-  {
-    h_data.myRidgeAngleVar = myRidgeAngle->text();
-    h_data.myRidgeAngle    = myRidgeAngle->value();
-  }
-
   if ( myAllowQuadrangles )
     h_data.myAllowQuadrangles = myAllowQuadrangles->isChecked();
 
@@ -628,6 +937,57 @@ bool NETGENPluginGUI_HypothesisCreator::readParamsFromWidgets( NetgenHypothesisD
 
   if ( myFuseEdges )
     h_data.myFuseEdges = myFuseEdges->isChecked();
+
+  h_data.myElemSizeWeight    = myElemSizeWeight->value();
+  h_data.myElemSizeWeightVar = myElemSizeWeight->text();
+  if ( myNbSurfOptSteps )
+  {
+    h_data.myNbSurfOptSteps    = myNbSurfOptSteps->value();
+    h_data.myNbSurfOptStepsVar = myNbSurfOptSteps->text();
+  }
+  if ( myNbVolOptSteps )
+  {
+    h_data.myNbVolOptSteps    = myNbVolOptSteps->value();
+    h_data.myNbVolOptStepsVar = myNbVolOptSteps->text();
+  }
+  h_data.myWorstElemMeasure    = myWorstElemMeasure->value();
+  h_data.myWorstElemMeasureVar = myWorstElemMeasure->text();
+
+  h_data.myUseDelauney        = myUseDelauney->isChecked();
+  h_data.myCheckOverlapping   = myCheckOverlapping->isChecked();
+  h_data.myCheckChartBoundary = myCheckChartBoundary->isChecked();
+
+  if ( myRidgeAngle )
+  {
+    h_data.myRidgeAngle                 = myRidgeAngle             ->value();
+    h_data.myRidgeAngleVar              = myRidgeAngle             ->text();
+    h_data.myEdgeCornerAngle            = myEdgeCornerAngle        ->value();
+    h_data.myEdgeCornerAngleVar         = myEdgeCornerAngle        ->text();
+    h_data.myChartAngle                 = myChartAngle             ->value();
+    h_data.myChartAngleVar              = myChartAngle             ->text();
+    h_data.myOuterChartAngle            = myOuterChartAngle        ->value();
+    h_data.myOuterChartAngleVar         = myOuterChartAngle        ->text();
+    h_data.myRestHChartDistFactor       = myRestHChartDistFactor   ->value();
+    h_data.myRestHChartDistFactorVar    = myRestHChartDistFactor   ->text();
+    h_data.myRestHLineLengthFactor      = myRestHLineLengthFactor  ->value();
+    h_data.myRestHLineLengthFactorVar   = myRestHLineLengthFactor  ->text();
+    h_data.myRestHCloseEdgeFactor       = myRestHCloseEdgeFactor   ->value();
+    h_data.myRestHCloseEdgeFactorVar    = myRestHCloseEdgeFactor   ->text();
+    h_data.myRestHSurfCurvFactor        = myRestHSurfCurvFactor    ->value();
+    h_data.myRestHSurfCurvFactorVar     = myRestHSurfCurvFactor    ->text();
+    h_data.myRestHEdgeAngleFactor       = myRestHEdgeAngleFactor   ->value();
+    h_data.myRestHEdgeAngleFactorVar    = myRestHEdgeAngleFactor   ->text();
+    h_data.myRestHSurfMeshCurvFactor    = myRestHSurfMeshCurvFactor->value();
+    h_data.myRestHSurfMeshCurvFactorVar = myRestHSurfMeshCurvFactor->text();
+    h_data.myRestHChartDistEnable       = myRestHChartDistEnable   ->isChecked();
+    h_data.myRestHLineLengthEnable      = myRestHLineLengthEnable  ->isChecked();
+    h_data.myRestHCloseEdgeEnable       = myRestHCloseEdgeEnable   ->isChecked();
+    h_data.myRestHSurfCurvEnable        = myRestHSurfCurvEnable    ->isChecked();
+    h_data.myRestHEdgeAngleEnable       = myRestHEdgeAngleEnable   ->isChecked();
+    h_data.myRestHSurfMeshCurvEnable    = myRestHSurfMeshCurvEnable->isChecked();
+    h_data.myKeepExistingEdges          = myKeepExistingEdges      ->isChecked();
+    h_data.myMakeGroupsOfSurfaces       = myMakeGroupsOfSurfaces   ->isChecked();
+  }
 
   if ( myLocalSizeTable )
   {
@@ -834,6 +1194,16 @@ void NETGENPluginGUI_HypothesisCreator::onSetSizeFile()
   QString dir = SUIT_FileDlg::getFileName( dlg(), QString(),
                                            QStringList() << tr( "ALL_FILES_FILTER" ) + "  (*)");
   myMeshSizeFile->setText( dir );
+}
+
+void NETGENPluginGUI_HypothesisCreator::onSTLEnable()
+{
+  myRestHChartDistFactor   ->setEnabled( myRestHChartDistEnable   ->isChecked() );
+  myRestHLineLengthFactor  ->setEnabled( myRestHLineLengthEnable  ->isChecked() );
+  myRestHCloseEdgeFactor   ->setEnabled( myRestHCloseEdgeEnable   ->isChecked() );
+  myRestHSurfCurvFactor    ->setEnabled( myRestHSurfCurvEnable    ->isChecked() );
+  myRestHEdgeAngleFactor   ->setEnabled( myRestHEdgeAngleEnable   ->isChecked() );
+  myRestHSurfMeshCurvFactor->setEnabled( myRestHSurfMeshCurvEnable->isChecked() );
 }
 
 GeomSelectionTools* NETGENPluginGUI_HypothesisCreator::getGeomSelectionTools()

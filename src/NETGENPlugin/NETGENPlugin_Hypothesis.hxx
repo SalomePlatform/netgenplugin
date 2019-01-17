@@ -47,17 +47,17 @@ public:
 
   NETGENPlugin_Hypothesis(int hypId, SMESH_Gen * gen);
 
-  void SetMaxSize(double theSize);
+  void   SetMaxSize(double theSize);
   double GetMaxSize() const { return _maxSize; }
 
-  void SetMinSize(double theSize);
+  void   SetMinSize(double theSize);
   double GetMinSize() const { return _minSize; }
 
-  void SetSecondOrder(bool theVal);
-  bool GetSecondOrder() const { return _secondOrder; }
+  void   SetSecondOrder(bool theVal);
+  bool   GetSecondOrder() const { return _secondOrder; }
 
-  void SetOptimize(bool theVal);
-  bool GetOptimize() const { return _optimize; }
+  void   SetOptimize(bool theVal);
+  bool   GetOptimize() const { return _optimize; }
 
   enum Fineness
   {
@@ -69,59 +69,87 @@ public:
     UserDefined
   };
 
-  void SetFineness(Fineness theFineness);
+  void   SetFineness(Fineness theFineness);
   Fineness GetFineness() const { return _fineness; }
 
-  // the following parameters are controlled by Fineness
+  // the following 3 parameters are controlled by Fineness
 
-  void SetGrowthRate(double theRate);
+  void   SetGrowthRate(double theRate);
   double GetGrowthRate() const { return _growthRate; }
 
-  void SetNbSegPerEdge(double theVal);
+  void   SetNbSegPerEdge(double theVal);
   double GetNbSegPerEdge() const { return _nbSegPerEdge; }
 
-  void SetNbSegPerRadius(double theVal);
+  void   SetNbSegPerRadius(double theVal);
   double GetNbSegPerRadius() const { return _nbSegPerRadius; }
 
-  void SetChordalErrorEnabled(bool value);
+  void   SetChordalErrorEnabled(bool value);
   double GetChordalErrorEnabled() const { return _chordalErrorEnabled; }
-  void SetChordalError(double value);
+  void   SetChordalError(double value);
   double GetChordalError() const { return _chordalError; }
 
   typedef std::map<std::string, double> TLocalSize;
   void   SetLocalSizeOnEntry(const std::string& entry, double localSize);
   double GetLocalSizeOnEntry(const std::string& entry);
   const TLocalSize& GetLocalSizesAndEntries() const { return _localSize; }
-  void UnsetLocalSizeOnEntry(const std::string& entry);
+  void   UnsetLocalSizeOnEntry(const std::string& entry);
 
-  void SetMeshSizeFile(const std::string& fileName);
+  void   SetMeshSizeFile(const std::string& fileName);
   const std::string& GetMeshSizeFile() const { return _meshSizeFile; }
 
-  void SetQuadAllowed(bool theVal);
-  bool GetQuadAllowed() const { return _quadAllowed; }
+  void   SetQuadAllowed(bool theVal);
+  bool   GetQuadAllowed() const { return _quadAllowed; }
 
-  void SetSurfaceCurvature(bool theVal);
-  bool GetSurfaceCurvature() const { return _surfaceCurvature; }
+  void   SetSurfaceCurvature(bool theVal);
+  bool   GetSurfaceCurvature() const { return _surfaceCurvature; }
 
-  void SetFuseEdges(bool theVal);
-  bool GetFuseEdges() const { return _fuseEdges; }
+  void   SetFuseEdges(bool theVal);
+  bool   GetFuseEdges() const { return _fuseEdges; }
+
+  void   SetNbSurfOptSteps( int nb );
+  int    GetNbSurfOptSteps() const { return _nbSurfOptSteps; }
+
+  void   SetNbVolOptSteps( int nb );
+  int    GetNbVolOptSteps() const { return _nbVolOptSteps; }
+
+  void   SetElemSizeWeight( double size );
+  double GetElemSizeWeight() const { return _elemSizeWeight; }
+
+  void   SetWorstElemMeasure( int val );
+  int    GetWorstElemMeasure() const { return _worstElemMeasure; }
+
+  void   SetUseDelauney( bool toUse);
+  bool   GetUseDelauney() const { return _useDelauney; }
+
+  void   SetCheckOverlapping( bool toCheck );
+  bool   GetCheckOverlapping() const { return _checkOverlapping; }
+
+  void   SetCheckChartBoundary( bool toCheck );
+  bool   GetCheckChartBoundary() const { return _checkChartBoundary; }
 
   // the default values (taken from NETGEN 4.5 sources)
 
-  static double GetDefaultMaxSize();
-  static Fineness GetDefaultFineness();
-  static double GetDefaultGrowthRate();
-  static double GetDefaultNbSegPerEdge();
-  static double GetDefaultNbSegPerRadius();
-  static double GetDefaultChordalError();
-  static bool GetDefaultSecondOrder();
-  static bool GetDefaultOptimize();
-  static bool GetDefaultQuadAllowed();
-  static bool GetDefaultSurfaceCurvature();
-  static bool GetDefaultFuseEdges();
+  static Fineness GetDefaultFineness()          { return Moderate; }
+  static bool     GetDefaultSecondOrder()       { return false; }
+  static bool     GetDefaultQuadAllowed()       { return false; }
+  static double   GetDefaultMaxSize()           { return 1000; }
+  static double   GetDefaultGrowthRate()        { return 0.3; }
+  static double   GetDefaultNbSegPerRadius()    { return 2; }
+  static double   GetDefaultNbSegPerEdge()      { return 1; }
+  static double   GetDefaultChordalError()      { return -1; } // disabled by default
+  static bool     GetDefaultOptimize()          { return true; }
+  static int      GetDefaultNbSurfOptSteps()    { return 3; }
+  static int      GetDefaultNbVolOptSteps()     { return 3; }
+  static double   GetDefaultElemSizeWeight()    { return 0.2; }
+  static int      GetDefaultWorstElemMeasure()  { return 2; }
+  static bool     GetDefaultSurfaceCurvature()  { return true; }
+  static bool     GetDefaultUseDelauney()       { return true; }
+  static bool     GetDefaultCheckOverlapping()  { return true; }
+  static bool     GetDefaultCheckChartBoundary(){ return true; }
+  static bool     GetDefaultFuseEdges()         { return true; }
 
   // Persistence
-  virtual std::ostream & SaveTo(std::ostream & save);
+  virtual std::ostream & SaveTo  (std::ostream & save);
   virtual std::istream & LoadFrom(std::istream & load);
 
   /*!
@@ -139,19 +167,37 @@ public:
   virtual bool SetParametersByDefaults(const TDefaults& dflts, const SMESH_Mesh* theMesh=0);
 
 private:
+
+  // General
+  Fineness      _fineness;
+  bool          _secondOrder;
+  bool          _quadAllowed;
+
+  // Mesh size
   double        _maxSize, _minSize;
   double        _growthRate;
-  double        _nbSegPerEdge;
+  std::string   _meshSizeFile;
   double        _nbSegPerRadius;
-  Fineness      _fineness;
+  double        _nbSegPerEdge;
+  // (SALOME additions)
+  TLocalSize    _localSize;
   bool          _chordalErrorEnabled;
   double        _chordalError;
-  bool          _secondOrder;
+
+  // Optimizer
   bool          _optimize;
-  TLocalSize    _localSize;
-  std::string   _meshSizeFile;
-  bool          _quadAllowed;
+  int           _nbSurfOptSteps;
+  int           _nbVolOptSteps;
+  double        _elemSizeWeight;
+  int           _worstElemMeasure;
+
+  // Insider
   bool          _surfaceCurvature;
+  bool          _useDelauney;
+  bool          _checkOverlapping;
+  bool          _checkChartBoundary;
+  //bool          _blockFilling; -- not used by netgen
+  // (SALOME additions)
   bool          _fuseEdges;
 };
 

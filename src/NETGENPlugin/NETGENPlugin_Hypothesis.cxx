@@ -37,35 +37,40 @@ using namespace std;
 
 //=============================================================================
 /*!
- *  
+ *
  */
 //=============================================================================
-NETGENPlugin_Hypothesis::NETGENPlugin_Hypothesis (int hypId,
-                                                  SMESH_Gen * gen)
+NETGENPlugin_Hypothesis::NETGENPlugin_Hypothesis (int hypId, SMESH_Gen * gen)
 
   : SMESH_Hypothesis(hypId, gen),
+    _fineness           (GetDefaultFineness()),
+    _secondOrder        (GetDefaultSecondOrder()),
+    _quadAllowed        (GetDefaultQuadAllowed()),
     _maxSize            (GetDefaultMaxSize()),
     _minSize            (0),
     _growthRate         (GetDefaultGrowthRate()),
-    _nbSegPerEdge       (GetDefaultNbSegPerEdge()),
     _nbSegPerRadius     (GetDefaultNbSegPerRadius()),
-    _fineness           (GetDefaultFineness()),
+    _nbSegPerEdge       (GetDefaultNbSegPerEdge()),
     _chordalErrorEnabled(GetDefaultChordalError() > 0),
     _chordalError       (GetDefaultChordalError() ),
-    _secondOrder        (GetDefaultSecondOrder()),
     _optimize           (GetDefaultOptimize()),
-    _quadAllowed        (GetDefaultQuadAllowed()),
+    _nbSurfOptSteps     (GetDefaultNbSurfOptSteps()),
+    _nbVolOptSteps      (GetDefaultNbVolOptSteps()),
+    _elemSizeWeight     (GetDefaultElemSizeWeight()),
+    _worstElemMeasure   (GetDefaultWorstElemMeasure()),
     _surfaceCurvature   (GetDefaultSurfaceCurvature()),
+    _useDelauney        (GetDefaultUseDelauney()),
+    _checkOverlapping   (GetDefaultCheckOverlapping()),
+    _checkChartBoundary (GetDefaultCheckChartBoundary()),
     _fuseEdges          (GetDefaultFuseEdges())
 {
   _name = "NETGEN_Parameters";
   _param_algo_dim = 3;
-  _localSize.clear();
 }
 
 //=============================================================================
 /*!
- *  
+ *
  */
 //=============================================================================
 void NETGENPlugin_Hypothesis::SetMaxSize(double theSize)
@@ -310,16 +315,6 @@ void NETGENPlugin_Hypothesis::SetQuadAllowed(bool theVal)
  *  
  */
 //=============================================================================
-bool NETGENPlugin_Hypothesis::GetDefaultQuadAllowed()
-{
-  return false;
-}
-
-//=============================================================================
-/*!
- *  
- */
-//=============================================================================
 void NETGENPlugin_Hypothesis::SetSurfaceCurvature(bool theVal)
 {
   if (theVal != _surfaceCurvature)
@@ -327,16 +322,6 @@ void NETGENPlugin_Hypothesis::SetSurfaceCurvature(bool theVal)
     _surfaceCurvature = theVal;
     NotifySubMeshesHypothesisModification();
   }
-}
-
-//=============================================================================
-/*!
- *
- */
-//=============================================================================
-bool NETGENPlugin_Hypothesis::GetDefaultSurfaceCurvature()
-{
-  return true;
 }
 
 //=============================================================================
@@ -353,14 +338,102 @@ void NETGENPlugin_Hypothesis::SetFuseEdges(bool theVal)
   }
 }
 
-//=============================================================================
-/*!
- *
- */
-//=============================================================================
-bool NETGENPlugin_Hypothesis::GetDefaultFuseEdges()
+//=======================================================================
+//function : SetNbSurfOptSteps
+//purpose  : 
+//=======================================================================
+
+void NETGENPlugin_Hypothesis::SetNbSurfOptSteps( int theVal )
 {
-  return true; // false; -- for SALOME_TESTS/Grids/smesh/3D_mesh_NETGEN_05/F6
+  if (theVal != _nbSurfOptSteps)
+  {
+    _nbSurfOptSteps = theVal;
+    NotifySubMeshesHypothesisModification();
+  }
+}
+
+//=======================================================================
+//function : SetNbVolOptSteps
+//purpose  : 
+//=======================================================================
+
+void NETGENPlugin_Hypothesis::SetNbVolOptSteps( int theVal )
+{
+  if (theVal != _nbVolOptSteps)
+  {
+    _nbVolOptSteps = theVal;
+    NotifySubMeshesHypothesisModification();
+  }
+}
+
+//=======================================================================
+//function : SetElemSizeWeight
+//purpose  : 
+//=======================================================================
+
+void NETGENPlugin_Hypothesis::SetElemSizeWeight( double theVal )
+{
+  if (theVal != _elemSizeWeight)
+  {
+    _elemSizeWeight = theVal;
+    NotifySubMeshesHypothesisModification();
+  }
+}
+
+//=======================================================================
+//function : SetWorstElemMeasure
+//purpose  : 
+//=======================================================================
+
+void NETGENPlugin_Hypothesis::SetWorstElemMeasure( int theVal )
+{
+  if (theVal != _worstElemMeasure)
+  {
+    _worstElemMeasure = theVal;
+    NotifySubMeshesHypothesisModification();
+  }
+}
+
+//=======================================================================
+//function : SetUseDelauney
+//purpose  : 
+//=======================================================================
+
+void NETGENPlugin_Hypothesis::SetUseDelauney( bool theVal )
+{
+  if (theVal != _useDelauney )
+  {
+    _useDelauney = theVal;
+    NotifySubMeshesHypothesisModification();
+  }
+}
+
+//=======================================================================
+//function : SetCheckOverlapping
+//purpose  : 
+//=======================================================================
+
+void NETGENPlugin_Hypothesis::SetCheckOverlapping( bool theVal )
+{
+  if (theVal != _checkOverlapping )
+  {
+    _checkOverlapping = theVal;
+    NotifySubMeshesHypothesisModification();
+  }
+}
+
+//=======================================================================
+//function : SetCheckChartBoundary
+//purpose  : 
+//=======================================================================
+
+void NETGENPlugin_Hypothesis::SetCheckChartBoundary( bool theVal )
+{
+  if (theVal != _checkChartBoundary)
+  {
+    _checkChartBoundary = theVal;
+    NotifySubMeshesHypothesisModification();
+  }
 }
 
 //=============================================================================
@@ -394,6 +467,18 @@ ostream & NETGENPlugin_Hypothesis::SaveTo(ostream & save)
   save << " " << _meshSizeFile.size() << " " << _meshSizeFile;
 
   save << " " << ( _chordalErrorEnabled ? _chordalError : 0. );
+
+
+  // added for option set completion
+
+  save << " " << _nbSurfOptSteps;
+  save << " " << _nbVolOptSteps;
+  save << " " << _elemSizeWeight;
+  save << " " << _worstElemMeasure;
+
+  save << " " << _useDelauney;
+  save << " " << _checkOverlapping;
+  save << " " << _checkChartBoundary;
 
   return save;
 }
@@ -515,29 +600,39 @@ istream & NETGENPlugin_Hypothesis::LoadFrom(istream & load)
     load.clear(ios::badbit | load.rdstate());
   _chordalErrorEnabled = ( _chordalError > 0 );
 
+
+  // added for option set completion
+
+  isOK = static_cast<bool>( load >> is );
+  if ( isOK )
+    _nbSurfOptSteps = is;
+
+  isOK = static_cast<bool>( load >> is );
+  if ( isOK )
+    _nbVolOptSteps = is;
+
+  isOK = static_cast<bool>( load >> val );
+  if ( isOK )
+    _elemSizeWeight =  val;
+
+  isOK = static_cast<bool>( load >> is );
+  if ( isOK )
+    _worstElemMeasure = is;
+
+  isOK = static_cast<bool>( load >> is );
+  if ( isOK )
+    _useDelauney = (bool) is;
+
+  isOK = static_cast<bool>( load >> is );
+  if ( isOK )
+    _checkOverlapping = (bool) is;
+
+  isOK = static_cast<bool>( load >> is );
+  if ( isOK )
+    _checkChartBoundary = (bool) is;
+
   return load;
 }
-
-//=============================================================================
-/*!
- *
- */
-//=============================================================================
-ostream & operator <<(ostream & save, NETGENPlugin_Hypothesis & hyp)
-{
-  return hyp.SaveTo( save );
-}
-
-//=============================================================================
-/*!
- *
- */
-//=============================================================================
-istream & operator >>(istream & load, NETGENPlugin_Hypothesis & hyp)
-{
-  return hyp.LoadFrom( load );
-}
-
 
 //================================================================================
 /*!
@@ -572,83 +667,4 @@ bool NETGENPlugin_Hypothesis::SetParametersByDefaults(const TDefaults&  dflts,
     _minSize    = NETGENPlugin_Mesher::GetDefaultMinSize( theMesh->GetShapeToMesh(), _maxSize );
 
   return _nbSegPerEdge && _maxSize > 0;
-}
-
-//=============================================================================
-/*!
- *  
- */
-//=============================================================================
-double NETGENPlugin_Hypothesis::GetDefaultMaxSize()
-{
-  return 1000;
-}
-
-//=============================================================================
-/*!
- *  
- */
-//=============================================================================
-NETGENPlugin_Hypothesis::Fineness NETGENPlugin_Hypothesis::GetDefaultFineness()
-{
-  return Moderate;
-}
-
-//=============================================================================
-/*!
- *  
- */
-//=============================================================================
-double NETGENPlugin_Hypothesis::GetDefaultGrowthRate()
-{
-  return 0.3;
-}
-
-//=============================================================================
-/*!
- *  
- */
-//=============================================================================
-double NETGENPlugin_Hypothesis::GetDefaultNbSegPerEdge()
-{
-  return 1;
-}
-
-//=============================================================================
-/*!
- *  
- */
-//=============================================================================
-double NETGENPlugin_Hypothesis::GetDefaultNbSegPerRadius()
-{
-  return 2;
-}
-//=============================================================================
-/*!
- *  
- */
-//=============================================================================
-double NETGENPlugin_Hypothesis::GetDefaultChordalError()
-{
-  return -1; // disabled by default
-}
-
-//=============================================================================
-/*!
- *  
- */
-//=============================================================================
-bool NETGENPlugin_Hypothesis::GetDefaultSecondOrder()
-{
-  return false;
-}
-
-//=============================================================================
-/*!
- *  
- */
-//=============================================================================
-bool NETGENPlugin_Hypothesis::GetDefaultOptimize()
-{
-  return true;
 }

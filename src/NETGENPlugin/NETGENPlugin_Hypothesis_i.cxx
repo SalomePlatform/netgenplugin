@@ -470,6 +470,175 @@ CORBA::Boolean NETGENPlugin_Hypothesis_i::GetFuseEdges()
   return this->GetImpl()->GetFuseEdges();
 }
 
+//=======================================================================
+//function : SetNbSurfOptSteps
+//purpose  : 
+//=======================================================================
+
+void NETGENPlugin_Hypothesis_i::SetNbSurfOptSteps(CORBA::Short nb )
+{
+  if ( GetNbSurfOptSteps() != nb )
+  {
+    this->GetImpl()->SetNbSurfOptSteps( nb );
+    SMESH::TPythonDump() << _this() << ".SetNbSurfOptSteps( " << SMESH::TVar(nb) << " )";
+  }
+}
+
+//=======================================================================
+//function : GetNbSurfOptSteps
+//purpose  :
+//=======================================================================
+
+CORBA::Short NETGENPlugin_Hypothesis_i::GetNbSurfOptSteps()
+{
+  return GetImpl()->GetNbSurfOptSteps();
+}
+
+//=======================================================================
+//function : SetNbVolOptSteps
+//purpose  : 
+//=======================================================================
+
+void NETGENPlugin_Hypothesis_i::SetNbVolOptSteps(CORBA::Short nb )
+{
+  if ( GetNbVolOptSteps() != nb )
+  {
+    this->GetImpl()->SetNbVolOptSteps( nb );
+    SMESH::TPythonDump() << _this() << ".SetNbVolOptSteps( " << SMESH::TVar(nb) << " )";
+  }
+
+}
+
+//=======================================================================
+//function : GetNbVolOptSteps
+//purpose  :
+//=======================================================================
+
+CORBA::Short NETGENPlugin_Hypothesis_i::GetNbVolOptSteps()
+{
+  return GetImpl()->GetNbVolOptSteps();
+}
+
+//=======================================================================
+//function : SetElemSizeWeight
+//purpose  : 
+//=======================================================================
+
+void NETGENPlugin_Hypothesis_i::SetElemSizeWeight(CORBA::Double size )
+{
+  if ( GetElemSizeWeight() != size )
+  {
+    this->GetImpl()->SetElemSizeWeight( size );
+    SMESH::TPythonDump() << _this() << ".SetElemSizeWeight( " << SMESH::TVar(size) << " )";
+  }
+}
+
+//=======================================================================
+//function : GetElemSizeWeight
+//purpose  :
+//=======================================================================
+
+CORBA::Double NETGENPlugin_Hypothesis_i::GetElemSizeWeight()
+{
+  return GetImpl()->GetElemSizeWeight();
+}
+
+//=======================================================================
+//function : SetWorstElemMeasure
+//purpose  : 
+//=======================================================================
+
+void NETGENPlugin_Hypothesis_i::SetWorstElemMeasure(CORBA::Short val )
+{
+  if ( GetWorstElemMeasure() != val )
+  {
+    this->GetImpl()->SetWorstElemMeasure( val );
+    SMESH::TPythonDump() << _this() << ".SetWorstElemMeasure( " << SMESH::TVar(val) << " )";
+  }
+}
+
+//=======================================================================
+//function : GetWorstElemMeasure
+//purpose  : 
+//=======================================================================
+
+CORBA::Short NETGENPlugin_Hypothesis_i::GetWorstElemMeasure()
+{
+  return GetImpl()->GetWorstElemMeasure();
+}
+
+//=======================================================================
+//function : SetUseDelauney
+//purpose  : 
+//=======================================================================
+
+void NETGENPlugin_Hypothesis_i::SetUseDelauney(CORBA::Boolean toUse)
+{
+  if ( GetUseDelauney() != toUse )
+  {
+    this->GetImpl()->SetUseDelauney( toUse );
+    SMESH::TPythonDump() << _this() << ".SetUseDelauney( " << toUse << " )";
+  }
+}
+
+//=======================================================================
+//function : GetUseDelauney
+//purpose  : 
+//=======================================================================
+
+CORBA::Boolean NETGENPlugin_Hypothesis_i::GetUseDelauney()
+{
+  return GetImpl()->GetUseDelauney();
+}
+
+//=======================================================================
+//function : SetCheckOverlapping
+//purpose  : 
+//=======================================================================
+
+void NETGENPlugin_Hypothesis_i::SetCheckOverlapping(CORBA::Boolean toCheck )
+{
+  if ( GetCheckOverlapping() != toCheck )
+  {
+    this->GetImpl()->SetCheckOverlapping( toCheck );
+    SMESH::TPythonDump() << _this() << ".SetCheckOverlapping( " << toCheck << " )";
+  }
+}
+
+//=======================================================================
+//function : GetCheckOverlapping
+//purpose  : 
+//=======================================================================
+
+CORBA::Boolean NETGENPlugin_Hypothesis_i::GetCheckOverlapping()
+{
+  return GetImpl()->GetCheckOverlapping();
+}
+
+//=======================================================================
+//function : SetCheckChartBoundary
+//purpose  : 
+//=======================================================================
+
+void NETGENPlugin_Hypothesis_i::SetCheckChartBoundary(CORBA::Boolean toCheck )
+{
+  if ( GetCheckChartBoundary() != toCheck )
+  {
+    this->GetImpl()->SetCheckChartBoundary( toCheck );
+    SMESH::TPythonDump() << _this() << ".SetCheckChartBoundary( " << toCheck << " )";
+  }
+}
+
+//=======================================================================
+//function : GetCheckChartBoundary
+//purpose  : Get implementation
+//=======================================================================
+
+CORBA::Boolean NETGENPlugin_Hypothesis_i::GetCheckChartBoundary()
+{
+  return GetImpl()->GetCheckChartBoundary();
+}
+
 //=============================================================================
 /*!
  *  NETGENPlugin_Hypothesis_i::GetImpl

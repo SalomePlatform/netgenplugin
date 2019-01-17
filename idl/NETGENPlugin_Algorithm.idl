@@ -28,6 +28,7 @@
 
 #include "SALOME_Exception.idl"
 #include "SMESH_Hypothesis.idl"
+#include "SMESH_Group.idl"
 #include "GEOM_Gen.idl"
 
 /*!
@@ -79,53 +80,74 @@ module NETGENPlugin
    */
   interface NETGENPlugin_Hypothesis : SMESH::SMESH_Hypothesis
   {
-    void SetMaxSize(in double value);
-    double GetMaxSize();
+    void    SetMaxSize(in double value);
+    double  GetMaxSize();
 
-    void SetMinSize(in double value);
-    double GetMinSize();
+    void    SetMinSize(in double value);
+    double  GetMinSize();
 
-    void SetSecondOrder(in boolean value);
+    void    SetSecondOrder(in boolean value);
     boolean GetSecondOrder();
 
-    void SetOptimize(in boolean value);
+    void    SetOptimize(in boolean value);
     boolean GetOptimize();
 
-    void SetFineness(in long value);
-    long GetFineness();
+    void    SetFineness(in long value);
+    long    GetFineness();
 
-    void SetGrowthRate(in double value);
-    double GetGrowthRate();
+    void    SetGrowthRate(in double value);
+    double  GetGrowthRate();
 
-    void SetNbSegPerEdge(in double value);
-    double GetNbSegPerEdge();
+    void    SetNbSegPerEdge(in double value);
+    double  GetNbSegPerEdge();
 
-    void SetChordalErrorEnabled(in boolean value);
+    void    SetChordalErrorEnabled(in boolean value);
     boolean GetChordalErrorEnabled();
-    void SetChordalError(in double value);
-    double GetChordalError();
+    void    SetChordalError(in double value);
+    double  GetChordalError();
 
-    void SetNbSegPerRadius(in double value);
-    double GetNbSegPerRadius();
+    void    SetNbSegPerRadius(in double value);
+    double  GetNbSegPerRadius();
 
-    void SetQuadAllowed(in boolean value);
+    void    SetQuadAllowed(in boolean value);
     boolean GetQuadAllowed();
     
-    void SetUseSurfaceCurvature(in boolean value);
+    void    SetUseSurfaceCurvature(in boolean value);
     boolean GetUseSurfaceCurvature();
     
-    void SetFuseEdges(in boolean value);
+    void    SetFuseEdges(in boolean value);
     boolean GetFuseEdges();
 
-    void SetLocalSizeOnShape(in GEOM::GEOM_Object GeomObj, in double localSize)
+    void    SetLocalSizeOnShape(in GEOM::GEOM_Object GeomObj, in double localSize)
       raises (SALOME::SALOME_Exception);
-    void SetLocalSizeOnEntry(in string entry, in double localSize);
-    double GetLocalSizeOnEntry(in string entry);
+    void    SetLocalSizeOnEntry(in string entry, in double localSize);
+    double  GetLocalSizeOnEntry(in string entry);
     string_array GetLocalSizeEntries();
-    void UnsetLocalSizeOnEntry(in string entry);
+    void    UnsetLocalSizeOnEntry(in string entry);
 
-    void SetMeshSizeFile(in string fileName);
-    string GetMeshSizeFile();
+    void    SetMeshSizeFile(in string fileName);
+    string  GetMeshSizeFile();
+
+    void    SetNbSurfOptSteps(in short nb );
+    short   GetNbSurfOptSteps();
+
+    void    SetNbVolOptSteps(in short nb );
+    short   GetNbVolOptSteps();
+
+    void    SetElemSizeWeight(in double size );
+    double  GetElemSizeWeight();
+
+    void    SetWorstElemMeasure(in short val );
+    short   GetWorstElemMeasure();
+
+    void    SetUseDelauney(in boolean toUse);
+    boolean GetUseDelauney();
+
+    void    SetCheckOverlapping(in boolean toCheck );
+    boolean GetCheckOverlapping();
+
+    void    SetCheckChartBoundary(in boolean toCheck );
+    boolean GetCheckChartBoundary();
   };
 
   /*!
@@ -157,8 +179,65 @@ module NETGENPlugin
     /*!
      * \brief Set/get ridge angle
      */
-    void SetRidgeAngle(in double angle );
-    double GetRidgeAngle();
+    void    SetRidgeAngle(in double angle );
+    double  GetRidgeAngle();
+
+    void    SetEdgeCornerAngle(in double angle );
+    double  GetEdgeCornerAngle();
+
+    void    SetChartAngle(in double angle );
+    double  GetChartAngle();
+
+    void    SetOuterChartAngle(in double angle );
+    double  GetOuterChartAngle();
+
+    void    SetRestHChartDistFactor(in double f );
+    double  GetRestHChartDistFactor();
+
+    void    SetRestHChartDistEnable(in boolean enable );
+    boolean GetRestHChartDistEnable();
+
+    void    SetRestHLineLengthFactor(in double f );
+    double  GetRestHLineLengthFactor();
+
+    void    SetRestHLineLengthEnable(in boolean enable );
+    boolean GetRestHLineLengthEnable();
+
+    void    SetRestHCloseEdgeFactor(in double f );
+    double  GetRestHCloseEdgeFactor();
+
+    void    SetRestHCloseEdgeEnable(in boolean enable );
+    boolean GetRestHCloseEdgeEnable();
+
+    void    SetRestHSurfCurvFactor(in double f );
+    double  GetRestHSurfCurvFactor();
+
+    void    SetRestHSurfCurvEnable(in boolean enable );
+    boolean GetRestHSurfCurvEnable();
+
+    void    SetRestHEdgeAngleFactor(in double f );
+    double  GetRestHEdgeAngleFactor();
+
+    void    SetRestHEdgeAngleEnable(in boolean enable );
+    boolean GetRestHEdgeAngleEnable();
+
+    void    SetRestHSurfMeshCurvFactor(in double f );
+    double  GetRestHSurfMeshCurvFactor();
+
+    void    SetRestHSurfMeshCurvEnable(in boolean enable );
+    boolean GetRestHSurfMeshCurvEnable();
+
+    void    SetKeepExistingEdges(in boolean toKeep );
+    boolean GetKeepExistingEdges();
+
+    void    SetMakeGroupsOfSurfaces(in boolean toMake );
+    boolean GetMakeGroupsOfSurfaces();
+
+    void    SetLoadMeshOnCancel(in boolean toLoad );
+    boolean GetLoadMeshOnCancel();
+
+    void SetFixedEdgeGroup( in SMESH::SMESH_GroupBase edgeGroup );
+    SMESH::SMESH_GroupBase GetFixedEdgeGroup( in SMESH::SMESH_Mesh mesh );
   };
 
   /*!

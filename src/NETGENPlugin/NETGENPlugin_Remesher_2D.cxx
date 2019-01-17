@@ -30,11 +30,13 @@
 #include "NETGENPlugin_Hypothesis_2D.hxx"
 
 #include <SMDS_SetIterator.hxx>
+#include <SMESHDS_Group.hxx>
 #include <SMESHDS_Mesh.hxx>
 #include <SMESH_ControlsDef.hxx>
 #include <SMESH_Gen.hxx>
 #include <SMESH_MeshAlgos.hxx>
 #include <SMESH_MesherHelper.hxx>
+#include <SMESH_Group.hxx>
 #include <SMESH_subMesh.hxx>
 
 #include <Bnd_B3d.hxx>
@@ -51,16 +53,15 @@ using namespace nglib;
 
 namespace netgen {
 
-#if defined(NETGEN_V5) && defined(WIN32)
-   DLL_HEADER 
- #endif
-   extern STLParameters stlparam;
+  NETGENPLUGIN_DLL_HEADER
+  extern STLParameters stlparam;
+
+  NETGENPLUGIN_DLL_HEADER
+  extern netgen::STLDoctorParams stldoctor;
 }
 namespace nglib
 {
-#if defined(NETGEN_V5) && defined(WIN32)
-	DLL_HEADER
-#endif
+  NETGENPLUGIN_DLL_HEADER
   extern netgen::Array<netgen::Point<3> > readedges;
 }
 
@@ -76,7 +77,7 @@ namespace
   public:
     HoleFiller( SMESH_Mesh& meshDS );
     ~HoleFiller();
-    void AddHoleBorders( Ng_STL_Geometry * ngStlGeo );
+    void AddHoleBordersAndEdges( Ng_STL_Geometry * ngStlGeo, bool toAddEdges );
     void KeepHole() { myHole.clear(); myCapElems.clear(); }
     void ClearCapElements() { myCapElems.clear(); }
 
@@ -220,7 +221,7 @@ namespace
    */
   //================================================================================
 
-  void HoleFiller::AddHoleBorders( Ng_STL_Geometry * ngStlGeo )
+  void HoleFiller::AddHoleBordersAndEdges( Ng_STL_Geometry * ngStlGeo, bool toAddEdges )
   {
     nglib::readedges.SetSize(0);
 
@@ -231,6 +232,27 @@ namespace
                         myHole[i][iP-1].ChangeData(),
                         myHole[i][iP-0].ChangeData() );
       }
+
+    if ( toAddEdges )
+    {
+      std::vector<const SMDS_MeshNode *>    nodes(2);
+      std::vector<const SMDS_MeshElement *> faces(2);
+      SMDS_EdgeIteratorPtr eIt = myMeshDS->edgesIterator();
+      while ( eIt->more() )
+      {
+        const SMDS_MeshElement* edge = eIt->next();
+        nodes[0] = edge->GetNode(0);
+        nodes[1] = edge->GetNode(1);
+        // check that an edge is a face border
+        if ( myMeshDS->GetElementsByNodes( nodes, faces, SMDSAbs_Face ))
+        {
+          Ng_STL_AddEdge( ngStlGeo,
+                          SMESH_NodeXYZ( nodes[0] ).ChangeData(),
+                          SMESH_NodeXYZ( nodes[1] ).ChangeData() );
+        }
+      }
+    }
+    return;
   }
   //================================================================================
   /*!
@@ -464,6 +486,35 @@ namespace
     return;
   } // ~HoleFiller()
 
+
+  //================================================================================
+  /*!
+   * \brief Fix nodes of a group
+   */
+  //================================================================================
+
+  void fixNodes( SMESHDS_GroupBase* group, netgen::STLGeometry* stlGeom )
+  {
+    SMESH_MeshAlgos::MarkElemNodes( group->GetElements(), false ); // un-mark nodes
+
+    for ( SMDS_ElemIteratorPtr eIt = group->GetElements(); eIt->more(); )
+    {
+      const SMDS_MeshElement* e = eIt->next();
+      for ( SMDS_NodeIteratorPtr nIt = e->nodeIterator(); nIt->more(); )
+      {
+        const SMDS_MeshNode* n = nIt->next();
+        if ( n->isMarked() )
+          continue;
+        n->setIsMarked( true );
+
+        SMESH_NodeXYZ p( n );
+        int id = stlGeom->GetPointNum( netgen::Point<3>( p.X(),p.Y(),p.Z() ));
+        if ( id > 0 )
+          stlGeom->SetLineEndPoint( id );
+      }
+    }
+  }
+
 } // namespace
 
 //=============================================================================
@@ -563,9 +614,11 @@ bool NETGENPlugin_Remesher_2D::Compute(SMESH_Mesh&         theMesh,
     }
   }
   // add edges
-  holeFiller.AddHoleBorders( ngStlGeo );
+  bool toAddExistingEdges = ( hyp && hyp->GetKeepExistingEdges() );
+  holeFiller.AddHoleBordersAndEdges( ngStlGeo, toAddExistingEdges );
 
   // init stl DS
+  //netgen::stldoctor.geom_tol_fact = 1e-12; // pointtol=boundingbox.Diam()*stldoctor.geom_tol_fact
   Ng_Result ng_res = Ng_STL_InitSTLGeometry( ngStlGeo );
   if ( ng_res != NG_OK )
   {
@@ -578,19 +631,32 @@ bool NETGENPlugin_Remesher_2D::Compute(SMESH_Mesh&         theMesh,
     return error( COMPERR_BAD_INPUT_MESH, txt );
   }
 
-  Ng_Meshing_Parameters ngParams;
-  ng_res = Ng_STL_MakeEdges( ngStlGeo, ngLib._ngMesh, &ngParams );
-  if ( ng_res != NG_OK )
-    return error( "Error in Edge Meshing" );
-
   // set parameters
+  Ng_Meshing_Parameters ngParams;
   if ( hyp )
   {
     ngParams.maxh              = hyp->GetMaxSize();
     ngParams.minh              = hyp->GetMinSize();
     ngParams.meshsize_filename = (char*) hyp->GetMeshSizeFile().c_str();
     ngParams.quad_dominated    = hyp->GetQuadAllowed();
-    netgen::stlparam.yangle    = hyp->GetRidgeAngle();
+
+    netgen::stlparam.yangle                  = hyp->GetRidgeAngle();
+    netgen::stlparam.edgecornerangle         = hyp->GetEdgeCornerAngle();
+    netgen::stlparam.chartangle              = hyp->GetChartAngle();
+    netgen::stlparam.outerchartangle         = hyp->GetOuterChartAngle();
+    netgen::stlparam.resthchartdistfac       = hyp->GetRestHChartDistFactor();
+    netgen::stlparam.resthchartdistenable    = hyp->GetRestHChartDistEnable();
+    netgen::stlparam.resthlinelengthfac      = hyp->GetRestHLineLengthFactor();
+    netgen::stlparam.resthlinelengthenable   = hyp->GetRestHLineLengthEnable();
+    netgen::stlparam.resthcloseedgefac       = hyp->GetRestHCloseEdgeFactor();
+    netgen::stlparam.resthcloseedgeenable    = hyp->GetRestHCloseEdgeEnable();
+    netgen::stlparam.resthsurfcurvfac        = hyp->GetRestHSurfCurvFactor();
+    netgen::stlparam.resthsurfcurvenable     = hyp->GetRestHSurfCurvEnable();
+    netgen::stlparam.resthedgeanglefac       = hyp->GetRestHEdgeAngleFactor();
+    netgen::stlparam.resthedgeangleenable    = hyp->GetRestHEdgeAngleEnable();
+    netgen::stlparam.resthsurfmeshcurvfac    = hyp->GetRestHSurfMeshCurvFactor();
+    netgen::stlparam.resthsurfmeshcurvenable = hyp->GetRestHSurfMeshCurvEnable();
+
     mesher.SetParameters( hyp );
   }
   else
@@ -600,11 +666,34 @@ bool NETGENPlugin_Remesher_2D::Compute(SMESH_Mesh&         theMesh,
     netgen::mparam.minh = netgen::mparam.maxh;
   }
 
-  // TODO: expose stlparam.resth* to the user
-  // netgen::stlparam.resthcloseedgeenable = 0; // Restrict H due to close edges
-  // netgen::stlparam.resthlinelengthenable = 0; // Restrict H due to line-length
-  // netgen::stlparam.resthatlasenable = 0;
-  // //netgen::stlparam.resthchartdistenable = 0;
+  // save netgen::mparam as Ng_STL_MakeEdges() modify it by Ng_Meshing_Parameters
+  netgen::MeshingParameters savedParams = netgen::mparam;
+
+  if ( SMESH_Group* fixedEdges = ( hyp ? hyp->GetFixedEdgeGroup( theMesh ) : 0 ))
+  {
+    netgen::STLGeometry* stlGeom = (netgen::STLGeometry*)ngStlGeo;
+
+    // the following code is taken from STLMeshing() method
+    stlGeom->Clear();
+    stlGeom->BuildEdges();
+    stlGeom->MakeAtlas( *ngMesh );
+    stlGeom->CalcFaceNums();
+    stlGeom->AddFaceEdges();
+    fixNodes( fixedEdges->GetGroupDS(), stlGeom );
+    stlGeom->LinkEdges();
+
+    ngMesh->ClearFaceDescriptors();
+    for (int i = 1; i <= stlGeom->GetNOFaces(); i++)
+      ngMesh->AddFaceDescriptor (netgen::FaceDescriptor (i, 1, 0, 0));
+
+    stlGeom->edgesfound = 1;
+  }
+  else
+  {
+    Ng_STL_MakeEdges( ngStlGeo, ngLib._ngMesh, &ngParams );
+  }
+
+  netgen::mparam = savedParams;
 
   double h = netgen::mparam.maxh;
   ngMesh->SetGlobalH( h );
@@ -617,6 +706,9 @@ bool NETGENPlugin_Remesher_2D::Compute(SMESH_Mesh&         theMesh,
   netgen::OCCGeometry occgeo;
   mesher.SetLocalSize( occgeo, *ngMesh );
 
+  // const char* optStr = "SmSmSm";//"smsmsmSmSmSm";
+  // netgen::mparam.optimize2d = optStr;
+
   // meshing
   try
   {
@@ -625,7 +717,8 @@ bool NETGENPlugin_Remesher_2D::Compute(SMESH_Mesh&         theMesh,
   catch (netgen::NgException & ex)
   {
     if ( netgen::multithread.terminate )
-      return false;
+      if ( !hyp || !hyp->GetLoadMeshOnCancel() )
+        return false;
   }
   if ( ng_res != NG_OK )
     return error( "Error in Surface Meshing" );
@@ -673,6 +766,24 @@ bool NETGENPlugin_Remesher_2D::Compute(SMESH_Mesh&         theMesh,
       meshDS->AddEdge( nodes[0], nodes[1] );
   }
 
+  // find existing groups
+  const char* theNamePrefix = "Surface_";
+  const int   theNamePrefixLen = strlen( theNamePrefix );
+  std::vector< SMESHDS_Group* > groups;
+  if ( hyp && hyp->GetMakeGroupsOfSurfaces() )
+  {
+    SMESH_Mesh::GroupIteratorPtr grIt = theMesh.GetGroups();
+    while ( grIt->more() )
+    {
+      SMESH_Group* group = grIt->next();
+      SMESHDS_Group* groupDS;
+      if (( group->GetGroupDS()->GetType() == SMDSAbs_Face ) &&
+          ( strncmp( group->GetName(), theNamePrefix, theNamePrefixLen ) == 0 ) &&
+          ( groupDS = dynamic_cast<SMESHDS_Group*>( group->GetGroupDS() )))
+        groups.push_back( groupDS );
+    }
+  }
+
   // add faces
   for ( int i = 1; i <= nbF; ++i )
   {
@@ -686,10 +797,42 @@ bool NETGENPlugin_Remesher_2D::Compute(SMESH_Mesh&         theMesh,
       else
         break;
     }
+    const SMDS_MeshElement* newFace = 0;
     switch( nodes.size() )
     {
-    case 3: meshDS->AddFace( nodes[0], nodes[1], nodes[2] ); break;
-    case 4: meshDS->AddFace( nodes[0], nodes[1], nodes[2], nodes[3] ); break;
+    case 3: newFace = meshDS->AddFace( nodes[0], nodes[1], nodes[2] ); break;
+    case 4: newFace = meshDS->AddFace( nodes[0], nodes[1], nodes[2], nodes[3] ); break;
+    }
+
+    // add newFace to a group
+    if ( newFace && hyp && hyp->GetMakeGroupsOfSurfaces() )
+    {
+      if ((size_t) elem.GetIndex()-1 >= groups.size() )
+        groups.resize( elem.GetIndex(), 0 );
+
+      SMESHDS_Group* & group = groups[  elem.GetIndex()-1 ];
+      if ( !group )
+      {
+        SMESH_Group* gr = theMesh.AddGroup( SMDSAbs_Face, "");
+        group = static_cast<SMESHDS_Group*>( gr->GetGroupDS() );
+      }
+      group->SMDSGroup().Add( newFace );
+    }
+  }
+
+  // update groups
+  int groupIndex = 1;
+  for ( size_t i = 0; i < groups.size(); ++i )
+  {
+    if ( !groups[i] )
+      continue;
+    if ( groups[i]->IsEmpty() )
+    {
+      theMesh.RemoveGroup( groups[i]->GetID() );
+    }
+    else if ( SMESH_Group* g = theMesh.GetGroup( groups[i]->GetID() ))
+    {
+      g->SetName( SMESH_Comment( theNamePrefix ) << groupIndex++ );
     }
   }
 

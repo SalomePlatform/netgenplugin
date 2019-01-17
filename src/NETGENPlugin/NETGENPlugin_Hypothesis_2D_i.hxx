@@ -81,8 +81,65 @@ class NETGENPLUGIN_EXPORT  NETGENPlugin_RemesherHypothesis_2D_i:
                                         ::SMESH_Gen*            theGenImpl);
 
   void SetRidgeAngle( CORBA::Double angle );
-
   CORBA::Double GetRidgeAngle();
+
+  void SetEdgeCornerAngle( CORBA::Double angle );
+  CORBA::Double GetEdgeCornerAngle();
+
+  void SetChartAngle( CORBA::Double angle );
+  CORBA::Double GetChartAngle();
+
+  void SetOuterChartAngle( CORBA::Double angle );
+  CORBA::Double GetOuterChartAngle();
+
+  void SetRestHChartDistFactor( CORBA::Double f );
+  CORBA::Double GetRestHChartDistFactor();
+
+  void SetRestHChartDistEnable( CORBA::Boolean enable );
+  CORBA::Boolean GetRestHChartDistEnable();
+
+  void SetRestHLineLengthFactor( CORBA::Double f );
+  CORBA::Double GetRestHLineLengthFactor();
+
+  void SetRestHLineLengthEnable( CORBA::Boolean enable );
+  CORBA::Boolean GetRestHLineLengthEnable();
+
+  void SetRestHCloseEdgeFactor( CORBA::Double f );
+  CORBA::Double GetRestHCloseEdgeFactor();
+
+  void SetRestHCloseEdgeEnable( CORBA::Boolean enable );
+  CORBA::Boolean GetRestHCloseEdgeEnable();
+
+  void SetRestHSurfCurvFactor( CORBA::Double f );
+  CORBA::Double GetRestHSurfCurvFactor();
+
+  void SetRestHSurfCurvEnable( CORBA::Boolean enable );
+  CORBA::Boolean GetRestHSurfCurvEnable();
+
+  void SetRestHEdgeAngleFactor( CORBA::Double f );
+  CORBA::Double GetRestHEdgeAngleFactor();
+
+  void SetRestHEdgeAngleEnable( CORBA::Boolean enable );
+  CORBA::Boolean GetRestHEdgeAngleEnable();
+
+  void SetRestHSurfMeshCurvFactor( CORBA::Double f );
+  CORBA::Double GetRestHSurfMeshCurvFactor();
+
+  void SetRestHSurfMeshCurvEnable( CORBA::Boolean enable );
+  CORBA::Boolean GetRestHSurfMeshCurvEnable();
+
+  void SetKeepExistingEdges( CORBA::Boolean toKeep );
+  CORBA::Boolean GetKeepExistingEdges();
+
+  void SetMakeGroupsOfSurfaces( CORBA::Boolean toMake );
+  CORBA::Boolean GetMakeGroupsOfSurfaces();
+
+  void SetFixedEdgeGroup( SMESH::SMESH_GroupBase_ptr edgeGroup );
+  SMESH::SMESH_GroupBase_ptr GetFixedEdgeGroup( SMESH::SMESH_Mesh_ptr mesh );
+
+  void SetLoadMeshOnCancel( CORBA::Boolean toLoad );
+  CORBA::Boolean GetLoadMeshOnCancel();
+
 
   // Get implementation
   ::NETGENPlugin_RemesherHypothesis_2D* GetImpl();
