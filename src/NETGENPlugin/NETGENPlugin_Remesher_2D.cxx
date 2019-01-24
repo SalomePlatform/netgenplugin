@@ -37,6 +37,7 @@
 #include <SMESH_MeshAlgos.hxx>
 #include <SMESH_MesherHelper.hxx>
 #include <SMESH_Group.hxx>
+#include <SMESH_MeshEditor.hxx>
 #include <SMESH_subMesh.hxx>
 
 #include <Bnd_B3d.hxx>
