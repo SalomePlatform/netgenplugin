@@ -2,33 +2,43 @@
 
 \page netgen_2d_3d_hypo_page NETGEN 2D and 3D hypotheses
 
-<b>NETGEN 2D Parameters</b> and <b>NETGEN 3D  Parameters</b> hypotheses work only with
-<b>NETGEN 1D-2D</b>, <b>NETGEN 2D</b>, <b>NETGEN 1D-2D-3D</b> and
-<b>NETGEN 3D</b> algorithms. <b>NETGEN 1D-2D</b> and <b>NETGEN
-1D-2D-3D</b>  algorithms do not require definition of lower-level
-hypotheses and algorithms (2D and 1D for meshing 3D objects and 1D for
-meshing 2D objects).
+<b>NETGEN 2D Parameters</b> and <b>NETGEN 3D Parameters</b>
+hypotheses work only with NETGEN algorithm in it's different forms:
+- <b>NETGEN 1D-2D</b>
+- <b>NETGEN 2D</b>
+- <b>NETGEN 1D-2D-3D</b>
+- <b>NETGEN 3D</b>. 
+
+<b>NETGEN 1D-2D</b> and <b>NETGEN 1D-2D-3D</b>  algorithms do not
+ require definition of lower-level hypotheses and algorithms (2D and
+ 1D for meshing 3D objects and 1D for meshing 2D objects).
+
+<b>NETGEN 1D-2D-3D</b> algorithm has maximal number of options. The
+rest forms have less options as they construct elements of less number
+of dimensions. All options are distributed among following tabs:
+- \ref arguments_anchor "Arguments" - basic options.
+- \ref local_sizes_anchor "Local Sizes" - local element size.
+- \ref advanced_anchor "Advanced" - advanced options.
+- \ref stl_anchor "STL" - specific Remesher options.
+
+\ref simple_anchor "NETGEN 2D/3D simple parameters" hypotheses allow
+defining the size of elements for each dimension separately.
+
+
+\anchor arguments_anchor
+<h2> Arguments tab</h2> 
+
+<b>Arguments</b> tab defines basic mesh parameters.
 
 \image html netgen2d3d.png
-<center><em>Hypothesis dialog boxes of <b>NETGEN 1D-2D</b> and <b>NETGEN
-      1D-2D-3D</b> algorithms are same</em></center>
+<center><em>Main tab of hypothesis dialog box <b>NETGEN 1D-2D-3D</b> algorithm</em></center>
 <br>
-
-\image html netgen2d3d_only.png
-<center><em>Dialog boxes of <b>NETGEN 2D</b> and <b>NETGEN 3D</b>
-    algorithms </em></center>
-<br>
-\image html netgen2d_remesher.png
-<center><em>Hypothesis dialog box of <b>NETGEN 2D</b> remesher algorithms</em></center>
-
 
 - <b>Name</b> - allows to define the name for the algorithm (NETGEN
 2D (or 3D) Parameters by default).
 - <b>Max Size</b> - maximum linear dimensions for mesh cells.
 - <b>Min Size</b> - minimum linear dimensions for mesh cells. It is
 ignored if it is more than <b>Max Size</b>.
-- <b>Second Order</b> - if this box is checked in, the algorithm will
-create second order mesh.
 - <b>Fineness</b> - ranging from <em>Very Coarse</em> to <em>Very Fine</em>
 allows to set the level of meshing detalization using the three
 parameters below. You can select \a Custom to define them manually.
@@ -56,23 +66,33 @@ number of segments on straight edges is defined by values of
 into account.) If this box is not checked in, then size of elements is
 defined by three parameters only:
 <b>Max Size</b>, <b>Min Size</b> and <b>Growth rate</b>.
-- <b>Allow Quadrangles</b> - if this box is checked in, the mesher
+- <b>Quad-dominated</b> - if this box is checked in, the mesher
 tries to generate quadrangle 2D mesh. Triangle elements are created
 where quadrangles are not possible.
+- <b>Second Order</b> - if this box is checked in, the algorithm will
+create second order mesh.
 - <b>Optimize</b> - if this box is checked in, the algorithm will modify
 initially created mesh in order to improve quality of elements. Optimization
-process is rather time consuming comparing to creation of initial mesh.
-- <b>Fuse Coincident Nodes on Edges and Vertices</b> - allows merging
-mesh nodes on vertices and edges which are geometrically coincident
-but are topologically different.
-- <b>Ridge angle</b> - allows to define minimum angle in degrees between
-normals of adjacent triangles at which the remesher (Netgen 2D working
-w/o geometry) considers the edge between these triangles as a feature edge.
+process is rather time consuming comparing to creation of initial
+mesh.
+
+Remesher has two additional basic options:
+- <b>Keep existing edges</b> - if activated, all edges present in the
+initial mesh are kept and used to separate STL surfaces.
+- <b>Create groups of surfaces </b> if activated, all new surface
+elements are distributed among groups corresponding to STL surfaces
+the Remesher detects.
+
+
+\anchor local_sizes_anchor
+<h2> Local sizes tab</h2> 
+
+<b>Local sizes</b> tab allows to define size of elements on and
+around specified geometrical objects. 
 
 \image html netgen3d_local_size.png
 
-- <b>Local sizes</b> - allows to define size of elements on and
-around specified geometrical objects. To define the local
+- To define the local
 size it is necessary to select a geometrical objects in the
 object browser or in the viewer, and to click a button corresponding
 to the type of the geometrical objects: <b>On Vertex</b>, <b>On
@@ -103,11 +123,74 @@ section.<br>
 25, 0) and (25, 25, 200) size of elements should be 0.3.
 
 
-\image html netgen2d3d_simple.png
+
+\anchor advanced_anchor 
+<h2> Advanced tab</h2> 
+
+<b>Advanced</b> tab allows advance controlling meshing algorithm.
+
+\image html netgen_advanced.png
+
+- <b>Element size weight</b> - weight of triangle size badness with respect to
+triangle shape badness. Total triangle badness is evaluated as <em>
+  shape_badness + size_weight * size_mismatch</em>.
+- <b>Nb. surface optimization steps</b> - number of loops when optimizing surface mesh.
+- <b>Nb. volume optimization steps</b> - number of loops when optimizing volume mesh.
+- <b>Worst element measure</b> - power of error, used to approximate max error optimization.
+- <b>Use Delaunay</b> - if activated, use Delaunay approach to
+construct volume elements, otherwise use Advancing front method.
+- <b>Check overlapping</b> - check overlapping surfaces during surface meshing.
+- <b>Check chart boundary</b> - to check chart boundary.
+- <b>Fuse Coincident Nodes on Edges and Vertices</b> - allows merging
+mesh nodes on vertices and edges which are geometrically coincident
+but are topologically different.
+
+
+
+\anchor stl_anchor
+<h2> STL tab</h2> 
+
+<b> STL </b> tab holds option of Remesher (NETGEN 2D working w/o geometry).
+
+\image html netgen2d_remesher.png
+<center><em>Options specific to <b>NETGEN 2D</b> remesher algorithms</em></center>
+
+
+- <b>Ridge angle</b> - defines minimum angle in degrees between
+normals of adjacent triangles at which the remesher considers the edge
+between these triangles as a feature edge. Feature edges bound charts
+of triangles that are re-meshed as separate surfaces.
+- <b> Edge corner angle </b> - defines minimum angle in degrees
+between adjacent edges of chart boundary, above which a point shared
+by the edges is considered as an end point of chart boundary curve.
+- <b> Chart angle </b> - angle between normals of adjacent triangles 
+under which a shared sharp edge is <em>not</em> considered as chart boundary,
+provided that this edge is not classified as chart boundary due
+to <b>Ridge angle</b> and <b>Keep existing edges</b> options.
+- <b> Outer chart angle </b> - angle for overlapping parts of chart.
+- <b> Chart distance </b> - defines a factor used to limit element
+size by distance to neighbor chart.
+- <b> Line length </b> - defines a factor used to limit size
+of elements located near ends of chart boundary curves by length of a
+chart boundary curve.
+- <b> Close edges </b> - defines a factor used to limit size
+of elements located near chart boundary curves by distance to other
+chart boundary curves.
+- <b> Surface curvature </b> - defines a factor used to limit size
+of elements by surface curvature.
+- <b> Edge angle </b> - defines a factor used to limit size
+of elements by chart boundary curve curvature.
+- <b> Surface mesh curvature</b> - defines a number of elements per
+curvature radius.
+
+\anchor simple_anchor
+<h2> NETGEN 2D/3D simple parameters</h2> 
 
 <b>NETGEN 2D simple parameters</b> and <b>NETGEN 3D simple
-parameters</b> allow defining the size of elements for each
+parameters</b> hypotheses allow defining the size of elements for each
 dimension.
+
+\image html netgen2d3d_simple.png
 
 \b 1D group allows defining the size of 1D elements in either of two ways: 
 - <b>Number of Segments</b> allows specifying number of segments, that

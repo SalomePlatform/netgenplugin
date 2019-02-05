@@ -299,8 +299,8 @@ void NETGENPlugin_Mesher::SetParameters(const NETGENPlugin_Hypothesis* hyp)
     mparams.uselocalh          = hyp->GetSurfaceCurvature();
     netgen::merge_solids       = hyp->GetFuseEdges();
     _chordalError              = hyp->GetChordalErrorEnabled() ? hyp->GetChordalError() : -1.;
-    mparams.optsteps2d         = hyp->GetNbSurfOptSteps();
-    mparams.optsteps3d         = hyp->GetNbVolOptSteps();
+    mparams.optsteps2d         = _optimize ? hyp->GetNbSurfOptSteps() : 0;
+    mparams.optsteps3d         = _optimize ? hyp->GetNbVolOptSteps()  : 0;
     mparams.elsizeweight       = hyp->GetElemSizeWeight();
     mparams.opterrpow          = hyp->GetWorstElemMeasure();
     mparams.delaunay           = hyp->GetUseDelauney();
