@@ -57,7 +57,7 @@ namespace netgen {
   extern STLParameters stlparam;
 
   NETGENPLUGIN_DLL_HEADER
-  extern netgen::STLDoctorParams stldoctor;
+  extern STLDoctorParams stldoctor;
 }
 namespace nglib
 {
