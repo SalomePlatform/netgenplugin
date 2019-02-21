@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2016  CEA/DEN, EDF R&D, OPEN CASCADE
+// Copyright (C) 2007-2019  CEA/DEN, EDF R&D, OPEN CASCADE
 //
 // Copyright (C) 2003-2007  OPEN CASCADE, EADS/CCR, LIP6, CEA/DEN,
 // CEDRAT, EDF R&D, LEG, PRINCIPIA R&D, BUREAU VERITAS
@@ -478,15 +478,16 @@ QFrame* NETGENPluginGUI_HypothesisCreator::buildFrame()
     optLayout->setSpacing( 6 );
 
     int row = 0;
-    optLayout->addWidget( new QLabel( tr( "NETGEN_ELEM_SIZE_WEIGHT" ), optBox ), row, 0 );
-    myElemSizeWeight = new SMESHGUI_SpinBox( optBox );
-    myElemSizeWeight->RangeStepAndValidator( 0., 1., 0.1, "parametric_precision" );
-    optLayout->addWidget( myElemSizeWeight, row, 1 );
-    row++;
-
+    myElemSizeWeight = 0;
     myNbSurfOptSteps = 0;
-    if ( myIs2D || !myIsONLY )
+    if ( myIs2D || !myIsONLY ) // 2D options
     {
+      optLayout->addWidget( new QLabel( tr( "NETGEN_ELEM_SIZE_WEIGHT" ), optBox ), row, 0 );
+      myElemSizeWeight = new SMESHGUI_SpinBox( optBox );
+      myElemSizeWeight->RangeStepAndValidator( 0., 1., 0.1, "parametric_precision" );
+      optLayout->addWidget( myElemSizeWeight, row, 1 );
+      row++;
+
       optLayout->addWidget( new QLabel( tr( "NETGEN_NB_SURF_OPT_STEPS" ), optBox ), row, 0 );
       myNbSurfOptSteps = new SalomeApp_IntSpinBox( optBox );
       myNbSurfOptSteps->setMinimum( 0 );
@@ -515,24 +516,37 @@ QFrame* NETGENPluginGUI_HypothesisCreator::buildFrame()
     insLayout->setSpacing( 6 );
 
     int row = 0;
-    insLayout->addWidget( new QLabel( tr( "NETGEN_WORST_ELEM_MEASURE" ), insGroup ), row, 0 );
-    myWorstElemMeasure = new SalomeApp_IntSpinBox( insGroup );
-    myWorstElemMeasure->setMinimum( 1 );
-    myWorstElemMeasure->setMaximum( 10 );
-    insLayout->addWidget( myWorstElemMeasure, row, 1, 1, 2 );
-    row++;
+    myWorstElemMeasure = 0;
+    myUseDelauney = 0;
+    if ( !myIs2D )
+    {
+      insLayout->addWidget( new QLabel( tr( "NETGEN_WORST_ELEM_MEASURE" ), insGroup ), row, 0 );
+      myWorstElemMeasure = new SalomeApp_IntSpinBox( insGroup );
+      myWorstElemMeasure->setMinimum( 1 );
+      myWorstElemMeasure->setMaximum( 10 );
+      insLayout->addWidget( myWorstElemMeasure, row, 1, 1, 2 );
+      row++;
 
-    myUseDelauney = new QCheckBox( tr( "NETGEN_USE_DELAUNEY" ), insGroup );
-    insLayout->addWidget( myUseDelauney, row, 0, 1, 2 );
-    row++;
+      myUseDelauney = new QCheckBox( tr( "NETGEN_USE_DELAUNEY" ), insGroup );
+      insLayout->addWidget( myUseDelauney, row, 0, 1, 2 );
+      row++;
+    }
 
-    myCheckOverlapping = new QCheckBox( tr( "NETGEN_CHECK_OVERLAPPING" ), insGroup );
-    insLayout->addWidget( myCheckOverlapping, row, 0, 1, 2 );
-    row++;
+    myCheckOverlapping = 0;
+    if ( myIs2D || !myIsONLY ) // 2D options
+    {
+      myCheckOverlapping = new QCheckBox( tr( "NETGEN_CHECK_OVERLAPPING" ), insGroup );
+      insLayout->addWidget( myCheckOverlapping, row, 0, 1, 2 );
+      row++;
+    }
 
-    myCheckChartBoundary = new QCheckBox( tr( "NETGEN_CHECK_CHART_BOUNDARY" ), insGroup );
-    insLayout->addWidget( myCheckChartBoundary, row, 0, 1, 2 );
-    row++;
+    myCheckChartBoundary = 0;
+    if ( isRemesher )
+    {
+      myCheckChartBoundary = new QCheckBox( tr( "NETGEN_CHECK_CHART_BOUNDARY" ), insGroup );
+      insLayout->addWidget( myCheckChartBoundary, row, 0, 1, 2 );
+      row++;
+    }
 
     myFuseEdges = 0;
     if ( !myIsONLY && !isRemesher )
@@ -590,9 +604,12 @@ void NETGENPluginGUI_HypothesisCreator::retrieveParams() const
   if (myFuseEdges)
     myFuseEdges->setChecked( data.myFuseEdges );
   setTextOrVar( myWorstElemMeasure, data.myWorstElemMeasure, data.myWorstElemMeasureVar );
-  myUseDelauney->setChecked( data.myUseDelauney );
-  myCheckOverlapping->setChecked( data.myCheckOverlapping );
-  myCheckChartBoundary->setChecked( data.myCheckChartBoundary );
+  if ( myUseDelauney )
+    myUseDelauney->setChecked( data.myUseDelauney );
+  if ( myCheckOverlapping )
+    myCheckOverlapping->setChecked( data.myCheckOverlapping );
+  if ( myCheckChartBoundary )
+    myCheckChartBoundary->setChecked( data.myCheckChartBoundary );
 
   if ( myRidgeAngle )
   {
@@ -824,9 +841,9 @@ bool NETGENPluginGUI_HypothesisCreator::storeParamsToHypo( const NetgenHypothesi
     h->SetVarParameter    ( h_data.myWorstElemMeasureVar.toLatin1().constData(), "SetWorstElemMeasure");
     h->SetWorstElemMeasure( h_data.myWorstElemMeasure );
 
-    h->SetUseDelauney( myUseDelauney );
-    h->SetCheckOverlapping( myCheckOverlapping );
-    h->SetCheckChartBoundary( myCheckChartBoundary );
+    h->SetUseDelauney( h_data.myUseDelauney );
+    h->SetCheckOverlapping( h_data.myCheckOverlapping );
+    h->SetCheckChartBoundary( h_data.myCheckChartBoundary );
     
     //if ( myIs2D )
     {
@@ -938,8 +955,11 @@ bool NETGENPluginGUI_HypothesisCreator::readParamsFromWidgets( NetgenHypothesisD
   if ( myFuseEdges )
     h_data.myFuseEdges = myFuseEdges->isChecked();
 
-  h_data.myElemSizeWeight    = myElemSizeWeight->value();
-  h_data.myElemSizeWeightVar = myElemSizeWeight->text();
+  if ( myElemSizeWeight )
+  {
+    h_data.myElemSizeWeight    = myElemSizeWeight->value();
+    h_data.myElemSizeWeightVar = myElemSizeWeight->text();
+  }
   if ( myNbSurfOptSteps )
   {
     h_data.myNbSurfOptSteps    = myNbSurfOptSteps->value();
@@ -950,12 +970,19 @@ bool NETGENPluginGUI_HypothesisCreator::readParamsFromWidgets( NetgenHypothesisD
     h_data.myNbVolOptSteps    = myNbVolOptSteps->value();
     h_data.myNbVolOptStepsVar = myNbVolOptSteps->text();
   }
-  h_data.myWorstElemMeasure    = myWorstElemMeasure->value();
-  h_data.myWorstElemMeasureVar = myWorstElemMeasure->text();
+  if ( myWorstElemMeasure )
+  {
+    h_data.myWorstElemMeasure    = myWorstElemMeasure->value();
+    h_data.myWorstElemMeasureVar = myWorstElemMeasure->text();
+  }
+  if ( myUseDelauney )
+    h_data.myUseDelauney        = myUseDelauney->isChecked();
 
-  h_data.myUseDelauney        = myUseDelauney->isChecked();
-  h_data.myCheckOverlapping   = myCheckOverlapping->isChecked();
-  h_data.myCheckChartBoundary = myCheckChartBoundary->isChecked();
+  if ( myCheckOverlapping )
+    h_data.myCheckOverlapping   = myCheckOverlapping->isChecked();
+
+  if ( myCheckChartBoundary )
+    h_data.myCheckChartBoundary = myCheckChartBoundary->isChecked();
 
   if ( myRidgeAngle )
   {
