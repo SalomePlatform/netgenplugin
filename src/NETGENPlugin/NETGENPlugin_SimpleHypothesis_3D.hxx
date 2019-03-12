@@ -34,8 +34,6 @@
 //  Simplified parameters of NETGEN
 //
 
-using namespace std;
-
 class NETGENPLUGIN_EXPORT NETGENPlugin_SimpleHypothesis_3D: public NETGENPlugin_SimpleHypothesis_2D
 {
 public:
@@ -48,8 +46,8 @@ public:
   double GetMaxElementVolume() const { return _volume; }
 
   // Persistence
-  virtual ostream & SaveTo(ostream & save);
-  virtual istream & LoadFrom(istream & load);
+  virtual std::ostream & SaveTo(std::ostream & save);
+  virtual std::istream & LoadFrom(std::istream & load);
 
   /*!
    * \brief Set parameters by mesh

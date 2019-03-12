@@ -39,8 +39,6 @@
 //  Parameters for work of NETGEN
 //
 
-using namespace std;
-
 class NETGENPLUGIN_EXPORT NETGENPlugin_Hypothesis: public SMESH_Hypothesis
 {
 public:
