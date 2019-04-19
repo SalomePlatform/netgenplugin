@@ -263,7 +263,17 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
 
       const SMESHDS_SubMesh * aSubMeshDSFace = proxyMesh->GetSubMesh( aShapeFace );
       if ( !aSubMeshDSFace ) continue;
+
       SMDS_ElemIteratorPtr iteratorElem = aSubMeshDSFace->GetElements();
+      if ( _quadraticMesh &&
+           dynamic_cast< const SMESH_ProxyMesh::SubMesh*>( aSubMeshDSFace ))
+      {
+        // add medium nodes of proxy triangles to helper (#16843)
+        while ( iteratorElem->more() )
+          helper.AddTLinks( static_cast< const SMDS_MeshFace* >( iteratorElem->next() ));
+
+        iteratorElem = aSubMeshDSFace->GetElements();
+      }
       while ( iteratorElem->more() ) // loop on elements on a geom face
       {
         // check mesh face
@@ -612,6 +622,13 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
     StdMeshers_QuadToTriaAdaptor* Adaptor = new StdMeshers_QuadToTriaAdaptor;
     Adaptor->Compute(aMesh);
     proxyMesh.reset( Adaptor );
+
+    if ( aHelper->IsQuadraticMesh() )
+    {
+      SMDS_ElemIteratorPtr fIt = proxyMesh->GetFaces();
+      while( fIt->more())
+        aHelper->AddTLinks( static_cast< const SMDS_MeshFace* >( fIt->next() ));
+    }
   }
 
   // maps nodes to ng ID

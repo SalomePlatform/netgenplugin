@@ -891,7 +891,7 @@ bool NETGENPluginGUI_HypothesisCreator::storeParamsToHypo( const NetgenHypothesi
 
         rh->SetKeepExistingEdges      ( h_data.myKeepExistingEdges );
         rh->SetMakeGroupsOfSurfaces   ( h_data.myMakeGroupsOfSurfaces );
-        rh->SetFixedEdgeGroup         ( 0 );
+        //rh->SetFixedEdgeGroup         ( -1 );
       }
     }
     for ( QMapIterator<QString,QString> i(myLocalSizeMap); i.hasNext(); )
