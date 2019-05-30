@@ -413,11 +413,8 @@ QFrame* NETGENPluginGUI_HypothesisCreator::buildFrame()
     localSizeHeaders << tr( "LSZ_ENTRY_COLUMN" )<< tr( "LSZ_NAME_COLUMN" ) << tr( "LSZ_LOCALSIZE_COLUMN" );
     myLocalSizeTable->setHorizontalHeaderLabels(localSizeHeaders);
     myLocalSizeTable->horizontalHeader()->hideSection(LSZ_ENTRY_COLUMN);
-#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
-    myLocalSizeTable->horizontalHeader()->setResizeMode(QHeaderView::Interactive);
-#else
     myLocalSizeTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Interactive);
-#endif
+
     myLocalSizeTable->resizeColumnToContents(LSZ_NAME_COLUMN);
     myLocalSizeTable->resizeColumnToContents(LSZ_LOCALSIZE_COLUMN);
     myLocalSizeTable->setAlternatingRowColors(true);
