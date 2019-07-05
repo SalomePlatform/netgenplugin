@@ -1875,6 +1875,7 @@ void NETGENPlugin_Mesher::AddIntVerticesInFaces(const netgen::OCCGeometry&     o
     }
 
   }
+  ngMesh.CalcSurfacesOfNode();
 }
 
 //================================================================================
