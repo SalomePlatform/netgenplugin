@@ -3803,10 +3803,10 @@ void NETGENPlugin_Mesher::toPython( const netgen::Mesh* ngMesh )
   ofstream outfile( pyFile, ios::out );
   if ( !outfile ) return;
 
-  outfile << "import salome, SMESH" << endl
-          << "from salome.smesh import smeshBuilder" << endl
-          << "smesh = smeshBuilder.New()" << endl
-          << "mesh = smesh.Mesh()" << endl << endl;
+  outfile << "import salome, SMESH" << std::endl
+          << "from salome.smesh import smeshBuilder" << std::endl
+          << "smesh = smeshBuilder.New()" << std::endl
+          << "mesh = smesh.Mesh()" << std::endl << std::endl;
 
   using namespace netgen;
   PointIndex pi;
@@ -3816,12 +3816,12 @@ void NETGENPlugin_Mesher::toPython( const netgen::Mesh* ngMesh )
     outfile << "mesh.AddNode( ";
     outfile << (*ngMesh)[pi](0) << ", ";
     outfile << (*ngMesh)[pi](1) << ", ";
-    outfile << (*ngMesh)[pi](2) << ") ## "<< pi << endl;
+    outfile << (*ngMesh)[pi](2) << ") ## "<< pi << std::endl;
   }
 
   int nbDom = ngMesh->GetNDomains();
   for ( int i = 0; i < nbDom; ++i )
-    outfile<< "grp" << i+1 << " = mesh.CreateEmptyGroup( SMESH.FACE, 'domain"<< i+1 << "')"<< endl;
+    outfile<< "grp" << i+1 << " = mesh.CreateEmptyGroup( SMESH.FACE, 'domain"<< i+1 << "')"<< std::endl;
 
   SurfaceElementIndex sei;
   for (sei = 0; sei < ngMesh->GetNSE(); sei++)
@@ -3831,14 +3831,14 @@ void NETGENPlugin_Mesher::toPython( const netgen::Mesh* ngMesh )
     for (int j = 0; j < sel.GetNP(); j++)
       outfile << sel[j] << ( j+1 < sel.GetNP() ? ", " : " ])");
     if ( sel.IsDeleted() ) outfile << " ## IsDeleted ";
-    outfile << endl;
+    outfile << std::endl;
 
     if ((*ngMesh)[sei].GetIndex())
     {
       if ( int dom1 = ngMesh->GetFaceDescriptor((*ngMesh)[sei].GetIndex ()).DomainIn())
-        outfile << "grp"<< dom1 <<".Add([ " << (int)sei+1 << " ])" << endl;
+        outfile << "grp"<< dom1 <<".Add([ " << (int)sei+1 << " ])" << std::endl;
       if ( int dom2 = ngMesh->GetFaceDescriptor((*ngMesh)[sei].GetIndex ()).DomainOut())
-        outfile << "grp"<< dom2 <<".Add([ " << (int)sei+1 << " ])" << endl;
+        outfile << "grp"<< dom2 <<".Add([ " << (int)sei+1 << " ])" << std::endl;
     }
   }
 
@@ -3848,7 +3848,7 @@ void NETGENPlugin_Mesher::toPython( const netgen::Mesh* ngMesh )
     outfile << "mesh.AddVolume([ ";
     for (int j = 0; j < el.GetNP(); j++)
       outfile << el[j] << ( j+1 < el.GetNP() ? ", " : " ])");
-    outfile << endl;
+    outfile << std::endl;
   }
 
   for (int i = 1; i <= ngMesh->GetNSeg(); i++)
@@ -3856,9 +3856,9 @@ void NETGENPlugin_Mesher::toPython( const netgen::Mesh* ngMesh )
     const Segment & seg = ngMesh->LineSegment (i);
     outfile << "mesh.AddEdge([ "
             << seg[0] << ", "
-            << seg[1] << " ])" << endl;
+            << seg[1] << " ])" << std::endl;
   }
-  cout << "Write " << pyFile << endl;
+  std::cout << "Write " << pyFile << std::endl;
 }
 
 //================================================================================
