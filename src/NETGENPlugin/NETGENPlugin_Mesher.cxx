@@ -4310,7 +4310,7 @@ NETGENPlugin_NetgenLibWrapper::NETGENPlugin_NetgenLibWrapper()
     netgen::myerr   = netgen::mycout;
     _coutBuffer     = std::cout.rdbuf();
 #ifdef _DEBUG_
-    cout << "NOTE: netgen output is redirected to file " << _outputFileName << endl;
+    std::cout << "NOTE: netgen output is redirected to file " << _outputFileName << std::endl;
 #else
     std::cout.rdbuf( netgen::mycout->rdbuf() );
 #endif
