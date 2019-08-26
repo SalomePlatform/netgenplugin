@@ -22,14 +22,15 @@ SALOME_CONFIGURE_FILE(doxyfile_py.in doxyfile_py)
 SALOME_CONFIGURE_FILE(static/header.html.in ${CMAKE_CURRENT_BINARY_DIR}/static/header.html)
 SALOME_CONFIGURE_FILE(static/header_py.html.in ${CMAKE_CURRENT_BINARY_DIR}/static/header_py.html)
 
-SET(DOC_SMESH_MeshersList NETGENPlugin)
 SET(smesh_file "$(SMESH_ROOT_DIR)/bin/salome/collect_mesh_methods.py")
 SET(kernel_file "$ENV{KERNEL_ROOT_DIR}/bin/salome/prepare_generating_doc.py")
 
-SALOME_ACCUMULATE_ENVIRONMENT(SMESH_MeshersList NOCHECK ${DOC_SMESH_MeshersList})
+# Define requared environment variables
+SET(ADD_VAR)
+LIST(APPEND ADD_VAR SMESH_MeshersList=NETGENPlugin)
 
 SET(_cmd_options ${smesh_file} -d -o tmp/smeshBuilder.py NETGENPlugin)
-SALOME_GENERATE_ENVIRONMENT_SCRIPT(_cmd env_script "${PYTHON_EXECUTABLE}" "${_cmd_options}")            
+SALOME_GENERATE_ENVIRONMENT_SCRIPT(_cmd env_script "${PYTHON_EXECUTABLE}" "${_cmd_options}" CONTEXT "NETGENPLUGIN_DOC" ADDITIONAL_VARIABLES ${ADD_VAR})
 
 ADD_CUSTOM_TARGET(usr_docs ${CMAKE_COMMAND} -E make_directory tmp
   COMMAND ${PYTHON_EXECUTABLE} ${kernel_file} -o tmp/NETGENPluginBuilder.py ${CMAKE_SOURCE_DIR}/src/NETGENPlugin/NETGENPluginBuilder.py
