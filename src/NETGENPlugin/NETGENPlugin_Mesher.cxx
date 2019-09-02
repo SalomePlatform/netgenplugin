@@ -1107,8 +1107,8 @@ bool NETGENPlugin_Mesher::FillNgMesh(netgen::OCCGeometry&           occgeom,
         bool isForwad = ( fOri == eNotSeam.Orientation() || fOri >= TopAbs_INTERNAL );
 
         // get all nodes from connected <edges>
-        const bool isQuad = smDS->IsQuadratic();
-        StdMeshers_FaceSide fSide( face, edges, _mesh, isForwad, isQuad, &helper );
+        const bool skipMedium = netgen::mparam.secondorder;//smDS->IsQuadratic();
+        StdMeshers_FaceSide fSide( face, edges, _mesh, isForwad, skipMedium, &helper );
         const vector<UVPtStruct>& points = fSide.GetUVPtStruct();
         if ( points.empty() )
           return false; // invalid node params?
@@ -3273,7 +3273,10 @@ bool NETGENPlugin_Mesher::Compute()
           {
             const netgen::Segment & seg = _ngMesh->LineSegment (i);
             if ( seg.epgeominfo[ 0 ].edgenr == 0 )
+            {
               _ngMesh->DeleteSegment( i );
+              initState._nbSegments--;
+            }
           }
           _ngMesh->Compress();
         }
