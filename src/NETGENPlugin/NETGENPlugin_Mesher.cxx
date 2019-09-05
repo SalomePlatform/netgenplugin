@@ -216,6 +216,7 @@ void NETGENPlugin_Mesher::SetSelfPointer( NETGENPlugin_Mesher ** ptr )
 void NETGENPlugin_Mesher::SetDefaultParameters()
 {
   netgen::MeshingParameters& mparams = netgen::mparam;
+  mparams = netgen::MeshingParameters();
   // maximal mesh edge size
   mparams.maxh            = 0;//NETGENPlugin_Hypothesis::GetDefaultMaxSize();
   mparams.minh            = 0;
