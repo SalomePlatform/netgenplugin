@@ -666,5 +666,13 @@ bool NETGENPlugin_Hypothesis::SetParametersByDefaults(const TDefaults&  dflts,
   else if ( theMesh && theMesh->HasShapeToMesh() )
     _minSize    = NETGENPlugin_Mesher::GetDefaultMinSize( theMesh->GetShapeToMesh(), _maxSize );
 
+  if ( dflts._way == SMESH_Hypothesis::BY_AVERAGE_LENGTH )
+  {
+    _minSize      = dflts._elemLength / 100.;
+    _chordalError = dflts._elemLength / 2.;
+    _chordalErrorEnabled = true;
+    _quadAllowed  = dflts._quadDominated;
+  }
+
   return _nbSegPerEdge && _maxSize > 0;
 }
