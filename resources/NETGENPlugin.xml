@@ -89,7 +89,7 @@
         <algo>NETGEN_3D=Tetrahedron()</algo>
         <hypo>MaxElementVolume=MaxElementVolume(SetMaxElementVolume())</hypo>
         <hypo>NETGEN_Parameters_3D=Parameters()</hypo>
-        <hypo>ViscousLayers=ViscousLayers(SetTotalThickness(),SetNumberLayers(),SetStretchFactor(),SetFaces(1),SetFaces(2),SetMethod())</hypo>
+        <hypo>ViscousLayers=ViscousLayers(SetTotalThickness(),SetNumberLayers(),SetStretchFactor(),SetFaces(1),SetFaces(2),SetMethod(),SetGroupName())</hypo>
       </python-wrap>
     </algorithm>
 
@@ -109,7 +109,7 @@
         <hypo>MaxElementArea=MaxElementArea(SetMaxElementArea())</hypo>
         <hypo>NETGEN_Parameters_2D_ONLY=Parameters()</hypo>
         <hypo>QuadranglePreference=SetQuadAllowed()</hypo>
-        <hypo>ViscousLayers2D=ViscousLayers2D(SetTotalThickness(),SetNumberLayers(),SetStretchFactor(),SetIgnoreEdges())</hypo>
+        <hypo>ViscousLayers2D=ViscousLayers2D(SetTotalThickness(),SetNumberLayers(),SetStretchFactor(),SetEdges(1),SetEdges(2),SetGroupName())</hypo>
       </python-wrap>
     </algorithm>
 
@@ -127,7 +127,7 @@
         <algo>NETGEN_2D=Triangle(algo=smeshBuilder.NETGEN_1D2D)</algo>
         <hypo>NETGEN_Parameters_2D=Parameters()</hypo>
         <hypo>NETGEN_SimpleParameters_2D=Parameters(smeshBuilder.SIMPLE)</hypo>
-        <hypo>ViscousLayers2D=ViscousLayers2D(SetTotalThickness(),SetNumberLayers(),SetStretchFactor(),SetIgnoreEdges())</hypo>
+        <hypo>ViscousLayers2D=ViscousLayers2D(SetTotalThickness(),SetNumberLayers(),SetStretchFactor(),SetEdges(1),SetEdges(2),SetGroupName())</hypo>
       </python-wrap>
     </algorithm>
 
@@ -145,7 +145,7 @@
         <algo>NETGEN_2D3D=Tetrahedron(algo=smeshBuilder.NETGEN_1D2D3D)</algo>
         <hypo>NETGEN_Parameters=Parameters()</hypo>
         <hypo>NETGEN_SimpleParameters_3D=Parameters(smeshBuilder.SIMPLE)</hypo>
-        <hypo>ViscousLayers=ViscousLayers(SetTotalThickness(),SetNumberLayers(),SetStretchFactor(),SetFaces(1),SetFaces(2),SetMethod())</hypo>
+        <hypo>ViscousLayers=ViscousLayers(SetTotalThickness(),SetNumberLayers(),SetStretchFactor(),SetFaces(1),SetFaces(2),SetMethod(),SetGroupName())</hypo>
       </python-wrap>
     </algorithm>
 
