@@ -80,6 +80,10 @@
         <translation>Optimiser</translation>
     </message>
     <message>
+        <source>NETGEN_OPTIMIZER</source>
+        <translation>Optimiseur</translation>
+    </message>
+    <message>
         <source>NETGEN_SECOND_ORDER</source>
         <translation>Second ordre</translation>
     </message>
@@ -90,6 +94,22 @@
     <message>
         <source>NETGEN_SEG_PER_RADIUS</source>
         <translation>Nb. segments par rayon</translation>
+    </message>
+    <message>
+        <source>NETGEN_CHORDAL_ERROR</source>
+        <translation>Erreur de corde</translation>
+    </message>
+    <message>
+        <source>NETGEN_RIDGE_ANGLE</source>
+        <translation>Angle de rive</translation>
+    </message>
+    <message>
+        <source>NETGEN_KEEP_EXISTING_EDGES</source>
+        <translation>Garder les arêtes existantes</translation>
+    </message>
+    <message>
+        <source>NETGEN_MAKE_SURFACE_GROUPS</source>
+        <translation>Create groups of surfaces</translation>
     </message>
     <message>
         <source>NETGEN_SURFACE_CURVATURE</source>
@@ -158,6 +178,94 @@
     <message>
         <source>LSZ_LOCALSIZE_COLUMN</source>
         <translation>Valeur</translation>
+    </message>
+    <message>
+        <source>NETGEN_LSZ_FILE</source>
+        <translation>Fichier des tailles locales</translation>
+    </message>
+    <message>
+        <source>NETGEN_MESH_SIZE</source>
+        <translation>Taille de maille</translation>
+    </message>
+    <message>
+        <source>NETGEN_INSIDER</source>
+        <translation>Insider</translation>
+    </message>
+    <message>
+        <source>NETGEN_WORST_ELEM_MEASURE</source>
+        <translation>Mesure du pire élément</translation>
+    </message>
+    <message>
+        <source>NETGEN_USE_DELAUNEY</source>
+        <translation>Utiliser Delaunay</translation>
+    </message>
+    <message>
+        <source>NETGEN_CHECK_OVERLAPPING</source>
+        <translation>Contrôle de la superposition</translation>
+    </message>
+    <message>
+        <source>NETGEN_CHECK_CHART_BOUNDARY</source>
+        <translation>Contrôle de la frontière</translation>
+    </message>
+    <message>
+        <source>NETGEN_ELEM_SIZE_WEIGHT</source>
+        <translation>Poids de la taille de maille</translation>
+    </message>
+    <message>
+        <source>NETGEN_NB_SURF_OPT_STEPS</source>
+        <translation>Nb. de pas d'optimisation de la surface</translation>
+    </message>
+    <message>
+        <source>NETGEN_NB_VOL_OPT_STEPS</source>
+        <translation>Nb. de pas d'optimisation du volume</translation>
+    </message>
+    <message>
+        <source>NETGEN_STL</source>
+        <translation>STL</translation>
+    </message>
+    <message>
+        <source>NETGEN_STL_CHARTS</source>
+        <translation>Charts</translation>
+    </message>
+    <message>
+        <source>NETGEN_STL_SIZE</source>
+        <translation>Taille de maille dépend de... (activation et valeur)</translation>
+    </message>
+    <message>
+        <source>NETGEN_EDGE_CORNER_ANGLE</source>
+        <translation>Angle du coin d'arêtes</translation>
+    </message>
+    <message>
+        <source>NETGEN_CHART_ANGLE</source>
+        <translation>Chart angle</translation>
+    </message>
+    <message>
+        <source>NETGEN_OUTER_CHART_ANGLE</source>
+        <translation>Outer chart angle</translation>
+    </message>
+    <message>
+        <source>NETGEN_RESTH_CHART_DIST</source>
+        <translation>Chart distance</translation>
+    </message>
+    <message>
+        <source>NETGEN_RESTH_LINE_LENGTH</source>
+        <translation>Longuer de la ligne</translation>
+    </message>
+    <message>
+        <source>NETGEN_RESTH_CLOSE_EDGE</source>
+        <translation>Fermer les arêtes</translation>
+    </message>
+    <message>
+        <source>NETGEN_RESTH_SURF_CURV</source>
+        <translation>Courbure de la surface</translation>
+    </message>
+    <message>
+        <source>NETGEN_RESTH_EDGE_ANGLE</source>
+        <translation>Angle d'arête</translation>
+    </message>
+    <message>
+        <source>NETGEN_RESTH_SURF_MESH_CURV</source>
+        <translation>Courbure du maillage de la surface</translation>
     </message>
 </context>
 </TS>
