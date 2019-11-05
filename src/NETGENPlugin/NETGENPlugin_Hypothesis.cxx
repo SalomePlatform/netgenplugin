@@ -669,6 +669,7 @@ bool NETGENPlugin_Hypothesis::SetParametersByDefaults(const TDefaults&  dflts,
   if ( dflts._way == SMESH_Hypothesis::BY_AVERAGE_LENGTH )
   {
     _minSize      = dflts._elemLength / 100.;
+    _nbSegPerEdge = 1;
     _chordalError = dflts._elemLength / 2.;
     _chordalErrorEnabled = true;
     _quadAllowed  = dflts._quadDominated;
