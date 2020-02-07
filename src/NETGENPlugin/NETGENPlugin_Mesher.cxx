@@ -3173,6 +3173,7 @@ bool NETGENPlugin_Mesher::Compute()
       const NETGENPlugin_SimpleHypothesis_3D* simple3d =
         dynamic_cast< const NETGENPlugin_SimpleHypothesis_3D* > ( _simpleHyp );
       if ( simple3d ) {
+        _ngMesh->Compress();
         if ( double vol = simple3d->GetMaxElementVolume() ) {
           // max volume
           mparams.maxh = pow( 72, 1/6. ) * pow( vol, 1/3. );
