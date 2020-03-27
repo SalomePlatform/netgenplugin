@@ -140,255 +140,37 @@ std::map<int,double> SolidId2LocalSize;
 std::vector<SMESHUtils::ControlPnt> ControlPoints;
 std::set<int> ShapesWithControlPoints; // <-- allows calling SetLocalSize() several times w/o recomputing ControlPoints
 
-//=============================================================================
-/*!
- *
- */
-//=============================================================================
-
-NETGENPlugin_Mesher::NETGENPlugin_Mesher (SMESH_Mesh*         mesh,
-                                          const TopoDS_Shape& aShape,
-                                          const bool          isVolume)
-  : _mesh    (mesh),
-    _shape   (aShape),
-    _isVolume(isVolume),
-    _optimize(true),
-    _fineness(NETGENPlugin_Hypothesis::GetDefaultFineness()),
-    _isViscousLayers2D(false),
-    _chordalError(-1), // means disabled
-    _ngMesh(NULL),
-    _occgeom(NULL),
-    _curShapeIndex(-1),
-    _progressTic(1),
-    _totalTime(1.0),
-    _simpleHyp(NULL),
-    _viscousLayersHyp(NULL),
-    _ptrToMe(NULL)
-{
-  SetDefaultParameters();
-  ShapesWithLocalSize.Clear();
-  VertexId2LocalSize.clear();
-  EdgeId2LocalSize.clear();
-  FaceId2LocalSize.clear();
-  SolidId2LocalSize.clear();
-  ControlPoints.clear();
-  ShapesWithControlPoints.clear();
-}
-
-//================================================================================
-/*!
- * Destructor
- */
-//================================================================================
-
-NETGENPlugin_Mesher::~NETGENPlugin_Mesher()
-{
-  if ( _ptrToMe )
-    *_ptrToMe = NULL;
-  _ptrToMe = 0;
-  _ngMesh = NULL;
-}
-
-//================================================================================
-/*!
- * Set pointer to NETGENPlugin_Mesher* field of the holder, that will be
- * nullified at destruction of this
- */
-//================================================================================
-
-void NETGENPlugin_Mesher::SetSelfPointer( NETGENPlugin_Mesher ** ptr )
-{
-  if ( _ptrToMe )
-    *_ptrToMe = NULL;
-
-  _ptrToMe = ptr;
-
-  if ( _ptrToMe )
-    *_ptrToMe = this;
-}
-
-//================================================================================
-/*!
- * \brief Initialize global NETGEN parameters with default values
- */
-//================================================================================
-
-void NETGENPlugin_Mesher::SetDefaultParameters()
-{
-  netgen::MeshingParameters& mparams = netgen::mparam;
-  mparams = netgen::MeshingParameters();
-  // maximal mesh edge size
-  mparams.maxh            = 0;//NETGENPlugin_Hypothesis::GetDefaultMaxSize();
-  mparams.minh            = 0;
-  // minimal number of segments per edge
-  mparams.segmentsperedge = NETGENPlugin_Hypothesis::GetDefaultNbSegPerEdge();
-  // rate of growth of size between elements
-  mparams.grading         = NETGENPlugin_Hypothesis::GetDefaultGrowthRate();
-  // safety factor for curvatures (elements per radius)
-  mparams.curvaturesafety = NETGENPlugin_Hypothesis::GetDefaultNbSegPerRadius();
-  // create elements of second order
-  mparams.secondorder     = NETGENPlugin_Hypothesis::GetDefaultSecondOrder();
-  // quad-dominated surface meshing
-  if (_isVolume)
-    mparams.quad          = 0;
-  else
-    mparams.quad          = NETGENPlugin_Hypothesis_2D::GetDefaultQuadAllowed();
-  _fineness               = NETGENPlugin_Hypothesis::GetDefaultFineness();
-  mparams.uselocalh       = NETGENPlugin_Hypothesis::GetDefaultSurfaceCurvature();
-  netgen::merge_solids    = NETGENPlugin_Hypothesis::GetDefaultFuseEdges();
-}
-
-//=============================================================================
-/*!
- *
- */
-//=============================================================================
-
-void SetLocalSize(TopoDS_Shape GeomShape, double LocalSize)
-{
-  if ( GeomShape.IsNull() ) return;
-  TopAbs_ShapeEnum GeomType = GeomShape.ShapeType();
-  if (GeomType == TopAbs_COMPOUND) {
-    for (TopoDS_Iterator it (GeomShape); it.More(); it.Next()) {
-      SetLocalSize(it.Value(), LocalSize);
-    }
-    return;
-  }
-  int key;
-  if (! ShapesWithLocalSize.Contains(GeomShape))
-    key = ShapesWithLocalSize.Add(GeomShape);
-  else
-    key = ShapesWithLocalSize.FindIndex(GeomShape);
-  if (GeomType == TopAbs_VERTEX) {
-    VertexId2LocalSize[key] = LocalSize;
-  } else if (GeomType == TopAbs_EDGE) {
-    EdgeId2LocalSize[key] = LocalSize;
-  } else if (GeomType == TopAbs_FACE) {
-    FaceId2LocalSize[key] = LocalSize;
-  } else if (GeomType == TopAbs_SOLID) {
-    SolidId2LocalSize[key] = LocalSize;
-  }
-}
-
-//=============================================================================
-/*!
- * Pass parameters to NETGEN
- */
-//=============================================================================
-void NETGENPlugin_Mesher::SetParameters(const NETGENPlugin_Hypothesis* hyp)
-{
-  if (hyp)
-  {
-    netgen::MeshingParameters& mparams = netgen::mparam;
-    // Initialize global NETGEN parameters:
-    // maximal mesh segment size
-    mparams.maxh               = hyp->GetMaxSize();
-    // maximal mesh element linear size
-    mparams.minh               = hyp->GetMinSize();
-    // minimal number of segments per edge
-    mparams.segmentsperedge    = hyp->GetNbSegPerEdge();
-    // rate of growth of size between elements
-    mparams.grading            = hyp->GetGrowthRate();
-    // safety factor for curvatures (elements per radius)
-    mparams.curvaturesafety    = hyp->GetNbSegPerRadius();
-    // create elements of second order
-    mparams.secondorder        = hyp->GetSecondOrder() ? 1 : 0;
-    // quad-dominated surface meshing
-    mparams.quad               = hyp->GetQuadAllowed() ? 1 : 0;
-    _optimize                  = hyp->GetOptimize();
-    _fineness                  = hyp->GetFineness();
-    mparams.uselocalh          = hyp->GetSurfaceCurvature();
-    netgen::merge_solids       = hyp->GetFuseEdges();
-    _chordalError              = hyp->GetChordalErrorEnabled() ? hyp->GetChordalError() : -1.;
-    mparams.optsteps2d         = _optimize ? hyp->GetNbSurfOptSteps() : 0;
-    mparams.optsteps3d         = _optimize ? hyp->GetNbVolOptSteps()  : 0;
-    mparams.elsizeweight       = hyp->GetElemSizeWeight();
-    mparams.opterrpow          = hyp->GetWorstElemMeasure();
-    mparams.delaunay           = hyp->GetUseDelauney();
-    mparams.checkoverlap       = hyp->GetCheckOverlapping();
-    mparams.checkchartboundary = hyp->GetCheckChartBoundary();
-    _simpleHyp                 = NULL;
-    // mesh size file
-    mparams.meshsizefilename= hyp->GetMeshSizeFile().empty() ? 0 : hyp->GetMeshSizeFile().c_str();
-
-    const NETGENPlugin_Hypothesis::TLocalSize& localSizes = hyp->GetLocalSizesAndEntries();
-    if ( !localSizes.empty() )
-    {
-      SMESH_Gen_i* smeshGen_i = SMESH_Gen_i::GetSMESHGen();
-      NETGENPlugin_Hypothesis::TLocalSize::const_iterator it = localSizes.begin();
-      for ( ; it != localSizes.end() ; it++)
-      {
-        std::string entry = (*it).first;
-        double        val = (*it).second;
-        // --
-        GEOM::GEOM_Object_var aGeomObj;
-        SALOMEDS::SObject_var aSObj = SMESH_Gen_i::getStudyServant()->FindObjectID( entry.c_str() );
-        if ( !aSObj->_is_nil() ) {
-          CORBA::Object_var obj = aSObj->GetObject();
-          aGeomObj = GEOM::GEOM_Object::_narrow(obj);
-          aSObj->UnRegister();
-        }
-        TopoDS_Shape S = smeshGen_i->GeomObjectToShape( aGeomObj.in() );
-        ::SetLocalSize(S, val);
-      }
-    }
-  }
-}
-
-//=============================================================================
-/*!
- * Pass simple parameters to NETGEN
- */
-//=============================================================================
-
-void NETGENPlugin_Mesher::SetParameters(const NETGENPlugin_SimpleHypothesis_2D* hyp)
-{
-  _simpleHyp = hyp;
-  if ( _simpleHyp )
-    SetDefaultParameters();
-}
-
-//================================================================================
-/*!
- * \brief Store a Viscous Layers hypothesis
- */
-//================================================================================
-
-void NETGENPlugin_Mesher::SetParameters(const StdMeshers_ViscousLayers* hyp )
-{
-  _viscousLayersHyp = hyp;
-}
-
-//=============================================================================
-/*!
- *  Link - a pair of integer numbers
- */
-//=============================================================================
-struct Link
-{
-  int n1, n2;
-  Link(int _n1, int _n2) : n1(_n1), n2(_n2) {}
-  Link() : n1(0), n2(0) {}
-  bool Contains( int n ) const { return n == n1 || n == n2; }
-  bool IsConnected( const Link& other ) const
-  {
-    return (( Contains( other.n1 ) || Contains( other.n2 )) && ( this != &other ));
-  }
-};
-
-int HashCode(const Link& aLink, int aLimit)
-{
-  return HashCode(aLink.n1 + aLink.n2, aLimit);
-}
-
-Standard_Boolean IsEqual(const Link& aLink1, const Link& aLink2)
-{
-  return (( aLink1.n1 == aLink2.n1 && aLink1.n2 == aLink2.n2 ) ||
-          ( aLink1.n1 == aLink2.n2 && aLink1.n2 == aLink2.n1 ));
-}
-
 namespace
 {
+  //=============================================================================
+  /*!
+   *  Link - a pair of integer numbers
+   */
+  //=============================================================================
+  struct Link
+  {
+    int n1, n2;
+    Link(int _n1, int _n2) : n1(_n1), n2(_n2) {}
+    Link() : n1(0), n2(0) {}
+    bool Contains( int n ) const { return n == n1 || n == n2; }
+    bool IsConnected( const Link& other ) const
+    {
+      return (( Contains( other.n1 ) || Contains( other.n2 )) && ( this != &other ));
+    }
+    static int HashCode(const Link& aLink, int aLimit)
+    {
+      return ::HashCode(aLink.n1 + aLink.n2, aLimit);
+    }
+
+    static Standard_Boolean IsEqual(const Link& aLink1, const Link& aLink2)
+    {
+      return (( aLink1.n1 == aLink2.n1 && aLink1.n2 == aLink2.n2 ) ||
+              ( aLink1.n1 == aLink2.n2 && aLink1.n2 == aLink2.n1 ));
+    }
+  };
+
+  typedef NCollection_Map<Link,Link> TLinkMap;
+
   //================================================================================
   /*!
    * \brief return id of netgen point corresponding to SMDS node
@@ -653,7 +435,264 @@ namespace
     return Sqrt( 3 ) * Sqrt( chordalError * ( 2 * radius - chordalError ));
   }
 
+  //=============================================================================
+  /*!
+   *
+   */
+  //=============================================================================
+
+  void setLocalSize(const TopoDS_Shape& GeomShape, double LocalSize)
+  {
+    if ( GeomShape.IsNull() ) return;
+    TopAbs_ShapeEnum GeomType = GeomShape.ShapeType();
+    if (GeomType == TopAbs_COMPOUND) {
+      for (TopoDS_Iterator it (GeomShape); it.More(); it.Next()) {
+        setLocalSize(it.Value(), LocalSize);
+      }
+      return;
+    }
+    int key;
+    if (! ShapesWithLocalSize.Contains(GeomShape))
+      key = ShapesWithLocalSize.Add(GeomShape);
+    else
+      key = ShapesWithLocalSize.FindIndex(GeomShape);
+    if (GeomType == TopAbs_VERTEX) {
+      VertexId2LocalSize[key] = LocalSize;
+    } else if (GeomType == TopAbs_EDGE) {
+      EdgeId2LocalSize[key] = LocalSize;
+    } else if (GeomType == TopAbs_FACE) {
+      FaceId2LocalSize[key] = LocalSize;
+    } else if (GeomType == TopAbs_SOLID) {
+      SolidId2LocalSize[key] = LocalSize;
+    }
+    return;
+  }
+
+  //================================================================================
+  /*!
+   * \brief Return faceNgID or faceNgID-1 depending on side the given proxy face lies
+   *  \param [in] f - proxy face
+   *  \param [in] solidSMDSIDs - IDs of SOLIDs sharing the FACE on which face lies
+   *  \param [in] faceNgID - NETGEN ID of the FACE
+   *  \return int - NETGEN ID of the FACE
+   */
+  //================================================================================
+
+  int getFaceNgID( const SMDS_MeshElement* face,
+                   const int *             solidSMDSIDs,
+                   const int               faceNgID )
+  {
+    for ( int i = 0; i < 3; ++i )
+    {
+      const SMDS_MeshNode* n = face->GetNode( i );
+      const int      shapeID = n->GetShapeID();
+      if ( shapeID == solidSMDSIDs[0] )
+        return faceNgID - 1;
+      if ( shapeID == solidSMDSIDs[1] )
+        return faceNgID;
+    }
+    std::vector<const SMDS_MeshNode*> fNodes( face->begin_nodes(), face->end_nodes() );
+    std::vector<const SMDS_MeshElement*> vols;
+    if ( SMDS_Mesh::GetElementsByNodes( fNodes, vols, SMDSAbs_Volume ))
+      for ( size_t i = 0; i < vols.size(); ++i )
+      {
+        const int shapeID = vols[i]->GetShapeID();
+        if ( shapeID == solidSMDSIDs[0] )
+          return faceNgID - 1;
+        if ( shapeID == solidSMDSIDs[1] )
+          return faceNgID;
+      }
+    return faceNgID;
+  }
+
 } // namespace
+
+//=============================================================================
+/*!
+ *
+ */
+//=============================================================================
+
+NETGENPlugin_Mesher::NETGENPlugin_Mesher (SMESH_Mesh*         mesh,
+                                          const TopoDS_Shape& aShape,
+                                          const bool          isVolume)
+  : _mesh    (mesh),
+    _shape   (aShape),
+    _isVolume(isVolume),
+    _optimize(true),
+    _fineness(NETGENPlugin_Hypothesis::GetDefaultFineness()),
+    _isViscousLayers2D(false),
+    _chordalError(-1), // means disabled
+    _ngMesh(NULL),
+    _occgeom(NULL),
+    _curShapeIndex(-1),
+    _progressTic(1),
+    _totalTime(1.0),
+    _simpleHyp(NULL),
+    _viscousLayersHyp(NULL),
+    _ptrToMe(NULL)
+{
+  SetDefaultParameters();
+  ShapesWithLocalSize.Clear();
+  VertexId2LocalSize.clear();
+  EdgeId2LocalSize.clear();
+  FaceId2LocalSize.clear();
+  SolidId2LocalSize.clear();
+  ControlPoints.clear();
+  ShapesWithControlPoints.clear();
+}
+
+//================================================================================
+/*!
+ * Destructor
+ */
+//================================================================================
+
+NETGENPlugin_Mesher::~NETGENPlugin_Mesher()
+{
+  if ( _ptrToMe )
+    *_ptrToMe = NULL;
+  _ptrToMe = 0;
+  _ngMesh = NULL;
+}
+
+//================================================================================
+/*!
+ * Set pointer to NETGENPlugin_Mesher* field of the holder, that will be
+ * nullified at destruction of this
+ */
+//================================================================================
+
+void NETGENPlugin_Mesher::SetSelfPointer( NETGENPlugin_Mesher ** ptr )
+{
+  if ( _ptrToMe )
+    *_ptrToMe = NULL;
+
+  _ptrToMe = ptr;
+
+  if ( _ptrToMe )
+    *_ptrToMe = this;
+}
+
+//================================================================================
+/*!
+ * \brief Initialize global NETGEN parameters with default values
+ */
+//================================================================================
+
+void NETGENPlugin_Mesher::SetDefaultParameters()
+{
+  netgen::MeshingParameters& mparams = netgen::mparam;
+  mparams = netgen::MeshingParameters();
+  // maximal mesh edge size
+  mparams.maxh            = 0;//NETGENPlugin_Hypothesis::GetDefaultMaxSize();
+  mparams.minh            = 0;
+  // minimal number of segments per edge
+  mparams.segmentsperedge = NETGENPlugin_Hypothesis::GetDefaultNbSegPerEdge();
+  // rate of growth of size between elements
+  mparams.grading         = NETGENPlugin_Hypothesis::GetDefaultGrowthRate();
+  // safety factor for curvatures (elements per radius)
+  mparams.curvaturesafety = NETGENPlugin_Hypothesis::GetDefaultNbSegPerRadius();
+  // create elements of second order
+  mparams.secondorder     = NETGENPlugin_Hypothesis::GetDefaultSecondOrder();
+  // quad-dominated surface meshing
+  if (_isVolume)
+    mparams.quad          = 0;
+  else
+    mparams.quad          = NETGENPlugin_Hypothesis_2D::GetDefaultQuadAllowed();
+  _fineness               = NETGENPlugin_Hypothesis::GetDefaultFineness();
+  mparams.uselocalh       = NETGENPlugin_Hypothesis::GetDefaultSurfaceCurvature();
+  netgen::merge_solids    = NETGENPlugin_Hypothesis::GetDefaultFuseEdges();
+}
+
+//=============================================================================
+/*!
+ * Pass parameters to NETGEN
+ */
+//=============================================================================
+void NETGENPlugin_Mesher::SetParameters(const NETGENPlugin_Hypothesis* hyp)
+{
+  if (hyp)
+  {
+    netgen::MeshingParameters& mparams = netgen::mparam;
+    // Initialize global NETGEN parameters:
+    // maximal mesh segment size
+    mparams.maxh               = hyp->GetMaxSize();
+    // maximal mesh element linear size
+    mparams.minh               = hyp->GetMinSize();
+    // minimal number of segments per edge
+    mparams.segmentsperedge    = hyp->GetNbSegPerEdge();
+    // rate of growth of size between elements
+    mparams.grading            = hyp->GetGrowthRate();
+    // safety factor for curvatures (elements per radius)
+    mparams.curvaturesafety    = hyp->GetNbSegPerRadius();
+    // create elements of second order
+    mparams.secondorder        = hyp->GetSecondOrder() ? 1 : 0;
+    // quad-dominated surface meshing
+    mparams.quad               = hyp->GetQuadAllowed() ? 1 : 0;
+    _optimize                  = hyp->GetOptimize();
+    _fineness                  = hyp->GetFineness();
+    mparams.uselocalh          = hyp->GetSurfaceCurvature();
+    netgen::merge_solids       = hyp->GetFuseEdges();
+    _chordalError              = hyp->GetChordalErrorEnabled() ? hyp->GetChordalError() : -1.;
+    mparams.optsteps2d         = _optimize ? hyp->GetNbSurfOptSteps() : 0;
+    mparams.optsteps3d         = _optimize ? hyp->GetNbVolOptSteps()  : 0;
+    mparams.elsizeweight       = hyp->GetElemSizeWeight();
+    mparams.opterrpow          = hyp->GetWorstElemMeasure();
+    mparams.delaunay           = hyp->GetUseDelauney();
+    mparams.checkoverlap       = hyp->GetCheckOverlapping();
+    mparams.checkchartboundary = hyp->GetCheckChartBoundary();
+    _simpleHyp                 = NULL;
+    // mesh size file
+    mparams.meshsizefilename= hyp->GetMeshSizeFile().empty() ? 0 : hyp->GetMeshSizeFile().c_str();
+
+    const NETGENPlugin_Hypothesis::TLocalSize& localSizes = hyp->GetLocalSizesAndEntries();
+    if ( !localSizes.empty() )
+    {
+      SMESH_Gen_i* smeshGen_i = SMESH_Gen_i::GetSMESHGen();
+      NETGENPlugin_Hypothesis::TLocalSize::const_iterator it = localSizes.begin();
+      for ( ; it != localSizes.end() ; it++)
+      {
+        std::string entry = (*it).first;
+        double        val = (*it).second;
+        // --
+        GEOM::GEOM_Object_var aGeomObj;
+        SALOMEDS::SObject_var aSObj = SMESH_Gen_i::getStudyServant()->FindObjectID( entry.c_str() );
+        if ( !aSObj->_is_nil() ) {
+          CORBA::Object_var obj = aSObj->GetObject();
+          aGeomObj = GEOM::GEOM_Object::_narrow(obj);
+          aSObj->UnRegister();
+        }
+        TopoDS_Shape S = smeshGen_i->GeomObjectToShape( aGeomObj.in() );
+        setLocalSize(S, val);
+      }
+    }
+  }
+}
+
+//=============================================================================
+/*!
+ * Pass simple parameters to NETGEN
+ */
+//=============================================================================
+
+void NETGENPlugin_Mesher::SetParameters(const NETGENPlugin_SimpleHypothesis_2D* hyp)
+{
+  _simpleHyp = hyp;
+  if ( _simpleHyp )
+    SetDefaultParameters();
+}
+
+//================================================================================
+/*!
+ * \brief Store a Viscous Layers hypothesis
+ */
+//================================================================================
+
+void NETGENPlugin_Mesher::SetParameters(const StdMeshers_ViscousLayers* hyp )
+{
+  _viscousLayersHyp = hyp;
+}
 
 //================================================================================
 /*!
@@ -1051,6 +1090,7 @@ bool NETGENPlugin_Mesher::FillNgMesh(netgen::OCCGeometry&           occgeom,
   set< SMESH_subMesh* > computedSM( meshedSM.begin(), meshedSM.end() );
 
   SMESH_MesherHelper helper (*_mesh);
+  SMESHDS_Mesh* meshDS = _mesh->GetMeshDS();
 
   int faceNgID = ngMesh.GetNFD();
 
@@ -1080,7 +1120,7 @@ bool NETGENPlugin_Mesher::FillNgMesh(netgen::OCCGeometry&           occgeom,
         if ( faceNgID < 1 )
           continue; // meshed face
 
-        int faceSMDSId = helper.GetMeshDS()->ShapeToIndex( *anc );
+        int faceSMDSId = meshDS->ShapeToIndex( *anc );
         if ( visitedEdgeSM2Faces[ sm ].count( faceSMDSId ))
           continue; // already treated EDGE
 
@@ -1134,7 +1174,7 @@ bool NETGENPlugin_Mesher::FillNgMesh(netgen::OCCGeometry&           occgeom,
           if ( p1.node->GetPosition()->GetTypeOfPosition() == SMDS_TOP_VERTEX ) //an EDGE begins
           {
             isSeam = false;
-            if ( helper.IsRealSeam( p1.node->getshapeId() ))
+            if ( helper.IsRealSeam( p1.node->GetShapeID() ))
             {
               TopoDS_Edge e = fSide.Edge( fSide.EdgeIndex( 0.5 * ( p1.normParam + p2.normParam )));
               isSeam = helper.IsRealSeam( e );
@@ -1169,7 +1209,7 @@ bool NETGENPlugin_Mesher::FillNgMesh(netgen::OCCGeometry&           occgeom,
           RestrictLocalSize( ngMesh, 0.5*(np1+np2), (np1-np2).Modulus() );
 
 #ifdef DUMP_SEGMENTS
-          cout << "Segment: " << seg.edgenr << " on SMESH face " << helper.GetMeshDS()->ShapeToIndex( face ) << endl
+          cout << "Segment: " << seg.edgenr << " on SMESH face " << meshDS->ShapeToIndex( face ) << endl
                << "\tface index: " << seg.si << endl
                << "\tp1: " << seg[0] << endl
                << "\tp2: " << seg[1] << endl
@@ -1236,7 +1276,8 @@ bool NETGENPlugin_Mesher::FillNgMesh(netgen::OCCGeometry&           occgeom,
       bool isInternalFace = ( geomFace.Orientation() == TopAbs_INTERNAL );
 
       // Find solids the geomFace bounds
-      int solidID1 = 0, solidID2 = 0;
+      int solidID1 = 0, solidID2 = 0; // ng IDs
+      int solidSMDSIDs[2] = { 0,0 };  // smds IDs
       {
         PShapeIteratorPtr solidIt = helper.GetAncestors( geomFace, *sm->GetFather(), TopAbs_SOLID);
         while ( const TopoDS_Shape * solid = solidIt->next() )
@@ -1244,6 +1285,7 @@ bool NETGENPlugin_Mesher::FillNgMesh(netgen::OCCGeometry&           occgeom,
           int id = occgeom.somap.FindIndex ( *solid );
           if ( solidID1 && id != solidID1 ) solidID2 = id;
           else                              solidID1 = id;
+          if ( id ) solidSMDSIDs[ bool( solidSMDSIDs[0] )] = meshDS->ShapeToIndex( *solid );
         }
       }
       if ( proxyMesh && proxyMesh->GetProxySubMesh( geomFace ))
@@ -1259,12 +1301,16 @@ bool NETGENPlugin_Mesher::FillNgMesh(netgen::OCCGeometry&           occgeom,
           if ( proxyMesh->IsTemporary( f ))
           {
             hasTmp = true;
+            if ( solidSMDSIDs[1] && proxyMesh->HasPrismsOnTwoSides( meshDS->MeshElements( geomFace )))
+              break;
+            else
+              solidSMDSIDs[1] = 0;
             std::vector<const SMDS_MeshNode*> fNodes( f->begin_nodes(), f->end_nodes() );
             std::vector<const SMDS_MeshElement*> vols;
-            if ( _mesh->GetMeshDS()->GetElementsByNodes( fNodes, vols, SMDSAbs_Volume ) == 1 )
+            if ( meshDS->GetElementsByNodes( fNodes, vols, SMDSAbs_Volume ) == 1 )
             {
-              int geomID = vols[0]->getshapeId();
-              const TopoDS_Shape& solid =  helper.GetMeshDS()->IndexToShape( geomID );
+              int geomID = vols[0]->GetShapeID();
+              const TopoDS_Shape& solid =  meshDS->IndexToShape( geomID );
               if ( !solid.IsNull() )
                 solidID1 = occgeom.somap.FindIndex ( solid );
               solidID2 = 0;
@@ -1272,7 +1318,6 @@ bool NETGENPlugin_Mesher::FillNgMesh(netgen::OCCGeometry&           occgeom,
             }
           }
         }
-        // exclude faces generated by NETGEN from computation of 3D mesh
         const int fID = occgeom.fmap.FindIndex( geomFace );
         if ( !hasTmp ) // shrunk mesh
         {
@@ -1309,6 +1354,7 @@ bool NETGENPlugin_Mesher::FillNgMesh(netgen::OCCGeometry&           occgeom,
             }
           }
         }
+        // exclude faces generated by NETGEN from computation of 3D mesh
         //if ( hasTmp )
         {
           faceNgID++;
@@ -1320,11 +1366,26 @@ bool NETGENPlugin_Mesher::FillNgMesh(netgen::OCCGeometry&           occgeom,
               const_cast< netgen::Element2d& >( elem ).SetIndex( faceNgID );
           }
         }
+      } // if proxy
+      else
+      {
+        solidSMDSIDs[1] = 0;
       }
+      const bool hasVLOn2Sides = ( solidSMDSIDs[1] > 0 );
+
       // Add ng face descriptors of meshed faces
       faceNgID++;
-      ngMesh.AddFaceDescriptor( netgen::FaceDescriptor( faceNgID, solidID1, solidID2, 0 ));
-
+      if ( hasVLOn2Sides )
+      {
+        // viscous layers are on two sides of the FACE
+        ngMesh.AddFaceDescriptor( netgen::FaceDescriptor( faceNgID, solidID1, 0, 0 ));
+        faceNgID++;
+        ngMesh.AddFaceDescriptor( netgen::FaceDescriptor( faceNgID, 0, solidID2, 0 ));
+      }
+      else
+      {
+        ngMesh.AddFaceDescriptor( netgen::FaceDescriptor( faceNgID, solidID1, solidID2, 0 ));
+      }
       // if second oreder is required, even already meshed faces must be passed to NETGEN
       int fID = occgeom.fmap.Add( geomFace );
       if ( occgeom.facemeshstatus.Size() < fID ) occgeom.facemeshstatus.SetSize( fID );
@@ -1360,7 +1421,7 @@ bool NETGENPlugin_Mesher::FillNgMesh(netgen::OCCGeometry&           occgeom,
       SMESH_TNodeXYZ xyz[3];
 
 #ifdef DUMP_TRIANGLES
-      cout << "SMESH face " << helper.GetMeshDS()->ShapeToIndex( geomFace )
+      cout << "SMESH face " << meshDS->ShapeToIndex( geomFace )
            << " internal="<<isInternalFace << endl;
 #endif
 
@@ -1374,12 +1435,14 @@ bool NETGENPlugin_Mesher::FillNgMesh(netgen::OCCGeometry&           occgeom,
           if ( const TopoDS_Shape * solid = solidIt->next() )
             sm = _mesh->GetSubMesh( *solid );
           SMESH_BadInputElements* badElems =
-            new SMESH_BadInputElements( helper.GetMeshDS(), COMPERR_BAD_INPUT_MESH,
-                                        "Not triangle sub-mesh");
+            new SMESH_BadInputElements( meshDS, COMPERR_BAD_INPUT_MESH, "Not triangle sub-mesh");
           badElems->add( f );
           sm->GetComputeError().reset( badElems );
           return false;
         }
+
+        if ( hasVLOn2Sides )
+          tri.SetIndex( getFaceNgID( f, solidSMDSIDs, faceNgID ));
 
         for ( int i = 0; i < 3; ++i )
         {
@@ -1387,10 +1450,10 @@ bool NETGENPlugin_Mesher::FillNgMesh(netgen::OCCGeometry&           occgeom,
           xyz[i].Set( node );
 
           // get node UV on face
-          int shapeID = node->getshapeId();
+          int shapeID = node->GetShapeID();
           if ( helper.IsSeamShape( shapeID ))
           {
-            if ( helper.IsSeamShape( f->GetNodeWrap( i+1 )->getshapeId() ))
+            if ( helper.IsSeamShape( f->GetNodeWrap( i+1 )->GetShapeID() ))
               inFaceNode = f->GetNodeWrap( i-1 );
             else
               inFaceNode = f->GetNodeWrap( i+1 );
@@ -1423,7 +1486,7 @@ bool NETGENPlugin_Mesher::FillNgMesh(netgen::OCCGeometry&           occgeom,
           cout << tri << endl;
 #endif
         }
-      }
+      } // loop on sub-mesh faces
 
       if ( quadHelper ) // remember medium nodes of sub-meshes
       {
@@ -1540,7 +1603,7 @@ bool NETGENPlugin_Mesher::FixFaceMesh(const netgen::OCCGeometry& occgeom,
   //const TopoDS_Face& face = TopoDS::Face( occgeom.fmap( faceID ));
 
   // find free links on the FACE
-  NCollection_Map<Link> linkMap;
+  TLinkMap linkMap;
   for ( int iF = 1; iF <= ngMesh.GetNSE(); ++iF )
   {
     const netgen::Element2d& elem = ngMesh.SurfaceElement(iF);
@@ -1576,17 +1639,17 @@ bool NETGENPlugin_Mesher::FixFaceMesh(const netgen::OCCGeometry& occgeom,
   netgen::Element2d tri(3);
   tri.SetIndex ( faceID );
 
-  NCollection_Map<Link>::Iterator linkIt( linkMap );
+  TLinkMap::Iterator linkIt( linkMap );
   Link link1 = linkIt.Value();
   // look for a link connected to link1
-  NCollection_Map<Link>::Iterator linkIt2 = linkIt;
+  TLinkMap::Iterator linkIt2 = linkIt;
   for ( linkIt2.Next(); linkIt2.More(); linkIt2.Next() )
   {
     const Link& link2 = linkIt2.Value();
     if ( link2.IsConnected( link1 ))
     {
       // look for a link connected to both link1 and link2
-      NCollection_Map<Link>::Iterator linkIt3 = linkIt2;
+      TLinkMap::Iterator linkIt3 = linkIt2;
       for ( linkIt3.Next(); linkIt3.More(); linkIt3.Next() )
       {
         const Link& link3 = linkIt3.Value();
@@ -2175,7 +2238,7 @@ NETGENPlugin_Mesher::AddSegmentsToMesh(netgen::Mesh&                    ngMesh,
       }
     }
     for ( size_t ngID = 1; ngID < nodeVec.size(); ++ngID )
-      if ( subIDs.count( nodeVec[ngID]->getshapeId() ))
+      if ( subIDs.count( nodeVec[ngID]->GetShapeID() ))
         node2ngID.insert( make_pair( nodeVec[ngID], ngID ));
   }
 
@@ -2208,13 +2271,13 @@ NETGENPlugin_Mesher::AddSegmentsToMesh(netgen::Mesh&                    ngMesh,
       // Add the first point of a segment
 
       const SMDS_MeshNode * n = uvPtVec[ i ].node;
-      const int posShapeID = n->getshapeId();
+      const int posShapeID = n->GetShapeID();
       bool onVertex = ( n->GetPosition()->GetTypeOfPosition() == SMDS_TOP_VERTEX );
       bool onEdge   = ( n->GetPosition()->GetTypeOfPosition() == SMDS_TOP_EDGE   );
 
       // skip nodes on degenerated edges
       if ( helper.IsDegenShape( posShapeID ) &&
-           helper.IsDegenShape( uvPtVec[ i+1 ].node->getshapeId() ))
+           helper.IsDegenShape( uvPtVec[ i+1 ].node->GetShapeID() ))
         continue;
 
       int ngID1 = ngMesh.GetNP() + 1, ngID2 = ngID1+1;
@@ -2485,7 +2548,7 @@ int NETGENPlugin_Mesher::FillSMesh(const netgen::OCCGeometry&          occgeo,
       {
         param = param2 * 0.5;
       }
-      if (!aEdge.IsNull() && nodeVec_ACCESS(pind)->getshapeId() < 1)
+      if (!aEdge.IsNull() && nodeVec_ACCESS(pind)->GetShapeID() < 1)
       {
         meshDS->SetNodeOnEdge(nodeVec_ACCESS(pind), aEdge, param);
       }
@@ -2517,7 +2580,7 @@ int NETGENPlugin_Mesher::FillSMesh(const netgen::OCCGeometry&          occgeo,
         nbSeg = nbFac = nbVol = 0;
         break;
       }
-      if ( !aEdge.IsNull() && edge->getshapeId() < 1 )
+      if ( !aEdge.IsNull() && edge->GetShapeID() < 1 )
         meshDS->SetMeshElementOnShape(edge, aEdge);
     }
     else if ( comment.empty() )
@@ -2554,7 +2617,7 @@ int NETGENPlugin_Mesher::FillSMesh(const netgen::OCCGeometry&          occgeo,
       if ( SMDS_MeshNode* node = nodeVec_ACCESS(pind))
       {
         nodes.push_back( node );
-        if (!aFace.IsNull() && node->getshapeId() < 1)
+        if (!aFace.IsNull() && node->GetShapeID() < 1)
         {
           const netgen::PointGeomInfo& pgi = elem.GeomInfoPi(j);
           meshDS->SetNodeOnFace(node, aFace, pgi.u, pgi.v);
@@ -2635,7 +2698,7 @@ int NETGENPlugin_Mesher::FillSMesh(const netgen::OCCGeometry&          occgeo,
       if ( SMDS_MeshNode* node = nodeVec_ACCESS(pind) )
       {
         nodes.push_back(node);
-        if ( !aSolid.IsNull() && node->getshapeId() < 1 )
+        if ( !aSolid.IsNull() && node->GetShapeID() < 1 )
           meshDS->SetNodeInVolume(node, aSolid);
       }
     }
@@ -2748,7 +2811,7 @@ namespace
       while ( nIt->more() )
       {
         const SMDS_MeshNode* n = nIt->next();
-        const TopoDS_Shape&  s = mesh->IndexToShape( n->getshapeId() );
+        const TopoDS_Shape&  s = mesh->IndexToShape( n->GetShapeID() );
         nbNodesOnSolid += ( !s.IsNull() && solidSubs.Contains( s ));
         if ( nbNodesOnSolid > 2 ||
              nbNodesOnSolid == nbNodes)
@@ -3521,7 +3584,7 @@ bool NETGENPlugin_Mesher::Evaluate(MapShapeNbElems& aResMap)
   }
 
   // store nb of segments computed by Netgen
-  NCollection_Map<Link> linkMap;
+  TLinkMap linkMap;
   for (int i = 1; i <= ngMesh->GetNSeg(); ++i )
   {
     const netgen::Segment& seg = ngMesh->LineSegment(i);
@@ -4097,7 +4160,7 @@ void NETGENPlugin_Internals::findBorderElements( TIDSortedElemSet & borderElems 
           {
             int nbDblNodes = 0;
             for ( int i = 0; i < nbNodes; ++i )
-              nbDblNodes += isInternalShape( f->GetNode(i)->getshapeId() );
+              nbDblNodes += isInternalShape( f->GetNode(i)->GetShapeID() );
             if ( nbDblNodes )
               suspectFaces[ nbDblNodes < 2 ].push_back( f );
             nbSuspectFaces++;
