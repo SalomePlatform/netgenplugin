@@ -2483,7 +2483,8 @@ int NETGENPlugin_Mesher::FillSMesh(const netgen::OCCGeometry&          occgeo,
   // Create and insert nodes into nodeVec
   // -------------------------------------
 
-  nodeVec.resize( nbNod + 1 );
+  if ( nbNod > nbInitNod )
+    nodeVec.resize( nbNod + 1 );
   for ( i = nbInitNod+1; i <= nbNod; ++i )
   {
     const netgen::MeshPoint& ngPoint = ngMesh.Point(i);
