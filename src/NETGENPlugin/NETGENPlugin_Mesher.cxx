@@ -205,7 +205,7 @@ namespace
 
   list< TopoDS_Edge > getConnectedEdges( const TopoDS_Edge&                 edge,
                                          const TopoDS_Face&                 face,
-                                         const set< SMESH_subMesh* > &      computedSM,
+                                         const set< SMESH_subMesh* > &      /*computedSM*/,
                                          const SMESH_MesherHelper&          helper,
                                          map< SMESH_subMesh*, set< int > >& addedEdgeSM2Faces)
   {
@@ -319,7 +319,7 @@ namespace
           OCC_CATCH_SIGNALS;
           BRepMesh_IncrementalMesh e(shape, 0.01, true);
         }
-        catch (Standard_Failure)
+        catch (Standard_Failure&)
         {
         }
   //       updated.erase( triangulation.operator->() );
@@ -3163,7 +3163,7 @@ bool NETGENPlugin_Mesher::Compute()
         comment << text(ex);
         //err = 1; -- try to make volumes anyway
       }
-      catch (netgen::NgException exc)
+      catch (netgen::NgException& exc)
       {
         comment << text(exc);
         //err = 1; -- try to make volumes anyway
@@ -3289,7 +3289,7 @@ bool NETGENPlugin_Mesher::Compute()
           comment << text(ex);
         err = 1;
       }
-      catch (netgen::NgException exc)
+      catch (netgen::NgException& exc)
       {
         if ( comment.empty() ) // do not overwrite a previous error
           comment << text(exc);
@@ -3320,7 +3320,7 @@ bool NETGENPlugin_Mesher::Compute()
           if ( comment.empty() ) // do not overwrite a previous error
             comment << text(ex);
         }
-        catch (netgen::NgException exc)
+        catch (netgen::NgException& exc)
         {
           if ( comment.empty() ) // do not overwrite a previous error
             comment << text(exc);
@@ -3361,7 +3361,7 @@ bool NETGENPlugin_Mesher::Compute()
         if ( comment.empty() ) // do not overwrite a previous error
           comment << "Exception in netgen at passing to 2nd order ";
       }
-      catch (netgen::NgException exc)
+      catch (netgen::NgException& exc)
       {
         if ( comment.empty() ) // do not overwrite a previous error
           comment << exc.What();
@@ -3712,7 +3712,7 @@ bool NETGENPlugin_Mesher::Evaluate(MapShapeNbElems& aResMap)
   return true;
 }
 
-double NETGENPlugin_Mesher::GetProgress(const SMESH_Algo* holder,
+double NETGENPlugin_Mesher::GetProgress(const SMESH_Algo* /*holder*/,
                                         const int *       algoProgressTic,
                                         const double *    algoProgress) const
 {

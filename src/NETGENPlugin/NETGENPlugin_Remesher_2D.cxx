@@ -852,8 +852,8 @@ bool NETGENPlugin_Remesher_2D::Compute(SMESH_Mesh&         theMesh,
  */
 //=============================================================================
 
-bool NETGENPlugin_Remesher_2D::Compute(SMESH_Mesh&         theMesh,
-                                       const TopoDS_Shape& theShape)
+bool NETGENPlugin_Remesher_2D::Compute(SMESH_Mesh&         /*theMesh*/,
+                                       const TopoDS_Shape& /*theShape*/)
 {
   return false;
 }
@@ -887,9 +887,9 @@ double NETGENPlugin_Remesher_2D::GetProgress() const
  */
 //=============================================================================
 
-bool NETGENPlugin_Remesher_2D::Evaluate(SMESH_Mesh&         aMesh,
-                                        const TopoDS_Shape& aShape,
-                                        MapShapeNbElems& aResMap)
+bool NETGENPlugin_Remesher_2D::Evaluate(SMESH_Mesh&         /*aMesh*/,
+                                        const TopoDS_Shape& /*aShape*/,
+                                        MapShapeNbElems& /*aResMap*/)
 {
   return false;
 }

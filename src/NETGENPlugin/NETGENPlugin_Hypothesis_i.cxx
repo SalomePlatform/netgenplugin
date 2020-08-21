@@ -337,7 +337,6 @@ CORBA::Double NETGENPlugin_Hypothesis_i::GetChordalError()
 
 void NETGENPlugin_Hypothesis_i::SetLocalSizeOnShape(GEOM::GEOM_Object_ptr GeomObj,
                                                     CORBA::Double         localSize)
-  throw (SALOME::SALOME_Exception)
 {
   string entry;
   entry = GeomObj->GetStudyEntry();
@@ -712,7 +711,7 @@ std::string NETGENPlugin_Hypothesis_i::getMethodOfParameter(const int paramIndex
 
 bool
 NETGENPlugin_Hypothesis_i::getObjectsDependOn( std::vector< std::string > & entryArray,
-                                               std::vector< int >         & subIDArray ) const
+                                               std::vector< int >         & /*subIDArray*/ ) const
 {
   typedef ::NETGENPlugin_Hypothesis THyp;
 
@@ -734,7 +733,7 @@ NETGENPlugin_Hypothesis_i::getObjectsDependOn( std::vector< std::string > & entr
 
 bool
 NETGENPlugin_Hypothesis_i::setObjectsDependOn( std::vector< std::string > & entryArray,
-                                               std::vector< int >         & subIDArray )
+                                               std::vector< int >         & /*subIDArray*/ )
 {
   typedef ::NETGENPlugin_Hypothesis THyp;
 

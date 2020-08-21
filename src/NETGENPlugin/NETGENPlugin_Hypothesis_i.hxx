@@ -83,8 +83,7 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_Hypothesis_i:
   void SetChordalError(CORBA::Double value);
   CORBA::Double GetChordalError();
 
-  void SetLocalSizeOnShape(GEOM::GEOM_Object_ptr GeomObj, CORBA::Double localSize)
-    throw (SALOME::SALOME_Exception);
+  void SetLocalSizeOnShape(GEOM::GEOM_Object_ptr GeomObj, CORBA::Double localSize);
   void SetLocalSizeOnEntry(const char* entry, CORBA::Double localSize);
   CORBA::Double GetLocalSizeOnEntry(const char* entry);
   NETGENPlugin::string_array* GetLocalSizeEntries();

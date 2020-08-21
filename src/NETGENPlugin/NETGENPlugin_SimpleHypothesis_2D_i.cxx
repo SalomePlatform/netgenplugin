@@ -72,7 +72,6 @@ NETGENPlugin_SimpleHypothesis_2D_i::~NETGENPlugin_SimpleHypothesis_2D_i()
  */
 //=============================================================================
 void NETGENPlugin_SimpleHypothesis_2D_i::SetNumberOfSegments(CORBA::Short nb)
-  throw ( SALOME::SALOME_Exception )
 {
   ASSERT(myBaseImpl);
   try {
@@ -237,7 +236,7 @@ int NETGENPlugin_SimpleHypothesis_2D_i::getParamIndex(const TCollection_AsciiStr
 //================================================================================
 
 std::string NETGENPlugin_SimpleHypothesis_2D_i::getMethodOfParameter(const int paramIndex,
-                                                                     int nbVars) const
+                                                                     int /*nbVars*/) const
 {
   switch ( paramIndex ) {
   case 0: return GetImpl()->GetNumberOfSegments() ? "SetNumberOfSegments" : "SetLocalLength";

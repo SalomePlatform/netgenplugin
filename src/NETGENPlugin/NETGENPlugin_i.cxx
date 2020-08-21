@@ -86,7 +86,6 @@ extern "C"
       aCreator = new NETGENPlugin_Creator_i<NETGENPlugin_SimpleHypothesis_3D_i>;
     else if (strcmp(aHypName, "NETGEN_RemesherParameters_2D") == 0)
       aCreator = new NETGENPlugin_Creator_i<NETGENPlugin_RemesherHypothesis_2D_i>;
-    else ;
 
     return aCreator;
   }

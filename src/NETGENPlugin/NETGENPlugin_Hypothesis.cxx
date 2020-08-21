@@ -642,8 +642,8 @@ istream & NETGENPlugin_Hypothesis::LoadFrom(istream & load)
  * \retval bool - always false
  */
 //================================================================================
-bool NETGENPlugin_Hypothesis::SetParametersByMesh(const SMESH_Mesh*   theMesh,
-                                                  const TopoDS_Shape& theShape)
+bool NETGENPlugin_Hypothesis::SetParametersByMesh(const SMESH_Mesh*   /*theMesh*/,
+                                                  const TopoDS_Shape& /*theShape*/)
 {
   return false;
 }

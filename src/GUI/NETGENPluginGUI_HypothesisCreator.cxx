@@ -116,7 +116,7 @@ NETGENPluginGUI_HypothesisCreator::~NETGENPluginGUI_HypothesisCreator()
 {
 }
 
-bool NETGENPluginGUI_HypothesisCreator::checkParams(QString& msg) const
+bool NETGENPluginGUI_HypothesisCreator::checkParams(QString& /*msg*/) const
 {
   NetgenHypothesisData data_old, data_new;
   readParamsFromHypo( data_old );
