@@ -63,11 +63,6 @@ namespace nglib {
 #include <meshing.hpp>
 //#include <meshtype.hpp>
 namespace netgen {
-#ifdef NETGEN_V5
-  extern int OCCGenerateMesh (OCCGeometry&, Mesh*&, MeshingParameters&, int, int);
-#else
-  extern int OCCGenerateMesh (OCCGeometry&, Mesh*&, int, int, char*);
-#endif
   NETGENPLUGIN_DLL_HEADER
   extern MeshingParameters mparam;
   extern void OCCSetLocalMeshSize(OCCGeometry & geom, Mesh & mesh);
@@ -284,15 +279,20 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
       netgen::mparam.minh = aMesher.GetDefaultMinSize( aShape, netgen::mparam.maxh );
     }
     // set local size depending on curvature and NOT closeness of EDGEs
+#ifdef NETGEN_V6
+    const double factor = *netgen::mparam.closeedgefac;
+    netgen::mparam.closeedgefac = std::nullopt;
+#else
+    const double factor = netgen::occparam.resthcloseedgefac;
     netgen::occparam.resthcloseedgeenable = false;
     //netgen::occparam.resthcloseedgefac = 1.0 + netgen::mparam.grading;
+#endif
     occgeoComm.face_maxh = netgen::mparam.maxh;
     netgen::OCCSetLocalMeshSize( occgeoComm, *ngMeshes[0] );
     occgeoComm.emap.Clear();
     occgeoComm.vmap.Clear();
 
     // set local size according to size of existing segments
-    const double factor = netgen::occparam.resthcloseedgefac;
     TopTools_IndexedMapOfShape edgeMap;
     TopExp::MapShapes( aMesh.GetShapeToMesh(), TopAbs_EDGE, edgeMap );
     for ( int iE = 1; iE <= edgeMap.Extent(); ++iE )
@@ -486,12 +486,8 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
       try {
         OCC_CATCH_SIGNALS;
 
-#ifdef NETGEN_V5
-        err = netgen::OCCGenerateMesh(occgeom, ngMesh, netgen::mparam, startWith, endWith);
-#else
-        char *optstr = 0;
-        err = netgen::OCCGenerateMesh(occgeom, ngMesh, startWith, endWith, optstr);
-#endif
+        err = ngLib.GenerateMesh(occgeom, startWith, endWith, ngMesh);
+
         if ( netgen::multithread.terminate )
           return false;
         if ( err )

@@ -84,12 +84,21 @@ struct NETGENPlugin_ngMeshInfo
 
 struct NETGENPLUGIN_EXPORT NETGENPlugin_NetgenLibWrapper
 {
-  bool             _isComputeOk;
-  nglib::Ng_Mesh * _ngMesh;
+  bool           _isComputeOk;
+  netgen::Mesh * _ngMesh;
 
   NETGENPlugin_NetgenLibWrapper();
   ~NETGENPlugin_NetgenLibWrapper();
   void setMesh( nglib::Ng_Mesh* mesh );
+  nglib::Ng_Mesh* ngMesh() { return (nglib::Ng_Mesh*)(void*)_ngMesh; }
+
+  static int GenerateMesh(netgen::OCCGeometry& occgeo, int startWith, int endWith,
+                          netgen::Mesh* & ngMesh);
+  int GenerateMesh(netgen::OCCGeometry& occgeo, int startWith, int endWith )
+  {
+    return GenerateMesh( occgeo, startWith, endWith, _ngMesh );
+  }
+  static void CalcLocalH( netgen::Mesh * ngMesh );
 
   static void RemoveTmpFiles();
   static int& instanceCounter();

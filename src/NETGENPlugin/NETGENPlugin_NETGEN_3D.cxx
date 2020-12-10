@@ -71,7 +71,14 @@
 #define OCCGEOMETRY
 #endif
 #include <occgeom.hpp>
+
+#ifdef NETGEN_V5
 #include <ngexception.hpp>
+#endif
+#ifdef NETGEN_V6
+#include <exception.hpp>
+#endif
+
 namespace nglib {
 #include <nglib.h>
 }
@@ -208,7 +215,7 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
   int Netgen_triangle[3];
 
   NETGENPlugin_NetgenLibWrapper ngLib;
-  Ng_Mesh * Netgen_mesh = ngLib._ngMesh;
+  Ng_Mesh * Netgen_mesh = (Ng_Mesh*)ngLib._ngMesh;
 
   // vector of nodes in which node index == netgen ID
   vector< const SMDS_MeshNode* > nodeVec;
@@ -347,7 +354,7 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
   // Generate the volume mesh
   // -------------------------
 
-  return ( ngLib._isComputeOk = compute( aMesh, helper, nodeVec, Netgen_mesh));
+  return ( ngLib._isComputeOk = compute( aMesh, helper, nodeVec, ngLib ));
 }
 
 // namespace
@@ -431,16 +438,14 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
 bool NETGENPlugin_NETGEN_3D::compute(SMESH_Mesh&                     aMesh,
                                      SMESH_MesherHelper&             helper,
                                      vector< const SMDS_MeshNode* >& nodeVec,
-                                     Ng_Mesh *                       Netgen_mesh)
+                                     NETGENPlugin_NetgenLibWrapper&  ngLib)
 {
   netgen::multithread.terminate = 0;
 
-  netgen::Mesh* ngMesh = (netgen::Mesh*)Netgen_mesh;
-  int Netgen_NbOfNodes = Ng_GetNP(Netgen_mesh);
+  netgen::Mesh* ngMesh = ngLib._ngMesh;
+  Ng_Mesh* Netgen_mesh = ngLib.ngMesh();
+  int Netgen_NbOfNodes = Ng_GetNP( Netgen_mesh );
 
-#ifndef NETGEN_V5
-  char *optstr = 0;
-#endif
   int startWith = netgen::MESHCONST_MESHVOLUME;
   int endWith   = netgen::MESHCONST_OPTVOLUME;
   int err = 1;
@@ -498,13 +503,9 @@ bool NETGENPlugin_NETGEN_3D::compute(SMESH_Mesh&                     aMesh,
   {
     OCC_CATCH_SIGNALS;
 
-#ifdef NETGEN_V5
-    ngMesh->CalcLocalH(netgen::mparam.grading);
-    err = netgen::OCCGenerateMesh(occgeo, ngMesh, netgen::mparam, startWith, endWith);
-#else
-    ngMesh->CalcLocalH();
-    err = netgen::OCCGenerateMesh(occgeo, ngMesh, startWith, endWith, optstr);
-#endif
+    ngLib.CalcLocalH(ngMesh);
+    err = ngLib.GenerateMesh(occgeo, startWith, endWith);
+
     if(netgen::multithread.terminate)
       return false;
     if ( err )
@@ -614,7 +615,7 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
   int Netgen_triangle[3];
 
   NETGENPlugin_NetgenLibWrapper ngLib;
-  Ng_Mesh * Netgen_mesh = ngLib._ngMesh;
+  Ng_Mesh * Netgen_mesh = ngLib.ngMesh();
 
   SMESH_ProxyMesh::Ptr proxyMesh( new SMESH_ProxyMesh( aMesh ));
   if ( aMesh.NbQuadrangles() > 0 )
@@ -677,7 +678,7 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
   // Generate the volume mesh
   // -------------------------
 
-  return ( ngLib._isComputeOk = compute( aMesh, *aHelper, nodeVec, Netgen_mesh));
+  return ( ngLib._isComputeOk = compute( aMesh, *aHelper, nodeVec, ngLib ));
 }
 
 void NETGENPlugin_NETGEN_3D::CancelCompute()

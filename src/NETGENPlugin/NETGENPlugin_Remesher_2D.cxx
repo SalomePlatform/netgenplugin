@@ -55,6 +55,9 @@ using namespace nglib;
 namespace netgen {
 
   NETGENPLUGIN_DLL_HEADER
+  extern MeshingParameters mparam;
+
+  NETGENPLUGIN_DLL_HEADER
   extern STLParameters stlparam;
 
   NETGENPLUGIN_DLL_HEADER
@@ -649,8 +652,10 @@ bool NETGENPlugin_Remesher_2D::Compute(SMESH_Mesh&         theMesh,
     netgen::stlparam.resthchartdistenable    = hyp->GetRestHChartDistEnable();
     netgen::stlparam.resthlinelengthfac      = hyp->GetRestHLineLengthFactor();
     netgen::stlparam.resthlinelengthenable   = hyp->GetRestHLineLengthEnable();
+#ifndef NETGEN_V6
     netgen::stlparam.resthcloseedgefac       = hyp->GetRestHCloseEdgeFactor();
     netgen::stlparam.resthcloseedgeenable    = hyp->GetRestHCloseEdgeEnable();
+#endif
     netgen::stlparam.resthsurfcurvfac        = hyp->GetRestHSurfCurvFactor();
     netgen::stlparam.resthsurfcurvenable     = hyp->GetRestHSurfCurvEnable();
     netgen::stlparam.resthedgeanglefac       = hyp->GetRestHEdgeAngleFactor();
@@ -675,6 +680,15 @@ bool NETGENPlugin_Remesher_2D::Compute(SMESH_Mesh&         theMesh,
     netgen::STLGeometry* stlGeom = (netgen::STLGeometry*)ngStlGeo;
 
     // the following code is taken from STLMeshing() method
+#ifdef NETGEN_V6
+    stlGeom->Clear();
+    stlGeom->BuildEdges( netgen::stlparam );
+    stlGeom->MakeAtlas( *ngMesh, netgen::mparam, netgen::stlparam );
+    stlGeom->CalcFaceNums();
+    stlGeom->AddFaceEdges();
+    fixNodes( fixedEdges->GetGroupDS(), stlGeom );
+    stlGeom->LinkEdges( netgen::stlparam );
+#else
     stlGeom->Clear();
     stlGeom->BuildEdges();
     stlGeom->MakeAtlas( *ngMesh );
@@ -682,7 +696,7 @@ bool NETGENPlugin_Remesher_2D::Compute(SMESH_Mesh&         theMesh,
     stlGeom->AddFaceEdges();
     fixNodes( fixedEdges->GetGroupDS(), stlGeom );
     stlGeom->LinkEdges();
-
+#endif
     ngMesh->ClearFaceDescriptors();
     for (int i = 1; i <= stlGeom->GetNOFaces(); i++)
       ngMesh->AddFaceDescriptor (netgen::FaceDescriptor (i, 1, 0, 0));
@@ -691,7 +705,7 @@ bool NETGENPlugin_Remesher_2D::Compute(SMESH_Mesh&         theMesh,
   }
   else
   {
-    Ng_STL_MakeEdges( ngStlGeo, ngLib._ngMesh, &ngParams );
+    Ng_STL_MakeEdges( ngStlGeo, ngLib.ngMesh(), &ngParams );
   }
 
   netgen::mparam = savedParams;
@@ -707,13 +721,10 @@ bool NETGENPlugin_Remesher_2D::Compute(SMESH_Mesh&         theMesh,
   netgen::OCCGeometry occgeo;
   mesher.SetLocalSize( occgeo, *ngMesh );
 
-  // const char* optStr = "SmSmSm";//"smsmsmSmSmSm";
-  // netgen::mparam.optimize2d = optStr;
-
   // meshing
   try
   {
-    ng_res = Ng_STL_GenerateSurfaceMesh( ngStlGeo, ngLib._ngMesh, &ngParams );
+    ng_res = Ng_STL_GenerateSurfaceMesh( ngStlGeo, ngLib.ngMesh(), &ngParams );
   }
   catch (netgen::NgException & ex)
   {
