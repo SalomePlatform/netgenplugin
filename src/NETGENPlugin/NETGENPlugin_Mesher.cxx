@@ -245,7 +245,7 @@ namespace
       SMESH_subMesh* sm = helper.GetMesh()->GetSubMesh( *eItFwd );
 
       bool connected = TopExp::CommonVertex( *ePrev, *eItFwd, vCommon );
-      bool computed  = sm->IsMeshComputed();
+      bool computed  = !sm->IsEmpty();
       bool added     = addedEdgeSM2Faces[ sm ].count( helper.GetSubShapeID() );
       bool doubled   = !eAdded.Add( *eItFwd );
       bool orientOK  = (( ePrev ->Orientation() < TopAbs_INTERNAL ) ==
@@ -267,7 +267,7 @@ namespace
       SMESH_subMesh* sm = helper.GetMesh()->GetSubMesh( *eItBack );
 
       bool connected = TopExp::CommonVertex( *ePrev, *eItBack, vCommon );
-      bool computed  = sm->IsMeshComputed();
+      bool computed  = !sm->IsEmpty();
       bool added     = addedEdgeSM2Faces[ sm ].count( helper.GetSubShapeID() );
       bool doubled   = !eAdded.Add( *eItBack );
       bool orientOK  = (( ePrev  ->Orientation() < TopAbs_INTERNAL ) ==
