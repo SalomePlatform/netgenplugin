@@ -658,7 +658,7 @@ void NETGENPlugin_Mesher::SetParameters(const NETGENPlugin_Hypothesis* hyp)
         double        val = (*it).second;
         // --
         GEOM::GEOM_Object_var aGeomObj;
-        SALOMEDS::SObject_var aSObj = SMESH_Gen_i::getStudyServant()->FindObjectID( entry.c_str() );
+        SALOMEDS::SObject_var aSObj = SMESH_Gen_i::GetSMESHGen()->getStudyServant()->FindObjectID( entry.c_str() );
         if ( !aSObj->_is_nil() ) {
           CORBA::Object_var obj = aSObj->GetObject();
           aGeomObj = GEOM::GEOM_Object::_narrow(obj);
