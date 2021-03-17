@@ -199,7 +199,7 @@ bool NETGENPlugin_SimpleHypothesis_2D::SetParametersByMesh(const SMESH_Mesh*   t
                                                            const TopoDS_Shape& theShape)
 {
   // Find out nb of segments.
-  int nbSeg = 0, nbEdges = 0;
+  smIdType nbSeg = 0, nbEdges = 0;
   TopExp_Explorer exp( theShape, TopAbs_EDGE );
   for ( ; exp.More(); exp.Next() ) {
     SMESH_subMesh* sm = theMesh->GetSubMeshContaining( exp.Current() );

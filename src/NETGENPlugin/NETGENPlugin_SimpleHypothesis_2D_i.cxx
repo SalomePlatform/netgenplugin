@@ -71,7 +71,7 @@ NETGENPlugin_SimpleHypothesis_2D_i::~NETGENPlugin_SimpleHypothesis_2D_i()
  *  NETGENPlugin_SimpleHypothesis_2D_i::SetNumberOfSegments
  */
 //=============================================================================
-void NETGENPlugin_SimpleHypothesis_2D_i::SetNumberOfSegments(CORBA::Short nb)
+void NETGENPlugin_SimpleHypothesis_2D_i::SetNumberOfSegments(CORBA::Long nb)
 {
   ASSERT(myBaseImpl);
   try {
@@ -88,10 +88,10 @@ void NETGENPlugin_SimpleHypothesis_2D_i::SetNumberOfSegments(CORBA::Short nb)
  *  NETGENPlugin_SimpleHypothesis_2D_i::GetNumberOfSegments()
  */
 //=============================================================================
-CORBA::Short NETGENPlugin_SimpleHypothesis_2D_i::GetNumberOfSegments()
+CORBA::Long NETGENPlugin_SimpleHypothesis_2D_i::GetNumberOfSegments()
 {
   ASSERT(myBaseImpl);
-  return this->GetImpl()->GetNumberOfSegments();
+  return (CORBA::Long) this->GetImpl()->GetNumberOfSegments();
 }
 
 //================================================================================

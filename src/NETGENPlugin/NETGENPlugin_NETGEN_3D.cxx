@@ -728,7 +728,7 @@ bool NETGENPlugin_NETGEN_3D::Evaluate(SMESH_Mesh& aMesh,
                                       const TopoDS_Shape& aShape,
                                       MapShapeNbElems& aResMap)
 {
-  int nbtri = 0, nbqua = 0;
+  smIdType nbtri = 0, nbqua = 0;
   double fullArea = 0.0;
   for (TopExp_Explorer expF(aShape, TopAbs_FACE); expF.More(); expF.Next()) {
     TopoDS_Face F = TopoDS::Face( expF.Current() );
@@ -739,9 +739,9 @@ bool NETGENPlugin_NETGEN_3D::Evaluate(SMESH_Mesh& aMesh,
       smError.reset( new SMESH_ComputeError(COMPERR_ALGO_FAILED,"Submesh can not be evaluated",this));
       return false;
     }
-    std::vector<int> aVec = (*anIt).second;
-    nbtri += Max(aVec[SMDSEntity_Triangle],aVec[SMDSEntity_Quad_Triangle]);
-    nbqua += Max(aVec[SMDSEntity_Quadrangle],aVec[SMDSEntity_Quad_Quadrangle]);
+    std::vector<smIdType> aVec = (*anIt).second;
+    nbtri += std::max(aVec[SMDSEntity_Triangle],aVec[SMDSEntity_Quad_Triangle]);
+    nbqua += std::max(aVec[SMDSEntity_Quadrangle],aVec[SMDSEntity_Quad_Quadrangle]);
     GProp_GProps G;
     BRepGProp::SurfaceProperties(F,G);
     double anArea = G.Mass();
@@ -749,7 +749,7 @@ bool NETGENPlugin_NETGEN_3D::Evaluate(SMESH_Mesh& aMesh,
   }
 
   // collect info from edges
-  int nb0d_e = 0, nb1d_e = 0;
+  smIdType nb0d_e = 0, nb1d_e = 0;
   bool IsQuadratic = false;
   bool IsFirst = true;
   TopTools_MapOfShape tmpMap;
@@ -766,9 +766,9 @@ bool NETGENPlugin_NETGEN_3D::Evaluate(SMESH_Mesh& aMesh,
                                             "Submesh can not be evaluated",this));
       return false;
     }
-    std::vector<int> aVec = (*anIt).second;
+    std::vector<smIdType> aVec = (*anIt).second;
     nb0d_e += aVec[SMDSEntity_Node];
-    nb1d_e += Max(aVec[SMDSEntity_Edge],aVec[SMDSEntity_Quad_Edge]);
+    nb1d_e += std::max(aVec[SMDSEntity_Edge],aVec[SMDSEntity_Quad_Edge]);
     if(IsFirst) {
       IsQuadratic = (aVec[SMDSEntity_Quad_Edge] > aVec[SMDSEntity_Edge]);
       IsFirst = false;
@@ -776,7 +776,7 @@ bool NETGENPlugin_NETGEN_3D::Evaluate(SMESH_Mesh& aMesh,
   }
   tmpMap.Clear();
 
-  double ELen_face = sqrt(2.* ( fullArea/(nbtri+nbqua*2) ) / sqrt(3.0) );
+  double ELen_face = sqrt(2.* ( fullArea/double(nbtri+nbqua*2) ) / sqrt(3.0) );
   double ELen_vol = pow( 72, 1/6. ) * pow( _maxElementVolume, 1/3. );
   double ELen = Min(ELen_vol,ELen_face*2);
 
@@ -785,11 +785,11 @@ bool NETGENPlugin_NETGEN_3D::Evaluate(SMESH_Mesh& aMesh,
   double aVolume = G.Mass();
   double tetrVol = 0.1179*ELen*ELen*ELen;
   double CoeffQuality = 0.9;
-  int nbVols = int( aVolume/tetrVol/CoeffQuality );
-  int nb1d_f = (nbtri*3 + nbqua*4 - nb1d_e) / 2;
-  int nb1d_in = (nbVols*6 - nb1d_e - nb1d_f ) / 5;
-  std::vector<int> aVec(SMDSEntity_Last);
-  for(int i=SMDSEntity_Node; i<SMDSEntity_Last; i++) aVec[i]=0;
+  smIdType nbVols = (smIdType)( aVolume/tetrVol/CoeffQuality );
+  smIdType nb1d_f = (nbtri*3 + nbqua*4 - nb1d_e) / 2;
+  smIdType nb1d_in = (nbVols*6 - nb1d_e - nb1d_f ) / 5;
+  std::vector<smIdType> aVec(SMDSEntity_Last);
+  for(smIdType i=SMDSEntity_Node; i<SMDSEntity_Last; i++) aVec[i]=0;
   if( IsQuadratic ) {
     aVec[SMDSEntity_Node] = nb1d_in/6 + 1 + nb1d_in;
     aVec[SMDSEntity_Quad_Tetra] = nbVols - nbqua*2;

@@ -141,7 +141,7 @@ namespace
     {
       // define tolerance
       double tol, len, sumLen = 0, minLen = 1e100;
-      int     nbSeg = 0;
+      size_t nbSeg = 0;
       for ( size_t i = 0; i < holes.size(); ++i )
       {
         nbSeg += holes[i].size();
@@ -155,7 +155,7 @@ namespace
           p1 = p2;
         }
       }
-      double avgLen = sumLen / nbSeg;
+      double avgLen = sumLen / double( nbSeg );
       if ( minLen > 1e-5 * avgLen )
         tol = 0.1 * minLen; // minLen is not degenerate
       else
@@ -779,8 +779,8 @@ bool NETGENPlugin_Remesher_2D::Compute(SMESH_Mesh&         theMesh,
   }
 
   // find existing groups
-  const char* theNamePrefix = "Surface_";
-  const int   theNamePrefixLen = strlen( theNamePrefix );
+  const char*     theNamePrefix = "Surface_";
+  const size_t theNamePrefixLen = strlen( theNamePrefix );
   std::vector< SMESHDS_Group* > groups;
   if ( hyp && hyp->GetMakeGroupsOfSurfaces() )
   {

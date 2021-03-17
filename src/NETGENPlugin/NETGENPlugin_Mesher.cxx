@@ -1162,7 +1162,7 @@ bool NETGENPlugin_Mesher::FillNgMesh(netgen::OCCGeometry&           occgeom,
         const vector<UVPtStruct>& points = fSide.GetUVPtStruct();
         if ( points.empty() )
           return false; // invalid node params?
-        int i, nbSeg = fSide.NbSegments();
+        smIdType i, nbSeg = fSide.NbSegments();
 
         // remember EDGEs of fSide to treat only once
         for ( int iE = 0; iE < fSide.NbEdges(); ++iE )
@@ -2202,7 +2202,7 @@ NETGENPlugin_Mesher::AddSegmentsToMesh(netgen::Mesh&                    ngMesh,
   // ----------------------------
   // Check wires and count nodes
   // ----------------------------
-  int nbNodes = 0;
+  smIdType nbNodes = 0;
   for ( size_t iW = 0; iW < wires.size(); ++iW )
   {
     StdMeshers_FaceSidePtr wire = wires[ iW ];
@@ -2259,7 +2259,7 @@ NETGENPlugin_Mesher::AddSegmentsToMesh(netgen::Mesh&                    ngMesh,
   {
     StdMeshers_FaceSidePtr       wire = wires[ iW ];
     const vector<UVPtStruct>& uvPtVec = wire->GetUVPtStruct();
-    const int              nbSegments = wire->NbPoints() - 1;
+    const smIdType         nbSegments = wire->NbPoints() - 1;
 
     // assure the 1st node to be in node2ngID, which is needed to correctly
     // "close chain of segments" (see below) in case if the 1st node is not
@@ -2351,8 +2351,8 @@ NETGENPlugin_Mesher::AddSegmentsToMesh(netgen::Mesh&                    ngMesh,
         SMESH_TNodeXYZ np1( n ), np2( uvPtVec[ i+1 ].node );
         // get an average size of adjacent segments to avoid sharp change of
         // element size (regression on issue 0020452, note 0010898)
-        int   iPrev = SMESH_MesherHelper::WrapIndex( i-1, nbSegments );
-        int   iNext = SMESH_MesherHelper::WrapIndex( i+1, nbSegments );
+        int   iPrev = SMESH_MesherHelper::WrapIndex( i-1, (int) nbSegments );
+        int   iNext = SMESH_MesherHelper::WrapIndex( i+1, (int) nbSegments );
         double sumH = segLen[ iPrev ] + segLen[ i ] + segLen[ iNext ];
         int   nbSeg = ( int( segLen[ iPrev ] > sumH / 100.)  +
                         int( segLen[ i     ] > sumH / 100.)  +
@@ -2465,14 +2465,14 @@ int NETGENPlugin_Mesher::FillSMesh(const netgen::OCCGeometry&          occgeo,
   if ( quadHelper && !quadHelper->GetIsQuadratic() && quadHelper->GetTLinkNodeMap().empty() )
     quadHelper = 0;
 
-  int i, nbInitNod = initState._nbNodes;
+  int ngID, nbInitNod = initState._nbNodes;
   if ( initState._elementsRemoved )
   {
     // PAL23427. Update nodeVec to track removal of netgen free points as a result
     // of removal of faces in FillNgMesh() in the case of a shrunk sub-mesh
-    int ngID, nodeVecSize = nodeVec.size();
+    size_t i, nodeVecSize = nodeVec.size();
     const double eps = std::numeric_limits<double>::min();
-    for ( ngID = i = 1; i < nodeVecSize; ++ngID, ++i )
+    for ( i = ngID = 1; i < nodeVecSize; ++ngID, ++i )
     {
       gp_Pnt ngPnt( NGPOINT_COORDS( ngMesh.Point( ngID )));
       gp_Pnt node ( SMESH_NodeXYZ (nodeVec_ACCESS(i) ));
@@ -2494,7 +2494,7 @@ int NETGENPlugin_Mesher::FillSMesh(const netgen::OCCGeometry&          occgeo,
 
   if ( nbNod > nbInitNod )
     nodeVec.resize( nbNod + 1 );
-  for ( i = nbInitNod+1; i <= nbNod; ++i )
+  for ( int i = nbInitNod+1; i <= nbNod; ++i )
   {
     const netgen::MeshPoint& ngPoint = ngMesh.Point(i);
     SMDS_MeshNode* node = NULL;
@@ -2529,7 +2529,7 @@ int NETGENPlugin_Mesher::FillSMesh(const netgen::OCCGeometry&          occgeo,
   // -------------------------------------------
 
   int nbInitSeg = initState._nbSegments;
-  for (i = nbInitSeg+1; i <= nbSeg; ++i )
+  for ( int i = nbInitSeg+1; i <= nbSeg; ++i )
   {
     const netgen::Segment& seg = ngMesh.LineSegment(i);
     TopoDS_Edge aEdge;
@@ -2611,7 +2611,7 @@ int NETGENPlugin_Mesher::FillSMesh(const netgen::OCCGeometry&          occgeo,
     ngMesh.AddFaceDescriptor (netgen::FaceDescriptor(quadFaceID, /*solid1=*/0, /*solid2=*/0, 0));
 
   vector<const SMDS_MeshNode*> nodes;
-  for (i = nbInitFac+1; i <= nbFac; ++i )
+  for ( int i = nbInitFac+1; i <= nbFac; ++i )
   {
     const netgen::Element2d& elem = ngMesh.SurfaceElement(i);
     const int        aGeomFaceInd = elem.GetIndex();
@@ -2692,7 +2692,7 @@ int NETGENPlugin_Mesher::FillSMesh(const netgen::OCCGeometry&          occgeo,
   // Create tetrahedra
   // ------------------
 
-  for ( i = 1; i <= nbVol; ++i )
+  for ( int i = 1; i <= nbVol; ++i )
   {
     const netgen::Element& elem = ngMesh.VolumeElement(i);      
     int aSolidInd = elem.GetIndex();
@@ -2957,7 +2957,7 @@ bool NETGENPlugin_Mesher::Compute()
     {
       // Pass 1D simple parameters to NETGEN
       // --------------------------------
-      int      nbSeg = _simpleHyp->GetNumberOfSegments();
+      double nbSeg   = (double) _simpleHyp->GetNumberOfSegments();
       double segSize = _simpleHyp->GetLocalLength();
       for ( int iE = 1; iE <= occgeo.emap.Extent(); ++iE )
       {
@@ -3184,7 +3184,7 @@ bool NETGENPlugin_Mesher::Compute()
       FillSMesh( occgeo, *_ngMesh, initState, *_mesh, nodeVec, comment, &quadHelper );
 
       // compute prismatic boundary volumes
-      int nbQuad = _mesh->NbQuadrangles();
+      smIdType nbQuad = _mesh->NbQuadrangles();
       SMESH_ProxyMesh::Ptr viscousMesh;
       if ( _viscousLayersHyp )
       {
@@ -3442,9 +3442,9 @@ bool NETGENPlugin_Mesher::Compute()
           bool smComputed = nbVol && !sm->IsEmpty();
           if ( smComputed && internals.hasInternalVertexInSolid( sm->GetId() ))
           {
-            int nbIntV = internals.getSolidsWithVertices().find( sm->GetId() )->second.size();
+            size_t nbIntV = internals.getSolidsWithVertices().find( sm->GetId() )->second.size();
             SMESHDS_SubMesh* smDS = sm->GetSubMeshDS();
-            smComputed = ( smDS->NbElements() > 0 || smDS->NbNodes() > nbIntV );
+            smComputed = ( smDS->NbElements() > 0 || smDS->NbNodes() > (smIdType) nbIntV );
           }
           SMESH_ComputeErrorPtr& smError = sm->GetComputeError();
           if ( !smComputed && ( !smError || smError->IsOK() ))
@@ -3552,7 +3552,7 @@ bool NETGENPlugin_Mesher::Evaluate(MapShapeNbElems& aResMap)
   // }
   // calculate total nb of segments and length of edges
   double fullLen = 0.0;
-  int fullNbSeg = 0;
+  smIdType fullNbSeg = 0;
   int entity = mparams.secondorder > 0 ? SMDSEntity_Quad_Edge : SMDSEntity_Edge;
   TopTools_DataMapOfShapeInteger Edge2NbSeg;
   for (TopExp_Explorer exp(_shape, TopAbs_EDGE); exp.More(); exp.Next())
@@ -3564,7 +3564,7 @@ bool NETGENPlugin_Mesher::Evaluate(MapShapeNbElems& aResMap)
     double aLen = SMESH_Algo::EdgeLength(E);
     fullLen += aLen;
 
-    vector<int>& aVec = aResMap[_mesh->GetSubMesh(E)];
+    vector<smIdType>& aVec = aResMap[_mesh->GetSubMesh(E)];
     if ( aVec.empty() )
       aVec.resize( SMDSEntity_Last, 0);
     else
@@ -3581,7 +3581,7 @@ bool NETGENPlugin_Mesher::Evaluate(MapShapeNbElems& aResMap)
     int aGeomEdgeInd = seg.epgeominfo[0].edgenr;
     if (aGeomEdgeInd > 0 && aGeomEdgeInd <= occgeo.emap.Extent())
     {
-      vector<int>& aVec = aResMap[_mesh->GetSubMesh(occgeo.emap(aGeomEdgeInd))];
+      vector<smIdType>& aVec = aResMap[_mesh->GetSubMesh(occgeo.emap(aGeomEdgeInd))];
       aVec[ entity ]++;
     }
   }
@@ -3589,12 +3589,12 @@ bool NETGENPlugin_Mesher::Evaluate(MapShapeNbElems& aResMap)
   TopTools_DataMapIteratorOfDataMapOfShapeInteger Edge2NbSegIt(Edge2NbSeg);
   for (; Edge2NbSegIt.More(); Edge2NbSegIt.Next())
   {
-    vector<int>& aVec = aResMap[_mesh->GetSubMesh(Edge2NbSegIt.Key())];
+    vector<smIdType>& aVec = aResMap[_mesh->GetSubMesh(Edge2NbSegIt.Key())];
     if ( aVec[ entity ] > 1 && aVec[ SMDSEntity_Node ] == 0 )
       aVec[SMDSEntity_Node] = mparams.secondorder > 0  ? 2*aVec[ entity ]-1 : aVec[ entity ]-1;
 
     fullNbSeg += aVec[ entity ];
-    Edge2NbSeg( Edge2NbSegIt.Key() ) = aVec[ entity ];
+    Edge2NbSeg( Edge2NbSegIt.Key() ) = (int) aVec[ entity ];
   }
   if ( fullNbSeg == 0 )
     return false;
@@ -3610,12 +3610,12 @@ bool NETGENPlugin_Mesher::Evaluate(MapShapeNbElems& aResMap)
     }
     else {
       // length from edges
-      mparams.maxh = fullLen/fullNbSeg;
+      mparams.maxh = fullLen / double( fullNbSeg );
       mparams.grading = 0.2; // slow size growth
     }
   }
   mparams.maxh = min( mparams.maxh, occgeo.boundingbox.Diam()/2 );
-  mparams.maxh = min( mparams.maxh, fullLen/fullNbSeg * (1. + mparams.grading));
+  mparams.maxh = min( mparams.maxh, fullLen / double( fullNbSeg ) * (1. + mparams.grading));
 
   for (TopExp_Explorer exp(_shape, TopAbs_FACE); exp.More(); exp.Next())
   {
@@ -3636,7 +3636,7 @@ bool NETGENPlugin_Mesher::Evaluate(MapShapeNbElems& aResMap)
     int nbFaces = tooManyElems ? hugeNb : int( 4*anArea / (mparams.maxh*mparams.maxh*sqrt(3.)));
     int nbNodes = tooManyElems ? hugeNb : (( nbFaces*3 - (nb1d-1)*2 ) / 6 + 1 );
 
-    vector<int> aVec(SMDSEntity_Last, 0);
+    vector<smIdType> aVec(SMDSEntity_Last, 0);
     if( mparams.secondorder > 0 ) {
       int nb1d_in = (nbFaces*3 - nb1d) / 2;
       aVec[SMDSEntity_Node] = nbNodes + nb1d_in;
@@ -3666,7 +3666,7 @@ bool NETGENPlugin_Mesher::Evaluate(MapShapeNbElems& aResMap)
         // using previous length from faces
       }
       mparams.grading = 0.4;
-      mparams.maxh = min( mparams.maxh, fullLen/fullNbSeg * (1. + mparams.grading));
+      mparams.maxh = min( mparams.maxh, fullLen / double( fullNbSeg ) * (1. + mparams.grading));
     }
     GProp_GProps G;
     BRepGProp::VolumeProperties(_shape,G);
@@ -3675,7 +3675,7 @@ bool NETGENPlugin_Mesher::Evaluate(MapShapeNbElems& aResMap)
     tooManyElems = tooManyElems || ( aVolume/hugeNb > tetrVol );
     int nbVols = tooManyElems ? hugeNb : int(aVolume/tetrVol);
     int nb1d_in = int(( nbVols*6 - fullNbSeg ) / 6 );
-    vector<int> aVec(SMDSEntity_Last, 0 );
+    vector<smIdType> aVec(SMDSEntity_Last, 0 );
     if ( tooManyElems ) // avoid FPE
     {
       aVec[SMDSEntity_Node] = hugeNb;
@@ -3787,8 +3787,8 @@ NETGENPlugin_Mesher::ReadErrors(const vector<const SMDS_MeshNode* >& nodeVec)
   vector<int> two(2);
   vector<int> three1(3), three2(3);
   const char* badEdgeStr = " multiple times in surface mesh";
-  const int   badEdgeStrLen = strlen( badEdgeStr );
-  const int   nbNodes = nodeVec.size();
+  const int   badEdgeStrLen = (int) strlen( badEdgeStr );
+  const int   nbNodes = (int) nodeVec.size();
 
   while( !file.eof() )
   {
@@ -3798,7 +3798,7 @@ NETGENPlugin_Mesher::ReadErrors(const vector<const SMDS_MeshNode* >& nodeVec)
          two[0] < nbNodes  &&  two[1] < nbNodes )
     {
       err->myBadElements.push_back( new SMDS_LinearEdge( nodeVec[ two[0]], nodeVec[ two[1]] ));
-      file += badEdgeStrLen;
+      file += (int) badEdgeStrLen;
     }
     else if ( strncmp( file, "Intersecting: ", 14 ) == 0 )
     {

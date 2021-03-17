@@ -29,7 +29,7 @@
 #include "NETGENPlugin_Defs.hxx"
 
 #include "SMESH_Hypothesis.hxx"
-#include "Utils_SALOME_Exception.hxx"
+#include "smIdType.hxx"
 
 //  Simplified parameters of NETGEN
 //
@@ -48,7 +48,7 @@ public:
    * Returns <number of segments> value.
    * Can be zero in case if LocalLength() has been set
    */
-  int GetNumberOfSegments() const { return _nbSegments; }
+  smIdType GetNumberOfSegments() const { return _nbSegments; }
 
   /*!
    * Sets <segment length> value
@@ -104,9 +104,9 @@ public:
   virtual bool SetParametersByDefaults(const TDefaults& dflts, const SMESH_Mesh* theMesh=0);
 
 private:
-  int    _nbSegments;
-  double _segmentLength, _area;
-  bool   _allowQuad;
+  smIdType _nbSegments;
+  double   _segmentLength, _area;
+  bool     _allowQuad;
 };
 
 #endif

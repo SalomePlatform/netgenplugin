@@ -356,7 +356,7 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
       StdMeshers_FaceSide::GetFaceWires( F, aMesh, ignoreMediumNodes, faceErr, &helper, proxyMesh );
     if ( faceErr && !faceErr->IsOK() )
       continue;
-    int nbWires = wires.size();
+    size_t nbWires = wires.size();
     if ( nbWires == 0 )
     {
       faceErr.reset
@@ -382,21 +382,21 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
       if (_hypLengthFromEdges )
       {
         // compute edgeLength as an average segment length
-        int nbSegments = 0;
-        for ( int iW = 0; iW < nbWires; ++iW )
+        smIdType nbSegments = 0;
+        for ( size_t iW = 0; iW < nbWires; ++iW )
         {
           edgeLength += wires[ iW ]->Length();
           nbSegments += wires[ iW ]->NbSegments();
         }
         if ( nbSegments )
-          edgeLength /= nbSegments;
+          edgeLength /= double( nbSegments );
         netgen::mparam.maxh = edgeLength;
       }
       else if ( isDefaultHyp )
       {
         // set edgeLength by a longest segment
         double maxSeg2 = 0;
-        for ( int iW = 0; iW < nbWires; ++iW )
+        for ( size_t iW = 0; iW < nbWires; ++iW )
         {
           const UVPtStructVec& points = wires[ iW ]->GetUVPtStruct();
           if ( points.empty() )
@@ -548,7 +548,7 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
       int nbNodes = ngMesh->GetNP();
       int nbFaces = ngMesh->GetNSE();
 
-      int nbInputNodes = nodeVec.size()-1;
+      int nbInputNodes = (int) nodeVec.size()-1;
       nodeVec.resize( nbNodes+1, 0 );
 
       // add nodes
@@ -646,7 +646,7 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Evaluate(SMESH_Mesh& aMesh,
     return false;
 
   // collect info from edges
-  int nb0d = 0, nb1d = 0;
+  smIdType nb0d = 0, nb1d = 0;
   bool IsQuadratic = false;
   bool IsFirst = true;
   double fullLen = 0.0;
@@ -664,9 +664,9 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Evaluate(SMESH_Mesh& aMesh,
       smError.reset( new SMESH_ComputeError(COMPERR_ALGO_FAILED,"Submesh can not be evaluated",this));
       return false;
     }
-    std::vector<int> aVec = (*anIt).second;
+    std::vector<smIdType> aVec = (*anIt).second;
     nb0d += aVec[SMDSEntity_Node];
-    nb1d += Max(aVec[SMDSEntity_Edge],aVec[SMDSEntity_Quad_Edge]);
+    nb1d += std::max(aVec[SMDSEntity_Edge],aVec[SMDSEntity_Quad_Edge]);
     double aLen = SMESH_Algo::EdgeLength(E);
     fullLen += aLen;
     if(IsFirst) {
@@ -680,7 +680,7 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Evaluate(SMESH_Mesh& aMesh,
   double ELen = 0;
   if (( _hypLengthFromEdges ) || ( !_hypLengthFromEdges && !_hypMaxElementArea )) {
     if ( nb1d > 0 )
-      ELen = fullLen / nb1d;
+      ELen = fullLen / double( nb1d );
   }
   if ( _hypMaxElementArea ) {
     double maxArea = _hypMaxElementArea->GetMaxArea();
@@ -698,10 +698,10 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Evaluate(SMESH_Mesh& aMesh,
     smError.reset( new SMESH_ComputeError(COMPERR_ALGO_FAILED,"Submesh can not be evaluated.\nToo small element length",this));
     return false;
   }
-  int nbFaces = (int) ( anArea / ( ELen*ELen*sqrt(3.) / 4 ) );
-  int nbNodes = (int) ( ( nbFaces*3 - (nb1d-1)*2 ) / 6 + 1 );
-  std::vector<int> aVec(SMDSEntity_Last);
-  for(int i=SMDSEntity_Node; i<SMDSEntity_Last; i++) aVec[i]=0;
+  smIdType nbFaces = (smIdType) ( anArea / ( ELen*ELen*sqrt(3.) / 4 ) );
+  smIdType nbNodes = (smIdType) ( ( nbFaces*3 - (nb1d-1)*2 ) / 6 + 1 );
+  std::vector<smIdType> aVec(SMDSEntity_Last);
+  for(smIdType i=SMDSEntity_Node; i<SMDSEntity_Last; i++) aVec[i]=0;
   if( IsQuadratic ) {
     aVec[SMDSEntity_Node] = nbNodes;
     aVec[SMDSEntity_Quad_Triangle] = nbFaces;

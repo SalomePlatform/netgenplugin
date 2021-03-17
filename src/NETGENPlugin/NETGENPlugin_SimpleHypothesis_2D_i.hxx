@@ -49,8 +49,8 @@ class NETGENPLUGIN_EXPORT  NETGENPlugin_SimpleHypothesis_2D_i:
   // Destructor
   virtual ~NETGENPlugin_SimpleHypothesis_2D_i();
 
-  void SetNumberOfSegments(CORBA::Short nb);
-  CORBA::Short GetNumberOfSegments();
+  void SetNumberOfSegments(CORBA::Long nb);
+  CORBA::Long GetNumberOfSegments();
 
   void SetLocalLength(CORBA::Double segmentLength);
   CORBA::Double GetLocalLength();

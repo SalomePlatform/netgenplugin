@@ -248,12 +248,12 @@ module NETGENPlugin
     /*!
      * Sets <number of segments> value
      */
-    void SetNumberOfSegments(in short nb) raises (SALOME::SALOME_Exception);
+    void SetNumberOfSegments(in long nb) raises (SALOME::SALOME_Exception);
     /*!
      * Returns <number of segments> value.
      * Can be zero in case if LocalLength() has been set
      */
-    short GetNumberOfSegments();
+    long GetNumberOfSegments();
 
     /*!
      * Sets <segment length> value

@@ -761,7 +761,7 @@ bool NETGENPluginGUI_HypothesisCreator::readParamsFromHypo( NetgenHypothesisData
 
   NETGENPluginGUI_HypothesisCreator*  that = (NETGENPluginGUI_HypothesisCreator*)this;
   NETGENPlugin::string_array_var myEntries = h->GetLocalSizeEntries();
-  for ( size_t i = 0; i < myEntries->length(); i++ )
+  for ( CORBA::ULong i = 0; i < myEntries->length(); i++ )
   {
     QString entry = myEntries[i].in();
     if (myLocalSizeMap.contains(entry) &&
@@ -826,17 +826,17 @@ bool NETGENPluginGUI_HypothesisCreator::storeParamsToHypo( const NetgenHypothesi
     if ( myNbSurfOptSteps )
     {
       h->SetVarParameter  ( h_data.myNbSurfOptStepsVar.toLatin1().constData(), "SetNbSurfOptSteps");
-      h->SetNbSurfOptSteps( h_data.myNbSurfOptSteps );
+      h->SetNbSurfOptSteps((CORBA::Short) h_data.myNbSurfOptSteps );
     }
     if ( myNbVolOptSteps )
     {
       h->SetVarParameter ( h_data.myNbVolOptStepsVar.toLatin1().constData(), "SetNbVolOptSteps");
-      h->SetNbVolOptSteps( h_data.myNbVolOptSteps );
+      h->SetNbVolOptSteps((CORBA::Short) h_data.myNbVolOptSteps );
     }
     if ( myFuseEdges )
       h->SetFuseEdges( h_data.myFuseEdges );
     h->SetVarParameter    ( h_data.myWorstElemMeasureVar.toLatin1().constData(), "SetWorstElemMeasure");
-    h->SetWorstElemMeasure( h_data.myWorstElemMeasure );
+    h->SetWorstElemMeasure((CORBA::Short) h_data.myWorstElemMeasure );
 
     h->SetUseDelauney( h_data.myUseDelauney );
     h->SetCheckOverlapping( h_data.myCheckOverlapping );

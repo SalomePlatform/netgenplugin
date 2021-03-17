@@ -373,7 +373,7 @@ NETGENPlugin::string_array* NETGENPlugin_Hypothesis_i::GetLocalSizeEntries()
   NETGENPlugin::string_array_var result = new NETGENPlugin::string_array();
   const ::NETGENPlugin_Hypothesis::TLocalSize localSizes =
     this->GetImpl()->GetLocalSizesAndEntries();
-  result->length(localSizes.size());
+  result->length((CORBA::ULong) localSizes.size());
   ::NETGENPlugin_Hypothesis::TLocalSize::const_iterator it = localSizes.begin();
   for (int i=0 ; it != localSizes.end() ; i++, it++)
     {
@@ -490,7 +490,7 @@ void NETGENPlugin_Hypothesis_i::SetNbSurfOptSteps(CORBA::Short nb )
 
 CORBA::Short NETGENPlugin_Hypothesis_i::GetNbSurfOptSteps()
 {
-  return GetImpl()->GetNbSurfOptSteps();
+  return (CORBA::Short) GetImpl()->GetNbSurfOptSteps();
 }
 
 //=======================================================================
@@ -515,7 +515,7 @@ void NETGENPlugin_Hypothesis_i::SetNbVolOptSteps(CORBA::Short nb )
 
 CORBA::Short NETGENPlugin_Hypothesis_i::GetNbVolOptSteps()
 {
-  return GetImpl()->GetNbVolOptSteps();
+  return (CORBA::Short) GetImpl()->GetNbVolOptSteps();
 }
 
 //=======================================================================
@@ -563,7 +563,7 @@ void NETGENPlugin_Hypothesis_i::SetWorstElemMeasure(CORBA::Short val )
 
 CORBA::Short NETGENPlugin_Hypothesis_i::GetWorstElemMeasure()
 {
-  return GetImpl()->GetWorstElemMeasure();
+  return (CORBA::Short) GetImpl()->GetWorstElemMeasure();
 }
 
 //=======================================================================
