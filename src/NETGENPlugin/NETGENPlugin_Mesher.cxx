@@ -669,6 +669,12 @@ void NETGENPlugin_Mesher::SetParameters(const NETGENPlugin_Hypothesis* hyp)
       }
     }
   }
+
+#ifdef NETGEN_V6
+
+  netgen::mparam.closeedgefac = 2;
+
+#endif
 }
 
 //=============================================================================
@@ -732,7 +738,7 @@ void NETGENPlugin_Mesher::SetLocalSize( netgen::OCCGeometry& occgeo,
     if ( faceNgID >= 1 )
     {
 #ifdef NETGEN_V6
-      occgeo.SetFaceMaxH(faceNgID-1, val);
+      occgeo.SetFaceMaxH(faceNgID-1, val, netgen::mparam);
 #else
       occgeo.SetFaceMaxH(faceNgID, val);
 #endif
@@ -801,7 +807,7 @@ void NETGENPlugin_Mesher::SetLocalSizeForChordalError( netgen::OCCGeometry& occg
       double maxCurv = Max( Abs( surfProp.MaxCurvature()), Abs( surfProp.MinCurvature() ));
       double    size = elemSizeForChordalError( _chordalError, 1 / maxCurv );
 #ifdef NETGEN_V6
-      occgeo.SetFaceMaxH( i-1, size * sizeCoef );
+      occgeo.SetFaceMaxH( i-1, size * sizeCoef, netgen::mparam );
 #else
       occgeo.SetFaceMaxH( i, size * sizeCoef );
 #endif
@@ -3814,7 +3820,7 @@ NETGENPlugin_Mesher::ReadErrors(const vector<const SMDS_MeshNode* >& nodeVec)
       ok = ok && file.getInts( three2 );
       for ( int i = 0; ok && i < 3; ++i )
         ok = ( three1[i] < nbNodes && nodeVec[ three1[i]]);
-      for ( int i = 0; ok && i < 3; ++i ) 
+      for ( int i = 0; ok && i < 3; ++i )
         ok = ( three2[i] < nbNodes && nodeVec[ three2[i]]);
       if ( ok )
       {
@@ -3865,6 +3871,59 @@ void NETGENPlugin_Mesher::toPython( const netgen::Mesh* ngMesh )
           << "mesh = smesh.Mesh()" << std::endl << std::endl;
 
   using namespace netgen;
+
+#ifdef NETGEN_V6
+
+  for ( int i = 1; i <= ngMesh->GetNP(); i++)
+  {
+    const Point3d & p = ngMesh->Point(i);
+    outfile << "mesh.AddNode( ";
+    outfile << p.X() << ", ";
+    outfile << p.Y() << ", ";
+    outfile << p.Z() << ") ## "<< i << std::endl;
+  }
+
+  int nbDom = ngMesh->GetNDomains();
+  for ( int i = 0; i < nbDom; ++i )
+    outfile<< "grp" << i+1 << " = mesh.CreateEmptyGroup( SMESH.FACE, 'domain"<< i+1 << "')"<< std::endl;
+
+  for (int i = 1; i <= ngMesh->GetNSE(); i++)
+  {
+    outfile << "mesh.AddFace([ ";
+    Element2d sel = ngMesh->SurfaceElement(i);
+    for (int j = 1; j <= sel.GetNP(); j++)
+      outfile << sel.PNum(j) << ( j < sel.GetNP() ? ", " : " ])");
+    if ( sel.IsDeleted() ) outfile << " ## IsDeleted ";
+    outfile << std::endl;
+
+    if (sel.GetIndex())
+    {
+      if ( int dom1 = ngMesh->GetFaceDescriptor(sel.GetIndex ()).DomainIn())
+        outfile << "grp"<< dom1 <<".Add([ " << i << " ])" << std::endl;
+      if ( int dom2 = ngMesh->GetFaceDescriptor(sel.GetIndex ()).DomainOut())
+        outfile << "grp"<< dom2 <<".Add([ " << i << " ])" << std::endl;
+    }
+  }
+
+  for (int i = 1; i <= ngMesh->GetNE(); i++)
+  {
+    Element el = ngMesh->VolumeElement(i);
+    outfile << "mesh.AddVolume([ ";
+    for (int j = 1; j <= el.GetNP(); j++)
+      outfile << el.PNum(j) << ( j < el.GetNP() ? ", " : " ])");
+    outfile << std::endl;
+  }
+
+  for (int i = 1; i <= ngMesh->GetNSeg(); i++)
+  {
+    const Segment & seg = ngMesh->LineSegment (i);
+    outfile << "mesh.AddEdge([ "
+            << seg[0]+1 << ", "
+            << seg[1]+1 << " ])" << std::endl;
+  }
+
+#else  //////// V 5
+
   PointIndex pi;
   for (pi = PointIndex::BASE; 
        pi < ngMesh->GetNP()+PointIndex::BASE; pi++)
@@ -3914,6 +3973,9 @@ void NETGENPlugin_Mesher::toPython( const netgen::Mesh* ngMesh )
             << seg[0] << ", "
             << seg[1] << " ])" << std::endl;
   }
+
+#endif
+
   std::cout << "Write " << pyFile << std::endl;
 }
 

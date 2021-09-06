@@ -65,7 +65,9 @@ namespace nglib {
 namespace netgen {
   NETGENPLUGIN_DLL_HEADER
   extern MeshingParameters mparam;
+#ifdef NETGEN_V5
   extern void OCCSetLocalMeshSize(OCCGeometry & geom, Mesh & mesh);
+#endif
 }
 
 using namespace std;
@@ -280,15 +282,19 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
     }
     // set local size depending on curvature and NOT closeness of EDGEs
 #ifdef NETGEN_V6
-    const double factor = *netgen::mparam.closeedgefac;
-    netgen::mparam.closeedgefac = std::nullopt;
+    const double factor = 2; //netgen::occparam.resthcloseedgefac;
 #else
     const double factor = netgen::occparam.resthcloseedgefac;
     netgen::occparam.resthcloseedgeenable = false;
-    //netgen::occparam.resthcloseedgefac = 1.0 + netgen::mparam.grading;
+    netgen::occparam.resthcloseedgefac = 1.0 + netgen::mparam.grading;
 #endif
     occgeoComm.face_maxh = netgen::mparam.maxh;
+#ifdef NETGEN_V6
+    netgen::OCCParameters occparam;
+    netgen::OCCSetLocalMeshSize( occgeoComm, *ngMeshes[0], netgen::mparam, occparam );
+#else
     netgen::OCCSetLocalMeshSize( occgeoComm, *ngMeshes[0] );
+#endif
     occgeoComm.emap.Clear();
     occgeoComm.vmap.Clear();
 

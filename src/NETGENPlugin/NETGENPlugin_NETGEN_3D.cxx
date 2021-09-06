@@ -76,18 +76,13 @@
 #include <ngexception.hpp>
 #endif
 #ifdef NETGEN_V6
-#include <exception.hpp>
+#include <core/exception.hpp>
 #endif
 
 namespace nglib {
 #include <nglib.h>
 }
 namespace netgen {
-#ifdef NETGEN_V5
-  extern int OCCGenerateMesh (OCCGeometry&, Mesh*&, MeshingParameters&, int, int);
-#else
-  extern int OCCGenerateMesh (OCCGeometry&, Mesh*&, int, int, char*);
-#endif
 
   NETGENPLUGIN_DLL_HEADER
   extern MeshingParameters mparam;
