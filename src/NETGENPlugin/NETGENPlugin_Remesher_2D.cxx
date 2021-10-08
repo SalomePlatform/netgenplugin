@@ -66,7 +66,11 @@ namespace netgen {
 namespace nglib
 {
   NETGENPLUGIN_DLL_HEADER
+#ifdef NETGEN_V6
+  extern netgen::NgArray<netgen::Point<3> > readedges;
+#else
   extern netgen::Array<netgen::Point<3> > readedges;
+#endif
 }
 
 namespace

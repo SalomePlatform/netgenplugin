@@ -35,7 +35,7 @@
     #define NETGENPLUGIN_EXPORT __declspec( dllimport )
   #endif
 
-  #if defined(NETGEN_V5)
+  #if defined(NETGEN_V5) || defined(NETGEN_V6)
     #define NETGENPLUGIN_DLL_HEADER DLL_HEADER
   #else
     #define NETGENPLUGIN_DLL_HEADER

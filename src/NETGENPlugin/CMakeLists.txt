@@ -30,6 +30,7 @@ INCLUDE_DIRECTORIES(
   ${Boost_INCLUDE_DIRS}
   ${OMNIORB_INCLUDE_DIR}
   ${PROJECT_BINARY_DIR}/idl
+  ${NETGEN_ZLIB_INCLUDE_DIRS}
 )
 
 # additional preprocessor / compiler flags
