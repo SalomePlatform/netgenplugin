@@ -34,6 +34,8 @@ except ImportError:
 
 LIBRARY = "libNETGENEngine.so"
 
+NETGEN_VERSION_MAJOR = NETGENPlugin.NETGEN_VERSION_MAJOR
+
 #----------------------------
 # Mesh algo type identifiers
 #----------------------------
