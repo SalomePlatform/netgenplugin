@@ -216,8 +216,8 @@ namespace
         gp_XYZ normal;
         if ( SMESH_MeshAlgos::FaceNormal( f, normal ))
         {
-          TIDSortedElemSet allFaces;
-          editor.Reorient2D( allFaces, normal, f );
+          TIDSortedElemSet allFaces, refFaces = { f };
+          editor.Reorient2D( allFaces, normal, refFaces, /*allowNonManifold=*/true );
           break;
         }
       }
