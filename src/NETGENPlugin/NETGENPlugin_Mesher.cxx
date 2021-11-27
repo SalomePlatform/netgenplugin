@@ -3901,7 +3901,7 @@ void NETGENPlugin_Mesher::toPython( const netgen::Mesh* ngMesh )
     if (sel.GetIndex())
     {
       if ( int dom1 = ngMesh->GetFaceDescriptor(sel.GetIndex ()).DomainIn())
-        outfile << "grp"<< dom1 <<".Add([ " << i - nbDel << << " ])" << std::endl;
+        outfile << "grp"<< dom1 <<".Add([ " << i - nbDel << " ])" << std::endl;
       if ( int dom2 = ngMesh->GetFaceDescriptor(sel.GetIndex ()).DomainOut())
         outfile << "grp"<< dom2 <<".Add([ " << i - nbDel << " ])" << std::endl;
     }
