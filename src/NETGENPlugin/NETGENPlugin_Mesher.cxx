@@ -1303,11 +1303,11 @@ bool NETGENPlugin_Mesher::FillNgMesh(netgen::OCCGeometry&           occgeom,
           if ( id ) solidSMDSIDs[ bool( solidSMDSIDs[0] )] = meshDS->ShapeToIndex( *solid );
         }
       }
+      bool isShrunk = true;
       if ( proxyMesh && proxyMesh->GetProxySubMesh( geomFace ))
       {
         // if a proxy sub-mesh contains temporary faces, then these faces
         // should be used to mesh only one SOLID
-        bool hasTmp = false;
         smDS = proxyMesh->GetSubMesh( geomFace );
         SMDS_ElemIteratorPtr faces = smDS->GetElements();
         while ( faces->more() )
@@ -1315,7 +1315,7 @@ bool NETGENPlugin_Mesher::FillNgMesh(netgen::OCCGeometry&           occgeom,
           const SMDS_MeshElement* f = faces->next();
           if ( proxyMesh->IsTemporary( f ))
           {
-            hasTmp = true;
+            isShrunk = false;
             if ( solidSMDSIDs[1] && proxyMesh->HasPrismsOnTwoSides( meshDS->MeshElements( geomFace )))
               break;
             else
@@ -1334,7 +1334,7 @@ bool NETGENPlugin_Mesher::FillNgMesh(netgen::OCCGeometry&           occgeom,
           }
         }
         const int fID = occgeom.fmap.FindIndex( geomFace );
-        if ( !hasTmp ) // shrunk mesh
+        if ( isShrunk ) // shrunk mesh
         {
           // move netgen points according to moved nodes
           SMESH_subMeshIteratorPtr smIt = sm->getDependsOnIterator(/*includeSelf=*/true);
@@ -1386,7 +1386,7 @@ bool NETGENPlugin_Mesher::FillNgMesh(netgen::OCCGeometry&           occgeom,
       {
         solidSMDSIDs[1] = 0;
       }
-      const bool hasVLOn2Sides = ( solidSMDSIDs[1] > 0 );
+      const bool hasVLOn2Sides = ( solidSMDSIDs[1] > 0 && !isShrunk );
 
       // Add ng face descriptors of meshed faces
       faceNgID++;
@@ -1446,7 +1446,7 @@ bool NETGENPlugin_Mesher::FillNgMesh(netgen::OCCGeometry&           occgeom,
         const SMDS_MeshElement* f = faces->next();
         if ( f->NbNodes() % 3 != 0 ) // not triangle
         {
-          PShapeIteratorPtr solidIt=helper.GetAncestors(geomFace,*sm->GetFather(),TopAbs_SOLID);
+          PShapeIteratorPtr solidIt = helper.GetAncestors( geomFace,*sm->GetFather(),TopAbs_SOLID);
           if ( const TopoDS_Shape * solid = solidIt->next() )
             sm = _mesh->GetSubMesh( *solid );
           SMESH_BadInputElements* badElems =
@@ -3234,7 +3234,7 @@ bool NETGENPlugin_Mesher::Compute()
       // fill _ngMesh with faces of sub-meshes
       err = ! ( FillNgMesh(occgeo, *_ngMesh, nodeVec, meshedSM[ MeshDim_2D ], &quadHelper));
       initState = NETGENPlugin_ngMeshInfo(_ngMesh, /*checkRemovedElems=*/true);
-      // toPython( _ngMesh );
+      // toPython( _ngMesh )
     }
     if (!err && _isVolume)
     {
@@ -3887,6 +3887,7 @@ void NETGENPlugin_Mesher::toPython( const netgen::Mesh* ngMesh )
   for ( int i = 0; i < nbDom; ++i )
     outfile<< "grp" << i+1 << " = mesh.CreateEmptyGroup( SMESH.FACE, 'domain"<< i+1 << "')"<< std::endl;
 
+  int nbDel = 0;
   for (int i = 1; i <= ngMesh->GetNSE(); i++)
   {
     outfile << "mesh.AddFace([ ";
@@ -3895,13 +3896,14 @@ void NETGENPlugin_Mesher::toPython( const netgen::Mesh* ngMesh )
       outfile << sel.PNum(j) << ( j < sel.GetNP() ? ", " : " ])");
     if ( sel.IsDeleted() ) outfile << " ## IsDeleted ";
     outfile << std::endl;
+    nbDel += sel.IsDeleted();
 
     if (sel.GetIndex())
     {
       if ( int dom1 = ngMesh->GetFaceDescriptor(sel.GetIndex ()).DomainIn())
-        outfile << "grp"<< dom1 <<".Add([ " << i << " ])" << std::endl;
+        outfile << "grp"<< dom1 <<".Add([ " << i - nbDel << << " ])" << std::endl;
       if ( int dom2 = ngMesh->GetFaceDescriptor(sel.GetIndex ()).DomainOut())
-        outfile << "grp"<< dom2 <<".Add([ " << i << " ])" << std::endl;
+        outfile << "grp"<< dom2 <<".Add([ " << i - nbDel << " ])" << std::endl;
     }
   }
 
@@ -3938,6 +3940,7 @@ void NETGENPlugin_Mesher::toPython( const netgen::Mesh* ngMesh )
   for ( int i = 0; i < nbDom; ++i )
     outfile<< "grp" << i+1 << " = mesh.CreateEmptyGroup( SMESH.FACE, 'domain"<< i+1 << "')"<< std::endl;
 
+  int nbDel = 0;
   SurfaceElementIndex sei;
   for (sei = 0; sei < ngMesh->GetNSE(); sei++)
   {
@@ -3947,13 +3950,14 @@ void NETGENPlugin_Mesher::toPython( const netgen::Mesh* ngMesh )
       outfile << sel[j] << ( j+1 < sel.GetNP() ? ", " : " ])");
     if ( sel.IsDeleted() ) outfile << " ## IsDeleted ";
     outfile << std::endl;
+    nbDel += sel.IsDeleted();
 
     if ((*ngMesh)[sei].GetIndex())
     {
       if ( int dom1 = ngMesh->GetFaceDescriptor((*ngMesh)[sei].GetIndex ()).DomainIn())
-        outfile << "grp"<< dom1 <<".Add([ " << (int)sei+1 << " ])" << std::endl;
+        outfile << "grp"<< dom1 <<".Add([ " << (int)sei+1 - nbDel << " ])" << std::endl;
       if ( int dom2 = ngMesh->GetFaceDescriptor((*ngMesh)[sei].GetIndex ()).DomainOut())
-        outfile << "grp"<< dom2 <<".Add([ " << (int)sei+1 << " ])" << std::endl;
+        outfile << "grp"<< dom2 <<".Add([ " << (int)sei+1 - nbDel  << " ])" << std::endl;
     }
   }
 
