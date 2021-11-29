@@ -599,6 +599,12 @@ void NETGENPlugin_Mesher::SetDefaultParameters()
   _fineness               = NETGENPlugin_Hypothesis::GetDefaultFineness();
   mparams.uselocalh       = NETGENPlugin_Hypothesis::GetDefaultSurfaceCurvature();
   netgen::merge_solids    = NETGENPlugin_Hypothesis::GetDefaultFuseEdges();
+
+#ifdef NETGEN_V6
+
+  mparams.nthreads = std::thread::hardware_concurrency();
+
+#endif
 }
 
 //=============================================================================
@@ -4492,10 +4498,11 @@ int NETGENPlugin_NetgenLibWrapper::GenerateMesh( netgen::OCCGeometry& occgeo,
                                                  netgen::Mesh* & ngMesh )
 {
   int err = 0;
-#ifdef NETGEN_V6
-
   if ( !ngMesh )
     ngMesh = new netgen::Mesh;
+
+#ifdef NETGEN_V6
+
   ngMesh->SetGeometry( shared_ptr<netgen::NetgenGeometry>( &occgeo, &NOOP_Deleter ));
 
   netgen::mparam.perfstepsstart = startWith;
