@@ -604,6 +604,12 @@ void NETGENPlugin_Mesher::SetDefaultParameters()
 
   mparams.nthreads = std::thread::hardware_concurrency();
 
+  if ( getenv( "SALOME_NETGEN_DISABLE_MULTITHREADING" ))
+  {
+    mparams.nthreads = 1;
+    mparams.parallel_meshing = false;
+  }
+
 #endif
 }
 
