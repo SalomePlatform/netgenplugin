@@ -354,6 +354,9 @@ class NETGEN_2D_Only_Algorithm(NETGEN_Algorithm):
     ## type of algorithm used with helper function in smeshBuilder.Mesh class
     #  @internal
     algoType = NETGEN_2D
+    ## flag pointing whether this algorithm should be used by default in dynamic method
+    #  of smeshBuilder.Mesh class
+    isDefault  = True
     ## doc string of the method
     #  @internal
     docHelper  = "Creates triangle 2D algorithm for faces"
