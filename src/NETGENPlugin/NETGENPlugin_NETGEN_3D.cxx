@@ -95,7 +95,7 @@ using namespace std;
 
 //=============================================================================
 /*!
- *  
+ *
  */
 //=============================================================================
 
@@ -119,7 +119,7 @@ NETGENPlugin_NETGEN_3D::NETGENPlugin_NETGEN_3D(int hypId, SMESH_Gen* gen)
 
 //=============================================================================
 /*!
- *  
+ *
  */
 //=============================================================================
 
@@ -129,7 +129,7 @@ NETGENPlugin_NETGEN_3D::~NETGENPlugin_NETGEN_3D()
 
 //=============================================================================
 /*!
- *  
+ *
  */
 //=============================================================================
 
@@ -544,7 +544,7 @@ bool NETGENPlugin_NETGEN_3D::compute(SMESH_Mesh&                     aMesh,
     if ( ce && ce->HasBadElems() )
       error( ce );
   }
-
+  aMesh.Lock();
   bool isOK = ( /*status == NG_OK &&*/ Netgen_NbOfTetra > 0 );// get whatever built
   if ( isOK )
   {
@@ -576,6 +576,8 @@ bool NETGENPlugin_NETGEN_3D::compute(SMESH_Mesh&                     aMesh,
       }
     }
   }
+  aMesh.Unlock();
+
 
   return !err;
 }
@@ -641,7 +643,7 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
       return error( COMPERR_BAD_INPUT_MESH, "Null element encounters");
     if ( elem->NbCornerNodes() != 3 )
       return error( COMPERR_BAD_INPUT_MESH, "Not triangle element encounters");
-      
+
     // add three nodes of triangle
     for ( int iN = 0; iN < 3; ++iN )
     {
@@ -797,7 +799,7 @@ bool NETGENPlugin_NETGEN_3D::Evaluate(SMESH_Mesh& aMesh,
   }
   SMESH_subMesh *sm = aMesh.GetSubMesh(aShape);
   aResMap.insert(std::make_pair(sm,aVec));
-  
+
   return true;
 }
 

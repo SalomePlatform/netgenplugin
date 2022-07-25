@@ -40,19 +40,19 @@ NETGEN_VERSION_MAJOR = NETGENPlugin.NETGEN_VERSION_MAJOR
 # Mesh algo type identifiers
 #----------------------------
 
-## Algorithm type: Netgen tetrahedron 3D algorithm, see NETGEN_3D_Algorithm 
+## Algorithm type: Netgen tetrahedron 3D algorithm, see NETGEN_3D_Algorithm
 NETGEN_3D     = "NETGEN_3D"
-## Algorithm type: Netgen tetrahedron 1D-2D-3D algorithm, see NETGEN_1D2D3D_Algorithm 
+## Algorithm type: Netgen tetrahedron 1D-2D-3D algorithm, see NETGEN_1D2D3D_Algorithm
 NETGEN_1D2D3D = "NETGEN_2D3D"
-## Algorithm type: Netgen triangle 1D-2D algorithm, see NETGEN_1D2D_Algorithm 
+## Algorithm type: Netgen triangle 1D-2D algorithm, see NETGEN_1D2D_Algorithm
 NETGEN_1D2D   = "NETGEN_2D"
 ## Algorithm type: Netgen triangle 2D algorithm, see NETGEN_2D_Only_Algorithm
 NETGEN_2D     = "NETGEN_2D_ONLY"
-## Algorithm type: Synonim of NETGEN_1D2D3D, see NETGEN_1D2D3D_Algorithm 
+## Algorithm type: Synonim of NETGEN_1D2D3D, see NETGEN_1D2D3D_Algorithm
 NETGEN_FULL   = NETGEN_1D2D3D
-## Algorithm type: Synonim of NETGEN_3D, see NETGEN_3D_Algorithm 
+## Algorithm type: Synonim of NETGEN_3D, see NETGEN_3D_Algorithm
 NETGEN        = NETGEN_3D
-## Algorithm type: Synonim of NETGEN_1D2D3D, see NETGEN_1D2D3D_Algorithm 
+## Algorithm type: Synonim of NETGEN_1D2D3D, see NETGEN_1D2D3D_Algorithm
 FULL_NETGEN   = NETGEN_FULL
 
 #----------------------------
@@ -190,7 +190,7 @@ class NETGEN_Algorithm(Mesh_Algorithm):
     def SetLocalSizeOnShape(self, shape, size ):
         self.Parameters().SetLocalSizeOnShape(shape, size)
         pass
-        
+
 
     pass # end of NETGEN_Algorithm class
 
@@ -310,7 +310,7 @@ class NETGEN_1D2D3D_Algorithm(NETGEN_Algorithm):
     pass # end of NETGEN_1D2D3D_Algorithm class
 
 
-## Triangle NETGEN 1D-2D algorithm. 
+## Triangle NETGEN 1D-2D algorithm.
 #
 #  It can be created by calling smeshBuilder.Mesh.Triangle( smeshBuilder.NETGEN_1D2D, geom=0 )
 #
@@ -327,6 +327,7 @@ class NETGEN_1D2D_Algorithm(NETGEN_1D2D3D_Algorithm):
     ## doc string of the method
     #  @internal
     docHelper  = "Creates triangle 2D algorithm for faces"
+
 
     ## Private constructor.
     #  @param mesh parent mesh object algorithm is assigned to
@@ -360,7 +361,9 @@ class NETGEN_2D_Only_Algorithm(NETGEN_Algorithm):
     ## doc string of the method
     #  @internal
     docHelper  = "Creates triangle 2D algorithm for faces"
-    
+
+    isDefault = True
+
     ## Private constructor.
     #  @param mesh parent mesh object algorithm is assigned to
     #  @param geom geometry (shape/sub-shape) algorithm is assigned to;
@@ -388,7 +391,7 @@ class NETGEN_2D_Only_Algorithm(NETGEN_Algorithm):
     def LengthFromEdges(self):
         hyp = self.Hypothesis("LengthFromEdges", UseExisting=1, CompareMethod=self.CompareEqualHyp)
         return hyp
-        
+
     ## Sets @c UseSurfaceCurvature flag
     #  @param toUse new value of the @c UseSurfaceCurvature parameter (@c True by default)
     def SetUseSurfaceCurvature(self, toUse=True):

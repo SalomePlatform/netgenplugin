@@ -34,7 +34,7 @@ INCLUDE_DIRECTORIES(
 )
 
 # additional preprocessor / compiler flags
-ADD_DEFINITIONS(  
+ADD_DEFINITIONS(
   ${OMNIORB_DEFINITIONS}
   ${OpenCASCADE_DEFINITIONS}
   ${BOOST_DEFINITIONS}
@@ -70,27 +70,28 @@ SET(_link_LIBRARIES
 
 # header files
 SET(NETGENEngine_HEADERS
-  NETGENPlugin_NETGEN_3D.hxx 
-  NETGENPlugin_NETGEN_3D_i.hxx 
-  NETGENPlugin_NETGEN_2D.hxx 
-  NETGENPlugin_NETGEN_2D_i.hxx 
-  NETGENPlugin_NETGEN_2D3D.hxx 
-  NETGENPlugin_NETGEN_2D3D_i.hxx 
-  NETGENPlugin_NETGEN_2D_ONLY.hxx 
-  NETGENPlugin_NETGEN_2D_ONLY_i.hxx 
-  NETGENPlugin_Hypothesis.hxx 
-  NETGENPlugin_Hypothesis_i.hxx 
-  NETGENPlugin_Hypothesis_2D.hxx 
-  NETGENPlugin_Hypothesis_2D_i.hxx 
-  NETGENPlugin_Hypothesis_3D_i.hxx 
-  NETGENPlugin_Hypothesis_2D_ONLY_i.hxx 
-  NETGENPlugin_SimpleHypothesis_2D.hxx 
-  NETGENPlugin_SimpleHypothesis_3D.hxx 
-  NETGENPlugin_SimpleHypothesis_2D_i.hxx 
-  NETGENPlugin_SimpleHypothesis_3D_i.hxx 
-  NETGENPlugin_Mesher.hxx 
+  NETGENPlugin_NETGEN_3D.hxx
+  NETGENPlugin_NETGEN_3D_i.hxx
+  NETGENPlugin_NETGEN_2D.hxx
+  NETGENPlugin_NETGEN_2D_i.hxx
+  NETGENPlugin_NETGEN_2D3D.hxx
+  NETGENPlugin_NETGEN_2D3D_i.hxx
+  NETGENPlugin_NETGEN_2D_ONLY.hxx
+  NETGENPlugin_NETGEN_2D_ONLY_i.hxx
+  NETGENPlugin_Hypothesis.hxx
+  NETGENPlugin_Hypothesis_i.hxx
+  NETGENPlugin_Hypothesis_2D.hxx
+  NETGENPlugin_Hypothesis_2D_i.hxx
+  NETGENPlugin_Hypothesis_3D_i.hxx
+  NETGENPlugin_Hypothesis_2D_ONLY_i.hxx
+  NETGENPlugin_SimpleHypothesis_2D.hxx
+  NETGENPlugin_SimpleHypothesis_3D.hxx
+  NETGENPlugin_SimpleHypothesis_2D_i.hxx
+  NETGENPlugin_SimpleHypothesis_3D_i.hxx
+  NETGENPlugin_Mesher.hxx
   NETGENPlugin_Remesher_2D.hxx
   NETGENPlugin_Defs.hxx
+  NETGENPlugin_Provider.hxx
 )
 
 # --- sources ---

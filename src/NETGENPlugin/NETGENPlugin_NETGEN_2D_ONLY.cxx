@@ -25,6 +25,7 @@
 
 #include "NETGENPlugin_Mesher.hxx"
 #include "NETGENPlugin_Hypothesis_2D.hxx"
+#include "NETGENPlugin_Provider.hxx"
 
 #include <SMDS_MeshElement.hxx>
 #include <SMDS_MeshNode.hxx>
@@ -76,7 +77,7 @@ using namespace nglib;
 
 //=============================================================================
 /*!
- *  
+ *
  */
 //=============================================================================
 
@@ -85,7 +86,7 @@ NETGENPlugin_NETGEN_2D_ONLY::NETGENPlugin_NETGEN_2D_ONLY(int        hypId,
   : SMESH_2D_Algo(hypId, gen)
 {
   _name = "NETGEN_2D_ONLY";
-  
+
   _shapeType = (1 << TopAbs_FACE);// 1 bit /shape type
   _onlyUnaryInput = false; // treat all FACEs at once
 
@@ -103,7 +104,7 @@ NETGENPlugin_NETGEN_2D_ONLY::NETGENPlugin_NETGEN_2D_ONLY(int        hypId,
 
 //=============================================================================
 /*!
- *  
+ *
  */
 //=============================================================================
 
@@ -114,7 +115,7 @@ NETGENPlugin_NETGEN_2D_ONLY::~NETGENPlugin_NETGEN_2D_ONLY()
 
 //=============================================================================
 /*!
- *  
+ *
  */
 //=============================================================================
 
@@ -127,6 +128,7 @@ bool NETGENPlugin_NETGEN_2D_ONLY::CheckHypothesis (SMESH_Mesh&         aMesh,
   _hypQuadranglePreference = 0;
   _hypParameters = 0;
   _progressByTic = -1;
+
 
   const list<const SMESHDS_Hypothesis*>& hyps = GetUsedHypothesis(aMesh, aShape, false);
 
@@ -226,6 +228,11 @@ bool NETGENPlugin_NETGEN_2D_ONLY::CheckHypothesis (SMESH_Mesh&         aMesh,
 bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
                                           const TopoDS_Shape& aShape)
 {
+  aMesh.Lock();
+  SMESH_Hypothesis::Hypothesis_Status hypStatus;
+  this->CheckHypothesis(aMesh, aShape, hypStatus);
+  aMesh.Unlock();
+
   netgen::multithread.terminate = 0;
   //netgen::multithread.task = "Surface meshing";
 
@@ -233,12 +240,14 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
   SMESH_MesherHelper helper(aMesh);
   helper.SetElementsOnShape( true );
 
-  NETGENPlugin_NetgenLibWrapper ngLib;
-  ngLib._isComputeOk = false;
+  NETGENPlugin_NetgenLibWrapper *ngLib;
+  int id_ngLib = nglib_provider.take(&ngLib);
+  ngLib->_isComputeOk = false;
 
   netgen::Mesh   ngMeshNoLocSize;
-  netgen::Mesh * ngMeshes[2] = { (netgen::Mesh*) ngLib._ngMesh,  & ngMeshNoLocSize };
-  netgen::OCCGeometry occgeoComm;
+  netgen::Mesh * ngMeshes[2] = { (netgen::Mesh*) ngLib->_ngMesh,  & ngMeshNoLocSize };
+  netgen::OCCGeometry *occgeoComm;
+  int id_occgeoComm = occgeom_provider.take(&occgeoComm);
 
   // min / max sizes are set as follows:
   // if ( _hypParameters )
@@ -252,7 +261,6 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
   // else
   //    min = aMesher.GetDefaultMinSize()
   //    max = max segment len of a FACE
-
   NETGENPlugin_Mesher aMesher( &aMesh, aShape, /*isVolume=*/false);
   aMesher.SetParameters( _hypParameters ); // _hypParameters -> netgen::mparam
   const bool toOptimize = _hypParameters ? _hypParameters->GetOptimize() : true;
@@ -270,14 +278,14 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
   if ( isCommonLocalSize ) // compute common local size in ngMeshes[0]
   {
     //list< SMESH_subMesh* > meshedSM[4]; --> all sub-shapes are added to occgeoComm
-    aMesher.PrepareOCCgeometry( occgeoComm, aShape, aMesh );//, meshedSM );
+    aMesher.PrepareOCCgeometry( *occgeoComm, aShape, aMesh );//, meshedSM );
 
     // local size set at MESHCONST_ANALYSE step depends on
     // minh, face_maxh, grading and curvaturesafety; find minh if not set by the user
     if ( !_hypParameters || netgen::mparam.minh < DBL_MIN )
     {
       if ( !_hypParameters )
-        netgen::mparam.maxh = occgeoComm.GetBoundingBox().Diam() / 3.;
+        netgen::mparam.maxh = occgeoComm->GetBoundingBox().Diam() / 3.;
       netgen::mparam.minh = aMesher.GetDefaultMinSize( aShape, netgen::mparam.maxh );
     }
     // set local size depending on curvature and NOT closeness of EDGEs
@@ -288,15 +296,15 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
     netgen::occparam.resthcloseedgeenable = false;
     netgen::occparam.resthcloseedgefac = 1.0 + netgen::mparam.grading;
 #endif
-    occgeoComm.face_maxh = netgen::mparam.maxh;
+    occgeoComm->face_maxh = netgen::mparam.maxh;
 #ifdef NETGEN_V6
     netgen::OCCParameters occparam;
-    netgen::OCCSetLocalMeshSize( occgeoComm, *ngMeshes[0], netgen::mparam, occparam );
+    netgen::OCCSetLocalMeshSize( *occgeoComm, *ngMeshes[0], netgen::mparam, occparam );
 #else
-    netgen::OCCSetLocalMeshSize( occgeoComm, *ngMeshes[0] );
+    netgen::OCCSetLocalMeshSize( *occgeoComm, *ngMeshes[0] );
 #endif
-    occgeoComm.emap.Clear();
-    occgeoComm.vmap.Clear();
+    occgeoComm->emap.Clear();
+    occgeoComm->vmap.Clear();
 
     // set local size according to size of existing segments
     TopTools_IndexedMapOfShape edgeMap;
@@ -321,8 +329,8 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
     }
 
     // set local size defined on shapes
-    aMesher.SetLocalSize( occgeoComm, *ngMeshes[0] );
-    aMesher.SetLocalSizeForChordalError( occgeoComm, *ngMeshes[0] );
+    aMesher.SetLocalSize( *occgeoComm, *ngMeshes[0] );
+    aMesher.SetLocalSizeForChordalError( *occgeoComm, *ngMeshes[0] );
     try {
       ngMeshes[0]->LoadLocalMeshSize( mparam.meshsizefilename );
     } catch (NgException & ex) {
@@ -330,7 +338,6 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
     }
   }
   netgen::mparam.uselocalh = toOptimize; // restore as it is used at surface optimization
-
   // ==================
   // Loop on all FACEs
   // ==================
@@ -419,7 +426,7 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
         netgen::mparam.maxh = edgeLength;
       }
       if ( netgen::mparam.maxh < DBL_MIN )
-        netgen::mparam.maxh = occgeoComm.GetBoundingBox().Diam();
+        netgen::mparam.maxh = occgeoComm->GetBoundingBox().Diam();
 
       if ( !isCommonLocalSize )
       {
@@ -428,16 +435,17 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
     }
 
     // prepare occgeom
-    netgen::OCCGeometry occgeom;
-    occgeom.shape = F;
-    occgeom.fmap.Add( F );
-    occgeom.CalcBoundingBox();
-    occgeom.facemeshstatus.SetSize(1);
-    occgeom.facemeshstatus = 0;
-    occgeom.face_maxh_modified.SetSize(1);
-    occgeom.face_maxh_modified = 0;
-    occgeom.face_maxh.SetSize(1);
-    occgeom.face_maxh = netgen::mparam.maxh;
+    netgen::OCCGeometry *occgeom;
+    int id_occgeom = occgeom_provider.take(&occgeom);
+    occgeom->shape = F;
+    occgeom->fmap.Add( F );
+    occgeom->CalcBoundingBox();
+    occgeom->facemeshstatus.SetSize(1);
+    occgeom->facemeshstatus = 0;
+    occgeom->face_maxh_modified.SetSize(1);
+    occgeom->face_maxh_modified = 0;
+    occgeom->face_maxh.SetSize(1);
+    occgeom->face_maxh = netgen::mparam.maxh;
 
     // -------------------------
     // Fill netgen mesh
@@ -460,11 +468,11 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
       {
         ngMesh->SetGlobalH ( mparam.maxh );
         ngMesh->SetMinimalH( mparam.minh );
-        Box<3> bb = occgeom.GetBoundingBox();
+        Box<3> bb = occgeom->GetBoundingBox();
         bb.Increase (bb.Diam()/10);
         ngMesh->SetLocalH (bb.PMin(), bb.PMax(), mparam.grading);
-        aMesher.SetLocalSize( occgeom, *ngMesh );
-        aMesher.SetLocalSizeForChordalError( occgeoComm, *ngMesh );
+        aMesher.SetLocalSize( *occgeom, *ngMesh );
+        aMesher.SetLocalSizeForChordalError( *occgeoComm, *ngMesh );
         try {
           ngMesh->LoadLocalMeshSize( mparam.meshsizefilename );
         } catch (NgException & ex) {
@@ -473,7 +481,7 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
       }
 
       nodeVec.clear();
-      faceErr = aMesher.AddSegmentsToMesh( *ngMesh, occgeom, wires, helper, nodeVec,
+      faceErr = aMesher.AddSegmentsToMesh( *ngMesh, *occgeom, wires, helper, nodeVec,
                                            /*overrideMinH=*/!_hypParameters);
       if ( faceErr && !faceErr->IsOK() )
         break;
@@ -491,9 +499,7 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
       SMESH_Comment str;
       try {
         OCC_CATCH_SIGNALS;
-
-        err = ngLib.GenerateMesh(occgeom, startWith, endWith, ngMesh);
-
+        err = ngLib->GenerateMesh(*occgeom, startWith, endWith, ngMesh);
         if ( netgen::multithread.terminate )
           return false;
         if ( err )
@@ -515,7 +521,7 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
       }
       if ( err )
       {
-        if ( aMesher.FixFaceMesh( occgeom, *ngMesh, 1 ))
+        if ( aMesher.FixFaceMesh( *occgeom, *ngMesh, 1 ))
           break;
         if ( iLoop == LOC_SIZE )
         {
@@ -546,7 +552,9 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
         }
       }
 
-
+      occgeom_provider.release(id_occgeoComm, true);
+      occgeom_provider.release(id_occgeom, true);
+      aMesh.Lock();
       // ----------------------------------------------------
       // Fill the SMESHDS with the generated nodes and faces
       // ----------------------------------------------------
@@ -596,6 +604,9 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
       break;
     } // two attempts
   } // loop on FACEs
+  aMesh.Unlock();
+  nglib_provider.release(id_ngLib, true);
+
 
   return true;
 }
