@@ -380,7 +380,7 @@ namespace
 
   //================================================================================
   /*!
-   * \brief Restrict size of elements on the given edge 
+   * \brief Restrict size of elements on the given edge
    */
   //================================================================================
 
@@ -572,13 +572,12 @@ void NETGENPlugin_Mesher::SetSelfPointer( NETGENPlugin_Mesher ** ptr )
 
 //================================================================================
 /*!
- * \brief Initialize global NETGEN parameters with default values
+ * \brief Initialize given NETGEN parameters with default values
  */
 //================================================================================
 
-void NETGENPlugin_Mesher::SetDefaultParameters()
+void NETGENPlugin_Mesher::SetDefaultParameters(netgen::MeshingParameters &mparams)
 {
-  netgen::MeshingParameters& mparams = netgen::mparam;
   mparams = netgen::MeshingParameters();
   // maximal mesh edge size
   mparams.maxh            = 0;//NETGENPlugin_Hypothesis::GetDefaultMaxSize();
@@ -613,6 +612,85 @@ void NETGENPlugin_Mesher::SetDefaultParameters()
 #endif
 }
 
+//================================================================================
+/*!
+ * \brief Initialize global NETGEN parameters with default values
+ */
+//================================================================================
+
+void NETGENPlugin_Mesher::SetDefaultParameters()
+{
+  netgen::MeshingParameters& mparams = netgen::mparam;
+  SetDefaultParameters(mparams);
+
+}
+
+void NETGENPlugin_Mesher::SetParameters(const NETGENPlugin_Hypothesis* hyp, netgen::MeshingParameters &mparams)
+{
+  // Initialize global NETGEN parameters:
+  // maximal mesh segment size
+  mparams.maxh               = hyp->GetMaxSize();
+  // maximal mesh element linear size
+  mparams.minh               = hyp->GetMinSize();
+  // minimal number of segments per edge
+  mparams.segmentsperedge    = hyp->GetNbSegPerEdge();
+  // rate of growth of size between elements
+  mparams.grading            = hyp->GetGrowthRate();
+  // safety factor for curvatures (elements per radius)
+  mparams.curvaturesafety    = hyp->GetNbSegPerRadius();
+  // create elements of second order
+  mparams.secondorder        = hyp->GetSecondOrder() ? 1 : 0;
+  // quad-dominated surface meshing
+  mparams.quad               = hyp->GetQuadAllowed() ? 1 : 0;
+  _optimize                  = hyp->GetOptimize();
+  _fineness                  = hyp->GetFineness();
+  mparams.uselocalh          = hyp->GetSurfaceCurvature();
+  netgen::merge_solids       = hyp->GetFuseEdges();
+  _chordalError              = hyp->GetChordalErrorEnabled() ? hyp->GetChordalError() : -1.;
+  mparams.optsteps2d         = _optimize ? hyp->GetNbSurfOptSteps() : 0;
+  mparams.optsteps3d         = _optimize ? hyp->GetNbVolOptSteps()  : 0;
+  mparams.elsizeweight       = hyp->GetElemSizeWeight();
+  mparams.opterrpow          = hyp->GetWorstElemMeasure();
+  mparams.delaunay           = hyp->GetUseDelauney();
+  mparams.checkoverlap       = hyp->GetCheckOverlapping();
+  mparams.checkchartboundary = hyp->GetCheckChartBoundary();
+  _simpleHyp                 = NULL;
+  // mesh size file
+#ifdef NETGEN_V6
+  // std::string
+  mparams.meshsizefilename = hyp->GetMeshSizeFile();
+#else
+  // const char*
+  mparams.meshsizefilename= hyp->GetMeshSizeFile().empty() ? 0 : hyp->GetMeshSizeFile().c_str();
+#endif
+  const NETGENPlugin_Hypothesis::TLocalSize& localSizes = hyp->GetLocalSizesAndEntries();
+  if ( !localSizes.empty() )
+  {
+    SMESH_Gen_i* smeshGen_i = SMESH_Gen_i::GetSMESHGen();
+    NETGENPlugin_Hypothesis::TLocalSize::const_iterator it = localSizes.begin();
+    for ( ; it != localSizes.end() ; it++)
+    {
+      std::string entry = (*it).first;
+      double        val = (*it).second;
+      // --
+      GEOM::GEOM_Object_var aGeomObj;
+      SALOMEDS::SObject_var aSObj = SMESH_Gen_i::GetSMESHGen()->getStudyServant()->FindObjectID( entry.c_str() );
+      if ( !aSObj->_is_nil() ) {
+        CORBA::Object_var obj = aSObj->GetObject();
+        aGeomObj = GEOM::GEOM_Object::_narrow(obj);
+        aSObj->UnRegister();
+      }
+      TopoDS_Shape S = smeshGen_i->GeomObjectToShape( aGeomObj.in() );
+      setLocalSize(S, val);
+    }
+  }
+#ifdef NETGEN_V6
+
+  netgen::mparam.closeedgefac = 2;
+
+#endif
+}
+
 //=============================================================================
 /*!
  * Pass parameters to NETGEN
@@ -623,70 +701,10 @@ void NETGENPlugin_Mesher::SetParameters(const NETGENPlugin_Hypothesis* hyp)
   if (hyp)
   {
     netgen::MeshingParameters& mparams = netgen::mparam;
-    // Initialize global NETGEN parameters:
-    // maximal mesh segment size
-    mparams.maxh               = hyp->GetMaxSize();
-    // maximal mesh element linear size
-    mparams.minh               = hyp->GetMinSize();
-    // minimal number of segments per edge
-    mparams.segmentsperedge    = hyp->GetNbSegPerEdge();
-    // rate of growth of size between elements
-    mparams.grading            = hyp->GetGrowthRate();
-    // safety factor for curvatures (elements per radius)
-    mparams.curvaturesafety    = hyp->GetNbSegPerRadius();
-    // create elements of second order
-    mparams.secondorder        = hyp->GetSecondOrder() ? 1 : 0;
-    // quad-dominated surface meshing
-    mparams.quad               = hyp->GetQuadAllowed() ? 1 : 0;
-    _optimize                  = hyp->GetOptimize();
-    _fineness                  = hyp->GetFineness();
-    mparams.uselocalh          = hyp->GetSurfaceCurvature();
-    netgen::merge_solids       = hyp->GetFuseEdges();
-    _chordalError              = hyp->GetChordalErrorEnabled() ? hyp->GetChordalError() : -1.;
-    mparams.optsteps2d         = _optimize ? hyp->GetNbSurfOptSteps() : 0;
-    mparams.optsteps3d         = _optimize ? hyp->GetNbVolOptSteps()  : 0;
-    mparams.elsizeweight       = hyp->GetElemSizeWeight();
-    mparams.opterrpow          = hyp->GetWorstElemMeasure();
-    mparams.delaunay           = hyp->GetUseDelauney();
-    mparams.checkoverlap       = hyp->GetCheckOverlapping();
-    mparams.checkchartboundary = hyp->GetCheckChartBoundary();
-    _simpleHyp                 = NULL;
-    // mesh size file
-#ifdef NETGEN_V6
-    // std::string
-    mparams.meshsizefilename = hyp->GetMeshSizeFile();
-#else
-    // const char*
-    mparams.meshsizefilename= hyp->GetMeshSizeFile().empty() ? 0 : hyp->GetMeshSizeFile().c_str();
-#endif
-    const NETGENPlugin_Hypothesis::TLocalSize& localSizes = hyp->GetLocalSizesAndEntries();
-    if ( !localSizes.empty() )
-    {
-      SMESH_Gen_i* smeshGen_i = SMESH_Gen_i::GetSMESHGen();
-      NETGENPlugin_Hypothesis::TLocalSize::const_iterator it = localSizes.begin();
-      for ( ; it != localSizes.end() ; it++)
-      {
-        std::string entry = (*it).first;
-        double        val = (*it).second;
-        // --
-        GEOM::GEOM_Object_var aGeomObj;
-        SALOMEDS::SObject_var aSObj = SMESH_Gen_i::GetSMESHGen()->getStudyServant()->FindObjectID( entry.c_str() );
-        if ( !aSObj->_is_nil() ) {
-          CORBA::Object_var obj = aSObj->GetObject();
-          aGeomObj = GEOM::GEOM_Object::_narrow(obj);
-          aSObj->UnRegister();
-        }
-        TopoDS_Shape S = smeshGen_i->GeomObjectToShape( aGeomObj.in() );
-        setLocalSize(S, val);
-      }
-    }
+    SetParameters(hyp, mparams);
   }
 
-#ifdef NETGEN_V6
 
-  netgen::mparam.closeedgefac = 2;
-
-#endif
 }
 
 //=============================================================================
@@ -1575,7 +1593,7 @@ void NETGENPlugin_Mesher::FixIntFaces(const netgen::OCCGeometry& occgeom,
                                       NETGENPlugin_Internals&    internalShapes)
 {
   SMESHDS_Mesh* meshDS = internalShapes.getMesh().GetMeshDS();
-  
+
   // find ng indices of internal faces
   set<int> ngFaceIds;
   for ( int ngFaceID = 1; ngFaceID <= occgeom.fmap.Extent(); ++ngFaceID )
@@ -1735,7 +1753,7 @@ namespace
     double dist3D = surf->Value( uv1.X(), uv1.Y() ).Distance( surf->Value( uv2.X(), uv2.Y() ));
     if ( stopHandler == 0 ) // stop recursion
       return dist3D;
-    
+
     // start recursion if necessary
     double dist2D = SMESH_MesherHelper::ApplyIn2D(surf, uv1, uv2, gp_XY_Subtracted, 0).Modulus();
     if ( fabs( dist3D - dist2D ) < dist2D * 1e-10 )
@@ -2205,7 +2223,7 @@ void NETGENPlugin_Mesher::AddIntVerticesInSolids(const netgen::OCCGeometry&     
  *  \param wires - data of nodes on FACE boundary
  *  \param helper - mesher helper holding the FACE
  *  \param nodeVec - vector of nodes in which node index == netgen ID
- *  \retval SMESH_ComputeErrorPtr - error description 
+ *  \retval SMESH_ComputeErrorPtr - error description
  */
 //================================================================================
 
@@ -2712,7 +2730,7 @@ int NETGENPlugin_Mesher::FillSMesh(const netgen::OCCGeometry&          occgeo,
 
   for ( int i = 1; i <= nbVol; ++i )
   {
-    const netgen::Element& elem = ngMesh.VolumeElement(i);      
+    const netgen::Element& elem = ngMesh.VolumeElement(i);
     int aSolidInd = elem.GetIndex();
     TopoDS_Solid aSolid;
     if ( aSolidInd > 0 && aSolidInd <= occgeo.somap.Extent() )
@@ -2905,7 +2923,7 @@ bool NETGENPlugin_Mesher::Compute()
 
   // vector of nodes in which node index == netgen ID
   vector< const SMDS_MeshNode* > nodeVec;
-  
+
   {
     // ----------------
     // compute 1D mesh
@@ -3511,7 +3529,7 @@ bool NETGENPlugin_Mesher::Evaluate(MapShapeNbElems& aResMap)
   const int hugeNb = std::numeric_limits<int>::max() / 100;
 
   // ----------------
-  // evaluate 1D 
+  // evaluate 1D
   // ----------------
   // pass 1D simple parameters to NETGEN
   if ( _simpleHyp )
@@ -3618,7 +3636,7 @@ bool NETGENPlugin_Mesher::Evaluate(MapShapeNbElems& aResMap)
     return false;
 
   // ----------------
-  // evaluate 2D 
+  // evaluate 2D
   // ----------------
   if ( _simpleHyp ) {
     if ( double area = _simpleHyp->GetMaxElementArea() ) {
@@ -3820,9 +3838,9 @@ NETGENPlugin_Mesher::ReadErrors(const vector<const SMDS_MeshNode* >& nodeVec)
     }
     else if ( strncmp( file, "Intersecting: ", 14 ) == 0 )
     {
-// Intersecting: 
+// Intersecting:
 // openelement 18 with open element 126
-// 41  36  38  
+// 41  36  38
 // 69  70  72
       file.getLine();
       const char* pos = file;
@@ -3939,7 +3957,7 @@ void NETGENPlugin_Mesher::toPython( const netgen::Mesh* ngMesh )
 #else  //////// V 5
 
   PointIndex pi;
-  for (pi = PointIndex::BASE; 
+  for (pi = PointIndex::BASE;
        pi < ngMesh->GetNP()+PointIndex::BASE; pi++)
   {
     outfile << "mesh.AddNode( ";
@@ -4501,7 +4519,8 @@ void NETGENPlugin_NetgenLibWrapper::setMesh( Ng_Mesh* mesh )
 
 int NETGENPlugin_NetgenLibWrapper::GenerateMesh( netgen::OCCGeometry& occgeo,
                                                  int startWith, int endWith,
-                                                 netgen::Mesh* & ngMesh )
+                                                 netgen::Mesh* & ngMesh ,
+                                                 netgen::MeshingParameters& mparam)
 {
   int err = 0;
   if ( !ngMesh )
@@ -4511,15 +4530,15 @@ int NETGENPlugin_NetgenLibWrapper::GenerateMesh( netgen::OCCGeometry& occgeo,
 
   ngMesh->SetGeometry( shared_ptr<netgen::NetgenGeometry>( &occgeo, &NOOP_Deleter ));
 
-  netgen::mparam.perfstepsstart = startWith;
-  netgen::mparam.perfstepsend   = endWith;
+  mparam.perfstepsstart = startWith;
+  mparam.perfstepsend   = endWith;
   std::shared_ptr<netgen::Mesh> meshPtr( ngMesh, &NOOP_Deleter );
-  err = occgeo.GenerateMesh( meshPtr, netgen::mparam );
+  err = occgeo.GenerateMesh( meshPtr, mparam );
 
 #else
   #ifdef NETGEN_V5
 
-  err = netgen::OCCGenerateMesh(occgeo, ngMesh, netgen::mparam, startWith, endWith);
+  err = netgen::OCCGenerateMesh(occgeo, ngMesh, mparam, startWith, endWith);
 
   #else
 

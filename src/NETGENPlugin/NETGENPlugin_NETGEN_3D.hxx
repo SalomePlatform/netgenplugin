@@ -31,6 +31,7 @@
 #ifndef _NETGENPlugin_NETGEN_3D_HXX_
 #define _NETGENPlugin_NETGEN_3D_HXX_
 
+#include "NETGENPlugin_Provider.hxx"
 #include "NETGENPlugin_Defs.hxx"
 #include "NETGENPlugin_Mesher.hxx"
 
@@ -41,6 +42,7 @@ class StdMeshers_ViscousLayers;
 class StdMeshers_MaxElementVolume;
 class NETGENPlugin_Hypothesis;
 class NETGENPlugin_NetgenLibWrapper;
+class netgen_params;
 
 class NETGENPLUGIN_EXPORT NETGENPlugin_NETGEN_3D: public SMESH_3D_Algo
 {
@@ -68,6 +70,18 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_NETGEN_3D: public SMESH_3D_Algo
 
  protected:
 
+  void exportElementOrientation(SMESH_Mesh& aMesh,
+                                const TopoDS_Shape& aShape,
+                                netgen_params& aParams,
+                                const std::string output_file);
+
+  void FillParameters(const NETGENPlugin_Hypothesis* hyp,
+                      netgen_params &aParams);
+
+  int ParallelCompute(SMESH_Mesh&         aMesh,
+                      const TopoDS_Shape& aShape);
+
+
   bool compute(SMESH_Mesh&                          mesh,
                SMESH_MesherHelper&                  helper,
                std::vector< const SMDS_MeshNode* >& nodeVec,
@@ -79,6 +93,10 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_NETGEN_3D: public SMESH_3D_Algo
   const StdMeshers_MaxElementVolume* _hypMaxElementVolume;
   const StdMeshers_ViscousLayers*    _viscousLayersHyp;
   double                             _progressByTic;
+
+  Provider<netgen::MeshingParameters, 2> mparam_provider;
+  ProviderPtr<netgen::OCCGeometry, 4> occgeom_provider;
+  ProviderPtr<NETGENPlugin_NetgenLibWrapper, 2> nglib_provider;
 };
 
 #endif

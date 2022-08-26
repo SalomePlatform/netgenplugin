@@ -24,12 +24,15 @@
 #ifndef _NETGENPlugin_NETGEN_2D_ONLY_HXX_
 #define _NETGENPlugin_NETGEN_2D_ONLY_HXX_
 
+#include "NETGENPlugin_Provider.hxx"
+
 #include <SMESH_Algo.hxx>
 #include <SMESH_Mesh.hxx>
 
 class StdMeshers_MaxElementArea;
 class StdMeshers_LengthFromEdges;
 class NETGENPlugin_Hypothesis_2D;
+class NETGENPlugin_NetgenLibWrapper;
 
 /*!
  * \brief Mesher generating 2D elements on a geometrical face taking
@@ -66,6 +69,10 @@ protected:
   const NETGENPlugin_Hypothesis_2D*      _hypParameters;
 
   double                                 _progressByTic;
+
+  Provider<netgen::MeshingParameters, 2> mparam_provider;
+  ProviderPtr<netgen::OCCGeometry, 4> occgeom_provider;
+  ProviderPtr<NETGENPlugin_NetgenLibWrapper, 2> nglib_provider;
 };
 
 #endif

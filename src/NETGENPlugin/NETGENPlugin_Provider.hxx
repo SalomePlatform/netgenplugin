@@ -21,6 +21,9 @@
 // Author    : Yoann AUDOUIN (EDF)
 // Project   : SALOME
 //
+#ifndef _NETGENPlugin_Provider_HXX_
+#define _NETGENPlugin_Provider_HXX_
+
 #include <iostream>
 #include <thread>
 #include <array>
@@ -44,13 +47,6 @@ class ProviderPtr{
     ProviderPtr(){
       for(int i=0;i<NDATA;i++){
         this->_mydata[i] = nullptr;
-        this->_useddata[i] = false;
-      }
-    }
-
-    ProviderPtr(std::array<int, NDATA> is, std::array<double, NDATA> ds){
-      for(int i=0;i<NDATA;i++){
-        this->_mydata[i] = new T(is[i], ds[i]);
         this->_useddata[i] = false;
       }
     }
@@ -107,6 +103,50 @@ class ProviderPtr{
 
 };
 
-ProviderPtr<netgen::OCCGeometry, 4> occgeom_provider;
-ProviderPtr<NETGENPlugin_NetgenLibWrapper, 2> nglib_provider;
+template<class T, int NDATA>
+class Provider{
+  public:
 
+    Provider() = default;
+
+    int take(T& data){
+
+      this->_mymutex.lock();
+      for(int i=0;i<NDATA;i++){
+        if(!this->_useddata[i]){
+          this->_useddata[i] = true;
+          data = this->_mydata[i];
+          this->_mymutex.unlock();
+          return i;
+        }
+      }
+      this->_mymutex.unlock();
+      return -1;
+    };
+
+
+    bool release(int i){
+
+      this->_mymutex.lock();
+      this->_useddata[i] = false;
+      this->_mymutex.unlock();
+
+      return true;
+    };
+
+    void dump(){
+      std::cout << "Dumping provider:" << std::endl;
+      for(int i=0;i<NDATA;i++){
+        std::cout << " - " << i << " used: " << this->_useddata[i] << std::endl;
+        std::cout << " -  i: " << this->_mydata[i].i << " d: " << this->_mydata[i].d << std::endl;
+      }
+    };
+
+  private:
+    std::array<T, NDATA> _mydata;
+    std::array<bool, NDATA> _useddata;
+    std::mutex _mymutex;
+
+};
+
+#endif

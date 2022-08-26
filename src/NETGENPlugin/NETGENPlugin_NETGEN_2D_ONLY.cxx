@@ -65,7 +65,7 @@ namespace nglib {
 //#include <meshtype.hpp>
 namespace netgen {
   NETGENPLUGIN_DLL_HEADER
-  extern MeshingParameters mparam;
+  // extern MeshingParameters mparam;
 #ifdef NETGEN_V5
   extern void OCCSetLocalMeshSize(OCCGeometry & geom, Mesh & mesh);
 #endif
@@ -74,6 +74,7 @@ namespace netgen {
 using namespace std;
 using namespace netgen;
 using namespace nglib;
+
 
 //=============================================================================
 /*!
@@ -233,6 +234,9 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
   this->CheckHypothesis(aMesh, aShape, hypStatus);
   aMesh.Unlock();
 
+  netgen::MeshingParameters mparam;
+  int id_mparam = mparam_provider.take(mparam);
+
   netgen::multithread.terminate = 0;
   //netgen::multithread.task = "Surface meshing";
 
@@ -261,19 +265,24 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
   // else
   //    min = aMesher.GetDefaultMinSize()
   //    max = max segment len of a FACE
+  aMesh.Lock();
   NETGENPlugin_Mesher aMesher( &aMesh, aShape, /*isVolume=*/false);
-  aMesher.SetParameters( _hypParameters ); // _hypParameters -> netgen::mparam
+  // TODO: Only valid for NETGEN2D_Only
+  aMesher.SetDefaultParameters(mparam);
+  aMesher.SetParameters( _hypParameters, mparam ); // _hypParameters -> mparam
   const bool toOptimize = _hypParameters ? _hypParameters->GetOptimize() : true;
   if ( _hypMaxElementArea )
   {
-    netgen::mparam.maxh = sqrt( 2. * _hypMaxElementArea->GetMaxArea() / sqrt(3.0) );
+    mparam.maxh = sqrt( 2. * _hypMaxElementArea->GetMaxArea() / sqrt(3.0) );
   }
   if ( _hypQuadranglePreference )
-    netgen::mparam.quad = true;
+    mparam.quad = true;
 
   // local size is common for all FACEs in aShape?
-  const bool isCommonLocalSize = ( !_hypLengthFromEdges && !_hypMaxElementArea && netgen::mparam.uselocalh );
+  const bool isCommonLocalSize = ( !_hypLengthFromEdges && !_hypMaxElementArea && mparam.uselocalh );
   const bool isDefaultHyp = ( !_hypLengthFromEdges && !_hypMaxElementArea && !_hypParameters );
+  aMesh.Unlock();
+
 
   if ( isCommonLocalSize ) // compute common local size in ngMeshes[0]
   {
@@ -282,11 +291,11 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
 
     // local size set at MESHCONST_ANALYSE step depends on
     // minh, face_maxh, grading and curvaturesafety; find minh if not set by the user
-    if ( !_hypParameters || netgen::mparam.minh < DBL_MIN )
+    if ( !_hypParameters || mparam.minh < DBL_MIN )
     {
       if ( !_hypParameters )
-        netgen::mparam.maxh = occgeoComm->GetBoundingBox().Diam() / 3.;
-      netgen::mparam.minh = aMesher.GetDefaultMinSize( aShape, netgen::mparam.maxh );
+        mparam.maxh = occgeoComm->GetBoundingBox().Diam() / 3.;
+      mparam.minh = aMesher.GetDefaultMinSize( aShape, mparam.maxh );
     }
     // set local size depending on curvature and NOT closeness of EDGEs
 #ifdef NETGEN_V6
@@ -294,14 +303,16 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
 #else
     const double factor = netgen::occparam.resthcloseedgefac;
     netgen::occparam.resthcloseedgeenable = false;
-    netgen::occparam.resthcloseedgefac = 1.0 + netgen::mparam.grading;
+    netgen::occparam.resthcloseedgefac = 1.0 + mparam.grading;
 #endif
-    occgeoComm->face_maxh = netgen::mparam.maxh;
+    occgeoComm->face_maxh = mparam.maxh;
 #ifdef NETGEN_V6
     netgen::OCCParameters occparam;
-    netgen::OCCSetLocalMeshSize( *occgeoComm, *ngMeshes[0], netgen::mparam, occparam );
+    netgen::OCCSetLocalMeshSize( *occgeoComm, *ngMeshes[0], mparam, occparam );
 #else
+    aMesh.Lock();
     netgen::OCCSetLocalMeshSize( *occgeoComm, *ngMeshes[0] );
+    aMesh.Unlock();
 #endif
     occgeoComm->emap.Clear();
     occgeoComm->vmap.Clear();
@@ -337,7 +348,7 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
       return error( COMPERR_BAD_PARMETERS, ex.What() );
     }
   }
-  netgen::mparam.uselocalh = toOptimize; // restore as it is used at surface optimization
+  mparam.uselocalh = toOptimize; // restore as it is used at surface optimization
   // ==================
   // Loop on all FACEs
   // ==================
@@ -403,7 +414,7 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
         }
         if ( nbSegments )
           edgeLength /= double( nbSegments );
-        netgen::mparam.maxh = edgeLength;
+        mparam.maxh = edgeLength;
       }
       else if ( isDefaultHyp )
       {
@@ -423,14 +434,14 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
           }
         }
         edgeLength = sqrt( maxSeg2 ) * 1.05;
-        netgen::mparam.maxh = edgeLength;
+        mparam.maxh = edgeLength;
       }
-      if ( netgen::mparam.maxh < DBL_MIN )
-        netgen::mparam.maxh = occgeoComm->GetBoundingBox().Diam();
+      if ( mparam.maxh < DBL_MIN )
+        mparam.maxh = occgeoComm->GetBoundingBox().Diam();
 
       if ( !isCommonLocalSize )
       {
-        netgen::mparam.minh = aMesher.GetDefaultMinSize( F, netgen::mparam.maxh );
+        mparam.minh = aMesher.GetDefaultMinSize( F, mparam.maxh );
       }
     }
 
@@ -445,7 +456,7 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
     occgeom->face_maxh_modified.SetSize(1);
     occgeom->face_maxh_modified = 0;
     occgeom->face_maxh.SetSize(1);
-    occgeom->face_maxh = netgen::mparam.maxh;
+    occgeom->face_maxh = mparam.maxh;
 
     // -------------------------
     // Fill netgen mesh
@@ -499,7 +510,7 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
       SMESH_Comment str;
       try {
         OCC_CATCH_SIGNALS;
-        err = ngLib->GenerateMesh(*occgeom, startWith, endWith, ngMesh);
+        err = ngLib->GenerateMesh(*occgeom, startWith, endWith, ngMesh, mparam);
         if ( netgen::multithread.terminate )
           return false;
         if ( err )
@@ -525,8 +536,8 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
           break;
         if ( iLoop == LOC_SIZE )
         {
-          netgen::mparam.minh = netgen::mparam.maxh;
-          netgen::mparam.maxh = 0;
+          mparam.minh = mparam.maxh;
+          mparam.maxh = 0;
           for ( size_t iW = 0; iW < wires.size(); ++iW )
           {
             StdMeshers_FaceSidePtr wire = wires[ iW ];
@@ -537,13 +548,13 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
               netgen::Point3d np( p.X(),p.Y(),p.Z());
               double segLen = p.Distance( uvPtVec[ iP-1 ].node );
               double   size = ngMesh->GetH( np );
-              netgen::mparam.minh = Min( netgen::mparam.minh, size );
-              netgen::mparam.maxh = Max( netgen::mparam.maxh, segLen );
+              mparam.minh = Min( mparam.minh, size );
+              mparam.maxh = Max( mparam.maxh, segLen );
             }
           }
-          //cerr << "min " << netgen::mparam.minh << " max " << netgen::mparam.maxh << endl;
-          netgen::mparam.minh *= 0.9;
-          netgen::mparam.maxh *= 1.1;
+          //cerr << "min " << mparam.minh << " max " << mparam.maxh << endl;
+          mparam.minh *= 0.9;
+          mparam.maxh *= 1.1;
           continue;
         }
         else
@@ -554,6 +565,7 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
 
       occgeom_provider.release(id_occgeoComm, true);
       occgeom_provider.release(id_occgeom, true);
+      mparam_provider.release(id_mparam);
       aMesh.Lock();
       // ----------------------------------------------------
       // Fill the SMESHDS with the generated nodes and faces

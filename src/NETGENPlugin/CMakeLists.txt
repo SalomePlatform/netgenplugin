@@ -94,6 +94,12 @@ SET(NETGENEngine_HEADERS
   NETGENPlugin_Provider.hxx
 )
 
+SET(Run_Mesher_HEADERS
+    DriverStep.hxx
+    netgen_param.hxx
+    netgen_mesher.hxx
+)
+
 # --- sources ---
 
 # sources / static
@@ -121,6 +127,12 @@ SET(NETGENEngine_SOURCES
   NETGENPlugin_i.cxx
 )
 
+SET(Run_Mesher_SOURCES
+  DriverStep.cxx
+  netgen_mesher.cxx
+  netgen_param.cxx
+)
+
 # --- scripts ---
 
 # scripts / static
@@ -131,10 +143,13 @@ SET(_bin_SCRIPTS
 
 # --- rules ---
 
-ADD_LIBRARY(NETGENEngine ${NETGENEngine_SOURCES})
+ADD_LIBRARY(NETGENEngine ${NETGENEngine_SOURCES} ${Run_Mesher_SOURCES})
 TARGET_LINK_LIBRARIES(NETGENEngine ${_link_LIBRARIES} )
 INSTALL(TARGETS NETGENEngine EXPORT ${PROJECT_NAME}TargetGroup DESTINATION ${SALOME_INSTALL_LIBS})
 
-INSTALL(FILES ${NETGENEngine_HEADERS} DESTINATION ${SALOME_INSTALL_HEADERS})
+#ADD_EXECUTABLE(run_mesher ${Run_Mesher_SOURCES})
+#INSTALL(TARGETS NETGENEngine EXPORT ${PROJECT_NAME}TargetGroup DESTINATION ${SALOME_INSTALL_BINS})
+
+INSTALL(FILES ${Run_Mesher_HEADERS} ${NETGENEngine_HEADERS} DESTINATION ${SALOME_INSTALL_HEADERS})
 
 SALOME_INSTALL_SCRIPTS("${_bin_SCRIPTS}" ${SALOME_INSTALL_PYTHON}/salome/NETGENPlugin)
