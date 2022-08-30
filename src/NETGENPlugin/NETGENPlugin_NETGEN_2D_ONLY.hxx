@@ -70,9 +70,9 @@ protected:
 
   double                                 _progressByTic;
 
-  Provider<netgen::MeshingParameters, 2> mparam_provider;
-  ProviderPtr<netgen::OCCGeometry, 4> occgeom_provider;
-  ProviderPtr<NETGENPlugin_NetgenLibWrapper, 2> nglib_provider;
+  Provider<netgen::MeshingParameters, 4> mparam_provider;
+  ProviderPtr<netgen::OCCGeometry, 8> occgeom_provider;
+  ProviderPtr<NETGENPlugin_NetgenLibWrapper, 4> nglib_provider;
 };
 
 #endif

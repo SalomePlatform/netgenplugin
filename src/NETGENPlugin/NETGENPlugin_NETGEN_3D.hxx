@@ -78,8 +78,8 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_NETGEN_3D: public SMESH_3D_Algo
   void FillParameters(const NETGENPlugin_Hypothesis* hyp,
                       netgen_params &aParams);
 
-  int ParallelCompute(SMESH_Mesh&         aMesh,
-                      const TopoDS_Shape& aShape);
+  int RemoteCompute(SMESH_Mesh&         aMesh,
+                    const TopoDS_Shape& aShape);
 
 
   bool compute(SMESH_Mesh&                          mesh,
@@ -93,10 +93,6 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_NETGEN_3D: public SMESH_3D_Algo
   const StdMeshers_MaxElementVolume* _hypMaxElementVolume;
   const StdMeshers_ViscousLayers*    _viscousLayersHyp;
   double                             _progressByTic;
-
-  Provider<netgen::MeshingParameters, 2> mparam_provider;
-  ProviderPtr<netgen::OCCGeometry, 4> occgeom_provider;
-  ProviderPtr<NETGENPlugin_NetgenLibWrapper, 2> nglib_provider;
 };
 
 #endif
