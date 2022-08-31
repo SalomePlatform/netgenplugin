@@ -326,10 +326,14 @@ int NETGENPlugin_NETGEN_3D::RemoteCompute(SMESH_Mesh&         aMesh,
 
   aMesh.Unlock();
   // Calling run_mesher
+  // TODO: check if we need to handle the .exe for windows
   std::string cmd;
-  // TODO: Add run_meher to bin
-  std::string run_mesher_exe = "/home/B61570/work_in_progress/ssmesh/run_mesher/build/src/run_mesher";
-  cmd = run_mesher_exe +
+  fs::path run_mesher_exe =
+    fs::path(std::getenv("NETGENPLUGIN_ROOT_DIR"))/
+    fs::path("bin")/
+    fs::path("salome")/
+    fs::path("run_mesher");
+  cmd = run_mesher_exe.string() +
                   " NETGEN3D " + mesh_file.string() + " "
                                + shape_file.string() + " "
                                + param_file.string() + " "
