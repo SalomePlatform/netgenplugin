@@ -63,6 +63,8 @@ SET(_link_LIBRARIES
   ${KERNEL_SalomeNS}
   ${KERNEL_SALOMELocalTrace}
   ${KERNEL_OpUtil}
+  VTK::CommonCore
+  VTK::CommonDataModel
   SalomeIDLNETGENPLUGIN
 )
 
@@ -92,12 +94,8 @@ SET(NETGENEngine_HEADERS
   NETGENPlugin_Remesher_2D.hxx
   NETGENPlugin_Defs.hxx
   NETGENPlugin_Provider.hxx
-)
-
-SET(Run_Mesher_HEADERS
-    DriverStep.hxx
-    netgen_param.hxx
-    netgen_mesher.hxx
+  netgen_param.hxx
+  netgen_mesher.hxx
 )
 
 # --- sources ---
@@ -125,12 +123,12 @@ SET(NETGENEngine_SOURCES
   NETGENPlugin_SimpleHypothesis_3D_i.cxx
   NETGENPlugin_Remesher_2D.cxx
   NETGENPlugin_i.cxx
+  netgen_mesher.cxx
+  netgen_param.cxx
 )
 
 SET(Run_Mesher_SOURCES
-  DriverStep.cxx
-  netgen_mesher.cxx
-  netgen_param.cxx
+  run_mesher.cxx
 )
 
 # --- scripts ---
@@ -143,13 +141,14 @@ SET(_bin_SCRIPTS
 
 # --- rules ---
 
-ADD_LIBRARY(NETGENEngine ${NETGENEngine_SOURCES} ${Run_Mesher_SOURCES})
+ADD_LIBRARY(NETGENEngine ${NETGENEngine_SOURCES})
 TARGET_LINK_LIBRARIES(NETGENEngine ${_link_LIBRARIES} )
 INSTALL(TARGETS NETGENEngine EXPORT ${PROJECT_NAME}TargetGroup DESTINATION ${SALOME_INSTALL_LIBS})
 
-#ADD_EXECUTABLE(run_mesher ${Run_Mesher_SOURCES})
-#INSTALL(TARGETS NETGENEngine EXPORT ${PROJECT_NAME}TargetGroup DESTINATION ${SALOME_INSTALL_BINS})
+ADD_EXECUTABLE(run_mesher ${Run_Mesher_SOURCES})
+TARGET_LINK_LIBRARIES(run_mesher ${_link_LIBRARIES} NETGENEngine )
+INSTALL(TARGETS run_mesher EXPORT ${PROJECT_NAME}TargetGroup DESTINATION ${SALOME_INSTALL_BINS})
 
-INSTALL(FILES ${Run_Mesher_HEADERS} ${NETGENEngine_HEADERS} DESTINATION ${SALOME_INSTALL_HEADERS})
+INSTALL(FILES ${NETGENEngine_HEADERS} DESTINATION ${SALOME_INSTALL_HEADERS})
 
 SALOME_INSTALL_SCRIPTS("${_bin_SCRIPTS}" ${SALOME_INSTALL_PYTHON}/salome/NETGENPlugin)
