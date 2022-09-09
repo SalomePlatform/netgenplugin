@@ -24,15 +24,14 @@
 #ifndef _NETGENPlugin_NETGEN_2D_ONLY_HXX_
 #define _NETGENPlugin_NETGEN_2D_ONLY_HXX_
 
-#include "NETGENPlugin_Provider.hxx"
-
 #include <SMESH_Algo.hxx>
 #include <SMESH_Mesh.hxx>
 
 class StdMeshers_MaxElementArea;
 class StdMeshers_LengthFromEdges;
 class NETGENPlugin_Hypothesis_2D;
-class NETGENPlugin_NetgenLibWrapper;
+class NETGENPlugin_Hypothesis;
+class netgen_params;
 
 /*!
  * \brief Mesher generating 2D elements on a geometrical face taking
@@ -52,6 +51,16 @@ public:
                                const TopoDS_Shape& aShape,
                                Hypothesis_Status&  aStatus);
 
+  void exportElementOrientation(SMESH_Mesh& aMesh,
+                                const TopoDS_Shape& aShape,
+                                netgen_params& aParams,
+                                const std::string output_file);
+
+  void FillParameters(const NETGENPlugin_Hypothesis* hyp,
+                      netgen_params &aParams);
+
+  virtual bool RemoteCompute(SMESH_Mesh&         aMesh,
+                             const TopoDS_Shape& aShape);
   virtual bool Compute(SMESH_Mesh&         aMesh,
                        const TopoDS_Shape& aShape);
 
@@ -69,10 +78,6 @@ protected:
   const NETGENPlugin_Hypothesis_2D*      _hypParameters;
 
   double                                 _progressByTic;
-
-  Provider<netgen::MeshingParameters, 4> mparam_provider;
-  ProviderPtr<netgen::OCCGeometry, 8> occgeom_provider;
-  ProviderPtr<NETGENPlugin_NetgenLibWrapper, 4> nglib_provider;
 };
 
 #endif

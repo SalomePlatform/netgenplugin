@@ -58,8 +58,6 @@ class TopoDS_Shape;
 namespace netgen {
   class OCCGeometry;
   class Mesh;
-  class MeshingParameters;
-  extern MeshingParameters mparam;
 }
 //=============================================================================
 /*!
@@ -97,16 +95,12 @@ struct NETGENPLUGIN_EXPORT NETGENPlugin_NetgenLibWrapper
 
 
   static int GenerateMesh(netgen::OCCGeometry& occgeo, int startWith, int endWith,
-                          netgen::Mesh* & ngMesh, netgen::MeshingParameters & mparam);
+                          netgen::Mesh* & ngMesh);
   int GenerateMesh(netgen::OCCGeometry& occgeo, int startWith, int endWith )
   {
-
-    return GenerateMesh( occgeo, startWith, endWith, _ngMesh, netgen::mparam );
+    return GenerateMesh( occgeo, startWith, endWith, _ngMesh );
   }
-  static int GenerateMesh(netgen::OCCGeometry& occgeo, int startWith, int endWith,
-                          netgen::Mesh* & ngMesh){
-                            return GenerateMesh(occgeo, startWith, endWith, ngMesh, netgen::mparam);
-                          };
+
   static void CalcLocalH( netgen::Mesh * ngMesh );
 
   static void RemoveTmpFiles();
@@ -139,7 +133,6 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_Mesher
   void SetSelfPointer( NETGENPlugin_Mesher ** ptr );
 
   void SetParameters(const NETGENPlugin_Hypothesis*          hyp);
-  void SetParameters(const NETGENPlugin_Hypothesis*          hyp, netgen::MeshingParameters &mparams);
   void SetParameters(const NETGENPlugin_SimpleHypothesis_2D* hyp);
   void SetParameters(const StdMeshers_ViscousLayers*         hyp );
   void SetViscousLayers2DAssigned(bool isAssigned) { _isViscousLayers2D = isAssigned; }
@@ -211,7 +204,6 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_Mesher
                       const bool                            overrideMinH=true);
 
   void SetDefaultParameters();
-  void SetDefaultParameters(netgen::MeshingParameters &mparams);
 
   static SMESH_ComputeErrorPtr ReadErrors(const std::vector< const SMDS_MeshNode* >& nodeVec);
 

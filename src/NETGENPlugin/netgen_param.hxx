@@ -78,6 +78,9 @@ struct netgen_params{
   StdMeshers_ViscousLayers*    _viscousLayersHyp=nullptr;
   //double                       _progressByTic;
   bool _quadraticMesh=false;
+
+  // Params from NETGEN2D
+  bool has_LengthFromEdges_hyp=false;
 };
 
 void print_netgen_params(netgen_params& aParams);

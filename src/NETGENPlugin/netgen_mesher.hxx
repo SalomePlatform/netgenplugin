@@ -36,6 +36,20 @@ class SMESH_Mesh;
 class SMESH_Comment;
 class netgen_params;
 
+int netgen2d(TopoDS_Shape &aShape,
+             SMESH_Mesh& aMesh,
+             netgen_params& aParams,
+             std::string new_element_file,
+             std::string element_orientation_file,
+             bool output_mesh);
+int netgen2d(const std::string input_mesh_file,
+             const std::string shape_file,
+             const std::string hypo_file,
+             const std::string element_orienation_file,
+             const std::string new_element_file,
+             bool output_mesh,
+             const std::string output_mesh_file);
+
 int netgen3d(TopoDS_Shape &aShape,
              SMESH_Mesh& aMesh,
              netgen_params& aParams,

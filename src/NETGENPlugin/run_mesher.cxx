@@ -36,6 +36,8 @@
 #include <TopoDS_Shape.hxx>
 #include <iostream>
 
+#include <chrono>
+
 /**
  * @brief Test of shape Import/Export
  *
@@ -183,7 +185,7 @@ int main(int argc, char *argv[]){
     std::cout << "           ELEM_ORIENT_FILE NEW_ELEMENT_FILE OUTPUT_MESH_FILE" << std::endl;
     std::cout << std::endl;
     std::cout << "Args:" << std::endl;
-    std::cout << "  MESHER: mesher to use from (NETGEN3D)" << std::endl;
+    std::cout << "  MESHER: mesher to use from (NETGEN3D, NETGEN2D)" << std::endl;
     std::cout << "  INPUT_MESH_FILE: MED File containing lower-dimension-elements already meshed" << std::endl;
     std::cout << "  SHAPE_FILE: STEP file containing the shape to mesh" << std::endl;
     std::cout << "  HYPO_FILE: Ascii file containint the list of parameters" << std::endl;
@@ -209,7 +211,19 @@ int main(int argc, char *argv[]){
     test_netgen_params();
     test_netgen3d();
   } else if (mesher=="NETGEN3D"){
+    auto begin = std::chrono::high_resolution_clock::now();
     netgen3d(input_mesh_file,
+             shape_file,
+             hypo_file,
+             element_orientation_file,
+             new_element_file,
+             output_mesh,
+             output_mesh_file);
+    auto end = std::chrono::high_resolution_clock::now();
+    auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
+    std::cout << "Time elapsed: " << elapsed.count()*1e-9 << std::endl;
+  } else if (mesher=="NETGEN2D"){
+    netgen2d(input_mesh_file,
              shape_file,
              hypo_file,
              element_orientation_file,

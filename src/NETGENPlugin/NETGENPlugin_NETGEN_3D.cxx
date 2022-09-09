@@ -231,7 +231,7 @@ void NETGENPlugin_NETGEN_3D::FillParameters(const NETGENPlugin_Hypothesis* hyp, 
 #endif
 }
 
-// wirte in a binary file the orientation for each 2D element of the mesh
+// write in a binary file the orientation for each 2D element of the mesh
 void NETGENPlugin_NETGEN_3D::exportElementOrientation(SMESH_Mesh& aMesh,
                                                       const TopoDS_Shape& aShape,
                                                       netgen_params& aParams,
@@ -294,8 +294,13 @@ int NETGENPlugin_NETGEN_3D::RemoteCompute(SMESH_Mesh&         aMesh,
                                           const TopoDS_Shape& aShape)
 {
   aMesh.Lock();
+  auto time0 = std::chrono::high_resolution_clock::now();
   SMESH_Hypothesis::Hypothesis_Status hypStatus;
   CheckHypothesis(aMesh, aShape, hypStatus);
+  auto time1 = std::chrono::high_resolution_clock::now();
+  auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(time1-time0);
+  std::cout << "Time for check_hypo: " << elapsed.count() * 1e-9 << std::endl;
+
 
   // Temporary folder for run
   fs::path tmp_folder = aMesh.tmp_folder / fs::unique_path(fs::path("Volume-%%%%-%%%%"));
@@ -315,14 +320,24 @@ int NETGENPlugin_NETGEN_3D::RemoteCompute(SMESH_Mesh&         aMesh,
 
   //Writing Shape
   export_shape(shape_file.string(), aShape);
+  auto time2 = std::chrono::high_resolution_clock::now();
+  elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(time2-time1);
+  std::cout << "Time for export_shape: " << elapsed.count() * 1e-9 << std::endl;
+
   //Writing hypo
   netgen_params aParams;
   FillParameters(_hypParameters, aParams);
 
   export_netgen_params(param_file.string(), aParams);
+  auto time3 = std::chrono::high_resolution_clock::now();
+  elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(time3-time2);
+  std::cout << "Time for fill+export param: " << elapsed.count() * 1e-9 << std::endl;
 
   // Exporting element orientation
   exportElementOrientation(aMesh, aShape, aParams, element_orientation_file.string());
+  auto time4 = std::chrono::high_resolution_clock::now();
+  elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(time4-time3);
+  std::cout << "Time for exportElemnOrient: " << elapsed.count() * 1e-9 << std::endl;
 
   aMesh.Unlock();
   // Calling run_mesher
@@ -353,16 +368,17 @@ int NETGENPlugin_NETGEN_3D::RemoteCompute(SMESH_Mesh&         aMesh,
 
   // TODO: Replace system by something else to handle redirection for windows
   int ret = system(cmd.c_str());
+  auto time5 = std::chrono::high_resolution_clock::now();
+  elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(time5-time4);
+  std::cout << "Time for exec of run_mesher: " << elapsed.count() * 1e-9 << std::endl;
 
   // TODO: better error handling (display log ?)
   if(ret != 0){
     // Run crahed
-    //throw Exception("Meshing failed");
     std::cerr << "Issue with command: " << std::endl;
     std::cerr << cmd << std::endl;
     return false;
   }
-
 
   aMesh.Lock();
   std::ifstream df(new_element_file.string(), ios::binary);
@@ -386,24 +402,19 @@ int NETGENPlugin_NETGEN_3D::RemoteCompute(SMESH_Mesh&         aMesh,
 
   // Filling nodevec (correspondence netgen numbering mesh numbering)
   vector< const SMDS_MeshNode* > nodeVec ( Netgen_NbOfNodesNew + 1 );
+  //vector<int> nodeTmpVec ( Netgen_NbOfNodesNew + 1 );
+  SMESHDS_Mesh * meshDS = helper.GetMeshDS();
   for (int nodeIndex = 1 ; nodeIndex <= Netgen_NbOfNodes; ++nodeIndex )
   {
     //Id of the point
     df.read((char*) &nodeID, sizeof(int));
-    nodeVec.at(nodeIndex) = nullptr;
-    SMDS_NodeIteratorPtr iteratorNode = aMesh.GetMeshDS()->nodesIterator();
-    while(iteratorNode->more()){
-      const SMDS_MeshNode* node = iteratorNode->next();
-      if(node->GetID() == nodeID){
-        nodeVec.at(nodeIndex) = node;
-        break;
-      }
-    }
-    if(nodeVec.at(nodeIndex) == nullptr){
-      std::cout << "Error could not identify id";
-      return false;
-    }
+    nodeVec.at(nodeIndex) = meshDS->FindNode(nodeID);
   }
+
+  auto time6 = std::chrono::high_resolution_clock::now();
+  elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(time6-time5);
+  std::cout << "Time for exec of nodeVec: " << elapsed.count() * 1e-9 << std::endl;
+
 
   // Add new points and update nodeVec
   for (int nodeIndex = Netgen_NbOfNodes +1 ; nodeIndex <= Netgen_NbOfNodesNew; ++nodeIndex )
@@ -411,22 +422,28 @@ int NETGENPlugin_NETGEN_3D::RemoteCompute(SMESH_Mesh&         aMesh,
     df.read((char *) &Netgen_point, sizeof(double)*3);
 
     nodeVec.at(nodeIndex) = helper.AddNode(Netgen_point[0],
-                                           Netgen_point[1],
-                                           Netgen_point[2]);
+                               Netgen_point[1],
+                               Netgen_point[2]);
   }
 
   // Add tetrahedrons
   df.read((char*) &Netgen_NbOfTetra, sizeof(int));
+
   for ( int elemIndex = 1; elemIndex <= Netgen_NbOfTetra; ++elemIndex )
   {
     df.read((char*) &Netgen_tetrahedron, sizeof(int)*4);
-    helper.AddVolume (nodeVec.at( Netgen_tetrahedron[0] ),
-                      nodeVec.at( Netgen_tetrahedron[1] ),
-                      nodeVec.at( Netgen_tetrahedron[2] ),
-                      nodeVec.at( Netgen_tetrahedron[3] ));
+    helper.AddVolume(
+                  nodeVec.at( Netgen_tetrahedron[0] ),
+                  nodeVec.at( Netgen_tetrahedron[1] ),
+                  nodeVec.at( Netgen_tetrahedron[2] ),
+                  nodeVec.at( Netgen_tetrahedron[3] ));
   }
   df.close();
+  auto time7 = std::chrono::high_resolution_clock::now();
+  elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(time7-time6);
+  std::cout << "Time for exec of add_in_mesh: " << elapsed.count() * 1e-9 << std::endl;
 
+  fs::remove_all(tmp_folder);
   aMesh.Unlock();
 
   return true;
@@ -443,6 +460,7 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
 {
   if(aMesh.IsParallel())
     return RemoteCompute(aMesh, aShape);
+  auto time0 = std::chrono::high_resolution_clock::now();
 
   netgen::multithread.terminate = 0;
   netgen::multithread.task = "Volume meshing";
@@ -597,6 +615,9 @@ bool NETGENPlugin_NETGEN_3D::Compute(SMESH_Mesh&         aMesh,
   // -------------------------
   // Generate the volume mesh
   // -------------------------
+  auto time1 = std::chrono::high_resolution_clock::now();
+  auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(time1-time0);
+  std::cout << "Time for seq:fill_in_ngmesh: " << elapsed.count() * 1e-9 << std::endl;
 
   return (ngLib._isComputeOk = compute( aMesh, helper, nodeVec, ngLib ));
 }
@@ -684,6 +705,8 @@ bool NETGENPlugin_NETGEN_3D::compute(SMESH_Mesh&                     aMesh,
                                      vector< const SMDS_MeshNode* >& nodeVec,
                                      NETGENPlugin_NetgenLibWrapper&  ngLib)
 {
+  auto time0 = std::chrono::high_resolution_clock::now();
+
   netgen::multithread.terminate = 0;
 
   netgen::Mesh* ngMesh = ngLib._ngMesh;
@@ -746,6 +769,7 @@ bool NETGENPlugin_NETGEN_3D::compute(SMESH_Mesh&                     aMesh,
   try
   {
     OCC_CATCH_SIGNALS;
+    auto time0 = std::chrono::high_resolution_clock::now();
 
     ngLib.CalcLocalH(ngMesh);
     err = ngLib.GenerateMesh(occgeo, startWith, endWith);
@@ -779,6 +803,9 @@ bool NETGENPlugin_NETGEN_3D::compute(SMESH_Mesh&                     aMesh,
       str << " at " << netgen::multithread.task;
     error(str);
   }
+  auto time1 = std::chrono::high_resolution_clock::now();
+  auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(time1-time0);
+  std::cout << "Time for seq:compute: " << elapsed.count() * 1e-9 << std::endl;
 
   int Netgen_NbOfNodesNew = Ng_GetNP(Netgen_mesh);
   int Netgen_NbOfTetra    = Ng_GetNE(Netgen_mesh);
@@ -825,6 +852,10 @@ bool NETGENPlugin_NETGEN_3D::compute(SMESH_Mesh&                     aMesh,
       }
     }
   }
+  auto time2 = std::chrono::high_resolution_clock::now();
+  elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(time2-time1);
+  std::cout << "Time for seq:compute: " << elapsed.count() * 1e-9 << std::endl;
+
 
   return !err;
 }

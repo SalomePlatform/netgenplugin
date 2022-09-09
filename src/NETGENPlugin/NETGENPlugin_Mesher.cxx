@@ -576,8 +576,9 @@ void NETGENPlugin_Mesher::SetSelfPointer( NETGENPlugin_Mesher ** ptr )
  */
 //================================================================================
 
-void NETGENPlugin_Mesher::SetDefaultParameters(netgen::MeshingParameters &mparams)
+void NETGENPlugin_Mesher::SetDefaultParameters()
 {
+  netgen::MeshingParameters& mparams = netgen::mparam;
   mparams = netgen::MeshingParameters();
   // maximal mesh edge size
   mparams.maxh            = 0;//NETGENPlugin_Hypothesis::GetDefaultMaxSize();
@@ -618,15 +619,9 @@ void NETGENPlugin_Mesher::SetDefaultParameters(netgen::MeshingParameters &mparam
  */
 //================================================================================
 
-void NETGENPlugin_Mesher::SetDefaultParameters()
+void NETGENPlugin_Mesher::SetParameters(const NETGENPlugin_Hypothesis* hyp)
 {
   netgen::MeshingParameters& mparams = netgen::mparam;
-  SetDefaultParameters(mparams);
-
-}
-
-void NETGENPlugin_Mesher::SetParameters(const NETGENPlugin_Hypothesis* hyp, netgen::MeshingParameters &mparams)
-{
   // Initialize global NETGEN parameters:
   // maximal mesh segment size
   mparams.maxh               = hyp->GetMaxSize();
@@ -689,22 +684,6 @@ void NETGENPlugin_Mesher::SetParameters(const NETGENPlugin_Hypothesis* hyp, netg
   netgen::mparam.closeedgefac = 2;
 
 #endif
-}
-
-//=============================================================================
-/*!
- * Pass parameters to NETGEN
- */
-//=============================================================================
-void NETGENPlugin_Mesher::SetParameters(const NETGENPlugin_Hypothesis* hyp)
-{
-  if (hyp)
-  {
-    netgen::MeshingParameters& mparams = netgen::mparam;
-    SetParameters(hyp, mparams);
-  }
-
-
 }
 
 //=============================================================================
@@ -4519,8 +4498,7 @@ void NETGENPlugin_NetgenLibWrapper::setMesh( Ng_Mesh* mesh )
 
 int NETGENPlugin_NetgenLibWrapper::GenerateMesh( netgen::OCCGeometry& occgeo,
                                                  int startWith, int endWith,
-                                                 netgen::Mesh* & ngMesh ,
-                                                 netgen::MeshingParameters& mparam)
+                                                 netgen::Mesh* & ngMesh)
 {
   int err = 0;
   if ( !ngMesh )
@@ -4530,15 +4508,15 @@ int NETGENPlugin_NetgenLibWrapper::GenerateMesh( netgen::OCCGeometry& occgeo,
 
   ngMesh->SetGeometry( shared_ptr<netgen::NetgenGeometry>( &occgeo, &NOOP_Deleter ));
 
-  mparam.perfstepsstart = startWith;
-  mparam.perfstepsend   = endWith;
+  netgen::mparam.perfstepsstart = startWith;
+  netgen::mparam.perfstepsend   = endWith;
   std::shared_ptr<netgen::Mesh> meshPtr( ngMesh, &NOOP_Deleter );
-  err = occgeo.GenerateMesh( meshPtr, mparam );
+  err = occgeo.GenerateMesh( meshPtr, netgen::mparam );
 
 #else
   #ifdef NETGEN_V5
 
-  err = netgen::OCCGenerateMesh(occgeo, ngMesh, mparam, startWith, endWith);
+  err = netgen::OCCGenerateMesh(occgeo, ngMesh, netgen::mparam, startWith, endWith);
 
   #else
 

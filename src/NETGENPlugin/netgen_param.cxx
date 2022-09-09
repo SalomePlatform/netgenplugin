@@ -31,12 +31,17 @@
 #include <string>
 #include <cassert>
 
+
+// TODO: Error handling of read/write
+
 /**
  * @brief Print content of a netgen_params
  *
  * @param aParams The object to display
  */
 void print_netgen_params(netgen_params& aParams){
+  // TODO: prettier print
+  // TODO: Add call to print in log
   std::cout << "has_netgen_param: " << aParams.has_netgen_param << std::endl;
   std::cout << "maxh: " << aParams.maxh << std::endl;
   std::cout << "minh: " << aParams.minh << std::endl;
@@ -57,11 +62,12 @@ void print_netgen_params(netgen_params& aParams){
   std::cout << "delaunay: " << aParams.delaunay << std::endl;
   std::cout << "checkoverlap: " << aParams.checkoverlap << std::endl;
   std::cout << "checkchartboundary: " << aParams.checkchartboundary << std::endl;
+  std::cout << "closeedgefac: " << aParams.closeedgefac << std::endl;
   std::cout << "has_local_size: " << aParams.has_local_size << std::endl;
   std::cout << "meshsizefilename: " << aParams.meshsizefilename << std::endl;
   std::cout << "has_maxelementvolume_hyp: " << aParams.has_maxelementvolume_hyp << std::endl;
   std::cout << "maxElementVolume: " << aParams.maxElementVolume << std::endl;
-  std::cout << "closeedgefac: " << aParams.closeedgefac << std::endl;
+  std::cout << "has_LengthFromEdges_hyp: " << aParams.has_LengthFromEdges_hyp << std::endl;
 }
 
 /**
@@ -124,6 +130,8 @@ void import_netgen_params(const std::string param_file, netgen_params& aParams){
   aParams.has_maxelementvolume_hyp = std::stoi(line);
   std::getline(myfile, line);
   aParams.maxElementVolume = std::stod(line);
+  std::getline(myfile, line);
+  aParams.maxElementVolume = std::stoi(line);
 
   myfile.close();
 };
@@ -161,6 +169,7 @@ void export_netgen_params(const std::string param_file, netgen_params& aParams){
   myfile << aParams.meshsizefilename << std::endl;
   myfile << aParams.has_maxelementvolume_hyp << std::endl;
   myfile << aParams.maxElementVolume << std::endl;
+  myfile << aParams.has_LengthFromEdges_hyp << std::endl;
 
   myfile.close();
 };
@@ -199,6 +208,7 @@ bool diff_netgen_params(netgen_params params1, netgen_params params2){
   ret &= params1.meshsizefilename == params2.meshsizefilename;
   ret &= params1.has_maxelementvolume_hyp == params2.has_maxelementvolume_hyp;
   ret &= params1.maxElementVolume == params2.maxElementVolume;
+  ret &= params1.has_LengthFromEdges_hyp == params2.has_LengthFromEdges_hyp;
 
   return ret;
 }

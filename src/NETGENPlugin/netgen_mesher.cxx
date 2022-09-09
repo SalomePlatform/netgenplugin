@@ -35,9 +35,11 @@
 #include <vector>
 #include <filesystem>
 namespace fs = std::filesystem;
+#include <chrono>
 
 // SMESH include
 #include <SMESH_Mesh.hxx>
+#include <SMESH_subMesh.hxx>
 #include <SMESH_Gen.hxx>
 #include <SMESH_Algo.hxx>
 #include <SMESHDS_Mesh.hxx>
@@ -48,6 +50,8 @@ namespace fs = std::filesystem;
 #include <StdMeshers_MaxElementVolume.hxx>
 #include <StdMeshers_QuadToTriaAdaptor.hxx>
 #include <StdMeshers_ViscousLayers.hxx>
+#include <StdMeshers_ViscousLayers2D.hxx>
+
 
 // NETGENPlugin
 // #include <NETGENPlugin_Mesher.hxx>
@@ -72,6 +76,7 @@ namespace fs = std::filesystem;
 #define OCCGEOMETRY
 #endif
 #include <occgeom.hpp>
+#include <meshing.hpp>
 
 #ifdef NETGEN_V5
 #include <ngexception.hpp>
@@ -86,21 +91,28 @@ namespace nglib {
 namespace netgen {
 
   NETGENPLUGIN_DLL_HEADER
+  extern MeshingParameters mparam;
 
   NETGENPLUGIN_DLL_HEADER
   extern volatile multithreadt multithread;
 
   NETGENPLUGIN_DLL_HEADER
   extern bool merge_solids;
+
+#ifdef NETGEN_V5
+  extern void OCCSetLocalMeshSize(OCCGeometry & geom, Mesh & mesh);
+#endif
 }
 using namespace nglib;
 
-int error(int error_type, std::string msg){
+int error(int error_type, std::string msg)
+{
  std::cerr << msg << std::endl;
   return error_type;
 };
 
-int error(const SMESH_Comment& comment){
+int error(const SMESH_Comment& comment)
+{
   return error(1, "SMESH_Comment error: "+comment);
 };
 
@@ -110,12 +122,16 @@ int error(const SMESH_Comment& comment){
  * @param aParams Internal structure of parameters
  * @param mparams Netgen strcuture of parameters
  */
-void set_netgen_parameters(netgen_params& aParams){
+void set_netgen_parameters(netgen_params& aParams)
+{
 
   // Default parameters
 #ifdef NETGEN_V6
 
-  netgen::mparam.nthreads = std::thread::hardware_concurrency();
+  //netgen::mparam.nthreads = std::thread::hardware_concurrency();
+  netgen::mparam.nthreads = 2;
+  //netgen::mparam.parallel_meshing = false;
+
 
   if ( getenv( "SALOME_NETGEN_DISABLE_MULTITHREADING" ))
   {
@@ -154,7 +170,7 @@ void set_netgen_parameters(netgen_params& aParams){
 }
 
 /**
- * @brief compute mesh with netgen
+ * @brief compute mesh with netgen3d
  *
  * @param input_mesh_file Input Mesh file
  * @param shape_file Shape file
@@ -171,8 +187,9 @@ int netgen3d(const std::string input_mesh_file,
              const std::string element_orientation_file,
              const std::string new_element_file,
              bool output_mesh,
-             const std::string output_mesh_file){
-
+             const std::string output_mesh_file)
+{
+  auto time0 = std::chrono::high_resolution_clock::now();
   // Importing mesh
   SMESH_Gen gen;
 
@@ -181,35 +198,49 @@ int netgen3d(const std::string input_mesh_file,
   std::string mesh_name = "Maillage_1";
 
   import_mesh(input_mesh_file, *myMesh, mesh_name);
+  auto time1 = std::chrono::high_resolution_clock::now();
+  auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(time1-time0);
+  std::cout << "Time for import_mesh: " << elapsed.count() * 1e-9 << std::endl;
 
   // Importing shape
   TopoDS_Shape myShape;
   import_shape(shape_file, myShape);
+  auto time2 = std::chrono::high_resolution_clock::now();
+  elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(time2-time1);
+  std::cout << "Time for import_shape: " << elapsed.count() * 1e-9 << std::endl;
 
   // Importing hypothesis
-  //TODO: make it
   netgen_params myParams;
 
   import_netgen_params(hypo_file, myParams);
+  auto time3 = std::chrono::high_resolution_clock::now();
+  elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(time3-time2);
+  std::cout << "Time for import_netgen_param: " << elapsed.count() * 1e-9 << std::endl;
 
   std::cout << "Meshing with netgen3d" << std::endl;
   int ret = netgen3d(myShape, *myMesh, myParams,
                      new_element_file, element_orientation_file,
                      output_mesh);
 
+
   if(!ret){
     std::cout << "Meshing failed" << std::endl;
     return ret;
   }
 
-  if(output_mesh)
+  if(output_mesh){
+    auto time4 = std::chrono::high_resolution_clock::now();
     export_mesh(output_mesh_file, *myMesh, mesh_name);
+    auto time5 = std::chrono::high_resolution_clock::now();
+    elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(time5-time4);
+    std::cout << "Time for export_mesh: " << elapsed.count() * 1e-9 << std::endl;
+  }
 
   return ret;
 }
 
 /**
- * @brief Compute aShape within aMesh using netgen
+ * @brief Compute aShape within aMesh using netgen3d
  *
  * @param aShape the shape
  * @param aMesh the mesh
@@ -220,7 +251,10 @@ int netgen3d(const std::string input_mesh_file,
  */
 int netgen3d(TopoDS_Shape &aShape, SMESH_Mesh& aMesh, netgen_params& aParams,
              std::string new_element_file, std::string element_orientation_file,
-             bool output_mesh){
+             bool output_mesh)
+{
+
+  auto time0 = std::chrono::high_resolution_clock::now();
 
   netgen::multithread.terminate = 0;
   netgen::multithread.task = "Volume meshing";
@@ -298,8 +332,6 @@ int netgen3d(TopoDS_Shape &aShape, SMESH_Mesh& aMesh, netgen_params& aParams,
 
     // Adding elements from Mesh
     SMDS_ElemIteratorPtr iteratorElem = meshDS->elementsIterator(SMDSAbs_Face);
-    int nbedge = meshDS->NbEdges();
-    int nbface = meshDS->NbFaces();
     bool isRev;
     bool isInternalFace = false;
 
@@ -309,7 +341,6 @@ int netgen3d(TopoDS_Shape &aShape, SMESH_Mesh& aMesh, netgen_params& aParams,
       {
         // check mesh face
         const SMDS_MeshElement* elem = iteratorElem->next();
-        int tmp = elem->GetShapeID();
         if ( !elem )
           return error( COMPERR_BAD_INPUT_MESH, "Null element encounters");
         if ( elem->NbCornerNodes() != 3 )
@@ -387,6 +418,9 @@ int netgen3d(TopoDS_Shape &aShape, SMESH_Mesh& aMesh, netgen_params& aParams,
     //                                               internals);
     //}
   }
+  auto time1 = std::chrono::high_resolution_clock::now();
+  auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(time1-time0);
+  std::cout << "Time for fill_in_ngmesh: " << elapsed.count() * 1e-9 << std::endl;
 
   // -------------------------
   // Generate the volume mesh
@@ -454,7 +488,7 @@ int netgen3d(TopoDS_Shape &aShape, SMESH_Mesh& aMesh, netgen_params& aParams,
     OCC_CATCH_SIGNALS;
 
     ngLib.CalcLocalH(ngMesh);
-    err = ngLib.GenerateMesh(occgeo, startWith, endWith, ngMesh, netgen::mparam);
+    err = ngLib.GenerateMesh(occgeo, startWith, endWith, ngMesh);
 
     if(netgen::multithread.terminate)
       return false;
@@ -499,6 +533,9 @@ int netgen3d(TopoDS_Shape &aShape, SMESH_Mesh& aMesh, netgen_params& aParams,
     if ( ce && ce->HasBadElems() )
       return error( ce );
   }
+  auto time2 = std::chrono::high_resolution_clock::now();
+  elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(time2-time1);
+  std::cout << "Time for netgen_compute: " << elapsed.count() * 1e-9 << std::endl;
 
   bool isOK = ( /*status == NG_OK &&*/ Netgen_NbOfTetra > 0 );// get whatever built
   if ( isOK )
@@ -536,6 +573,10 @@ int netgen3d(TopoDS_Shape &aShape, SMESH_Mesh& aMesh, netgen_params& aParams,
     }
     df.close();
   }
+  auto time3 = std::chrono::high_resolution_clock::now();
+  elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(time3-time2);
+  std::cout << "Time for write_new_elem: " << elapsed.count() * 1e-9 << std::endl;
+
 
   // Adding new files in aMesh as well
   if ( output_mesh )
@@ -569,7 +610,517 @@ int netgen3d(TopoDS_Shape &aShape, SMESH_Mesh& aMesh, netgen_params& aParams,
       {
       }
     }
+    auto time4 = std::chrono::high_resolution_clock::now();
+    elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(time4-time3);
+    std::cout << "Time for add_element_to_smesh: " << elapsed.count() * 1e-9 << std::endl;
+
   }
 
   return !err;
+}
+
+/**
+ * @brief compute mesh with netgen2d
+ *
+ * @param input_mesh_file Input Mesh file
+ * @param shape_file Shape file
+ * @param hypo_file Parameter file
+ * @param new_element_file Binary file containing new nodes and new element info
+ * @param output_mesh If true will export mesh into output_mesh_file
+ * @param output_mesh_file Output Mesh file
+ *
+ * @return error code
+ */
+int netgen2d(const std::string input_mesh_file,
+             const std::string shape_file,
+             const std::string hypo_file,
+             const std::string element_orientation_file,
+             const std::string new_element_file,
+             bool output_mesh,
+             const std::string output_mesh_file)
+{
+
+  // Importing mesh
+  SMESH_Gen gen;
+
+  SMESH_Mesh *myMesh = gen.CreateMesh(false);
+  //TODO: To define
+  std::string mesh_name = "Maillage_1";
+
+  import_mesh(input_mesh_file, *myMesh, mesh_name);
+
+  // Importing shape
+  TopoDS_Shape myShape;
+  import_shape(shape_file, myShape);
+
+  // Importing hypothesis
+  netgen_params myParams;
+
+  import_netgen_params(hypo_file, myParams);
+
+  std::cout << "Meshing with netgen3d" << std::endl;
+  int ret = netgen2d(myShape, *myMesh, myParams,
+                     new_element_file, element_orientation_file,
+                     output_mesh);
+
+  if(!ret){
+    std::cout << "Meshing failed" << std::endl;
+    return ret;
+  }
+
+  if(output_mesh)
+    export_mesh(output_mesh_file, *myMesh, mesh_name);
+
+  return ret;
+}
+
+/**
+ * @brief Compute aShape within aMesh using netgen2d
+ *
+ * @param aShape the shape
+ * @param aMesh the mesh
+ * @param aParams the netgen parameters
+ * @param new_element_file file containing data on the new point/tetra added by netgen
+ *
+ * @return error code
+ */
+int netgen2d(TopoDS_Shape &aShape, SMESH_Mesh& aMesh, netgen_params& aParams,
+             std::string new_element_file, std::string element_orientation_file,
+             bool output_mesh)
+{
+  netgen::multithread.terminate = 0;
+  netgen::multithread.task = "Surface meshing";
+
+  SMESHDS_Mesh* meshDS = aMesh.GetMeshDS();
+  SMESH_MesherHelper helper(aMesh);
+  helper.SetElementsOnShape( true );
+
+  NETGENPlugin_NetgenLibWrapper ngLib;
+  ngLib._isComputeOk = false;
+
+  netgen::Mesh   ngMeshNoLocSize;
+  netgen::Mesh * ngMeshes[2] = { (netgen::Mesh*) ngLib._ngMesh,  & ngMeshNoLocSize };
+  netgen::OCCGeometry occgeoComm;
+
+  std::map<vtkIdType, bool> elemOrientation;
+
+  typedef map< const SMDS_MeshNode*, int, TIDCompare > TNodeToIDMap;
+  typedef TNodeToIDMap::value_type                     TN2ID;
+  const int invalid_ID = -1;
+  int Netgen_NbOfNodes=0;
+  double Netgen_point[3];
+  int Netgen_segment[2];
+  int Netgen_triangle[3];
+
+  // min / max sizes are set as follows:
+  // if ( _hypParameters )
+  //    min and max are defined by the user
+  // else if ( aParams.has_LengthFromEdges_hyp )
+  //    min = aMesher.GetDefaultMinSize()
+  //    max = average segment len of a FACE
+  // else if ( _hypMaxElementArea )
+  //    min = aMesher.GetDefaultMinSize()
+  //    max = f( _hypMaxElementArea )
+  // else
+  //    min = aMesher.GetDefaultMinSize()
+  //    max = max segment len of a FACE
+  NETGENPlugin_Mesher aMesher( &aMesh, aShape, /*isVolume=*/false);
+  set_netgen_parameters( aParams );
+  const bool toOptimize = aParams.optimize;
+  if ( aParams.has_maxelementvolume_hyp )
+  {
+    netgen::mparam.maxh = sqrt( 2. * aParams.maxElementVolume / sqrt(3.0) );
+  }
+  netgen::mparam.quad = aParams.quad;
+
+  // local size is common for all FACEs in aShape?
+  const bool isCommonLocalSize = ( !aParams.has_LengthFromEdges_hyp && !aParams.has_maxelementvolume_hyp && netgen::mparam.uselocalh );
+  const bool isDefaultHyp = ( !aParams.has_LengthFromEdges_hyp && !aParams.has_maxelementvolume_hyp && !aParams.has_netgen_param );
+
+
+  if ( isCommonLocalSize ) // compute common local size in ngMeshes[0]
+  {
+    //list< SMESH_subMesh* > meshedSM[4]; --> all sub-shapes are added to occgeoComm
+    aMesher.PrepareOCCgeometry( occgeoComm, aShape, aMesh );//, meshedSM );
+
+    // local size set at MESHCONST_ANALYSE step depends on
+    // minh, face_maxh, grading and curvaturesafety; find minh if not set by the user
+    if ( !aParams.has_netgen_param || netgen::mparam.minh < DBL_MIN )
+    {
+      if ( !aParams.has_netgen_param )
+        netgen::mparam.maxh = occgeoComm.GetBoundingBox().Diam() / 3.;
+      netgen::mparam.minh = aMesher.GetDefaultMinSize( aShape, netgen::mparam.maxh );
+    }
+    // set local size depending on curvature and NOT closeness of EDGEs
+#ifdef NETGEN_V6
+    const double factor = 2; //netgen::occparam.resthcloseedgefac;
+#else
+    const double factor = netgen::occparam.resthcloseedgefac;
+    netgen::occparam.resthcloseedgeenable = false;
+    netgen::occparam.resthcloseedgefac = 1.0 + netgen::mparam.grading;
+#endif
+    occgeoComm.face_maxh = netgen::mparam.maxh;
+#ifdef NETGEN_V6
+    netgen::OCCParameters occparam;
+    netgen::OCCSetLocalMeshSize( occgeoComm, *ngMeshes[0], netgen::mparam, occparam );
+#else
+    netgen::OCCSetLocalMeshSize( occgeoComm, *ngMeshes[0] );
+#endif
+    occgeoComm.emap.Clear();
+    occgeoComm.vmap.Clear();
+
+    // Reading list of element to integrate into netgen mesh
+    std::ifstream df(element_orientation_file, ios::in|ios::binary);
+    int nbElement;
+    vtkIdType id;
+    bool orient;
+    df.read((char*)&nbElement, sizeof(int));
+
+    for(int ielem=0;ielem<nbElement;++ielem){
+      df.read((char*) &id, sizeof(vtkIdType));
+      df.read((char*) &orient, sizeof(bool));
+      elemOrientation[id] = orient;
+    }
+    df.close();
+
+    bool isIn;
+    // set local size according to size of existing segments
+    SMDS_ElemIteratorPtr iteratorElem = meshDS->elementsIterator(SMDSAbs_Edge);
+    while ( iteratorElem->more() ) // loop on elements on a geom face
+    {
+      const SMDS_MeshElement* seg = iteratorElem->next();
+      // Keeping only element that are in the element orientation file
+      isIn = elemOrientation.count(seg->GetID())==1;
+
+      if(!isIn)
+        continue;
+
+      SMESH_TNodeXYZ n1 = seg->GetNode(0);
+      SMESH_TNodeXYZ n2 = seg->GetNode(1);
+      gp_XYZ p = 0.5 * ( n1 + n2 );
+      netgen::Point3d pi(p.X(), p.Y(), p.Z());
+      ngMeshes[0]->RestrictLocalH( pi, factor * ( n1 - n2 ).Modulus() );
+    }
+
+    // set local size defined on shapes
+    aMesher.SetLocalSize( occgeoComm, *ngMeshes[0] );
+    aMesher.SetLocalSizeForChordalError( occgeoComm, *ngMeshes[0] );
+    try {
+      ngMeshes[0]->LoadLocalMeshSize( netgen::mparam.meshsizefilename );
+    } catch (netgen::NgException & ex) {
+      return error( COMPERR_BAD_PARMETERS, ex.What() );
+    }
+  }
+  netgen::mparam.uselocalh = toOptimize; // restore as it is used at surface optimization
+  // ==================
+  // Loop on all FACEs
+  // ==================
+
+  vector< const SMDS_MeshNode* > nodeVec;
+
+  // TopExp_Explorer fExp( aShape, TopAbs_FACE );
+  // for ( int iF = 0; fExp.More(); fExp.Next(), ++iF )
+  // {
+  //   TopoDS_Face F = TopoDS::Face( fExp.Current() /*.Oriented( TopAbs_FORWARD )*/);
+  //   int    faceID = meshDS->ShapeToIndex( F );
+  //   SMESH_ComputeErrorPtr& faceErr = aMesh.GetSubMesh( F )->GetComputeError();
+
+  //   aParams._quadraticMesh = helper.IsQuadraticSubMesh( F );
+  //   const bool ignoreMediumNodes = aParams._quadraticMesh;
+
+  //   // build viscous layers if required
+  //   if ( F.Orientation() != TopAbs_FORWARD &&
+  //        F.Orientation() != TopAbs_REVERSED )
+  //     F.Orientation( TopAbs_FORWARD ); // avoid pb with TopAbs_INTERNAL
+  //   SMESH_ProxyMesh::Ptr proxyMesh = StdMeshers_ViscousLayers2D::Compute( aMesh, F );
+  //   if ( !proxyMesh )
+  //     continue;
+
+  //   // ------------------------
+  //   // get all EDGEs of a FACE
+  //   // ------------------------
+  //   TSideVector wires =
+  //     StdMeshers_FaceSide::GetFaceWires( F, aMesh, ignoreMediumNodes, faceErr, &helper, proxyMesh );
+  //   if ( faceErr && !faceErr->IsOK() )
+  //     continue;
+  //   size_t nbWires = wires.size();
+  //   if ( nbWires == 0 )
+  //   {
+  //     faceErr.reset
+  //       ( new SMESH_ComputeError
+  //         ( COMPERR_ALGO_FAILED, "Problem in StdMeshers_FaceSide::GetFaceWires()" ));
+  //     continue;
+  //   }
+  //   if ( wires[0]->NbSegments() < 3 ) // ex: a circle with 2 segments
+  //   {
+  //     faceErr.reset
+  //       ( new SMESH_ComputeError
+  //         ( COMPERR_BAD_INPUT_MESH, SMESH_Comment("Too few segments: ")<<wires[0]->NbSegments()) );
+  //     continue;
+  //   }
+
+  //   // ----------------------
+  //   // compute maxh of a FACE
+  //   // ----------------------
+
+  //   if ( !aParams.has_netgen_param )
+  //   {
+  //     double edgeLength = 0;
+  //     if (aParams.has_LengthFromEdges_hyp )
+  //     {
+  //       // compute edgeLength as an average segment length
+  //       smIdType nbSegments = 0;
+  //       for ( size_t iW = 0; iW < nbWires; ++iW )
+  //       {
+  //         edgeLength += wires[ iW ]->Length();
+  //         nbSegments += wires[ iW ]->NbSegments();
+  //       }
+  //       if ( nbSegments )
+  //         edgeLength /= double( nbSegments );
+  //       netgen::mparam.maxh = edgeLength;
+  //     }
+  //     else if ( isDefaultHyp )
+  //     {
+  //       // set edgeLength by a longest segment
+  //       double maxSeg2 = 0;
+  //       for ( size_t iW = 0; iW < nbWires; ++iW )
+  //       {
+  //         const UVPtStructVec& points = wires[ iW ]->GetUVPtStruct();
+  //         if ( points.empty() )
+  //           return error( COMPERR_BAD_INPUT_MESH );
+  //         gp_Pnt pPrev = SMESH_TNodeXYZ( points[0].node );
+  //         for ( size_t i = 1; i < points.size(); ++i )
+  //         {
+  //           gp_Pnt p = SMESH_TNodeXYZ( points[i].node );
+  //           maxSeg2 = Max( maxSeg2, p.SquareDistance( pPrev ));
+  //           pPrev = p;
+  //         }
+  //       }
+  //       edgeLength = sqrt( maxSeg2 ) * 1.05;
+  //       netgen::mparam.maxh = edgeLength;
+  //     }
+  //     if ( netgen::mparam.maxh < DBL_MIN )
+  //       netgen::mparam.maxh = occgeoComm.GetBoundingBox().Diam();
+
+  //     if ( !isCommonLocalSize )
+  //     {
+  //       netgen::mparam.minh = aMesher.GetDefaultMinSize( F, netgen::mparam.maxh );
+  //     }
+  //   }
+
+
+
+    // prepare occgeom
+    netgen::OCCGeometry occgeom;
+    occgeom.shape = aShape;
+    occgeom.fmap.Add( aShape );
+    occgeom.CalcBoundingBox();
+    occgeom.facemeshstatus.SetSize(1);
+    occgeom.facemeshstatus = 0;
+    occgeom.face_maxh_modified.SetSize(1);
+    occgeom.face_maxh_modified = 0;
+    occgeom.face_maxh.SetSize(1);
+    occgeom.face_maxh = netgen::mparam.maxh;
+
+    // -------------------------
+    // Fill netgen mesh
+    // -------------------------
+    // maps nodes to ng ID
+
+
+    // MESHCONST_ANALYSE step may lead to a failure, so we make an attempt
+    // w/o MESHCONST_ANALYSE at the second loop
+    int err = 0;
+    enum { LOC_SIZE, NO_LOC_SIZE };
+    int iLoop = isCommonLocalSize ? 0 : 1;
+    int faceID = occgeom.fmap.FindIndex(aShape);
+    int solidID = 0;
+    for ( ; iLoop < 2; iLoop++ )
+    {
+      //bool isMESHCONST_ANALYSE = false;
+      //TODO: check how to replace that
+      //InitComputeError();
+
+      netgen::Mesh * ngMesh = ngMeshes[ iLoop ];
+      ngMesh->DeleteMesh();
+
+      if ( iLoop == NO_LOC_SIZE )
+      {
+        ngMesh->SetGlobalH ( netgen::mparam.maxh );
+        ngMesh->SetMinimalH( netgen::mparam.minh );
+        netgen::Box<3> bb = occgeom.GetBoundingBox();
+        bb.Increase (bb.Diam()/10);
+        ngMesh->SetLocalH (bb.PMin(), bb.PMax(), netgen::mparam.grading);
+        aMesher.SetLocalSize( occgeom, *ngMesh );
+        aMesher.SetLocalSizeForChordalError( occgeoComm, *ngMesh );
+        try {
+          ngMesh->LoadLocalMeshSize( netgen::mparam.meshsizefilename );
+        } catch (netgen::NgException & ex) {
+          return error( COMPERR_BAD_PARMETERS, ex.What() );
+        }
+      }
+
+      TNodeToIDMap nodeToNetgenID;
+
+      nodeVec.clear();
+      ngMesh->AddFaceDescriptor( netgen::FaceDescriptor( faceID, solidID, solidID, 0 ));
+          // set local size according to size of existing segments
+      SMDS_ElemIteratorPtr iteratorElem = meshDS->elementsIterator(SMDSAbs_Edge);
+      while ( iteratorElem->more() ) // loop on elements on a geom face
+      {
+        const SMDS_MeshElement* elem = iteratorElem->next();
+        // Keeping only element that are in the element orientation file
+        bool isIn = elemOrientation.count(elem->GetID())==1;
+
+        if(!isIn)
+          continue;
+
+        bool isRev = elemOrientation[elem->GetID()];
+        std::cerr << isRev;
+
+
+
+        for ( int iN = 0; iN < 2; ++iN )
+        {
+          const SMDS_MeshNode* node = elem->GetNode( iN );
+          const int shapeID = node->getshapeId();
+          int& ngID = nodeToNetgenID.insert(TN2ID( node, invalid_ID )).first->second;
+          if ( ngID == invalid_ID )
+          {
+            ngID = ++Netgen_NbOfNodes;
+            Netgen_point [ 0 ] = node->X();
+            Netgen_point [ 1 ] = node->Y();
+            Netgen_point [ 2 ] = node->Z();
+            netgen::MeshPoint mp( netgen::Point<3> (node->X(), node->Y(), node->Z()) );
+            ngMesh->AddPoint ( mp, 1, netgen::EDGEPOINT );
+          }
+          Netgen_segment[ isRev ? 1-iN : iN ] = ngID;
+        }
+        // add segment
+
+        netgen::Segment seg;
+        seg[0] = Netgen_segment[0];
+        seg[1] = Netgen_segment[1];
+        seg.edgenr = ngMesh->GetNSeg() +1;
+        seg.si = faceID;
+
+        ngMesh->AddSegment(seg);
+      }
+      int nbNodes2 = ngMesh->GetNP();
+      int nseg = ngMesh->GetNSeg();
+
+      // insert old nodes into nodeVec
+      nodeVec.resize( nodeToNetgenID.size() + 1, 0 );
+      TNodeToIDMap::iterator n_id = nodeToNetgenID.begin();
+      for ( ; n_id != nodeToNetgenID.end(); ++n_id )
+        nodeVec[ n_id->second ] = n_id->first;
+      nodeToNetgenID.clear();
+
+
+      //if ( !isCommonLocalSize )
+      //limitSize( ngMesh, mparam.maxh * 0.8);
+
+      // -------------------------
+      // Generate surface mesh
+      // -------------------------
+
+      const int startWith = netgen::MESHCONST_MESHSURFACE;
+      const int endWith   = toOptimize ? netgen::MESHCONST_OPTSURFACE : netgen::MESHCONST_MESHSURFACE;
+
+      SMESH_Comment str;
+      try {
+        OCC_CATCH_SIGNALS;
+        err = ngLib.GenerateMesh(occgeom, startWith, endWith, ngMesh);
+        if ( netgen::multithread.terminate )
+          return false;
+        if ( err )
+          str << "Error in netgen::OCCGenerateMesh() at " << netgen::multithread.task;
+      }
+      catch (Standard_Failure& ex)
+      {
+        err = 1;
+        str << "Exception in  netgen::OCCGenerateMesh()"
+            << " at " << netgen::multithread.task
+            << ": " << ex.DynamicType()->Name();
+        if ( ex.GetMessageString() && strlen( ex.GetMessageString() ))
+          str << ": " << ex.GetMessageString();
+      }
+      catch (...) {
+        err = 1;
+        str << "Exception in  netgen::OCCGenerateMesh()"
+            << " at " << netgen::multithread.task;
+      }
+      if ( err )
+      {
+        if ( iLoop == LOC_SIZE )
+        {
+          std::cout << "Need second run" << std::endl;
+          /*netgen::mparam.minh = netgen::mparam.maxh;
+          netgen::mparam.maxh = 0;
+          for ( size_t iW = 0; iW < wires.size(); ++iW )
+          {
+            StdMeshers_FaceSidePtr wire = wires[ iW ];
+            const vector<UVPtStruct>& uvPtVec = wire->GetUVPtStruct();
+            for ( size_t iP = 1; iP < uvPtVec.size(); ++iP )
+            {
+              SMESH_TNodeXYZ   p( uvPtVec[ iP ].node );
+              netgen::Point3d np( p.X(),p.Y(),p.Z());
+              double segLen = p.Distance( uvPtVec[ iP-1 ].node );
+              double   size = ngMesh->GetH( np );
+              netgen::mparam.minh = Min( netgen::mparam.minh, size );
+              netgen::mparam.maxh = Max( netgen::mparam.maxh, segLen );
+            }
+          }
+          //cerr << "min " << mparam.minh << " max " << mparam.maxh << endl;
+          netgen::mparam.minh *= 0.9;
+          netgen::mparam.maxh *= 1.1;
+          */
+          continue;
+        }
+        else
+        {
+          //faceErr.reset( new SMESH_ComputeError( COMPERR_ALGO_FAILED, str ));
+        }
+      }
+
+      // ----------------------------------------------------
+      // Fill the SMESHDS with the generated nodes and faces
+      // ----------------------------------------------------
+
+      if(output_mesh)
+      {
+        int nbNodes = ngMesh->GetNP();
+        int nbFaces = ngMesh->GetNSE();
+        std::cout << nbFaces << " " << nbNodes << std::endl;
+
+        int nbInputNodes = (int) nodeVec.size()-1;
+        nodeVec.resize( nbNodes+1, 0 );
+
+        // add nodes
+        for ( int ngID = nbInputNodes + 1; ngID <= nbNodes; ++ngID )
+        {
+          const netgen::MeshPoint& ngPoint = ngMesh->Point( ngID );
+          SMDS_MeshNode * node = meshDS->AddNode(ngPoint(0), ngPoint(1), ngPoint(2));
+          nodeVec[ ngID ] = node;
+        }
+
+        // create faces
+        int i,j;
+        for ( i = 1; i <= nbFaces ; ++i )
+        {
+          Ng_GetVolumeElement(ngLib.ngMesh(), i, Netgen_triangle);
+
+          helper.AddFace (nodeVec.at( Netgen_triangle[0] ),
+                          nodeVec.at( Netgen_triangle[1] ),
+                          nodeVec.at( Netgen_triangle[2] ));
+
+        }
+      } // output_mesh
+
+      break;
+    } // two attempts
+  //} // loop on FACEs
+
+  return true;
+
 }
