@@ -218,9 +218,9 @@ int netgen3d(const std::string input_mesh_file,
   std::cout << "Time for import_netgen_param: " << elapsed.count() * 1e-9 << std::endl;
 
   std::cout << "Meshing with netgen3d" << std::endl;
-  int ret = netgen3d(myShape, *myMesh, myParams,
-                     new_element_file, element_orientation_file,
-                     output_mesh);
+  int ret = netgen3d_internal(myShape, *myMesh, myParams,
+                              new_element_file, element_orientation_file,
+                              output_mesh);
 
 
   if(!ret){
@@ -249,9 +249,9 @@ int netgen3d(const std::string input_mesh_file,
  *
  * @return error code
  */
-int netgen3d(TopoDS_Shape &aShape, SMESH_Mesh& aMesh, netgen_params& aParams,
-             std::string new_element_file, std::string element_orientation_file,
-             bool output_mesh)
+int netgen3d_internal(TopoDS_Shape &aShape, SMESH_Mesh& aMesh, netgen_params& aParams,
+                      std::string new_element_file, std::string element_orientation_file,
+                      bool output_mesh)
 {
 
   auto time0 = std::chrono::high_resolution_clock::now();
@@ -659,9 +659,9 @@ int netgen2d(const std::string input_mesh_file,
   import_netgen_params(hypo_file, myParams);
 
   std::cout << "Meshing with netgen3d" << std::endl;
-  int ret = netgen2d(myShape, *myMesh, myParams,
-                     new_element_file, element_orientation_file,
-                     output_mesh);
+  int ret = netgen2d_internal(myShape, *myMesh, myParams,
+                              new_element_file, element_orientation_file,
+                              output_mesh);
 
   if(!ret){
     std::cout << "Meshing failed" << std::endl;
@@ -674,6 +674,8 @@ int netgen2d(const std::string input_mesh_file,
   return ret;
 }
 
+
+// TODO: Not working properly
 /**
  * @brief Compute aShape within aMesh using netgen2d
  *
@@ -684,9 +686,9 @@ int netgen2d(const std::string input_mesh_file,
  *
  * @return error code
  */
-int netgen2d(TopoDS_Shape &aShape, SMESH_Mesh& aMesh, netgen_params& aParams,
-             std::string new_element_file, std::string element_orientation_file,
-             bool output_mesh)
+int netgen2d_internal(TopoDS_Shape &aShape, SMESH_Mesh& aMesh, netgen_params& aParams,
+                      std::string new_element_file, std::string element_orientation_file,
+                      bool output_mesh)
 {
   netgen::multithread.terminate = 0;
   netgen::multithread.task = "Surface meshing";
@@ -817,98 +819,6 @@ int netgen2d(TopoDS_Shape &aShape, SMESH_Mesh& aMesh, netgen_params& aParams,
   // ==================
 
   vector< const SMDS_MeshNode* > nodeVec;
-
-  // TopExp_Explorer fExp( aShape, TopAbs_FACE );
-  // for ( int iF = 0; fExp.More(); fExp.Next(), ++iF )
-  // {
-  //   TopoDS_Face F = TopoDS::Face( fExp.Current() /*.Oriented( TopAbs_FORWARD )*/);
-  //   int    faceID = meshDS->ShapeToIndex( F );
-  //   SMESH_ComputeErrorPtr& faceErr = aMesh.GetSubMesh( F )->GetComputeError();
-
-  //   aParams._quadraticMesh = helper.IsQuadraticSubMesh( F );
-  //   const bool ignoreMediumNodes = aParams._quadraticMesh;
-
-  //   // build viscous layers if required
-  //   if ( F.Orientation() != TopAbs_FORWARD &&
-  //        F.Orientation() != TopAbs_REVERSED )
-  //     F.Orientation( TopAbs_FORWARD ); // avoid pb with TopAbs_INTERNAL
-  //   SMESH_ProxyMesh::Ptr proxyMesh = StdMeshers_ViscousLayers2D::Compute( aMesh, F );
-  //   if ( !proxyMesh )
-  //     continue;
-
-  //   // ------------------------
-  //   // get all EDGEs of a FACE
-  //   // ------------------------
-  //   TSideVector wires =
-  //     StdMeshers_FaceSide::GetFaceWires( F, aMesh, ignoreMediumNodes, faceErr, &helper, proxyMesh );
-  //   if ( faceErr && !faceErr->IsOK() )
-  //     continue;
-  //   size_t nbWires = wires.size();
-  //   if ( nbWires == 0 )
-  //   {
-  //     faceErr.reset
-  //       ( new SMESH_ComputeError
-  //         ( COMPERR_ALGO_FAILED, "Problem in StdMeshers_FaceSide::GetFaceWires()" ));
-  //     continue;
-  //   }
-  //   if ( wires[0]->NbSegments() < 3 ) // ex: a circle with 2 segments
-  //   {
-  //     faceErr.reset
-  //       ( new SMESH_ComputeError
-  //         ( COMPERR_BAD_INPUT_MESH, SMESH_Comment("Too few segments: ")<<wires[0]->NbSegments()) );
-  //     continue;
-  //   }
-
-  //   // ----------------------
-  //   // compute maxh of a FACE
-  //   // ----------------------
-
-  //   if ( !aParams.has_netgen_param )
-  //   {
-  //     double edgeLength = 0;
-  //     if (aParams.has_LengthFromEdges_hyp )
-  //     {
-  //       // compute edgeLength as an average segment length
-  //       smIdType nbSegments = 0;
-  //       for ( size_t iW = 0; iW < nbWires; ++iW )
-  //       {
-  //         edgeLength += wires[ iW ]->Length();
-  //         nbSegments += wires[ iW ]->NbSegments();
-  //       }
-  //       if ( nbSegments )
-  //         edgeLength /= double( nbSegments );
-  //       netgen::mparam.maxh = edgeLength;
-  //     }
-  //     else if ( isDefaultHyp )
-  //     {
-  //       // set edgeLength by a longest segment
-  //       double maxSeg2 = 0;
-  //       for ( size_t iW = 0; iW < nbWires; ++iW )
-  //       {
-  //         const UVPtStructVec& points = wires[ iW ]->GetUVPtStruct();
-  //         if ( points.empty() )
-  //           return error( COMPERR_BAD_INPUT_MESH );
-  //         gp_Pnt pPrev = SMESH_TNodeXYZ( points[0].node );
-  //         for ( size_t i = 1; i < points.size(); ++i )
-  //         {
-  //           gp_Pnt p = SMESH_TNodeXYZ( points[i].node );
-  //           maxSeg2 = Max( maxSeg2, p.SquareDistance( pPrev ));
-  //           pPrev = p;
-  //         }
-  //       }
-  //       edgeLength = sqrt( maxSeg2 ) * 1.05;
-  //       netgen::mparam.maxh = edgeLength;
-  //     }
-  //     if ( netgen::mparam.maxh < DBL_MIN )
-  //       netgen::mparam.maxh = occgeoComm.GetBoundingBox().Diam();
-
-  //     if ( !isCommonLocalSize )
-  //     {
-  //       netgen::mparam.minh = aMesher.GetDefaultMinSize( F, netgen::mparam.maxh );
-  //     }
-  //   }
-
-
 
     // prepare occgeom
     netgen::OCCGeometry occgeom;
