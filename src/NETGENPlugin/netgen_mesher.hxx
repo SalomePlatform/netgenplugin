@@ -62,7 +62,8 @@ int netgen3d(const std::string input_mesh_file,
              const std::string element_orienation_file,
              const std::string new_element_file,
              bool output_mesh,
-             const std::string output_mesh_file);
+             const std::string output_mesh_file,
+             int nbThreads);
 
 //TODO: Tmp function replace by real error handling
 int error(int error_type, std::string msg);

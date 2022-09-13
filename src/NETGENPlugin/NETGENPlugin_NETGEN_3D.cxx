@@ -222,7 +222,7 @@ void NETGENPlugin_NETGEN_3D::FillParameters(const NETGENPlugin_Hypothesis* hyp, 
   aParams.meshsizefilename = hyp->GetMeshSizeFile();
 #else
   // const char*
-  aParams.meshsizefilename = hyp->GetMeshSizeFile().empty() ? 0 : hyp->GetMeshSizeFile().c_str();
+  aParams.meshsizefilename = hyp->GetMeshSizeFile();
 #endif
 #ifdef NETGEN_V6
   aParams.closeedgefac = 2;
@@ -353,6 +353,7 @@ int NETGENPlugin_NETGEN_3D::RemoteCompute(SMESH_Mesh&         aMesh,
                                + shape_file.string() + " "
                                + param_file.string() + " "
                                + element_orientation_file.string() + " "
+                               + std::to_string(aMesh.GetMesherNbThreads()) + " "
                                + new_element_file.string() + " "
                                + std::to_string(0) + " "
                                + output_mesh_file.string() +

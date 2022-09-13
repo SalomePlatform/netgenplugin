@@ -129,8 +129,8 @@ void set_netgen_parameters(netgen_params& aParams)
 #ifdef NETGEN_V6
 
   //netgen::mparam.nthreads = std::thread::hardware_concurrency();
-  netgen::mparam.nthreads = 2;
-  //netgen::mparam.parallel_meshing = false;
+  netgen::mparam.nthreads = aParams.nbThreads;
+  netgen::mparam.parallel_meshing = aParams.nbThreads > 1;
 
 
   if ( getenv( "SALOME_NETGEN_DISABLE_MULTITHREADING" ))
@@ -165,7 +165,7 @@ void set_netgen_parameters(netgen_params& aParams)
 
 #else
   // const char*
-  netgen::mparam.meshsizefilename= aParams.meshsizefilename ? 0 : aParams.meshsizefilename.c_str();
+  netgen::mparam.meshsizefilename= aParams.meshsizefilename.empty() ? 0 : aParams.meshsizefilename.c_str();
 #endif
 }
 
@@ -187,7 +187,8 @@ int netgen3d(const std::string input_mesh_file,
              const std::string element_orientation_file,
              const std::string new_element_file,
              bool output_mesh,
-             const std::string output_mesh_file)
+             const std::string output_mesh_file,
+             int nbThreads)
 {
   auto time0 = std::chrono::high_resolution_clock::now();
   // Importing mesh
@@ -216,6 +217,8 @@ int netgen3d(const std::string input_mesh_file,
   auto time3 = std::chrono::high_resolution_clock::now();
   elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(time3-time2);
   std::cout << "Time for import_netgen_param: " << elapsed.count() * 1e-9 << std::endl;
+  // Setting number of threads for netgen
+  myParams.nbThreads = nbThreads;
 
   std::cout << "Meshing with netgen3d" << std::endl;
   int ret = netgen3d_internal(myShape, *myMesh, myParams,

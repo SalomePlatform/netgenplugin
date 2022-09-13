@@ -81,6 +81,9 @@ struct netgen_params{
 
   // Params from NETGEN2D
   bool has_LengthFromEdges_hyp=false;
+
+  // Number of threads for the mesher
+  int nbThreads;
 };
 
 void print_netgen_params(netgen_params& aParams);
