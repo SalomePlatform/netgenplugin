@@ -279,15 +279,16 @@ void NETGENPlugin_NETGEN_3D::exportElementOrientation(SMESH_Mesh& aMesh,
     } // loop on elements on a face
   } // loop on faces of a SOLID or SHELL
 
-  std::ofstream df(output_file, ios::out|ios::binary);
-  int size=elemOrientation.size();
+  {
+    std::ofstream df(output_file, ios::out|ios::binary);
+    int size=elemOrientation.size();
 
-  df.write((char*)&size, sizeof(int));
-  for(auto const& [id, orient]:elemOrientation){
-    df.write((char*)&id, sizeof(vtkIdType));
-    df.write((char*)&orient, sizeof(bool));
+    df.write((char*)&size, sizeof(int));
+    for(auto const& [id, orient]:elemOrientation){
+      df.write((char*)&id, sizeof(vtkIdType));
+      df.write((char*)&orient, sizeof(bool));
+    }
   }
-  df.close();
 }
 
 int NETGENPlugin_NETGEN_3D::RemoteCompute(SMESH_Mesh&         aMesh,
@@ -363,10 +364,10 @@ int NETGENPlugin_NETGEN_3D::RemoteCompute(SMESH_Mesh&         aMesh,
   //std::cout << cmd << std::endl;
 
   // Writing command in log
-  std::ofstream flog(log_file.string());
-  flog << cmd << endl;
-  flog.close();
-
+  {
+    std::ofstream flog(log_file.string());
+    flog << cmd << endl;
+  }
   // TODO: Replace system by something else to handle redirection for windows
   int ret = system(cmd.c_str());
   auto time5 = std::chrono::high_resolution_clock::now();
@@ -382,66 +383,62 @@ int NETGENPlugin_NETGEN_3D::RemoteCompute(SMESH_Mesh&         aMesh,
   }
 
   aMesh.Lock();
-  std::ifstream df(new_element_file.string(), ios::binary);
-
-  int Netgen_NbOfNodes;
-  int Netgen_NbOfNodesNew;
-  int Netgen_NbOfTetra;
-  double Netgen_point[3];
-  int    Netgen_tetrahedron[4];
-  int nodeID;
-
-  SMESH_MesherHelper helper(aMesh);
-  // This function
-  int _quadraticMesh = helper.IsQuadraticSubMesh(aShape);
-  helper.SetElementsOnShape( true );
-
-  // Number of nodes in intial mesh
-  df.read((char*) &Netgen_NbOfNodes, sizeof(int));
-  // Number of nodes added by netgen
-  df.read((char*) &Netgen_NbOfNodesNew, sizeof(int));
-
-  // Filling nodevec (correspondence netgen numbering mesh numbering)
-  vector< const SMDS_MeshNode* > nodeVec ( Netgen_NbOfNodesNew + 1 );
-  //vector<int> nodeTmpVec ( Netgen_NbOfNodesNew + 1 );
-  SMESHDS_Mesh * meshDS = helper.GetMeshDS();
-  for (int nodeIndex = 1 ; nodeIndex <= Netgen_NbOfNodes; ++nodeIndex )
   {
-    //Id of the point
-    df.read((char*) &nodeID, sizeof(int));
-    nodeVec.at(nodeIndex) = meshDS->FindNode(nodeID);
+    std::ifstream df(new_element_file.string(), ios::binary);
+
+    int Netgen_NbOfNodes;
+    int Netgen_NbOfNodesNew;
+    int Netgen_NbOfTetra;
+    double Netgen_point[3];
+    int    Netgen_tetrahedron[4];
+    int nodeID;
+
+    SMESH_MesherHelper helper(aMesh);
+    // This function
+    int _quadraticMesh = helper.IsQuadraticSubMesh(aShape);
+    helper.SetElementsOnShape( true );
+
+    // Number of nodes in intial mesh
+    df.read((char*) &Netgen_NbOfNodes, sizeof(int));
+    // Number of nodes added by netgen
+    df.read((char*) &Netgen_NbOfNodesNew, sizeof(int));
+
+    // Filling nodevec (correspondence netgen numbering mesh numbering)
+    vector< const SMDS_MeshNode* > nodeVec ( Netgen_NbOfNodesNew + 1 );
+    //vector<int> nodeTmpVec ( Netgen_NbOfNodesNew + 1 );
+    SMESHDS_Mesh * meshDS = helper.GetMeshDS();
+    for (int nodeIndex = 1 ; nodeIndex <= Netgen_NbOfNodes; ++nodeIndex )
+    {
+      //Id of the point
+      df.read((char*) &nodeID, sizeof(int));
+      nodeVec.at(nodeIndex) = meshDS->FindNode(nodeID);
+    }
+
+    // Add new points and update nodeVec
+    for (int nodeIndex = Netgen_NbOfNodes +1 ; nodeIndex <= Netgen_NbOfNodesNew; ++nodeIndex )
+    {
+      df.read((char *) &Netgen_point, sizeof(double)*3);
+
+      nodeVec.at(nodeIndex) = helper.AddNode(Netgen_point[0],
+                                 Netgen_point[1],
+                                 Netgen_point[2]);
+    }
+
+    // Add tetrahedrons
+    df.read((char*) &Netgen_NbOfTetra, sizeof(int));
+
+    for ( int elemIndex = 1; elemIndex <= Netgen_NbOfTetra; ++elemIndex )
+    {
+      df.read((char*) &Netgen_tetrahedron, sizeof(int)*4);
+      helper.AddVolume(
+                    nodeVec.at( Netgen_tetrahedron[0] ),
+                    nodeVec.at( Netgen_tetrahedron[1] ),
+                    nodeVec.at( Netgen_tetrahedron[2] ),
+                    nodeVec.at( Netgen_tetrahedron[3] ));
+    }
   }
-
-  auto time6 = std::chrono::high_resolution_clock::now();
-  elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(time6-time5);
-  std::cout << "Time for exec of nodeVec: " << elapsed.count() * 1e-9 << std::endl;
-
-
-  // Add new points and update nodeVec
-  for (int nodeIndex = Netgen_NbOfNodes +1 ; nodeIndex <= Netgen_NbOfNodesNew; ++nodeIndex )
-  {
-    df.read((char *) &Netgen_point, sizeof(double)*3);
-
-    nodeVec.at(nodeIndex) = helper.AddNode(Netgen_point[0],
-                               Netgen_point[1],
-                               Netgen_point[2]);
-  }
-
-  // Add tetrahedrons
-  df.read((char*) &Netgen_NbOfTetra, sizeof(int));
-
-  for ( int elemIndex = 1; elemIndex <= Netgen_NbOfTetra; ++elemIndex )
-  {
-    df.read((char*) &Netgen_tetrahedron, sizeof(int)*4);
-    helper.AddVolume(
-                  nodeVec.at( Netgen_tetrahedron[0] ),
-                  nodeVec.at( Netgen_tetrahedron[1] ),
-                  nodeVec.at( Netgen_tetrahedron[2] ),
-                  nodeVec.at( Netgen_tetrahedron[3] ));
-  }
-  df.close();
   auto time7 = std::chrono::high_resolution_clock::now();
-  elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(time7-time6);
+  elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(time7-time5);
   std::cout << "Time for exec of add_in_mesh: " << elapsed.count() * 1e-9 << std::endl;
 
   fs::remove_all(tmp_folder);

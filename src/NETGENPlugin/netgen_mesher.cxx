@@ -315,23 +315,24 @@ int netgen3d_internal(TopoDS_Shape &aShape, SMESH_Mesh& aMesh, netgen_params& aP
     }
 
     // Get list of elements + their orientation from element_orientation file
-    std::ifstream df(element_orientation_file, ios::binary|ios::in);
-    int nbElement;
-    bool orient;
-
-    // Warning of the use of vtkIdType (I had issue when run_mesher was compiled with internal vtk) and salome not
-    // Sizeof was the same but how he othered the type was different
-    // Maybe using another type (uint64_t) instead would be better
-    vtkIdType id;
     std::map<vtkIdType, bool> elemOrientation;
-    df.read((char*)&nbElement, sizeof(int));
+    {
+      std::ifstream df(element_orientation_file, ios::binary|ios::in);
+      int nbElement;
+      bool orient;
 
-    for(int ielem=0;ielem<nbElement;++ielem){
-      df.read((char*) &id, sizeof(vtkIdType));
-      df.read((char*) &orient, sizeof(bool));
-      elemOrientation[id] = orient;
+      // Warning of the use of vtkIdType (I had issue when run_mesher was compiled with internal vtk) and salome not
+      // Sizeof was the same but how he othered the type was different
+      // Maybe using another type (uint64_t) instead would be better
+      vtkIdType id;
+      df.read((char*)&nbElement, sizeof(int));
+
+      for(int ielem=0;ielem<nbElement;++ielem){
+        df.read((char*) &id, sizeof(vtkIdType));
+        df.read((char*) &orient, sizeof(bool));
+        elemOrientation[id] = orient;
+      }
     }
-    df.close();
 
     // Adding elements from Mesh
     SMDS_ElemIteratorPtr iteratorElem = meshDS->elementsIterator(SMDSAbs_Face);
@@ -548,7 +549,7 @@ int netgen3d_internal(TopoDS_Shape &aShape, SMESH_Mesh& aMesh, netgen_params& aP
     double Netgen_point[3];
     int    Netgen_tetrahedron[4];
 
-    // Writing nodevec (correspondance netgen numbering mesh numbering)
+    // Writing nodevec (correspondence netgen numbering mesh numbering)
     // Number of nodes
     df.write((char*) &Netgen_NbOfNodes, sizeof(int));
     df.write((char*) &Netgen_NbOfNodesNew, sizeof(int));
@@ -574,7 +575,6 @@ int netgen3d_internal(TopoDS_Shape &aShape, SMESH_Mesh& aMesh, netgen_params& aP
       Ng_GetVolumeElement(Netgen_mesh, elemIndex, Netgen_tetrahedron);
       df.write((char*) &Netgen_tetrahedron, sizeof(int)*4);
     }
-    df.close();
   }
   auto time3 = std::chrono::high_resolution_clock::now();
   elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(time3-time2);
@@ -775,18 +775,19 @@ int netgen2d_internal(TopoDS_Shape &aShape, SMESH_Mesh& aMesh, netgen_params& aP
     occgeoComm.vmap.Clear();
 
     // Reading list of element to integrate into netgen mesh
-    std::ifstream df(element_orientation_file, ios::in|ios::binary);
-    int nbElement;
-    vtkIdType id;
-    bool orient;
-    df.read((char*)&nbElement, sizeof(int));
+    {
+      std::ifstream df(element_orientation_file, ios::in|ios::binary);
+      int nbElement;
+      vtkIdType id;
+      bool orient;
+      df.read((char*)&nbElement, sizeof(int));
 
-    for(int ielem=0;ielem<nbElement;++ielem){
-      df.read((char*) &id, sizeof(vtkIdType));
-      df.read((char*) &orient, sizeof(bool));
-      elemOrientation[id] = orient;
+      for(int ielem=0;ielem<nbElement;++ielem){
+        df.read((char*) &id, sizeof(vtkIdType));
+        df.read((char*) &orient, sizeof(bool));
+        elemOrientation[id] = orient;
+      }
     }
-    df.close();
 
     bool isIn;
     // set local size according to size of existing segments
