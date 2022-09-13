@@ -25,8 +25,7 @@
 
 #include "NETGENPlugin_Mesher.hxx"
 #include "NETGENPlugin_Hypothesis_2D.hxx"
-#include "NETGENPlugin_Provider.hxx"
-#include "netgen_param.hxx"
+#include "NETGENPlugin_DriverParam.hxx"
 
 #include <SMDS_MeshElement.hxx>
 #include <SMDS_MeshNode.hxx>
@@ -41,8 +40,8 @@
 #include <StdMeshers_MaxElementArea.hxx>
 #include <StdMeshers_QuadranglePreference.hxx>
 #include <StdMeshers_ViscousLayers2D.hxx>
-#include "DriverStep.hxx"
-#include "DriverMesh.hxx"
+#include "SMESH_DriverStep.hxx"
+#include "SMESH_DriverMesh.hxx"
 
 
 #include <Precision.hxx>
@@ -324,17 +323,17 @@ bool NETGENPlugin_NETGEN_2D_ONLY::RemoteCompute(SMESH_Mesh&         aMesh,
   fs::path output_mesh_file=tmp_folder / fs::path("output_mesh.med");
   fs::path shape_file=tmp_folder / fs::path("shape.step");
   fs::path param_file=tmp_folder / fs::path("netgen2d_param.txt");
-  fs::path log_file=tmp_folder / fs::path("run_mesher.log");
+  fs::path log_file=tmp_folder / fs::path("run.log");
   //TODO: Handle variable mesh_name
   std::string mesh_name = "Maillage_1";
 
   //Writing Shape
-  export_shape(shape_file.string(), aShape);
+  exportShape(shape_file.string(), aShape);
   //Writing hypo
   netgen_params aParams;
   FillParameters(_hypParameters, aParams);
 
-  export_netgen_params(param_file.string(), aParams);
+  exportNetgenParams(param_file.string(), aParams);
 
   // Exporting element orientation
   exportElementOrientation(aMesh, aShape, aParams, element_orientation_file.string());
@@ -347,7 +346,7 @@ bool NETGENPlugin_NETGEN_2D_ONLY::RemoteCompute(SMESH_Mesh&         aMesh,
     fs::path(std::getenv("NETGENPLUGIN_ROOT_DIR"))/
     fs::path("bin")/
     fs::path("salome")/
-    fs::path("run_mesher");
+    fs::path("NETGENPlugin_Runner");
   cmd = run_mesher_exe.string() +
                   " NETGEN2D " + mesh_file.string() + " "
                                + shape_file.string() + " "

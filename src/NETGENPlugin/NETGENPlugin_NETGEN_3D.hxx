@@ -31,7 +31,6 @@
 #ifndef _NETGENPlugin_NETGEN_3D_HXX_
 #define _NETGENPlugin_NETGEN_3D_HXX_
 
-#include "NETGENPlugin_Provider.hxx"
 #include "NETGENPlugin_Defs.hxx"
 #include "NETGENPlugin_Mesher.hxx"
 
@@ -75,7 +74,7 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_NETGEN_3D: public SMESH_3D_Algo
                                 netgen_params& aParams,
                                 const std::string output_file);
 
-  void FillParameters(const NETGENPlugin_Hypothesis* hyp,
+  void fillParameters(const NETGENPlugin_Hypothesis* hyp,
                       netgen_params &aParams);
 
   int RemoteCompute(SMESH_Mesh&         aMesh,

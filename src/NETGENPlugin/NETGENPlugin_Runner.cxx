@@ -20,21 +20,20 @@
 // See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
 //
 
-//  File   : netgen_mesher.cxx
+//  File   : NETGENPlugin_Runner.cxx
 //  Author : Yoann AUDOUIN, EDF
 //  Module : SMESH
 //
 
-#include "netgen_mesher.hxx"
+#include "NETGENPlugin_Runner.hxx"
 
-#include "DriverStep.hxx"
-#include "DriverMesh.hxx"
-#include "netgen_param.hxx"
+
+#include "NETGENPlugin_DriverParam.hxx"
 
 #include <fstream>
 #include <vector>
-#include <filesystem>
-namespace fs = std::filesystem;
+#include <boost/filesystem.hpp>
+namespace fs = boost::filesystem;
 #include <chrono>
 
 // SMESH include
@@ -51,6 +50,8 @@ namespace fs = std::filesystem;
 #include <StdMeshers_QuadToTriaAdaptor.hxx>
 #include <StdMeshers_ViscousLayers.hxx>
 #include <StdMeshers_ViscousLayers2D.hxx>
+#include <SMESH_DriverStep.hxx>
+#include <SMESH_DriverMesh.hxx>
 
 
 // NETGENPlugin
@@ -186,7 +187,6 @@ int netgen3d(const std::string input_mesh_file,
              const std::string hypo_file,
              const std::string element_orientation_file,
              const std::string new_element_file,
-             bool output_mesh,
              const std::string output_mesh_file,
              int nbThreads)
 {
@@ -198,22 +198,22 @@ int netgen3d(const std::string input_mesh_file,
   //TODO: To define
   std::string mesh_name = "Maillage_1";
 
-  import_mesh(input_mesh_file, *myMesh, mesh_name);
+  importMesh(input_mesh_file, *myMesh, mesh_name);
   auto time1 = std::chrono::high_resolution_clock::now();
   auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(time1-time0);
-  std::cout << "Time for import_mesh: " << elapsed.count() * 1e-9 << std::endl;
+  std::cout << "Time for importMesh: " << elapsed.count() * 1e-9 << std::endl;
 
   // Importing shape
   TopoDS_Shape myShape;
-  import_shape(shape_file, myShape);
+  importShape(shape_file, myShape);
   auto time2 = std::chrono::high_resolution_clock::now();
   elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(time2-time1);
-  std::cout << "Time for import_shape: " << elapsed.count() * 1e-9 << std::endl;
+  std::cout << "Time for importShape: " << elapsed.count() * 1e-9 << std::endl;
 
   // Importing hypothesis
   netgen_params myParams;
 
-  import_netgen_params(hypo_file, myParams);
+  importNetgenParams(hypo_file, myParams);
   auto time3 = std::chrono::high_resolution_clock::now();
   elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(time3-time2);
   std::cout << "Time for import_netgen_param: " << elapsed.count() * 1e-9 << std::endl;
@@ -221,9 +221,9 @@ int netgen3d(const std::string input_mesh_file,
   myParams.nbThreads = nbThreads;
 
   std::cout << "Meshing with netgen3d" << std::endl;
-  int ret = netgen3d_internal(myShape, *myMesh, myParams,
+  int ret = netgen3dInternal(myShape, *myMesh, myParams,
                               new_element_file, element_orientation_file,
-                              output_mesh);
+                              !output_mesh_file.empty());
 
 
   if(!ret){
@@ -231,12 +231,12 @@ int netgen3d(const std::string input_mesh_file,
     return ret;
   }
 
-  if(output_mesh){
+  if(!output_mesh_file.empty()){
     auto time4 = std::chrono::high_resolution_clock::now();
-    export_mesh(output_mesh_file, *myMesh, mesh_name);
+    exportMesh(output_mesh_file, *myMesh, mesh_name);
     auto time5 = std::chrono::high_resolution_clock::now();
     elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(time5-time4);
-    std::cout << "Time for export_mesh: " << elapsed.count() * 1e-9 << std::endl;
+    std::cout << "Time for exportMesh: " << elapsed.count() * 1e-9 << std::endl;
   }
 
   return ret;
@@ -249,10 +249,12 @@ int netgen3d(const std::string input_mesh_file,
  * @param aMesh the mesh
  * @param aParams the netgen parameters
  * @param new_element_file file containing data on the new point/tetra added by netgen
+ * @param element_orientation_file file containing data on the orientation of each element to add to netgen
+ * @param output_mesh if true add element created by netgen into aMesh
  *
  * @return error code
  */
-int netgen3d_internal(TopoDS_Shape &aShape, SMESH_Mesh& aMesh, netgen_params& aParams,
+int netgen3dInternal(TopoDS_Shape &aShape, SMESH_Mesh& aMesh, netgen_params& aParams,
                       std::string new_element_file, std::string element_orientation_file,
                       bool output_mesh)
 {
@@ -317,20 +319,31 @@ int netgen3d_internal(TopoDS_Shape &aShape, SMESH_Mesh& aMesh, netgen_params& aP
     // Get list of elements + their orientation from element_orientation file
     std::map<vtkIdType, bool> elemOrientation;
     {
-      std::ifstream df(element_orientation_file, ios::binary|ios::in);
-      int nbElement;
-      bool orient;
+      // Setting all element orientation to false if there no element orientation file
+      if(element_orientation_file.empty()){
+        SMDS_ElemIteratorPtr iteratorElem = meshDS->elementsIterator(SMDSAbs_Face);
+        while ( iteratorElem->more() ) // loop on elements on a geom face
+          {
+            // check mesh face
+            const SMDS_MeshElement* elem = iteratorElem->next();
+            elemOrientation[elem->GetID()] = false;
+          }
+      } else {
+        std::ifstream df(element_orientation_file, ios::binary|ios::in);
+        int nbElement;
+        bool orient;
 
-      // Warning of the use of vtkIdType (I had issue when run_mesher was compiled with internal vtk) and salome not
-      // Sizeof was the same but how he othered the type was different
-      // Maybe using another type (uint64_t) instead would be better
-      vtkIdType id;
-      df.read((char*)&nbElement, sizeof(int));
+        // Warning of the use of vtkIdType (I had issue when run_mesher was compiled with internal vtk) and salome not
+        // Sizeof was the same but how he othered the type was different
+        // Maybe using another type (uint64_t) instead would be better
+        vtkIdType id;
+        df.read((char*)&nbElement, sizeof(int));
 
-      for(int ielem=0;ielem<nbElement;++ielem){
-        df.read((char*) &id, sizeof(vtkIdType));
-        df.read((char*) &orient, sizeof(bool));
-        elemOrientation[id] = orient;
+        for(int ielem=0;ielem<nbElement;++ielem){
+          df.read((char*) &id, sizeof(vtkIdType));
+          df.read((char*) &orient, sizeof(bool));
+          elemOrientation[id] = orient;
+        }
       }
     }
 
@@ -355,7 +368,6 @@ int netgen3d_internal(TopoDS_Shape &aShape, SMESH_Mesh& aMesh, netgen_params& aP
 
         if(!isIn)
           continue;
-
 
         // Get orientation
         // Netgen requires that all the triangle point outside
@@ -542,7 +554,7 @@ int netgen3d_internal(TopoDS_Shape &aShape, SMESH_Mesh& aMesh, netgen_params& aP
   std::cout << "Time for netgen_compute: " << elapsed.count() * 1e-9 << std::endl;
 
   bool isOK = ( /*status == NG_OK &&*/ Netgen_NbOfTetra > 0 );// get whatever built
-  if ( isOK )
+  if ( isOK && !new_element_file.empty() )
   {
     std::ofstream df(new_element_file, ios::out|ios::binary);
 
@@ -581,7 +593,7 @@ int netgen3d_internal(TopoDS_Shape &aShape, SMESH_Mesh& aMesh, netgen_params& aP
   std::cout << "Time for write_new_elem: " << elapsed.count() * 1e-9 << std::endl;
 
 
-  // Adding new files in aMesh as well
+  // Adding new elements in aMesh as well
   if ( output_mesh )
   {
     double Netgen_point[3];
@@ -639,7 +651,6 @@ int netgen2d(const std::string input_mesh_file,
              const std::string hypo_file,
              const std::string element_orientation_file,
              const std::string new_element_file,
-             bool output_mesh,
              const std::string output_mesh_file)
 {
 
@@ -650,29 +661,29 @@ int netgen2d(const std::string input_mesh_file,
   //TODO: To define
   std::string mesh_name = "Maillage_1";
 
-  import_mesh(input_mesh_file, *myMesh, mesh_name);
+  importMesh(input_mesh_file, *myMesh, mesh_name);
 
   // Importing shape
   TopoDS_Shape myShape;
-  import_shape(shape_file, myShape);
+  importShape(shape_file, myShape);
 
   // Importing hypothesis
   netgen_params myParams;
 
-  import_netgen_params(hypo_file, myParams);
+  importNetgenParams(hypo_file, myParams);
 
   std::cout << "Meshing with netgen3d" << std::endl;
-  int ret = netgen2d_internal(myShape, *myMesh, myParams,
+  int ret = netgen2dInternal(myShape, *myMesh, myParams,
                               new_element_file, element_orientation_file,
-                              output_mesh);
+                              !output_mesh_file.empty());
 
   if(!ret){
     std::cout << "Meshing failed" << std::endl;
     return ret;
   }
 
-  if(output_mesh)
-    export_mesh(output_mesh_file, *myMesh, mesh_name);
+  if(!output_mesh_file.empty())
+    exportMesh(output_mesh_file, *myMesh, mesh_name);
 
   return ret;
 }
@@ -689,7 +700,7 @@ int netgen2d(const std::string input_mesh_file,
  *
  * @return error code
  */
-int netgen2d_internal(TopoDS_Shape &aShape, SMESH_Mesh& aMesh, netgen_params& aParams,
+int netgen2dInternal(TopoDS_Shape &aShape, SMESH_Mesh& aMesh, netgen_params& aParams,
                       std::string new_element_file, std::string element_orientation_file,
                       bool output_mesh)
 {

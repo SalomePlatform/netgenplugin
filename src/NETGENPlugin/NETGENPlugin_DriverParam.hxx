@@ -20,13 +20,13 @@
 // See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
 //
 
-//  File   : netgen_param.hxx
+//  File   : NETGENPlugin_DriverParam.hxx
 //  Author : Yoann AUDOUIN, EDF
-//  Module : SMESH
+//  Module : NETGEN
 //
 
-#ifndef _NETGEN_PARAM_HXX_
-#define _NETGEN_PARAM_HXX_
+#ifndef _NETGENPLUGIN_DRIVERPARAM_HXX_
+#define _NETGENPLUGIN_DRIVERPARAM_HXX_
 
 #include <string>
 
@@ -86,11 +86,11 @@ struct netgen_params{
   int nbThreads;
 };
 
-void print_netgen_params(netgen_params& aParams);
+void printNetgenParams(netgen_params& aParams);
 
-void import_netgen_params(const std::string param_file, netgen_params& aParams);
-void export_netgen_params(const std::string param_file, netgen_params& aParams);
+void importNetgenParams(const std::string param_file, netgen_params& aParams);
+void exportNetgenParams(const std::string param_file, netgen_params& aParams);
 
-bool diff_netgen_params(netgen_params params1, netgen_params params2);
+bool diffNetgenParams(netgen_params params1, netgen_params params2);
 
 #endif

@@ -93,9 +93,8 @@ SET(NETGENEngine_HEADERS
   NETGENPlugin_Mesher.hxx
   NETGENPlugin_Remesher_2D.hxx
   NETGENPlugin_Defs.hxx
-  NETGENPlugin_Provider.hxx
-  netgen_param.hxx
-  netgen_mesher.hxx
+  NETGENPlugin_DriverParam.hxx
+  NETGENPlugin_Runner.hxx
 )
 
 # --- sources ---
@@ -123,12 +122,12 @@ SET(NETGENEngine_SOURCES
   NETGENPlugin_SimpleHypothesis_3D_i.cxx
   NETGENPlugin_Remesher_2D.cxx
   NETGENPlugin_i.cxx
-  netgen_mesher.cxx
-  netgen_param.cxx
+  NETGENPlugin_Runner.cxx
+  NETGENPlugin_DriverParam.cxx
 )
 
-SET(Run_Mesher_SOURCES
-  run_mesher.cxx
+SET(NetgenRunner_SOURCES
+  NETGENPlugin_Runner_main.cxx
 )
 
 # --- scripts ---
@@ -145,9 +144,9 @@ ADD_LIBRARY(NETGENEngine ${NETGENEngine_SOURCES})
 TARGET_LINK_LIBRARIES(NETGENEngine ${_link_LIBRARIES} )
 INSTALL(TARGETS NETGENEngine EXPORT ${PROJECT_NAME}TargetGroup DESTINATION ${SALOME_INSTALL_LIBS})
 
-ADD_EXECUTABLE(run_mesher ${Run_Mesher_SOURCES})
-TARGET_LINK_LIBRARIES(run_mesher ${_link_LIBRARIES} NETGENEngine )
-INSTALL(TARGETS run_mesher EXPORT ${PROJECT_NAME}TargetGroup DESTINATION ${SALOME_INSTALL_BINS})
+ADD_EXECUTABLE(NETGENPlugin_Runner ${NetgenRunner_SOURCES})
+TARGET_LINK_LIBRARIES(NETGENPlugin_Runner ${_link_LIBRARIES} NETGENEngine )
+INSTALL(TARGETS NETGENPlugin_Runner EXPORT ${PROJECT_NAME}TargetGroup DESTINATION ${SALOME_INSTALL_BINS})
 
 INSTALL(FILES ${NETGENEngine_HEADERS} DESTINATION ${SALOME_INSTALL_HEADERS})
 

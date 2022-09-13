@@ -32,9 +32,7 @@
 
 #include "NETGENPlugin_Hypothesis.hxx"
 
-#include "DriverStep.hxx"
-#include "DriverMesh.hxx"
-#include "netgen_param.hxx"
+#include "NETGENPlugin_DriverParam.hxx"
 
 #include <SMDS_MeshElement.hxx>
 #include <SMDS_MeshNode.hxx>
@@ -50,6 +48,9 @@
 #include <StdMeshers_QuadToTriaAdaptor.hxx>
 #include <StdMeshers_ViscousLayers.hxx>
 #include <SMESH_subMesh.hxx>
+#include <SMESH_DriverStep.hxx>
+#include <SMESH_DriverMesh.hxx>
+
 
 #include <BRepGProp.hxx>
 #include <BRep_Tool.hxx>
@@ -196,7 +197,7 @@ bool NETGENPlugin_NETGEN_3D::CheckHypothesis (SMESH_Mesh&         aMesh,
 }
 
 
-void NETGENPlugin_NETGEN_3D::FillParameters(const NETGENPlugin_Hypothesis* hyp, netgen_params &aParams)
+void NETGENPlugin_NETGEN_3D::fillParameters(const NETGENPlugin_Hypothesis* hyp, netgen_params &aParams)
 {
   aParams.maxh               = hyp->GetMaxSize();
   aParams.minh               = hyp->GetMinSize();
@@ -315,21 +316,21 @@ int NETGENPlugin_NETGEN_3D::RemoteCompute(SMESH_Mesh&         aMesh,
   fs::path output_mesh_file=tmp_folder / fs::path("output_mesh.med");
   fs::path shape_file=tmp_folder / fs::path("shape.step");
   fs::path param_file=tmp_folder / fs::path("netgen3d_param.txt");
-  fs::path log_file=tmp_folder / fs::path("run_mesher.log");
+  fs::path log_file=tmp_folder / fs::path("run.log");
   //TODO: Handle variable mesh_name
   std::string mesh_name = "Maillage_1";
 
   //Writing Shape
-  export_shape(shape_file.string(), aShape);
+  exportShape(shape_file.string(), aShape);
   auto time2 = std::chrono::high_resolution_clock::now();
   elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(time2-time1);
-  std::cout << "Time for export_shape: " << elapsed.count() * 1e-9 << std::endl;
+  std::cout << "Time for exportShape: " << elapsed.count() * 1e-9 << std::endl;
 
   //Writing hypo
   netgen_params aParams;
-  FillParameters(_hypParameters, aParams);
+  fillParameters(_hypParameters, aParams);
 
-  export_netgen_params(param_file.string(), aParams);
+  exportNetgenParams(param_file.string(), aParams);
   auto time3 = std::chrono::high_resolution_clock::now();
   elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(time3-time2);
   std::cout << "Time for fill+export param: " << elapsed.count() * 1e-9 << std::endl;
@@ -338,7 +339,7 @@ int NETGENPlugin_NETGEN_3D::RemoteCompute(SMESH_Mesh&         aMesh,
   exportElementOrientation(aMesh, aShape, aParams, element_orientation_file.string());
   auto time4 = std::chrono::high_resolution_clock::now();
   elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(time4-time3);
-  std::cout << "Time for exportElemnOrient: " << elapsed.count() * 1e-9 << std::endl;
+  std::cout << "Time for exportElemOrient: " << elapsed.count() * 1e-9 << std::endl;
 
   aMesh.Unlock();
   // Calling run_mesher
@@ -348,7 +349,7 @@ int NETGENPlugin_NETGEN_3D::RemoteCompute(SMESH_Mesh&         aMesh,
     fs::path(std::getenv("NETGENPLUGIN_ROOT_DIR"))/
     fs::path("bin")/
     fs::path("salome")/
-    fs::path("run_mesher");
+    fs::path("NETGENPlugin_Runner");
   cmd = run_mesher_exe.string() +
                   " NETGEN3D " + mesh_file.string() + " "
                                + shape_file.string() + " "
@@ -356,8 +357,7 @@ int NETGENPlugin_NETGEN_3D::RemoteCompute(SMESH_Mesh&         aMesh,
                                + element_orientation_file.string() + " "
                                + std::to_string(aMesh.GetMesherNbThreads()) + " "
                                + new_element_file.string() + " "
-                               + std::to_string(0) + " "
-                               + output_mesh_file.string() +
+                               + "NONE" +
                                " >> " + log_file.string();
 
   //std::cout << "Running command: " << std::endl;

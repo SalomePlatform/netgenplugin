@@ -20,11 +20,11 @@
 // See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
 //
 
-//  File   : netgen_param.hxx
+//  File   : NETGENPlugin_DriverParam.hxx
 //  Author : Yoann AUDOUIN, EDF
-//  Module : SMESH
+//  Module : NETGEN
 //
-#include "netgen_param.hxx"
+#include "NETGENPlugin_DriverParam.hxx"
 
 #include <iostream>
 #include <fstream>
@@ -39,7 +39,7 @@
  *
  * @param aParams The object to display
  */
-void print_netgen_params(netgen_params& aParams){
+void printNetgenParams(netgen_params& aParams){
   // TODO: prettier print
   // TODO: Add call to print in log
   std::cout << "has_netgen_param: " << aParams.has_netgen_param << std::endl;
@@ -76,7 +76,7 @@ void print_netgen_params(netgen_params& aParams){
  * @param param_file Name of the file
  * @param aParams Structure to fill
  */
-void import_netgen_params(const std::string param_file, netgen_params& aParams){
+void importNetgenParams(const std::string param_file, netgen_params& aParams){
   std::ifstream myfile(param_file);
   std::string line;
 
@@ -142,7 +142,7 @@ void import_netgen_params(const std::string param_file, netgen_params& aParams){
  * @param param_file the file
  * @param aParams the object
  */
-void export_netgen_params(const std::string param_file, netgen_params& aParams){
+void exportNetgenParams(const std::string param_file, netgen_params& aParams){
   std::ofstream myfile(param_file);
   myfile << aParams.has_netgen_param << std::endl;
   myfile << aParams.maxh << std::endl;
@@ -182,7 +182,7 @@ void export_netgen_params(const std::string param_file, netgen_params& aParams){
 
  * @return true if the two object are identical
  */
-bool diff_netgen_params(netgen_params params1, netgen_params params2){
+bool diffNetgenParams(netgen_params params1, netgen_params params2){
   bool ret = true;
   ret &= params1.maxh == params2.maxh;
   ret &= params1.minh == params2.minh;
