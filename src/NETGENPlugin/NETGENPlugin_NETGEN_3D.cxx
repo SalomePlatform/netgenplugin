@@ -69,6 +69,9 @@
 #include <vector>
 #include <map>
 
+#include <QString>
+#include <QProcess>
+
 #include <cstdlib>
 #include <boost/filesystem.hpp>
 namespace fs = boost::filesystem;
@@ -350,6 +353,7 @@ int NETGENPlugin_NETGEN_3D::RemoteCompute(SMESH_Mesh&         aMesh,
     fs::path("bin")/
     fs::path("salome")/
     fs::path("NETGENPlugin_Runner");
+
   cmd = run_mesher_exe.string() +
                   " NETGEN3D " + mesh_file.string() + " "
                                + shape_file.string() + " "
@@ -357,19 +361,36 @@ int NETGENPlugin_NETGEN_3D::RemoteCompute(SMESH_Mesh&         aMesh,
                                + element_orientation_file.string() + " "
                                + std::to_string(aMesh.GetMesherNbThreads()) + " "
                                + new_element_file.string() + " "
-                               + "NONE" +
-                               " >> " + log_file.string();
-
-  //std::cout << "Running command: " << std::endl;
-  //std::cout << cmd << std::endl;
-
+                               + "NONE";
   // Writing command in log
   {
     std::ofstream flog(log_file.string());
     flog << cmd << endl;
+    flog << endl;
   }
-  // TODO: Replace system by something else to handle redirection for windows
-  int ret = system(cmd.c_str());
+  //std::cout << "Running command: " << std::endl;
+  //std::cout << cmd << std::endl;
+
+
+  // Building arguments for QProcess
+  QString program = run_mesher_exe.c_str();
+  QStringList arguments;
+  arguments << "NETGEN3D";
+  arguments << mesh_file.c_str();
+  arguments << shape_file.c_str();
+  arguments << param_file.c_str();
+  arguments << element_orientation_file.c_str();
+  arguments << std::to_string(aMesh.GetMesherNbThreads()).c_str();
+  arguments << new_element_file.c_str();
+  arguments << "NONE";
+  QString out_file = log_file.c_str();
+  QProcess myProcess;
+  myProcess.setStandardOutputFile(out_file);
+
+  myProcess.start(program, arguments);
+  myProcess.waitForFinished();
+  int ret = myProcess.exitStatus();
+
   auto time5 = std::chrono::high_resolution_clock::now();
   elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(time5-time4);
   std::cout << "Time for exec of run_mesher: " << elapsed.count() * 1e-9 << std::endl;
@@ -377,8 +398,9 @@ int NETGENPlugin_NETGEN_3D::RemoteCompute(SMESH_Mesh&         aMesh,
   // TODO: better error handling (display log ?)
   if(ret != 0){
     // Run crahed
-    std::cerr << "Issue with command: " << std::endl;
-    std::cerr << cmd << std::endl;
+    std::cout << "Issue with command: " << std::endl;
+    std::cout << "See log for more detail: " << log_file.string() << std::endl;
+    std::cout << cmd << std::endl;
     return false;
   }
 

@@ -17,9 +17,12 @@
 # See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
 #
 
+INCLUDE(UseQtExt)
+
 # --- options ---
 # additional include directories
 INCLUDE_DIRECTORIES(
+  ${QT_INCLUDES}
   ${KERNEL_INCLUDE_DIRS}
   ${GUI_INCLUDE_DIRS}
   ${GEOM_INCLUDE_DIRS}
@@ -35,6 +38,7 @@ INCLUDE_DIRECTORIES(
 
 # additional preprocessor / compiler flags
 ADD_DEFINITIONS(
+  ${QT_DEFINITIONS}
   ${OMNIORB_DEFINITIONS}
   ${OpenCASCADE_DEFINITIONS}
   ${BOOST_DEFINITIONS}
@@ -66,6 +70,7 @@ SET(_link_LIBRARIES
   VTK::CommonCore
   VTK::CommonDataModel
   SalomeIDLNETGENPLUGIN
+  Qt5::Core
 )
 
 # --- headers ---
