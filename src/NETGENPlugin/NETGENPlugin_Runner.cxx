@@ -194,7 +194,7 @@ int netgen3d(const std::string input_mesh_file,
   // Importing mesh
   SMESH_Gen gen;
 
-  SMESH_Mesh *myMesh = gen.CreateMesh(false);
+  std::unique_ptr<SMESH_Mesh> myMesh(gen.CreateMesh(false));
   //TODO: To define
   std::string mesh_name = "Maillage_1";
 
@@ -657,7 +657,8 @@ int netgen2d(const std::string input_mesh_file,
   // Importing mesh
   SMESH_Gen gen;
 
-  SMESH_Mesh *myMesh = gen.CreateMesh(false);
+  std::unique_ptr<SMESH_Mesh> myMesh(gen.CreateMesh(false));
+
   //TODO: To define
   std::string mesh_name = "Maillage_1";
 

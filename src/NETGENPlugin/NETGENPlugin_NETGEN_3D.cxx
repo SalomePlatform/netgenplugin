@@ -441,7 +441,6 @@ int NETGENPlugin_NETGEN_3D::RemoteCompute(SMESH_Mesh&         aMesh,
   elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(time7-time5);
   std::cout << "Time for exec of add_in_mesh: " << elapsed.count() * 1e-9 << std::endl;
 
-  fs::remove_all(tmp_folder);
   aMesh.Unlock();
 
   return true;
