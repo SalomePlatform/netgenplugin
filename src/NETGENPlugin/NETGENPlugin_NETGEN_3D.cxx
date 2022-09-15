@@ -48,7 +48,7 @@
 #include <StdMeshers_QuadToTriaAdaptor.hxx>
 #include <StdMeshers_ViscousLayers.hxx>
 #include <SMESH_subMesh.hxx>
-#include <SMESH_DriverStep.hxx>
+#include <SMESH_DriverShape.hxx>
 #include <SMESH_DriverMesh.hxx>
 
 
@@ -317,7 +317,7 @@ int NETGENPlugin_NETGEN_3D::RemoteCompute(SMESH_Mesh&         aMesh,
   fs::path tmp_mesh_file=tmp_folder / fs::path("tmp_mesh.med");
   // TODO: Remove that file we do not use it
   fs::path output_mesh_file=tmp_folder / fs::path("output_mesh.med");
-  fs::path shape_file=tmp_folder / fs::path("shape.step");
+  fs::path shape_file=tmp_folder / fs::path("shape.brep");
   fs::path param_file=tmp_folder / fs::path("netgen3d_param.txt");
   fs::path log_file=tmp_folder / fs::path("run.log");
   //TODO: Handle variable mesh_name
@@ -399,7 +399,7 @@ int NETGENPlugin_NETGEN_3D::RemoteCompute(SMESH_Mesh&         aMesh,
   if(ret != 0){
     // Run crahed
     std::cout << "Issue with command: " << std::endl;
-    std::cout << "See log for more detail: " << log_file.string() << std::endl;
+    std::cout << "See log for more details: " << log_file.string() << std::endl;
     std::cout << cmd << std::endl;
     return false;
   }

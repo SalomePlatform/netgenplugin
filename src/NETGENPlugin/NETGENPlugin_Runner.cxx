@@ -50,7 +50,7 @@ namespace fs = boost::filesystem;
 #include <StdMeshers_QuadToTriaAdaptor.hxx>
 #include <StdMeshers_ViscousLayers.hxx>
 #include <StdMeshers_ViscousLayers2D.hxx>
-#include <SMESH_DriverStep.hxx>
+#include <SMESH_DriverShape.hxx>
 #include <SMESH_DriverMesh.hxx>
 
 

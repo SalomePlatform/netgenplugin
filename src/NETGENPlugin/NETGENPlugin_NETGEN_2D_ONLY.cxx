@@ -40,7 +40,7 @@
 #include <StdMeshers_MaxElementArea.hxx>
 #include <StdMeshers_QuadranglePreference.hxx>
 #include <StdMeshers_ViscousLayers2D.hxx>
-#include "SMESH_DriverStep.hxx"
+#include "SMESH_DriverShape.hxx"
 #include "SMESH_DriverMesh.hxx"
 
 
