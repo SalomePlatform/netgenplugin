@@ -26,13 +26,15 @@
 //
 #include "NETGENPlugin_DriverParam.hxx"
 
+#include "NETGENPlugin_Hypothesis.hxx"
+
+#include <SMESH_Gen.hxx>
+#include <StdMeshers_MaxElementVolume.hxx>
+
 #include <iostream>
 #include <fstream>
 #include <string>
 #include <cassert>
-
-
-// TODO: Error handling of read/write
 
 /**
  * @brief Print content of a netgen_params
@@ -40,8 +42,6 @@
  * @param aParams The object to display
  */
 void printNetgenParams(netgen_params& aParams){
-  // TODO: prettier print
-  // TODO: Add call to print in log
   std::cout << "has_netgen_param: " << aParams.has_netgen_param << std::endl;
   std::cout << "maxh: " << aParams.maxh << std::endl;
   std::cout << "minh: " << aParams.minh << std::endl;
@@ -76,7 +76,7 @@ void printNetgenParams(netgen_params& aParams){
  * @param param_file Name of the file
  * @param aParams Structure to fill
  */
-void importNetgenParams(const std::string param_file, netgen_params& aParams){
+void importNetgenParams(const std::string param_file, netgen_params& aParams, SMESH_Gen *gen){
   std::ifstream myfile(param_file);
   std::string line;
 
@@ -133,7 +133,36 @@ void importNetgenParams(const std::string param_file, netgen_params& aParams){
   std::getline(myfile, line);
   aParams.maxElementVolume = std::stoi(line);
 
-  myfile.close();
+  if(aParams.has_netgen_param){
+    aParams._hypParameters = new NETGENPlugin_Hypothesis(0, gen);
+
+    aParams._hypParameters->SetMaxSize(aParams.maxh);
+    aParams._hypParameters->SetMinSize(aParams.minh);
+    aParams._hypParameters->SetNbSegPerEdge(aParams.segmentsperedge);
+    aParams._hypParameters->SetGrowthRate(aParams.grading);
+    aParams._hypParameters->SetNbSegPerRadius(aParams.curvaturesafety);
+    aParams._hypParameters->SetSecondOrder(aParams.secondorder);
+    aParams._hypParameters->SetQuadAllowed(aParams.quad);
+    aParams._hypParameters->SetOptimize(aParams.optimize);
+    aParams._hypParameters->SetFineness((NETGENPlugin_Hypothesis::Fineness)aParams.fineness);
+    aParams._hypParameters->SetSurfaceCurvature(aParams.uselocalh);
+    aParams._hypParameters->SetFuseEdges(aParams.merge_solids);
+    aParams._hypParameters->SetChordalErrorEnabled(aParams.chordalError);
+    if(aParams.optimize){
+      aParams._hypParameters->SetNbSurfOptSteps(aParams.optsteps2d);
+      aParams._hypParameters->SetNbVolOptSteps(aParams.optsteps3d);
+    }
+    aParams._hypParameters->SetElemSizeWeight(aParams.elsizeweight);
+    aParams._hypParameters->SetWorstElemMeasure(aParams.opterrpow);
+    aParams._hypParameters->SetUseDelauney(aParams.delaunay);
+    aParams._hypParameters->SetCheckOverlapping(aParams.checkoverlap);
+    aParams._hypParameters->SetCheckChartBoundary(aParams.checkchartboundary);
+    aParams._hypParameters->SetMeshSizeFile(aParams.meshsizefilename);
+  }
+  if(aParams.has_maxelementvolume_hyp){
+    aParams._hypMaxElementVolume = new StdMeshers_MaxElementVolume(1, gen);
+  }
+  // TODO: Handle viscous layer
 };
 
 /**
@@ -170,45 +199,4 @@ void exportNetgenParams(const std::string param_file, netgen_params& aParams){
   myfile << aParams.has_maxelementvolume_hyp << std::endl;
   myfile << aParams.maxElementVolume << std::endl;
   myfile << aParams.has_LengthFromEdges_hyp << std::endl;
-
-  myfile.close();
 };
-
-/**
- * @brief Compares two netgen_parms object
- *
- * @param params1 Object 1
- * @param params2 Object 2
-
- * @return true if the two object are identical
- */
-bool diffNetgenParams(netgen_params params1, netgen_params params2){
-  bool ret = true;
-  ret &= params1.maxh == params2.maxh;
-  ret &= params1.minh == params2.minh;
-  ret &= params1.segmentsperedge == params2.segmentsperedge;
-  ret &= params1.grading == params2.grading;
-  ret &= params1.curvaturesafety == params2.curvaturesafety;
-  ret &= params1.secondorder == params2.secondorder;
-  ret &= params1.quad == params2.quad;
-  ret &= params1.optimize == params2.optimize;
-  ret &= params1.fineness == params2.fineness;
-  ret &= params1.uselocalh == params2.uselocalh;
-  ret &= params1.merge_solids == params2.merge_solids;
-  ret &= params1.chordalError == params2.chordalError;
-  ret &= params1.optsteps2d == params2.optsteps2d;
-  ret &= params1.optsteps3d == params2.optsteps3d;
-  ret &= params1.elsizeweight == params2.elsizeweight;
-  ret &= params1.opterrpow == params2.opterrpow;
-  ret &= params1.delaunay == params2.delaunay;
-  ret &= params1.checkoverlap == params2.checkoverlap;
-  ret &= params1.checkchartboundary == params2.checkchartboundary;
-  ret &= params1.closeedgefac == params2.closeedgefac;
-  ret &= params1.has_local_size == params2.has_local_size;
-  ret &= params1.meshsizefilename == params2.meshsizefilename;
-  ret &= params1.has_maxelementvolume_hyp == params2.has_maxelementvolume_hyp;
-  ret &= params1.maxElementVolume == params2.maxElementVolume;
-  ret &= params1.has_LengthFromEdges_hyp == params2.has_LengthFromEdges_hyp;
-
-  return ret;
-}

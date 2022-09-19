@@ -33,6 +33,7 @@
 class NETGENPlugin_Hypothesis;
 class StdMeshers_MaxElementVolume;
 class StdMeshers_ViscousLayers;
+class SMESH_Gen;
 
 struct netgen_params{
   // Params from NETGENPlugin_Mesher
@@ -60,7 +61,6 @@ struct netgen_params{
   int closeedgefac;
 
 
-  // TODO: add localsize (pass through local size file ?)
   // True if we have a mesh size file or local size info
   bool has_local_size = false;
   std::string meshsizefilename;
@@ -70,14 +70,13 @@ struct netgen_params{
   bool has_maxelementvolume_hyp=false;
   double maxElementVolume=0.0;
 
-  // to replace
-  //NETGENPlugin_Hypothesis *    _hypParameters=nullptr;
-  // to remove ?
+  NETGENPlugin_Hypothesis *    _hypParameters=nullptr;
   StdMeshers_MaxElementVolume* _hypMaxElementVolume=nullptr;
-  // to remove ?
   StdMeshers_ViscousLayers*    _viscousLayersHyp=nullptr;
-  //double                       _progressByTic;
+  double                       _progressByTic;
   bool _quadraticMesh=false;
+  int _error=0;
+  std::string _comment;
 
   // Params from NETGEN2D
   bool has_LengthFromEdges_hyp=false;
@@ -88,9 +87,7 @@ struct netgen_params{
 
 void printNetgenParams(netgen_params& aParams);
 
-void importNetgenParams(const std::string param_file, netgen_params& aParams);
+void importNetgenParams(const std::string param_file, netgen_params& aParams, SMESH_Gen * gen);
 void exportNetgenParams(const std::string param_file, netgen_params& aParams);
-
-bool diffNetgenParams(netgen_params params1, netgen_params params2);
 
 #endif

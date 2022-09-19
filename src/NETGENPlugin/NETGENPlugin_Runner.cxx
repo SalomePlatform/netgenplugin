@@ -213,7 +213,7 @@ int netgen3d(const std::string input_mesh_file,
   // Importing hypothesis
   netgen_params myParams;
 
-  importNetgenParams(hypo_file, myParams);
+  importNetgenParams(hypo_file, myParams, &gen);
   auto time3 = std::chrono::high_resolution_clock::now();
   elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(time3-time2);
   std::cout << "Time for import_netgen_param: " << elapsed.count() * 1e-9 << std::endl;
@@ -671,7 +671,7 @@ int netgen2d(const std::string input_mesh_file,
   // Importing hypothesis
   netgen_params myParams;
 
-  importNetgenParams(hypo_file, myParams);
+  importNetgenParams(hypo_file, myParams, &gen);
 
   std::cout << "Meshing with netgen3d" << std::endl;
   int ret = netgen2dInternal(myShape, *myMesh, myParams,
