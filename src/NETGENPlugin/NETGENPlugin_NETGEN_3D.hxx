@@ -37,11 +37,14 @@
 #include "SMESH_Algo.hxx"
 #include "Utils_SALOME_Exception.hxx"
 
+#include <vector>
+
 class StdMeshers_ViscousLayers;
 class StdMeshers_MaxElementVolume;
 class NETGENPlugin_Hypothesis;
 class NETGENPlugin_NetgenLibWrapper;
 class netgen_params;
+class SMDS_MeshNode;
 
 class NETGENPLUGIN_EXPORT NETGENPlugin_NETGEN_3D: public SMESH_3D_Algo
 {
@@ -67,6 +70,37 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_NETGEN_3D: public SMESH_3D_Algo
                         const TopoDS_Shape& aShape,
                         MapShapeNbElems& aResMap);
 
+  static bool computeFillNgMesh(
+    SMESH_Mesh&         aMesh,
+    const TopoDS_Shape& aShape,
+    std::vector< const SMDS_MeshNode* > &nodeVec,
+    NETGENPlugin_NetgenLibWrapper &ngLib,
+    SMESH_MesherHelper &helper,
+    netgen_params &aParams,
+    int &Netgen_NbOfNodes);
+
+  static bool computePrepareParam(
+    SMESH_Mesh&         aMesh,
+    NETGENPlugin_NetgenLibWrapper &ngLib,
+    netgen::OCCGeometry &occgeo,
+    SMESH_MesherHelper &helper,
+    netgen_params &aParams,
+    int &endWith);
+
+  static bool computeRunMesher(
+    netgen::OCCGeometry &occgeo,
+    std::vector< const SMDS_MeshNode* > &nodeVec,
+    netgen::Mesh* ngMesh,
+    NETGENPlugin_NetgenLibWrapper &ngLib,
+    netgen_params &aParams,
+    int &startWith, int &endWith);
+
+  static bool computeFillMesh(
+    std::vector< const SMDS_MeshNode* > &nodeVec,
+    NETGENPlugin_NetgenLibWrapper &ngLib,
+    SMESH_MesherHelper &helper,
+    int &Netgen_NbOfNodes);
+
  protected:
 
   void exportElementOrientation(SMESH_Mesh& aMesh,
@@ -79,6 +113,7 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_NETGEN_3D: public SMESH_3D_Algo
 
   int RemoteCompute(SMESH_Mesh&         aMesh,
                     const TopoDS_Shape& aShape);
+
 
 
   bool compute(SMESH_Mesh&                          mesh,
