@@ -190,7 +190,6 @@ int netgen3d(const std::string input_mesh_file,
              const std::string output_mesh_file,
              int nbThreads)
 {
-  auto time0 = std::chrono::high_resolution_clock::now();
   // Importing mesh
   SMESH_Gen gen;
 
@@ -199,24 +198,15 @@ int netgen3d(const std::string input_mesh_file,
   std::string mesh_name = "Maillage_1";
 
   importMesh(input_mesh_file, *myMesh, mesh_name);
-  auto time1 = std::chrono::high_resolution_clock::now();
-  auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(time1-time0);
-  std::cout << "Time for importMesh: " << elapsed.count() * 1e-9 << std::endl;
 
   // Importing shape
   TopoDS_Shape myShape;
   importShape(shape_file, myShape);
-  auto time2 = std::chrono::high_resolution_clock::now();
-  elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(time2-time1);
-  std::cout << "Time for importShape: " << elapsed.count() * 1e-9 << std::endl;
 
   // Importing hypothesis
   netgen_params myParams;
 
   importNetgenParams(hypo_file, myParams, &gen);
-  auto time3 = std::chrono::high_resolution_clock::now();
-  elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(time3-time2);
-  std::cout << "Time for import_netgen_param: " << elapsed.count() * 1e-9 << std::endl;
   // Setting number of threads for netgen
   myParams.nbThreads = nbThreads;
 
@@ -226,59 +216,41 @@ int netgen3d(const std::string input_mesh_file,
                               !output_mesh_file.empty());
 
 
-  if(!ret){
+  if(ret){
     std::cout << "Meshing failed" << std::endl;
     return ret;
   }
 
   if(!output_mesh_file.empty()){
-    auto time4 = std::chrono::high_resolution_clock::now();
     exportMesh(output_mesh_file, *myMesh, mesh_name);
-    auto time5 = std::chrono::high_resolution_clock::now();
-    elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(time5-time4);
-    std::cout << "Time for exportMesh: " << elapsed.count() * 1e-9 << std::endl;
   }
 
   return ret;
 }
 
-/**
- * @brief Compute aShape within aMesh using netgen3d
- *
- * @param aShape the shape
- * @param aMesh the mesh
- * @param aParams the netgen parameters
- * @param new_element_file file containing data on the new point/tetra added by netgen
- * @param element_orientation_file file containing data on the orientation of each element to add to netgen
- * @param output_mesh if true add element created by netgen into aMesh
- *
- * @return error code
- */
-int netgen3dInternal(TopoDS_Shape &aShape, SMESH_Mesh& aMesh, netgen_params& aParams,
-                      std::string new_element_file, std::string element_orientation_file,
-                      bool output_mesh)
+bool mycomputeFillNgMesh(
+    SMESH_Mesh&         aMesh,
+    const TopoDS_Shape& aShape,
+    std::vector< const SMDS_MeshNode* > &nodeVec,
+    NETGENPlugin_NetgenLibWrapper &ngLib,
+    SMESH_MesherHelper &helper,
+    netgen_params &aParams,
+    std::string element_orientation_file,
+    int &Netgen_NbOfNodes)
 {
-
-  auto time0 = std::chrono::high_resolution_clock::now();
-
   netgen::multithread.terminate = 0;
   netgen::multithread.task = "Volume meshing";
 
   SMESHDS_Mesh* meshDS = aMesh.GetMeshDS();
 
-  SMESH_MesherHelper helper(aMesh);
   aParams._quadraticMesh = helper.IsQuadraticSubMesh(aShape);
   helper.SetElementsOnShape( true );
 
-  int Netgen_NbOfNodes = 0;
   double Netgen_point[3];
   int Netgen_triangle[3];
 
-  NETGENPlugin_NetgenLibWrapper ngLib;
   Ng_Mesh * Netgen_mesh = (Ng_Mesh*)ngLib._ngMesh;
 
-  // vector of nodes in which node index == netgen ID
-  vector< const SMDS_MeshNode* > nodeVec;
   {
     const int invalid_ID = -1;
 
@@ -434,9 +406,20 @@ int netgen3dInternal(TopoDS_Shape &aShape, SMESH_Mesh& aMesh, netgen_params& aPa
     //                                               internals);
     //}
   }
-  auto time1 = std::chrono::high_resolution_clock::now();
-  auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(time1-time0);
-  std::cout << "Time for fill_in_ngmesh: " << elapsed.count() * 1e-9 << std::endl;
+  Netgen_mesh = ngLib.ngMesh();
+  Netgen_NbOfNodes = Ng_GetNP( Netgen_mesh );
+
+  return false;
+}
+
+bool mycomputePrepareParam(
+    SMESH_Mesh&         aMesh,
+    NETGENPlugin_NetgenLibWrapper &ngLib,
+    netgen::OCCGeometry &occgeo,
+    SMESH_MesherHelper &helper,
+    netgen_params &aParams,
+    int &endWith)
+{
 
   // -------------------------
   // Generate the volume mesh
@@ -444,16 +427,8 @@ int netgen3dInternal(TopoDS_Shape &aShape, SMESH_Mesh& aMesh, netgen_params& aPa
   netgen::multithread.terminate = 0;
 
   netgen::Mesh* ngMesh = ngLib._ngMesh;
-  Netgen_mesh = ngLib.ngMesh();
-  Netgen_NbOfNodes = Ng_GetNP( Netgen_mesh );
-
-
-  int startWith = netgen::MESHCONST_MESHVOLUME;
-  int endWith   = netgen::MESHCONST_OPTVOLUME;
-  int err = 1;
 
   NETGENPlugin_Mesher aMesher( &aMesh, helper.GetSubShape(), /*isVolume=*/true );
-  netgen::OCCGeometry occgeo;
   set_netgen_parameters(aParams);
 
   if ( aParams.has_netgen_param )
@@ -499,6 +474,17 @@ int netgen3dInternal(TopoDS_Shape &aShape, SMESH_Mesh& aMesh, netgen_params& aPa
     netgen::mparam.minh = aMesher.GetDefaultMinSize( helper.GetSubShape(), netgen::mparam.maxh );
   }
 
+  return false;
+}
+
+bool mycomputeRunMesher(
+    netgen::OCCGeometry &occgeo,
+    std::vector< const SMDS_MeshNode* > &nodeVec,
+    netgen::Mesh* ngMesh,
+    NETGENPlugin_NetgenLibWrapper &ngLib,
+    int &startWith, int &endWith)
+{
+  int err = 1;
   try
   {
     OCC_CATCH_SIGNALS;
@@ -536,22 +522,28 @@ int netgen3dInternal(TopoDS_Shape &aShape, SMESH_Mesh& aMesh, netgen_params& aPa
     return error(str);
   }
 
-  int Netgen_NbOfNodesNew = Ng_GetNP(Netgen_mesh);
-  int Netgen_NbOfTetra    = Ng_GetNE(Netgen_mesh);
-
-  // -------------------------------------------------------------------
-  // Feed back the SMESHDS with the generated Nodes and Volume Elements
-  // -------------------------------------------------------------------
-
   if ( err )
   {
     SMESH_ComputeErrorPtr ce = NETGENPlugin_Mesher::ReadErrors(nodeVec);
     if ( ce && ce->HasBadElems() )
       return error( ce );
   }
-  auto time2 = std::chrono::high_resolution_clock::now();
-  elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(time2-time1);
-  std::cout << "Time for netgen_compute: " << elapsed.count() * 1e-9 << std::endl;
+
+  return false;
+
+}
+
+bool mycomputeFillNewElementFile(
+    std::vector< const SMDS_MeshNode* > &nodeVec,
+    NETGENPlugin_NetgenLibWrapper &ngLib,
+    std::string new_element_file,
+    int &Netgen_NbOfNodes
+)
+{
+  Ng_Mesh* Netgen_mesh = ngLib.ngMesh();
+
+  int Netgen_NbOfNodesNew = Ng_GetNP(Netgen_mesh);
+  int Netgen_NbOfTetra    = Ng_GetNE(Netgen_mesh);
 
   bool isOK = ( /*status == NG_OK &&*/ Netgen_NbOfTetra > 0 );// get whatever built
   if ( isOK && !new_element_file.empty() )
@@ -588,50 +580,115 @@ int netgen3dInternal(TopoDS_Shape &aShape, SMESH_Mesh& aMesh, netgen_params& aPa
       df.write((char*) &Netgen_tetrahedron, sizeof(int)*4);
     }
   }
-  auto time3 = std::chrono::high_resolution_clock::now();
-  elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(time3-time2);
-  std::cout << "Time for write_new_elem: " << elapsed.count() * 1e-9 << std::endl;
+  return false;
+}
 
+bool mycomputeFillMesh(
+    std::vector< const SMDS_MeshNode* > &nodeVec,
+    NETGENPlugin_NetgenLibWrapper &ngLib,
+    SMESH_MesherHelper &helper,
+    int &Netgen_NbOfNodes)
+{
+
+  Ng_Mesh* Netgen_mesh = ngLib.ngMesh();
+
+  int Netgen_NbOfNodesNew = Ng_GetNP(Netgen_mesh);
+  int Netgen_NbOfTetra    = Ng_GetNE(Netgen_mesh);
+
+  // -------------------------------------------------------------------
+  // Feed back the SMESHDS with the generated Nodes and Volume Elements
+  // -------------------------------------------------------------------
 
   // Adding new elements in aMesh as well
-  if ( output_mesh )
+
+  double Netgen_point[3];
+  int    Netgen_tetrahedron[4];
+
+  // create and insert new nodes into nodeVec
+  nodeVec.resize( Netgen_NbOfNodesNew + 1, 0 );
+  int nodeIndex = Netgen_NbOfNodes + 1;
+  for ( ; nodeIndex <= Netgen_NbOfNodesNew; ++nodeIndex )
   {
-    double Netgen_point[3];
-    int    Netgen_tetrahedron[4];
+    Ng_GetPoint( Netgen_mesh, nodeIndex, Netgen_point );
+    nodeVec.at(nodeIndex) = helper.AddNode(Netgen_point[0],
+                                            Netgen_point[1],
+                                            Netgen_point[2]);
+  }
 
-    // create and insert new nodes into nodeVec
-    nodeVec.resize( Netgen_NbOfNodesNew + 1, 0 );
-    int nodeIndex = Netgen_NbOfNodes + 1;
-    for ( ; nodeIndex <= Netgen_NbOfNodesNew; ++nodeIndex )
+  // create tetrahedrons
+  for ( int elemIndex = 1; elemIndex <= Netgen_NbOfTetra; ++elemIndex )
+  {
+    Ng_GetVolumeElement(Netgen_mesh, elemIndex, Netgen_tetrahedron);
+    try
     {
-      Ng_GetPoint( Netgen_mesh, nodeIndex, Netgen_point );
-      nodeVec.at(nodeIndex) = helper.AddNode(Netgen_point[0],
-                                             Netgen_point[1],
-                                             Netgen_point[2]);
+      helper.AddVolume (nodeVec.at( Netgen_tetrahedron[0] ),
+                        nodeVec.at( Netgen_tetrahedron[1] ),
+                        nodeVec.at( Netgen_tetrahedron[2] ),
+                        nodeVec.at( Netgen_tetrahedron[3] ));
     }
-
-    // create tetrahedrons
-    for ( int elemIndex = 1; elemIndex <= Netgen_NbOfTetra; ++elemIndex )
+    catch (...)
     {
-      Ng_GetVolumeElement(Netgen_mesh, elemIndex, Netgen_tetrahedron);
-      try
-      {
-        helper.AddVolume (nodeVec.at( Netgen_tetrahedron[0] ),
-                          nodeVec.at( Netgen_tetrahedron[1] ),
-                          nodeVec.at( Netgen_tetrahedron[2] ),
-                          nodeVec.at( Netgen_tetrahedron[3] ));
-      }
-      catch (...)
-      {
-      }
     }
-    auto time4 = std::chrono::high_resolution_clock::now();
-    elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(time4-time3);
-    std::cout << "Time for add_element_to_smesh: " << elapsed.count() * 1e-9 << std::endl;
 
   }
 
-  return !err;
+  return false;
+}
+
+/**
+ * @brief Compute aShape within aMesh using netgen3d
+ *
+ * @param aShape the shape
+ * @param aMesh the mesh
+ * @param aParams the netgen parameters
+ * @param new_element_file file containing data on the new point/tetra added by netgen
+ * @param element_orientation_file file containing data on the orientation of each element to add to netgen
+ * @param output_mesh if true add element created by netgen into aMesh
+ *
+ * @return error code
+ */
+int netgen3dInternal(TopoDS_Shape &aShape, SMESH_Mesh& aMesh, netgen_params& aParams,
+                     std::string new_element_file, std::string element_orientation_file,
+                     bool output_mesh)
+{
+// vector of nodes in which node index == netgen ID
+  vector< const SMDS_MeshNode* > nodeVec;
+  NETGENPlugin_NetgenLibWrapper ngLib;
+  SMESH_MesherHelper helper(aMesh);
+  int startWith = netgen::MESHCONST_MESHVOLUME;
+  int endWith   = netgen::MESHCONST_OPTVOLUME;
+  int Netgen_NbOfNodes=0;
+
+  bool ret;
+  std::cout << "mycomputeFillNgMesh" << std::endl;
+  ret = mycomputeFillNgMesh(aMesh, aShape, nodeVec, ngLib, helper, aParams, element_orientation_file, Netgen_NbOfNodes);
+  if(ret)
+    return error( aParams._error, aParams._comment);
+  std::cout << "mycomputePrepareParam" << std::endl;
+
+  netgen::OCCGeometry occgeo;
+  mycomputePrepareParam(aMesh, ngLib, occgeo, helper, aParams, endWith);
+  std::cout << "mycomputeRunMesher" << std::endl;
+
+  ret = mycomputeRunMesher(occgeo, nodeVec, ngLib._ngMesh, ngLib, startWith, endWith);
+  if(ret){
+    if(aParams._error)
+      return error(aParams._error, aParams._comment);
+
+    error(aParams._comment);
+    return true;
+  }
+  std::cout << "mycomputeFillNewElementFile" << std::endl;
+
+  mycomputeFillNewElementFile(nodeVec, ngLib, new_element_file, Netgen_NbOfNodes);
+  std::cout << "mycomputeFillMesh" << std::endl;
+
+  if(output_mesh)
+    mycomputeFillMesh(nodeVec, ngLib, helper, Netgen_NbOfNodes);
+  std::cout << "Done" << std::endl;
+
+
+  return false;
 }
 
 /**

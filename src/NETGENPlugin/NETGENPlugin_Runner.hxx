@@ -31,11 +31,20 @@
 #include <string>
 #include <iostream>
 
+#include "NETGENPlugin_Defs.hxx"
+#include "NETGENPlugin_Mesher.hxx"
+
+#include "SMESH_Algo.hxx"
+#include "Utils_SALOME_Exception.hxx"
+
 class TopoDS_Shape;
 class SMESH_Mesh;
 class SMESH_Comment;
 class netgen_params;
+class NETGENPlugin_NetgenLibWrapper;
+class SMDS_MeshNode;
 
+// Netgen 2d functions
 int netgen2dInternal(TopoDS_Shape &aShape,
              SMESH_Mesh& aMesh,
              netgen_params& aParams,
@@ -48,6 +57,44 @@ int netgen2d(const std::string input_mesh_file,
              const std::string element_orientation_file,
              const std::string new_element_file,
              const std::string output_mesh_file);
+
+// Netgen 3D functions
+bool mycomputeFillNgMesh(
+    SMESH_Mesh&         aMesh,
+    const TopoDS_Shape& aShape,
+    std::vector< const SMDS_MeshNode* > &nodeVec,
+    NETGENPlugin_NetgenLibWrapper &ngLib,
+    SMESH_MesherHelper &helper,
+    netgen_params &aParams,
+    std::string element_orientation_file,
+    int &Netgen_NbOfNodes);
+
+bool mycomputePrepareParam(
+    SMESH_Mesh&         aMesh,
+    NETGENPlugin_NetgenLibWrapper &ngLib,
+    netgen::OCCGeometry &occgeo,
+    SMESH_MesherHelper &helper,
+    netgen_params &aParams,
+    int &endWith);
+
+bool mycomputeRunMesher(
+    netgen::OCCGeometry &occgeo,
+    std::vector< const SMDS_MeshNode* > &nodeVec,
+    netgen::Mesh* ngMesh,
+    NETGENPlugin_NetgenLibWrapper &ngLib,
+    int &startWith, int &endWith);
+
+bool mycomputeFillNewElementFile(
+    std::vector< const SMDS_MeshNode* > &nodeVec,
+    NETGENPlugin_NetgenLibWrapper &ngLib,
+    std::string new_element_file,
+    int &Netgen_NbOfNodes);
+
+bool mycomputeFillMesh(
+    std::vector< const SMDS_MeshNode* > &nodeVec,
+    NETGENPlugin_NetgenLibWrapper &ngLib,
+    SMESH_MesherHelper &helper,
+    int &Netgen_NbOfNodes);
 
 int netgen3dInternal(TopoDS_Shape &aShape,
              SMESH_Mesh& aMesh,

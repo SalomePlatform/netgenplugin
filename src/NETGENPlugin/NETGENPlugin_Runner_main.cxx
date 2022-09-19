@@ -72,6 +72,9 @@ int main(int argc, char *argv[]){
   std::string new_element_file=argv[7];
   std::string output_mesh_file=argv[8];
 
+  //std::string thing;
+  //std::cin >> thing;
+
   if (output_mesh_file == "NONE")
     output_mesh_file = "";
   if (element_orientation_file == "NONE")
