@@ -474,6 +474,70 @@ int NETGENPlugin_NETGEN_3D::RemoteCompute(SMESH_Mesh&         aMesh,
  */
 //=============================================================================
 
+/**
+ * @brief Get an iterator on the Surface element with their orientation
+ *
+ */
+
+ bool getSurfaceElements(
+    SMESH_Mesh&         aMesh,
+    const TopoDS_Shape& aShape,
+    SMESH_ProxyMesh::Ptr proxyMesh,
+    NETGENPlugin_Internals &internals,
+    SMESH_MesherHelper &helper,
+    netgen_params &aParams,
+    std::map<const SMDS_MeshElement*, tuple<bool, bool>>& listElements
+)
+{
+  SMESHDS_Mesh* meshDS = aMesh.GetMeshDS();
+  TopAbs_ShapeEnum mainType = aMesh.GetShapeToMesh().ShapeType();
+  bool checkReverse = ( mainType == TopAbs_COMPOUND || mainType == TopAbs_COMPSOLID );
+
+  for ( TopExp_Explorer exFa( aShape, TopAbs_FACE ); exFa.More(); exFa.Next())
+  {
+    const TopoDS_Shape& aShapeFace = exFa.Current();
+    int faceID = meshDS->ShapeToIndex( aShapeFace );
+    bool isInternalFace = internals.isInternalShape( faceID );
+    bool isRev = false;
+    if ( checkReverse && !isInternalFace &&
+          helper.NbAncestors(aShapeFace, aMesh, aShape.ShapeType()) > 1 )
+      // IsReversedSubMesh() can work wrong on strongly curved faces,
+      // so we use it as less as possible
+      isRev = helper.IsReversedSubMesh( TopoDS::Face( aShapeFace ));
+
+    const SMESHDS_SubMesh * aSubMeshDSFace = proxyMesh->GetSubMesh( aShapeFace );
+    if ( !aSubMeshDSFace ) continue;
+
+    SMDS_ElemIteratorPtr iteratorElem = aSubMeshDSFace->GetElements();
+    if ( aParams._quadraticMesh &&
+          dynamic_cast< const SMESH_ProxyMesh::SubMesh*>( aSubMeshDSFace ))
+    {
+      // add medium nodes of proxy triangles to helper (#16843)
+      while ( iteratorElem->more() )
+        helper.AddTLinks( static_cast< const SMDS_MeshFace* >( iteratorElem->next() ));
+
+      iteratorElem = aSubMeshDSFace->GetElements();
+    }
+    while(iteratorElem->more()){
+      const SMDS_MeshElement* elem = iteratorElem->next();
+      // check mesh face
+      if ( !elem ){
+        aParams._error = COMPERR_BAD_INPUT_MESH;
+        aParams._comment = "Null element encounters";
+        return true;
+      }
+      if ( elem->NbCornerNodes() != 3 ){
+        aParams._error = COMPERR_BAD_INPUT_MESH;
+        aParams._comment = "Not triangle element encounters";
+        return true;
+      }
+      listElements[elem] = tuple(isRev, isInternalFace);
+    }
+  }
+
+  return false;
+}
+
 
 bool NETGENPlugin_NETGEN_3D::computeFillNgMesh(
   SMESH_Mesh&         aMesh,
@@ -516,9 +580,8 @@ bool NETGENPlugin_NETGEN_3D::computeFillNgMesh(
     // ---------------------------------
     // Feed the Netgen with surface mesh
     // ---------------------------------
-
-    TopAbs_ShapeEnum mainType = aMesh.GetShapeToMesh().ShapeType();
-    bool checkReverse = ( mainType == TopAbs_COMPOUND || mainType == TopAbs_COMPSOLID );
+    bool isRev=false;
+    bool isInternalFace=false;
 
     SMESH_ProxyMesh::Ptr proxyMesh( new SMESH_ProxyMesh( aMesh ));
     if ( aParams._viscousLayersHyp )
@@ -536,88 +599,56 @@ bool NETGENPlugin_NETGEN_3D::computeFillNgMesh(
       proxyMesh.reset( Adaptor );
     }
 
-    for ( TopExp_Explorer exFa( aShape, TopAbs_FACE ); exFa.More(); exFa.Next())
+    std::map<const SMDS_MeshElement*, tuple<bool, bool>> listElements;
+    bool ret = getSurfaceElements(aMesh, aShape, proxyMesh, internals, helper, aParams, listElements);
+    if(ret)
+      return ret;
+
+    for ( auto const& [elem, info] : listElements ) // loop on elements on a geom face
     {
-      const TopoDS_Shape& aShapeFace = exFa.Current();
-      int faceID = meshDS->ShapeToIndex( aShapeFace );
-      bool isInternalFace = internals.isInternalShape( faceID );
-      bool isRev = false;
-      if ( checkReverse && !isInternalFace &&
-           helper.NbAncestors(aShapeFace, aMesh, aShape.ShapeType()) > 1 )
-        // IsReversedSubMesh() can work wrong on strongly curved faces,
-        // so we use it as less as possible
-        isRev = helper.IsReversedSubMesh( TopoDS::Face( aShapeFace ));
+      isRev = get<0>(info);
+      isInternalFace = get<1>(info);
+      // Add nodes of triangles and triangles them-selves to netgen mesh
 
-      const SMESHDS_SubMesh * aSubMeshDSFace = proxyMesh->GetSubMesh( aShapeFace );
-      if ( !aSubMeshDSFace ) continue;
-
-      SMDS_ElemIteratorPtr iteratorElem = aSubMeshDSFace->GetElements();
-      if ( aParams._quadraticMesh &&
-           dynamic_cast< const SMESH_ProxyMesh::SubMesh*>( aSubMeshDSFace ))
+      // add three nodes of triangle
+      bool hasDegen = false;
+      for ( int iN = 0; iN < 3; ++iN )
       {
-        // add medium nodes of proxy triangles to helper (#16843)
-        while ( iteratorElem->more() )
-          helper.AddTLinks( static_cast< const SMDS_MeshFace* >( iteratorElem->next() ));
-
-        iteratorElem = aSubMeshDSFace->GetElements();
+        const SMDS_MeshNode* node = elem->GetNode( iN );
+        const int shapeID = node->getshapeId();
+        if ( node->GetPosition()->GetTypeOfPosition() == SMDS_TOP_EDGE &&
+              helper.IsDegenShape( shapeID ))
+        {
+          // ignore all nodes on degeneraged edge and use node on its vertex instead
+          TopoDS_Shape vertex = TopoDS_Iterator( meshDS->IndexToShape( shapeID )).Value();
+          node = SMESH_Algo::VertexNode( TopoDS::Vertex( vertex ), meshDS );
+          hasDegen = true;
+        }
+        int& ngID = nodeToNetgenID.insert(TN2ID( node, invalid_ID )).first->second;
+        if ( ngID == invalid_ID )
+        {
+          ngID = ++Netgen_NbOfNodes;
+          Netgen_point [ 0 ] = node->X();
+          Netgen_point [ 1 ] = node->Y();
+          Netgen_point [ 2 ] = node->Z();
+          Ng_AddPoint(Netgen_mesh, Netgen_point);
+        }
+        Netgen_triangle[ isRev ? 2-iN : iN ] = ngID;
       }
-      while ( iteratorElem->more() ) // loop on elements on a geom face
+      // add triangle
+      if ( hasDegen && (Netgen_triangle[0] == Netgen_triangle[1] ||
+                        Netgen_triangle[0] == Netgen_triangle[2] ||
+                        Netgen_triangle[2] == Netgen_triangle[1] ))
+        continue;
+
+      Ng_AddSurfaceElement(Netgen_mesh, NG_TRIG, Netgen_triangle);
+
+      if ( isInternalFace && !proxyMesh->IsTemporary( elem ))
       {
-        // check mesh face
-        const SMDS_MeshElement* elem = iteratorElem->next();
-        if ( !elem ){
-          aParams._error = COMPERR_BAD_INPUT_MESH;
-          aParams._comment = "Null element encounters";
-          return true;
-        }
-        if ( elem->NbCornerNodes() != 3 ){
-          aParams._error = COMPERR_BAD_INPUT_MESH;
-          aParams._comment = "Not triangle element encounters";
-          return true;
-        }
-
-        // Add nodes of triangles and triangles them-selves to netgen mesh
-
-        // add three nodes of triangle
-        bool hasDegen = false;
-        for ( int iN = 0; iN < 3; ++iN )
-        {
-          const SMDS_MeshNode* node = elem->GetNode( iN );
-          const int shapeID = node->getshapeId();
-          if ( node->GetPosition()->GetTypeOfPosition() == SMDS_TOP_EDGE &&
-               helper.IsDegenShape( shapeID ))
-          {
-            // ignore all nodes on degeneraged edge and use node on its vertex instead
-            TopoDS_Shape vertex = TopoDS_Iterator( meshDS->IndexToShape( shapeID )).Value();
-            node = SMESH_Algo::VertexNode( TopoDS::Vertex( vertex ), meshDS );
-            hasDegen = true;
-          }
-          int& ngID = nodeToNetgenID.insert(TN2ID( node, invalid_ID )).first->second;
-          if ( ngID == invalid_ID )
-          {
-            ngID = ++Netgen_NbOfNodes;
-            Netgen_point [ 0 ] = node->X();
-            Netgen_point [ 1 ] = node->Y();
-            Netgen_point [ 2 ] = node->Z();
-            Ng_AddPoint(Netgen_mesh, Netgen_point);
-          }
-          Netgen_triangle[ isRev ? 2-iN : iN ] = ngID;
-        }
-        // add triangle
-        if ( hasDegen && (Netgen_triangle[0] == Netgen_triangle[1] ||
-                          Netgen_triangle[0] == Netgen_triangle[2] ||
-                          Netgen_triangle[2] == Netgen_triangle[1] ))
-          continue;
-
+        swap( Netgen_triangle[1], Netgen_triangle[2] );
         Ng_AddSurfaceElement(Netgen_mesh, NG_TRIG, Netgen_triangle);
-
-        if ( isInternalFace && !proxyMesh->IsTemporary( elem ))
-        {
-          swap( Netgen_triangle[1], Netgen_triangle[2] );
-          Ng_AddSurfaceElement(Netgen_mesh, NG_TRIG, Netgen_triangle);
-        }
-      } // loop on elements on a face
-    } // loop on faces of a SOLID or SHELL
+      }
+    } // loop on elements on a face
 
     // insert old nodes into nodeVec
     nodeVec.resize( nodeToNetgenID.size() + 1, 0 );
