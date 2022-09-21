@@ -25,8 +25,7 @@
 //  Module : NETGEN
 //
 
-
-#include "NETGENPlugin_Runner.hxx"
+#include "NETGENPlugin_NETGEN_3D_SA.hxx"
 
 #include <stdio.h>
 #include <string.h>
@@ -84,7 +83,8 @@ int main(int argc, char *argv[]){
 
   if (mesher=="NETGEN3D"){
     auto begin = std::chrono::high_resolution_clock::now();
-    netgen3d(input_mesh_file,
+    NETGENPlugin_NETGEN_3D_SA myplugin;
+    myplugin.run(input_mesh_file,
              shape_file,
              hypo_file,
              element_orientation_file,
@@ -94,13 +94,6 @@ int main(int argc, char *argv[]){
     auto end = std::chrono::high_resolution_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
     std::cout << "Time elapsed: " << elapsed.count()*1e-9 << std::endl;
-  } else if (mesher=="NETGEN2D"){
-    netgen2d(input_mesh_file,
-             shape_file,
-             hypo_file,
-             element_orientation_file,
-             new_element_file,
-             output_mesh_file);
   } else {
     std::cerr << "Unknown mesher:" << mesher << std::endl;
   }

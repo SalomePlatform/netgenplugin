@@ -42,6 +42,7 @@ NETGEN_VERSION_MAJOR = NETGENPlugin.NETGEN_VERSION_MAJOR
 
 ## Algorithm type: Netgen tetrahedron 3D algorithm, see NETGEN_3D_Algorithm
 NETGEN_3D     = "NETGEN_3D"
+NETGEN_3D_Remote     = "NETGEN_3D_Remote"
 ## Algorithm type: Netgen tetrahedron 1D-2D-3D algorithm, see NETGEN_1D2D3D_Algorithm
 NETGEN_1D2D3D = "NETGEN_2D3D"
 ## Algorithm type: Netgen triangle 1D-2D algorithm, see NETGEN_1D2D_Algorithm
@@ -472,6 +473,37 @@ class NETGEN_3D_Algorithm(NETGEN_Algorithm):
         return hyp
 
     pass # end of NETGEN_3D_Algorithm class
+
+## Tetrahedron 3D algorithm
+#
+#  It can be created by calling smeshBuilder.Mesh.Tetrahedron() or smeshBuilder.Mesh.Tetrahedron( smeshBuilder.NETGEN, geom=0 )
+#
+#  This algorithm generates only 3D (volumes) elements for given geometrical shape
+#  and, in contrast to NETGEN_1D2D3D_Algorithm class, should be used in conjunction
+#  with other 1D and 2D meshing algorithms.
+class NETGEN_3D_Remote_Algorithm(NETGEN_3D_Algorithm):
+
+    ## type of algorithm used with helper function in smeshBuilder.Mesh class
+    #  @internal
+    algoType   = NETGEN_3D_Remote
+    ## flag pointing either this algorithm should be used by default in dynamic method
+    #  of smeshBuilder.Mesh class
+    #  @internal
+    isDefault  = False
+    ## doc string of the method
+    #  @internal
+    docHelper  = "Remotely Creates tetrahedron 3D algorithm for solids"
+
+    ## Private constructor.
+    #  @param mesh parent mesh object algorithm is assigned to
+    #  @param geom geometry (shape/sub-shape) algorithm is assigned to;
+    #              if it is @c 0 (default), the algorithm is assigned to the main shape
+    def __init__(self, mesh, geom=0):
+        NETGEN_3D_Algorithm.__init__(self, mesh, geom)
+        pass
+
+    pass # end of NETGEN_3D_Remote_Algorithm class
+
 
 
 ## Triangle (helper) 1D-2D algorithm

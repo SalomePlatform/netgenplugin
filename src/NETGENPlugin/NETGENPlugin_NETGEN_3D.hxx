@@ -38,6 +38,7 @@
 #include "Utils_SALOME_Exception.hxx"
 
 #include <vector>
+#include <tuple>
 
 class StdMeshers_ViscousLayers;
 class StdMeshers_MaxElementVolume;
@@ -70,7 +71,7 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_NETGEN_3D: public SMESH_3D_Algo
                         const TopoDS_Shape& aShape,
                         MapShapeNbElems& aResMap);
 
-  static bool computeFillNgMesh(
+  bool computeFillNgMesh(
     SMESH_Mesh&         aMesh,
     const TopoDS_Shape& aShape,
     std::vector< const SMDS_MeshNode* > &nodeVec,
@@ -79,7 +80,7 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_NETGEN_3D: public SMESH_3D_Algo
     netgen_params &aParams,
     int &Netgen_NbOfNodes);
 
-  static bool computePrepareParam(
+  bool computePrepareParam(
     SMESH_Mesh&         aMesh,
     NETGENPlugin_NetgenLibWrapper &ngLib,
     netgen::OCCGeometry &occgeo,
@@ -87,7 +88,7 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_NETGEN_3D: public SMESH_3D_Algo
     netgen_params &aParams,
     int &endWith);
 
-  static bool computeRunMesher(
+  bool computeRunMesher(
     netgen::OCCGeometry &occgeo,
     std::vector< const SMDS_MeshNode* > &nodeVec,
     netgen::Mesh* ngMesh,
@@ -95,7 +96,7 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_NETGEN_3D: public SMESH_3D_Algo
     netgen_params &aParams,
     int &startWith, int &endWith);
 
-  static bool computeFillMesh(
+  bool computeFillMesh(
     std::vector< const SMDS_MeshNode* > &nodeVec,
     NETGENPlugin_NetgenLibWrapper &ngLib,
     SMESH_MesherHelper &helper,
@@ -103,18 +104,14 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_NETGEN_3D: public SMESH_3D_Algo
 
  protected:
 
-  void exportElementOrientation(SMESH_Mesh& aMesh,
-                                const TopoDS_Shape& aShape,
-                                netgen_params& aParams,
-                                const std::string output_file);
-
-  void fillParameters(const NETGENPlugin_Hypothesis* hyp,
-                      netgen_params &aParams);
-
-  int RemoteCompute(SMESH_Mesh&         aMesh,
-                    const TopoDS_Shape& aShape);
-
-
+  virtual bool getSurfaceElements(
+    SMESH_Mesh&         aMesh,
+    const TopoDS_Shape& aShape,
+    SMESH_ProxyMesh::Ptr proxyMesh,
+    NETGENPlugin_Internals &internals,
+    SMESH_MesherHelper &helper,
+    netgen_params &aParams,
+    std::map<const SMDS_MeshElement*, std::tuple<bool, bool>>& listElements);
 
   bool compute(SMESH_Mesh&                          mesh,
                SMESH_MesherHelper&                  helper,

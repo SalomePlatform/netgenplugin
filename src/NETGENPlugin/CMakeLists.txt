@@ -99,7 +99,9 @@ SET(NETGENEngine_HEADERS
   NETGENPlugin_Remesher_2D.hxx
   NETGENPlugin_Defs.hxx
   NETGENPlugin_DriverParam.hxx
-  NETGENPlugin_Runner.hxx
+  NETGENPlugin_NETGEN_3D_SA.hxx
+  NETGENPlugin_NETGEN_3D_Remote.hxx
+  NETGENPlugin_NETGEN_3D_Remote_i.hxx
 )
 
 # --- sources ---
@@ -127,8 +129,10 @@ SET(NETGENEngine_SOURCES
   NETGENPlugin_SimpleHypothesis_3D_i.cxx
   NETGENPlugin_Remesher_2D.cxx
   NETGENPlugin_i.cxx
-  NETGENPlugin_Runner.cxx
   NETGENPlugin_DriverParam.cxx
+  NETGENPlugin_NETGEN_3D_SA.cxx
+  NETGENPlugin_NETGEN_3D_Remote.cxx
+  NETGENPlugin_NETGEN_3D_Remote_i.cxx
 )
 
 SET(NetgenRunner_SOURCES
