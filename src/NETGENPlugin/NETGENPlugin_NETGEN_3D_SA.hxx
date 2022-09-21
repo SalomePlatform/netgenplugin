@@ -35,12 +35,10 @@
 #include <vector>
 #include <map>
 
-class StdMeshers_ViscousLayers;
-class StdMeshers_MaxElementVolume;
-class NETGENPlugin_Hypothesis;
 class NETGENPlugin_NetgenLibWrapper;
 class netgen_params;
 class SMDS_MeshNode;
+class SMESH_Gen;
 
 using namespace std;
 
@@ -83,6 +81,7 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_NETGEN_3D_SA: public NETGENPlugin_NETGEN_
     );
 
    std::string _element_orientation_file="";
+   SMESH_Gen *_gen=nullptr;
 
 };
 

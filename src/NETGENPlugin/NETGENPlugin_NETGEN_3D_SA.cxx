@@ -80,7 +80,7 @@ using namespace nglib;
 //=============================================================================
 
 NETGENPlugin_NETGEN_3D_SA::NETGENPlugin_NETGEN_3D_SA()
-  : NETGENPlugin_NETGEN_3D(0, new SMESH_Gen())
+  : NETGENPlugin_NETGEN_3D(0, _gen=new SMESH_Gen())
 {
   _name = "NETGEN_3D_SA";
 }
@@ -93,6 +93,8 @@ NETGENPlugin_NETGEN_3D_SA::NETGENPlugin_NETGEN_3D_SA()
 
 NETGENPlugin_NETGEN_3D_SA::~NETGENPlugin_NETGEN_3D_SA()
 {
+  if(_gen)
+    delete _gen;
 }
 
 
@@ -198,10 +200,8 @@ int NETGENPlugin_NETGEN_3D_SA::run(const std::string input_mesh_file,
   SMESH_Gen gen;
 
   std::unique_ptr<SMESH_Mesh> myMesh(gen.CreateMesh(false));
-  //TODO: To define
-  std::string mesh_name = "Maillage_1";
 
-  importMesh(input_mesh_file, *myMesh, mesh_name);
+  importMesh(input_mesh_file, *myMesh);
 
   // Importing shape
   TopoDS_Shape myShape;

@@ -324,8 +324,6 @@ bool NETGENPlugin_NETGEN_2D_ONLY::RemoteCompute(SMESH_Mesh&         aMesh,
   fs::path shape_file=tmp_folder / fs::path("shape.step");
   fs::path param_file=tmp_folder / fs::path("netgen2d_param.txt");
   fs::path log_file=tmp_folder / fs::path("run.log");
-  //TODO: Handle variable mesh_name
-  std::string mesh_name = "Maillage_1";
 
   //Writing Shape
   exportShape(shape_file.string(), aShape);

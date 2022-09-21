@@ -219,7 +219,7 @@ bool NETGENPlugin_NETGEN_3D_Remote::Compute(SMESH_Mesh&         aMesh,
   fs::path log_file=tmp_folder / fs::path("run.log");
   fs::path cmd_file=tmp_folder / fs::path("cmd.log");
   //TODO: Handle variable mesh_name
-  std::string mesh_name = "Maillage_1";
+  std::string mesh_name = "MESH";
 
   //Writing Shape
   exportShape(shape_file.string(), aShape);
