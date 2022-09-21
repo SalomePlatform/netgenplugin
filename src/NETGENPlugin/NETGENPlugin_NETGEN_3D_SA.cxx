@@ -214,19 +214,20 @@ int NETGENPlugin_NETGEN_3D_SA::run(const std::string input_mesh_file,
   // Setting number of threads for netgen
   myParams.nbThreads = nbThreads;
 
-  std::cout << "Meshing with netgen3d" << std::endl;
+  MESSAGE("Meshing with netgen3d");
   int ret = Compute(myShape, *myMesh, myParams,
                       new_element_file, element_orientation_file,
                       !output_mesh_file.empty());
 
 
   if(ret){
-    std::cout << "Meshing failed" << std::endl;
+    std::cerr << "Meshing failed" << std::endl;
     return ret;
   }
 
   if(!output_mesh_file.empty()){
-    exportMesh(output_mesh_file, *myMesh, mesh_name);
+    std::string meshName = "MESH";
+    exportMesh(output_mesh_file, *myMesh, meshName);
   }
 
   return ret;
@@ -250,7 +251,7 @@ bool NETGENPlugin_NETGEN_3D_SA::getSurfaceElements(
   {
     // Setting all element orientation to false if there no element orientation file
     if(_element_orientation_file.empty()){
-      std::cout << "No element orientation file" << std::endl;
+      MESSAGE("No element orientation file");
 
       SMDS_ElemIteratorPtr iteratorElem = meshDS->elementsIterator(SMDSAbs_Face);
       while ( iteratorElem->more() ) // loop on elements on a geom face
@@ -260,7 +261,7 @@ bool NETGENPlugin_NETGEN_3D_SA::getSurfaceElements(
           elemOrientation[elem->GetID()] = false;
         }
     } else {
-      std::cout << "Reading from elements from file: " << _element_orientation_file << std::endl;
+      MESSAGE("Reading from elements from file: " << _element_orientation_file);
       std::ifstream df(_element_orientation_file, ios::binary|ios::in);
       int nbElement;
       bool orient;

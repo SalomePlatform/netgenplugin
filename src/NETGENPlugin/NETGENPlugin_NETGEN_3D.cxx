@@ -627,8 +627,6 @@ bool NETGENPlugin_NETGEN_3D::compute(SMESH_Mesh&                     aMesh,
                                      vector< const SMDS_MeshNode* >& nodeVec,
                                      NETGENPlugin_NetgenLibWrapper&  ngLib)
 {
-  auto time0 = std::chrono::high_resolution_clock::now();
-
   netgen::multithread.terminate = 0;
 
   netgen::Mesh* ngMesh = ngLib._ngMesh;
@@ -691,7 +689,6 @@ bool NETGENPlugin_NETGEN_3D::compute(SMESH_Mesh&                     aMesh,
   try
   {
     OCC_CATCH_SIGNALS;
-    auto time0 = std::chrono::high_resolution_clock::now();
 
     ngLib.CalcLocalH(ngMesh);
     err = ngLib.GenerateMesh(occgeo, startWith, endWith);
@@ -725,9 +722,6 @@ bool NETGENPlugin_NETGEN_3D::compute(SMESH_Mesh&                     aMesh,
       str << " at " << netgen::multithread.task;
     error(str);
   }
-  auto time1 = std::chrono::high_resolution_clock::now();
-  auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(time1-time0);
-  std::cout << "Time for seq:compute: " << elapsed.count() * 1e-9 << std::endl;
 
   int Netgen_NbOfNodesNew = Ng_GetNP(Netgen_mesh);
   int Netgen_NbOfTetra    = Ng_GetNE(Netgen_mesh);
@@ -774,10 +768,6 @@ bool NETGENPlugin_NETGEN_3D::compute(SMESH_Mesh&                     aMesh,
       }
     }
   }
-  auto time2 = std::chrono::high_resolution_clock::now();
-  elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(time2-time1);
-  std::cout << "Time for seq:compute: " << elapsed.count() * 1e-9 << std::endl;
-
 
   return !err;
 }
@@ -903,14 +893,12 @@ double NETGENPlugin_NETGEN_3D::GetProgress() const
          strncmp( netgen::multithread.task, volMeshing, 3 ) == 0 ))
   {
     res = 0.001 + meshingRatio * netgen::multithread.percent / 100.;
-    //cout << netgen::multithread.task << " " <<_progressTic << "-" << netgen::multithread.percent << endl;
   }
   else // different otimizations
   {
     if ( _progressByTic < 0. )
       ((NETGENPlugin_NETGEN_3D*)this)->_progressByTic = meshingRatio / _progressTic;
     res = _progressByTic * _progressTic;
-    //cout << netgen::multithread.task << " " << _progressTic << " " << res << endl;
   }
   return Min ( res, 0.98 );
 }

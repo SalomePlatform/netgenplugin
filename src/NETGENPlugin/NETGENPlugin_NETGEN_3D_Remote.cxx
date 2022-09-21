@@ -226,7 +226,6 @@ bool NETGENPlugin_NETGEN_3D_Remote::Compute(SMESH_Mesh&         aMesh,
 
   //Writing hypo
   netgen_params aParams;
-  std::cout << _hypParameters << std::endl;
   fillParameters(_hypParameters, aParams);
 
   exportNetgenParams(param_file.string(), aParams);
@@ -258,8 +257,8 @@ bool NETGENPlugin_NETGEN_3D_Remote::Compute(SMESH_Mesh&         aMesh,
     flog << cmd << endl;
     flog << endl;
   }
-  //std::cout << "Running command: " << std::endl;
-  //std::cout << cmd << std::endl;
+  MESSAGE("Running command: ");
+  MESSAGE(cmd);
 
 
   // Building arguments for QProcess
@@ -283,9 +282,9 @@ bool NETGENPlugin_NETGEN_3D_Remote::Compute(SMESH_Mesh&         aMesh,
 
   if(ret != 0){
     // Run crahed
-    std::cout << "Issue with command: " << std::endl;
-    std::cout << "See log for more details: " << log_file.string() << std::endl;
-    std::cout << cmd << std::endl;
+    std::cerr << "Issue with command: " << std::endl;
+    std::cerr << "See log for more details: " << log_file.string() << std::endl;
+    std::cerr << cmd << std::endl;
     return false;
   }
 

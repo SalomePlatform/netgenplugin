@@ -355,8 +355,8 @@ bool NETGENPlugin_NETGEN_2D_ONLY::RemoteCompute(SMESH_Mesh&         aMesh,
                                + output_mesh_file.string() +
                                " >> " + log_file.string();
 
-  std::cout << "Running command: " << std::endl;
-  std::cout << cmd << std::endl;
+  MESSAGE("Running command: ");
+  MESSAGE(cmd);
 
   // Writing command in log
   std::ofstream flog(log_file.string());
@@ -411,8 +411,8 @@ bool NETGENPlugin_NETGEN_2D_ONLY::RemoteCompute(SMESH_Mesh&         aMesh,
       }
     }
     if(nodeVec.at(nodeIndex) == nullptr){
-      std::cout << "Error could not identify id";
-      return false;
+      std::cerr << "Error could not identify id";
+      return true;
     }
   }
 
