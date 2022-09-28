@@ -25,7 +25,6 @@
 
 #include "NETGENPlugin_Mesher.hxx"
 #include "NETGENPlugin_Hypothesis_2D.hxx"
-#include "NETGENPlugin_DriverParam.hxx"
 
 #include <SMDS_MeshElement.hxx>
 #include <SMDS_MeshNode.hxx>
@@ -40,9 +39,6 @@
 #include <StdMeshers_MaxElementArea.hxx>
 #include <StdMeshers_QuadranglePreference.hxx>
 #include <StdMeshers_ViscousLayers2D.hxx>
-#include "SMESH_DriverShape.hxx"
-#include "SMESH_DriverMesh.hxx"
-
 
 #include <Precision.hxx>
 #include <Standard_ErrorHandler.hxx>
@@ -54,9 +50,6 @@
 #include <vector>
 #include <limits>
 
-#include <cstdlib>
-#include <boost/filesystem.hpp>
-namespace fs = boost::filesystem;
 /*
   Netgen include files
 */
@@ -80,7 +73,6 @@ namespace netgen {
 using namespace std;
 using namespace netgen;
 using namespace nglib;
-
 
 //=============================================================================
 /*!
@@ -135,7 +127,6 @@ bool NETGENPlugin_NETGEN_2D_ONLY::CheckHypothesis (SMESH_Mesh&         aMesh,
   _hypQuadranglePreference = 0;
   _hypParameters = 0;
   _progressByTic = -1;
-
 
   const list<const SMESHDS_Hypothesis*>& hyps = GetUsedHypothesis(aMesh, aShape, false);
 
@@ -226,221 +217,6 @@ bool NETGENPlugin_NETGEN_2D_ONLY::CheckHypothesis (SMESH_Mesh&         aMesh,
 //   }
 // }
 
-
-// write in a binary file the orientation for each 2D element of the mesh
-void NETGENPlugin_NETGEN_2D_ONLY::exportElementOrientation(SMESH_Mesh& aMesh,
-                                                           const TopoDS_Shape& aShape,
-                                                           netgen_params& aParams,
-                                                           const std::string output_file)
-{
-  std::map<vtkIdType, bool> elemOrientation;
-
-  SMESH_ProxyMesh::Ptr proxyMesh( new SMESH_ProxyMesh( aMesh ));
-  for ( TopExp_Explorer exEd( aShape, TopAbs_EDGE ); exEd.More(); exEd.Next())
-  {
-    const TopoDS_Shape& aShapeEdge = exEd.Current();
-    const SMESHDS_SubMesh * aSubMeshDSEdge = proxyMesh->GetSubMesh( aShapeEdge );
-    if ( !aSubMeshDSEdge ) continue;
-
-    SMDS_ElemIteratorPtr iteratorElem = aSubMeshDSEdge->GetElements();
-    while ( iteratorElem->more() ) // loop on elements on a geom face
-    {
-      const SMDS_MeshElement* elem = iteratorElem->next();
-      elemOrientation[elem->GetID()] = aShapeEdge.Orientation() == TopAbs_INTERNAL;
-    }
-  }
-
-  std::ofstream df(output_file, ios::out|ios::binary);
-  int size=elemOrientation.size();
-
-  df.write((char*)&size, sizeof(int));
-  for(auto const& [id, orient]:elemOrientation){
-    df.write((char*)&id, sizeof(vtkIdType));
-    df.write((char*)&orient, sizeof(bool));
-  }
-  df.close();
-}
-
-void NETGENPlugin_NETGEN_2D_ONLY::FillParameters(const NETGENPlugin_Hypothesis* hyp, netgen_params &aParams)
-{
-  //TODO: factorize code with the one from NETGEN3D
-  // Move in netgen_param ?
-  aParams.maxh               = hyp->GetMaxSize();
-  aParams.minh               = hyp->GetMinSize();
-  aParams.segmentsperedge    = hyp->GetNbSegPerEdge();
-  aParams.grading            = hyp->GetGrowthRate();
-  aParams.curvaturesafety    = hyp->GetNbSegPerRadius();
-  aParams.secondorder        = hyp->GetSecondOrder() ? 1 : 0;
-  aParams.quad               = hyp->GetQuadAllowed() ? 1 : 0;
-  aParams.optimize           = hyp->GetOptimize();
-  aParams.fineness           = hyp->GetFineness();
-  aParams.uselocalh          = hyp->GetSurfaceCurvature();
-  aParams.merge_solids       = hyp->GetFuseEdges();
-  aParams.chordalError       = hyp->GetChordalErrorEnabled() ? hyp->GetChordalError() : -1.;
-  aParams.optsteps2d         = aParams.optimize ? hyp->GetNbSurfOptSteps() : 0;
-  aParams.optsteps3d         = aParams.optimize ? hyp->GetNbVolOptSteps()  : 0;
-  aParams.elsizeweight       = hyp->GetElemSizeWeight();
-  aParams.opterrpow          = hyp->GetWorstElemMeasure();
-  aParams.delaunay           = hyp->GetUseDelauney();
-  aParams.checkoverlap       = hyp->GetCheckOverlapping();
-  aParams.checkchartboundary = hyp->GetCheckChartBoundary();
-#ifdef NETGEN_V6
-  // std::string
-  aParams.meshsizefilename = hyp->GetMeshSizeFile();
-#else
-  // const char*
-  aParams.meshsizefilename = hyp->GetMeshSizeFile().empty() ? 0 : hyp->GetMeshSizeFile().c_str();
-#endif
-#ifdef NETGEN_V6
-  aParams.closeedgefac = 2;
-#else
-  aParams.closeedgefac = 0;
-#endif
-  aParams.has_LengthFromEdges_hyp = _hypLengthFromEdges;
-}
-//=============================================================================
-/*!
- *Here we are going to use the NETGEN mesher remotely
- */
-//=============================================================================
-
-bool NETGENPlugin_NETGEN_2D_ONLY::RemoteCompute(SMESH_Mesh&         aMesh,
-                                                const TopoDS_Shape& aShape)
-{
-    aMesh.Lock();
-  SMESH_Hypothesis::Hypothesis_Status hypStatus;
-  CheckHypothesis(aMesh, aShape, hypStatus);
-
-  // Temporary folder for run
-  fs::path tmp_folder = aMesh.tmp_folder / fs::unique_path(fs::path("Face-%%%%-%%%%"));
-  fs::create_directories(tmp_folder);
-  // Using MESH2D generated after all triangles where created.
-  fs::path mesh_file=aMesh.tmp_folder / fs::path("Mesh1D.med");
-  fs::path element_orientation_file=tmp_folder / fs::path("element_orientation.dat");
-  fs::path new_element_file=tmp_folder / fs::path("new_elements.dat");
-  fs::path tmp_mesh_file=tmp_folder / fs::path("tmp_mesh.med");
-  // TODO: Remove that file we do not use it
-  fs::path output_mesh_file=tmp_folder / fs::path("output_mesh.med");
-  fs::path shape_file=tmp_folder / fs::path("shape.step");
-  fs::path param_file=tmp_folder / fs::path("netgen2d_param.txt");
-  fs::path log_file=tmp_folder / fs::path("run.log");
-
-  //Writing Shape
-  exportShape(shape_file.string(), aShape);
-  //Writing hypo
-  netgen_params aParams;
-  FillParameters(_hypParameters, aParams);
-
-  exportNetgenParams(param_file.string(), aParams);
-
-  // Exporting element orientation
-  exportElementOrientation(aMesh, aShape, aParams, element_orientation_file.string());
-
-  aMesh.Unlock();
-  // Calling run_mesher
-  // TODO: check if we need to handle the .exe for windows
-  std::string cmd;
-  fs::path run_mesher_exe =
-    fs::path(std::getenv("NETGENPLUGIN_ROOT_DIR"))/
-    fs::path("bin")/
-    fs::path("salome")/
-    fs::path("NETGENPlugin_Runner");
-  cmd = run_mesher_exe.string() +
-                  " NETGEN2D " + mesh_file.string() + " "
-                               + shape_file.string() + " "
-                               + param_file.string() + " "
-                               + element_orientation_file.string() + " "
-                               + new_element_file.string() + " "
-                               + std::to_string(0) + " "
-                               + output_mesh_file.string() +
-                               " >> " + log_file.string();
-
-  MESSAGE("Running command: ");
-  MESSAGE(cmd);
-
-  // Writing command in log
-  std::ofstream flog(log_file.string());
-  flog << cmd << endl;
-  flog.close();
-
-  // TODO: Replace system by something else to handle redirection for windows
-  int ret = system(cmd.c_str());
-
-  // TODO: better error handling (display log ?)
-  if(ret != 0){
-    // Run crahed
-    //throw Exception("Meshing failed");
-    std::cerr << "Issue with command: " << std::endl;
-    std::cerr << cmd << std::endl;
-    return false;
-  }
-
-    aMesh.Lock();
-  std::ifstream df(new_element_file.string(), ios::binary);
-
-  int Netgen_NbOfNodes;
-  int Netgen_NbOfNodesNew;
-  int Netgen_NbOfTria;
-  double Netgen_point[3];
-  int    Netgen_triangle[3];
-  int nodeID;
-
-  SMESH_MesherHelper helper(aMesh);
-  // This function is necessary so that SetElementOnShape works
-  int _quadraticMesh = helper.IsQuadraticSubMesh(aShape);
-  helper.SetElementsOnShape( true );
-
-  // Number of nodes in intial mesh
-  df.read((char*) &Netgen_NbOfNodes, sizeof(int));
-  // Number of nodes added by netgen
-  df.read((char*) &Netgen_NbOfNodesNew, sizeof(int));
-
-  // Filling nodevec (correspondence netgen numbering mesh numbering)
-  vector< const SMDS_MeshNode* > nodeVec ( Netgen_NbOfNodesNew + 1 );
-  for (int nodeIndex = 1 ; nodeIndex <= Netgen_NbOfNodes; ++nodeIndex )
-  {
-    //Id of the point
-    df.read((char*) &nodeID, sizeof(int));
-    nodeVec.at(nodeIndex) = nullptr;
-    SMDS_NodeIteratorPtr iteratorNode = aMesh.GetMeshDS()->nodesIterator();
-    while(iteratorNode->more()){
-      const SMDS_MeshNode* node = iteratorNode->next();
-      if(node->GetID() == nodeID){
-        nodeVec.at(nodeIndex) = node;
-        break;
-      }
-    }
-    if(nodeVec.at(nodeIndex) == nullptr){
-      std::cerr << "Error could not identify id";
-      return true;
-    }
-  }
-
-  // Add new points and update nodeVec
-  for (int nodeIndex = Netgen_NbOfNodes +1 ; nodeIndex <= Netgen_NbOfNodesNew; ++nodeIndex )
-  {
-    df.read((char *) &Netgen_point, sizeof(double)*3);
-
-    nodeVec.at(nodeIndex) = helper.AddNode(Netgen_point[0],
-                                           Netgen_point[1],
-                                           Netgen_point[2]);
-  }
-
-  // Add tetrahedrons
-  df.read((char*) &Netgen_NbOfTria, sizeof(int));
-  for ( int elemIndex = 1; elemIndex <= Netgen_NbOfTria; ++elemIndex )
-  {
-    df.read((char*) &Netgen_triangle, sizeof(int)*3);
-    helper.AddFace (nodeVec.at( Netgen_triangle[0] ),
-                    nodeVec.at( Netgen_triangle[1] ),
-                    nodeVec.at( Netgen_triangle[2] ));
-  }
-  df.close();
-
-  aMesh.Unlock();
-
-  return true;
-}
 //=============================================================================
 /*!
  *Here we are going to use the NETGEN mesher
@@ -450,12 +226,8 @@ bool NETGENPlugin_NETGEN_2D_ONLY::RemoteCompute(SMESH_Mesh&         aMesh,
 bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
                                           const TopoDS_Shape& aShape)
 {
-
-  if(aMesh.IsParallel())
-    return RemoteCompute(aMesh, aShape);
-
   netgen::multithread.terminate = 0;
-  netgen::multithread.task = "Surface meshing";
+  //netgen::multithread.task = "Surface meshing";
 
   SMESHDS_Mesh* meshDS = aMesh.GetMeshDS();
   SMESH_MesherHelper helper(aMesh);
@@ -480,6 +252,7 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
   // else
   //    min = aMesher.GetDefaultMinSize()
   //    max = max segment len of a FACE
+
   NETGENPlugin_Mesher aMesher( &aMesh, aShape, /*isVolume=*/false);
   aMesher.SetParameters( _hypParameters ); // _hypParameters -> netgen::mparam
   const bool toOptimize = _hypParameters ? _hypParameters->GetOptimize() : true;
@@ -493,8 +266,6 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
   // local size is common for all FACEs in aShape?
   const bool isCommonLocalSize = ( !_hypLengthFromEdges && !_hypMaxElementArea && netgen::mparam.uselocalh );
   const bool isDefaultHyp = ( !_hypLengthFromEdges && !_hypMaxElementArea && !_hypParameters );
-  aMesh.Unlock();
-
 
   if ( isCommonLocalSize ) // compute common local size in ngMeshes[0]
   {
@@ -522,9 +293,7 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
     netgen::OCCParameters occparam;
     netgen::OCCSetLocalMeshSize( occgeoComm, *ngMeshes[0], netgen::mparam, occparam );
 #else
-    aMesh.Lock();
     netgen::OCCSetLocalMeshSize( occgeoComm, *ngMeshes[0] );
-    aMesh.Unlock();
 #endif
     occgeoComm.emap.Clear();
     occgeoComm.vmap.Clear();
@@ -555,12 +324,13 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
     aMesher.SetLocalSize( occgeoComm, *ngMeshes[0] );
     aMesher.SetLocalSizeForChordalError( occgeoComm, *ngMeshes[0] );
     try {
-      ngMeshes[0]->LoadLocalMeshSize( netgen::mparam.meshsizefilename );
+      ngMeshes[0]->LoadLocalMeshSize( mparam.meshsizefilename );
     } catch (NgException & ex) {
       return error( COMPERR_BAD_PARMETERS, ex.What() );
     }
   }
   netgen::mparam.uselocalh = toOptimize; // restore as it is used at surface optimization
+
   // ==================
   // Loop on all FACEs
   // ==================
@@ -688,15 +458,15 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
 
       if ( iLoop == NO_LOC_SIZE )
       {
-        ngMesh->SetGlobalH ( netgen::mparam.maxh );
-        ngMesh->SetMinimalH( netgen::mparam.minh );
+        ngMesh->SetGlobalH ( mparam.maxh );
+        ngMesh->SetMinimalH( mparam.minh );
         Box<3> bb = occgeom.GetBoundingBox();
         bb.Increase (bb.Diam()/10);
-        ngMesh->SetLocalH (bb.PMin(), bb.PMax(), netgen::mparam.grading);
+        ngMesh->SetLocalH (bb.PMin(), bb.PMax(), mparam.grading);
         aMesher.SetLocalSize( occgeom, *ngMesh );
         aMesher.SetLocalSizeForChordalError( occgeoComm, *ngMesh );
         try {
-          ngMesh->LoadLocalMeshSize( netgen::mparam.meshsizefilename );
+          ngMesh->LoadLocalMeshSize( mparam.meshsizefilename );
         } catch (NgException & ex) {
           return error( COMPERR_BAD_PARMETERS, ex.What() );
         }
@@ -709,7 +479,7 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
         break;
 
       //if ( !isCommonLocalSize )
-      //limitSize( ngMesh, netgen::mparam.maxh * 0.8);
+      //limitSize( ngMesh, mparam.maxh * 0.8);
 
       // -------------------------
       // Generate surface mesh
@@ -721,7 +491,9 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
       SMESH_Comment str;
       try {
         OCC_CATCH_SIGNALS;
+
         err = ngLib.GenerateMesh(occgeom, startWith, endWith, ngMesh);
+
         if ( netgen::multithread.terminate )
           return false;
         if ( err )
@@ -760,10 +532,10 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
               double segLen = p.Distance( uvPtVec[ iP-1 ].node );
               double   size = ngMesh->GetH( np );
               netgen::mparam.minh = Min( netgen::mparam.minh, size );
-             netgen:: mparam.maxh = Max( netgen::mparam.maxh, segLen );
+              netgen::mparam.maxh = Max( netgen::mparam.maxh, segLen );
             }
           }
-          //cerr << "min " << mparam.minh << " max " << mparam.maxh << endl;
+          //cerr << "min " << netgen::mparam.minh << " max " << netgen::mparam.maxh << endl;
           netgen::mparam.minh *= 0.9;
           netgen::mparam.maxh *= 1.1;
           continue;
@@ -773,6 +545,7 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
           faceErr.reset( new SMESH_ComputeError( COMPERR_ALGO_FAILED, str ));
         }
       }
+
 
       // ----------------------------------------------------
       // Fill the SMESHDS with the generated nodes and faces

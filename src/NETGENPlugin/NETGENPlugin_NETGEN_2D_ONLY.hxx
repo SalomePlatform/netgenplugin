@@ -30,8 +30,6 @@
 class StdMeshers_MaxElementArea;
 class StdMeshers_LengthFromEdges;
 class NETGENPlugin_Hypothesis_2D;
-class NETGENPlugin_Hypothesis;
-class netgen_params;
 
 /*!
  * \brief Mesher generating 2D elements on a geometrical face taking
@@ -51,16 +49,6 @@ public:
                                const TopoDS_Shape& aShape,
                                Hypothesis_Status&  aStatus);
 
-  void exportElementOrientation(SMESH_Mesh& aMesh,
-                                const TopoDS_Shape& aShape,
-                                netgen_params& aParams,
-                                const std::string output_file);
-
-  void FillParameters(const NETGENPlugin_Hypothesis* hyp,
-                      netgen_params &aParams);
-
-  virtual bool RemoteCompute(SMESH_Mesh&         aMesh,
-                             const TopoDS_Shape& aShape);
   virtual bool Compute(SMESH_Mesh&         aMesh,
                        const TopoDS_Shape& aShape);
 
