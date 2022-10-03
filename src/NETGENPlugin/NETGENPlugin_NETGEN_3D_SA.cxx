@@ -202,6 +202,11 @@ bool NETGENPlugin_NETGEN_3D_SA::Compute(TopoDS_Shape &aShape, SMESH_Mesh& aMesh,
   int endWith   = netgen::MESHCONST_OPTVOLUME;
   int Netgen_NbOfNodes=0;
 
+  // Changing netgen log_file putting it next to new_element_file
+  fs::path netgen_log_file = fs::path(new_element_file).remove_filename() / fs::path("NETGEN.out");
+
+  ngLib.setOutputFile(netgen_log_file.string());
+
   NETGENPlugin_NETGEN_3D::computeFillNgMesh(aMesh, aShape, nodeVec, ngLib, helper, Netgen_NbOfNodes);
 
   netgen::OCCGeometry occgeo;

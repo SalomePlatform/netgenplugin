@@ -105,6 +105,7 @@ struct NETGENPLUGIN_EXPORT NETGENPlugin_NetgenLibWrapper
 
   static void RemoveTmpFiles();
   static int& instanceCounter();
+  void setOutputFile(std::string);
 
  private:
   std::string getOutputFileName();

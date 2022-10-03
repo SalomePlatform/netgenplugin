@@ -4437,18 +4437,7 @@ NETGENPlugin_NetgenLibWrapper::NETGENPlugin_NetgenLibWrapper():
   _ngcerr           = NULL;
   if ( !getenv( "KEEP_NETGEN_OUTPUT" ))
   {
-    // redirect all netgen output (mycout,myerr,cout) to _outputFileName
-    _outputFileName = getOutputFileName();
-    _ngcout         = netgen::mycout;
-    _ngcerr         = netgen::myerr;
-    netgen::mycout  = new ofstream ( _outputFileName.c_str() );
-    netgen::myerr   = netgen::mycout;
-    _coutBuffer     = std::cout.rdbuf();
-#ifdef _DEBUG_
-    std::cout << "NOTE: netgen output is redirected to file " << _outputFileName << std::endl;
-#else
-    std::cout.rdbuf( netgen::mycout->rdbuf() );
-#endif
+    setOutputFile(getOutputFileName());
   }
 
   setMesh( Ng_NewMesh() );
@@ -4568,6 +4557,27 @@ std::string NETGENPlugin_NetgenLibWrapper::getOutputFileName()
   aGenericName += ".out";
 
   return aGenericName.ToCString();
+}
+//================================================================================
+/*!
+ * \brief Set output file name for netgen log
+ */
+//================================================================================
+
+void NETGENPlugin_NetgenLibWrapper::setOutputFile(std::string outputfile)
+{
+  // redirect all netgen output (mycout,myerr,cout) to _outputFileName
+  _outputFileName = outputfile;
+  _ngcout         = netgen::mycout;
+  _ngcerr         = netgen::myerr;
+  netgen::mycout  = new ofstream ( _outputFileName.c_str() );
+  netgen::myerr   = netgen::mycout;
+  _coutBuffer     = std::cout.rdbuf();
+#ifdef _DEBUG_
+  std::cout << "NOTE: netgen output is redirected to file " << _outputFileName << std::endl;
+#else
+  std::cout.rdbuf( netgen::mycout->rdbuf() );
+#endif
 }
 
 //================================================================================
