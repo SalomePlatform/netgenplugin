@@ -220,7 +220,6 @@ bool NETGENPlugin_NETGEN_3D_Remote::Compute(SMESH_Mesh&         aMesh,
   fs::path param_file=tmp_folder / fs::path("netgen3d_param.txt");
   fs::path log_file=tmp_folder / fs::path("run.log");
   fs::path cmd_file=tmp_folder / fs::path("cmd.log");
-  //TODO: Handle variable mesh_name
   std::string mesh_name = "MESH";
 
   {
@@ -239,20 +238,22 @@ bool NETGENPlugin_NETGEN_3D_Remote::Compute(SMESH_Mesh&         aMesh,
   }
 
   // Calling run_mesher
-  // TODO: check if we need to handle the .exe for windows
   std::string cmd;
   fs::path run_mesher_exe =
     fs::path(std::getenv("NETGENPLUGIN_ROOT_DIR"))/
     fs::path("bin")/
     fs::path("salome")/
+#ifdef WIN32
+    fs::path("NETGENPlugin_Runner.exe");
+#else
     fs::path("NETGENPlugin_Runner");
+#endif
 
   cmd = run_mesher_exe.string() +
                   " NETGEN3D " + mesh_file.string() + " "
                                + shape_file.string() + " "
                                + param_file.string() + " "
                                + element_orientation_file.string() + " "
-                               + std::to_string(aMesh.GetMesherNbThreads()) + " "
                                + new_element_file.string() + " "
                                + "NONE";
   // Writing command in log
@@ -273,7 +274,6 @@ bool NETGENPlugin_NETGEN_3D_Remote::Compute(SMESH_Mesh&         aMesh,
   arguments << shape_file.c_str();
   arguments << param_file.c_str();
   arguments << element_orientation_file.c_str();
-  arguments << std::to_string(aMesh.GetMesherNbThreads()).c_str();
   arguments << new_element_file.c_str();
   arguments << "NONE";
   QString out_file = log_file.c_str();

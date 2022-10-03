@@ -227,8 +227,7 @@ int NETGENPlugin_NETGEN_3D_SA::run(const std::string input_mesh_file,
           const std::string hypo_file,
           const std::string element_orientation_file,
           const std::string new_element_file,
-          const std::string output_mesh_file,
-          int nbThreads)
+          const std::string output_mesh_file)
 {
 
   _element_orientation_file = element_orientation_file;
@@ -248,8 +247,6 @@ int NETGENPlugin_NETGEN_3D_SA::run(const std::string input_mesh_file,
 
   importNetgenParams(hypo_file, myParams);
   fillHyp(myParams, &gen);
-  // Setting number of threads for netgen
-  myParams.nbThreads = nbThreads;
 
   MESSAGE("Meshing with netgen3d");
   int ret = Compute(myShape, *myMesh, myParams,

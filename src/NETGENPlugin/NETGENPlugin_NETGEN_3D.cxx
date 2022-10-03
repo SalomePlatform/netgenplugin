@@ -32,9 +32,6 @@
 
 #include "NETGENPlugin_Hypothesis.hxx"
 
-// TODO: remove use of netgen_param
-#include "NETGENPlugin_DriverParam.hxx"
-
 #include <SMDS_MeshElement.hxx>
 #include <SMDS_MeshNode.hxx>
 #include <SMESHDS_Mesh.hxx>

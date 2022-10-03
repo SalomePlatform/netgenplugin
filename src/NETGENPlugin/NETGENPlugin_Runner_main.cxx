@@ -42,11 +42,11 @@
  */
 int main(int argc, char *argv[]){
 
-  if(argc!=9||(argc==2 && (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help")==0))){
-    std::cout << "Error in number of arguments "<< argc<<" given expected 8" <<std::endl;
+  if(argc!=8||(argc==2 && (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help")==0))){
+    std::cout << "Error in number of arguments "<< argc-1<<" given expected 7" <<std::endl;
     std::cout << "Syntax:"<<std::endl;
     std::cout << "run_mesher MESHER INPUT_MESH_FILE SHAPE_FILE HYPO_FILE" << std::endl;
-    std::cout << "           ELEM_ORIENT_FILE NB_THREADS" << std::endl;
+    std::cout << "           ELEM_ORIENT_FILE " << std::endl;
     std::cout << "           NEW_ELEMENT_FILE OUTPUT_MESH_FILE" << std::endl;
     std::cout << std::endl;
     std::cout << " Set argument to NONE to ignore them " << std::endl;
@@ -57,7 +57,6 @@ int main(int argc, char *argv[]){
     std::cout << "  SHAPE_FILE: STEP file containing the shape to mesh" << std::endl;
     std::cout << "  HYPO_FILE: Ascii file containint the list of parameters" << std::endl;
     std::cout << "  (optional) ELEM_ORIENT_FILE: binary file containing the list of element from INPUT_MESH_FILE associated to the shape and their orientation" << std::endl;
-    std::cout << "  NB_THREADS: Number of thread to use for the mesher" << std::endl;
     std::cout << "  (optional) NEW_ELEMENT_FILE: (out) contains elements and nodes added by the meshing" << std::endl;
     std::cout << "  (optional) OUTPUT_MESH_FILE: (out) MED File containing the mesh after the run of the mesher" << std::endl;
     return 0;
@@ -67,9 +66,8 @@ int main(int argc, char *argv[]){
   std::string shape_file=argv[3];
   std::string hypo_file=argv[4];
   std::string element_orientation_file=argv[5];
-  int nbThreads=std::stoi(argv[6]);
-  std::string new_element_file=argv[7];
-  std::string output_mesh_file=argv[8];
+  std::string new_element_file=argv[6];
+  std::string output_mesh_file=argv[7];
 
   //std::string thing;
   //std::cin >> thing;
@@ -82,18 +80,13 @@ int main(int argc, char *argv[]){
     new_element_file = "";
 
   if (mesher=="NETGEN3D"){
-    auto begin = std::chrono::high_resolution_clock::now();
     NETGENPlugin_NETGEN_3D_SA myplugin;
     myplugin.run(input_mesh_file,
              shape_file,
              hypo_file,
              element_orientation_file,
              new_element_file,
-             output_mesh_file,
-             nbThreads);
-    auto end = std::chrono::high_resolution_clock::now();
-    auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
-    std::cout << "Time elapsed: " << elapsed.count()*1e-9 << std::endl;
+             output_mesh_file);
   } else {
     std::cerr << "Unknown mesher:" << mesher << std::endl;
   }

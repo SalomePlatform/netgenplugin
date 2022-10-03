@@ -57,10 +57,7 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_NETGEN_3D_SA: public NETGENPlugin_NETGEN_
           const std::string hypo_file,
           const std::string element_orientation_file,
           const std::string new_element_file,
-          const std::string output_mesh_file,
-          int nbThreads);
-
-
+          const std::string output_mesh_file);
 
  protected:
 
