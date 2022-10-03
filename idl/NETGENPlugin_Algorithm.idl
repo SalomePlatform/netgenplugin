@@ -147,6 +147,9 @@ module NETGENPlugin
     void    SetWorstElemMeasure(in short val );
     short   GetWorstElemMeasure();
 
+    void    SetNbThreads(in short val );
+    short   GetNbThreads();
+
     void    SetUseDelauney(in boolean toUse);
     boolean GetUseDelauney();
 

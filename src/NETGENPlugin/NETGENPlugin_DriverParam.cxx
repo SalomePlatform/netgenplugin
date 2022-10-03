@@ -59,6 +59,7 @@ void printNetgenParams(netgen_params& aParams){
   std::cout << "checkoverlap: " << aParams.checkoverlap << std::endl;
   std::cout << "checkchartboundary: " << aParams.checkchartboundary << std::endl;
   std::cout << "closeedgefac: " << aParams.closeedgefac << std::endl;
+  std::cout << "nbThreadMesher: " << aParams.nbThreads << std::endl;
   std::cout << "has_local_size: " << aParams.has_local_size << std::endl;
   std::cout << "meshsizefilename: " << aParams.meshsizefilename << std::endl;
   std::cout << "has_maxelementvolume_hyp: " << aParams.has_maxelementvolume_hyp << std::endl;
@@ -119,6 +120,8 @@ void importNetgenParams(const std::string param_file, netgen_params& aParams){
   std::getline(myfile, line);
   aParams.closeedgefac = std::stoi(line);
   std::getline(myfile, line);
+  aParams.nbThreads = std::stoi(line);
+  std::getline(myfile, line);
   aParams.has_local_size = std::stoi(line);
   std::getline(myfile, line);
   aParams.meshsizefilename = line;
@@ -160,6 +163,7 @@ void exportNetgenParams(const std::string param_file, netgen_params& aParams){
   myfile << aParams.checkoverlap << std::endl;
   myfile << aParams.checkchartboundary << std::endl;
   myfile << aParams.closeedgefac << std::endl;
+  myfile << aParams.nbThreads << std::endl;
   myfile << aParams.has_local_size << std::endl;
   myfile << aParams.meshsizefilename << std::endl;
   myfile << aParams.has_maxelementvolume_hyp << std::endl;

@@ -127,13 +127,11 @@ void NETGENPlugin_NETGEN_3D_Remote::fillParameters(const NETGENPlugin_Hypothesis
 #ifdef NETGEN_V6
   // std::string
   aParams.meshsizefilename = hyp->GetMeshSizeFile();
+  aParams.closeedgefac = 2;
+  aParams.nbThreads = hyp->GetNbThreads();
 #else
   // const char*
   aParams.meshsizefilename = hyp->GetMeshSizeFile();
-#endif
-#ifdef NETGEN_V6
-  aParams.closeedgefac = 2;
-#else
   aParams.closeedgefac = 0;
 #endif
 }

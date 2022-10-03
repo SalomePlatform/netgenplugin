@@ -60,7 +60,7 @@ bool NETGENPlugin_Hypothesis_i::isToSetParameter<double>(double curValue,
 NETGENPlugin_Hypothesis_i::
 NETGENPlugin_Hypothesis_i (PortableServer::POA_ptr thePOA,
                            ::SMESH_Gen*            theGenImpl)
-  : SALOME::GenericObj_i( thePOA ), 
+  : SALOME::GenericObj_i( thePOA ),
     SMESH_Hypothesis_i( thePOA ),
     mySetMethodFlags(0)
 {
@@ -471,7 +471,7 @@ CORBA::Boolean NETGENPlugin_Hypothesis_i::GetFuseEdges()
 
 //=======================================================================
 //function : SetNbSurfOptSteps
-//purpose  : 
+//purpose  :
 //=======================================================================
 
 void NETGENPlugin_Hypothesis_i::SetNbSurfOptSteps(CORBA::Short nb )
@@ -495,7 +495,7 @@ CORBA::Short NETGENPlugin_Hypothesis_i::GetNbSurfOptSteps()
 
 //=======================================================================
 //function : SetNbVolOptSteps
-//purpose  : 
+//purpose  :
 //=======================================================================
 
 void NETGENPlugin_Hypothesis_i::SetNbVolOptSteps(CORBA::Short nb )
@@ -520,7 +520,7 @@ CORBA::Short NETGENPlugin_Hypothesis_i::GetNbVolOptSteps()
 
 //=======================================================================
 //function : SetElemSizeWeight
-//purpose  : 
+//purpose  :
 //=======================================================================
 
 void NETGENPlugin_Hypothesis_i::SetElemSizeWeight(CORBA::Double size )
@@ -544,7 +544,7 @@ CORBA::Double NETGENPlugin_Hypothesis_i::GetElemSizeWeight()
 
 //=======================================================================
 //function : SetWorstElemMeasure
-//purpose  : 
+//purpose  :
 //=======================================================================
 
 void NETGENPlugin_Hypothesis_i::SetWorstElemMeasure(CORBA::Short val )
@@ -558,7 +558,7 @@ void NETGENPlugin_Hypothesis_i::SetWorstElemMeasure(CORBA::Short val )
 
 //=======================================================================
 //function : GetWorstElemMeasure
-//purpose  : 
+//purpose  :
 //=======================================================================
 
 CORBA::Short NETGENPlugin_Hypothesis_i::GetWorstElemMeasure()
@@ -567,8 +567,32 @@ CORBA::Short NETGENPlugin_Hypothesis_i::GetWorstElemMeasure()
 }
 
 //=======================================================================
+//function : SetNbThreads
+//purpose  :
+//=======================================================================
+
+void NETGENPlugin_Hypothesis_i::SetNbThreads(CORBA::Short val )
+{
+  if ( GetNbThreads() != val )
+  {
+    this->GetImpl()->SetNbThreads( val );
+    SMESH::TPythonDump() << _this() << ".SetNbThreads( " << SMESH::TVar(val) << " )";
+  }
+}
+
+//=======================================================================
+//function : GetNbThreads
+//purpose  :
+//=======================================================================
+
+CORBA::Short NETGENPlugin_Hypothesis_i::GetNbThreads()
+{
+  return (CORBA::Short) GetImpl()->GetNbThreads();
+}
+
+//=======================================================================
 //function : SetUseDelauney
-//purpose  : 
+//purpose  :
 //=======================================================================
 
 void NETGENPlugin_Hypothesis_i::SetUseDelauney(CORBA::Boolean toUse)
@@ -582,7 +606,7 @@ void NETGENPlugin_Hypothesis_i::SetUseDelauney(CORBA::Boolean toUse)
 
 //=======================================================================
 //function : GetUseDelauney
-//purpose  : 
+//purpose  :
 //=======================================================================
 
 CORBA::Boolean NETGENPlugin_Hypothesis_i::GetUseDelauney()
@@ -592,7 +616,7 @@ CORBA::Boolean NETGENPlugin_Hypothesis_i::GetUseDelauney()
 
 //=======================================================================
 //function : SetCheckOverlapping
-//purpose  : 
+//purpose  :
 //=======================================================================
 
 void NETGENPlugin_Hypothesis_i::SetCheckOverlapping(CORBA::Boolean toCheck )
@@ -606,7 +630,7 @@ void NETGENPlugin_Hypothesis_i::SetCheckOverlapping(CORBA::Boolean toCheck )
 
 //=======================================================================
 //function : GetCheckOverlapping
-//purpose  : 
+//purpose  :
 //=======================================================================
 
 CORBA::Boolean NETGENPlugin_Hypothesis_i::GetCheckOverlapping()
@@ -616,7 +640,7 @@ CORBA::Boolean NETGENPlugin_Hypothesis_i::GetCheckOverlapping()
 
 //=======================================================================
 //function : SetCheckChartBoundary
-//purpose  : 
+//purpose  :
 //=======================================================================
 
 void NETGENPlugin_Hypothesis_i::SetCheckChartBoundary(CORBA::Boolean toCheck )
@@ -652,13 +676,13 @@ CORBA::Boolean NETGENPlugin_Hypothesis_i::GetCheckChartBoundary()
 
 //================================================================================
 /*!
- * \brief Verify whether hypothesis supports given entity type 
+ * \brief Verify whether hypothesis supports given entity type
   * \param type - dimension (see SMESH::Dimension enumeration)
   * \retval CORBA::Boolean - TRUE if dimension is supported, FALSE otherwise
- * 
+ *
  * Verify whether hypothesis supports given entity type (see SMESH::Dimension enumeration)
  */
-//================================================================================  
+//================================================================================
 CORBA::Boolean NETGENPlugin_Hypothesis_i::IsDimSupported( SMESH::Dimension type )
 {
   return type == SMESH::DIM_3D;

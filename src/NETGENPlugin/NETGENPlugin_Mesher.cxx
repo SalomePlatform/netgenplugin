@@ -602,14 +602,13 @@ void NETGENPlugin_Mesher::SetDefaultParameters()
 
 #ifdef NETGEN_V6
 
-  mparams.nthreads = std::thread::hardware_concurrency();
+  mparams.nthreads = NETGENPlugin_Hypothesis::GetDefaultNbThreads();
 
   if ( getenv( "SALOME_NETGEN_DISABLE_MULTITHREADING" ))
   {
     mparams.nthreads = 1;
     mparams.parallel_meshing = false;
   }
-
 #endif
 }
 
@@ -655,6 +654,7 @@ void NETGENPlugin_Mesher::SetParameters(const NETGENPlugin_Hypothesis* hyp)
 #ifdef NETGEN_V6
     // std::string
     mparams.meshsizefilename = hyp->GetMeshSizeFile();
+    mparams.nthreads = hyp->GetNbThreads();
 #else
     // const char*
     mparams.meshsizefilename= hyp->GetMeshSizeFile().empty() ? 0 : hyp->GetMeshSizeFile().c_str();

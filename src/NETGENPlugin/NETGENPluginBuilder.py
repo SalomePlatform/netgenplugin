@@ -148,6 +148,12 @@ class NETGEN_Algorithm(Mesh_Algorithm):
         if self.Parameters(): self.params.SetGrowthRate(theRate)
         pass
 
+    ## Sets @c NbThreads parameter
+    #  @param theRate new value of the @c NbThreads parameter
+    def SetNbThreads(self, theNumber):
+        if self.Parameters(): self.params.SetNbThreads(theNumber)
+        pass
+
     ## Creates meshing hypothesis according to the chosen algorithm type
     #  and initializes it with default parameters
     #  @param which hypothesis type; can be either @ref SOLE (default) or @ref SIMPLE
