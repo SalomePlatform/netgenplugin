@@ -30,11 +30,6 @@
 
 #include <string>
 
-class NETGENPlugin_Hypothesis;
-class StdMeshers_MaxElementVolume;
-class StdMeshers_ViscousLayers;
-class SMESH_Gen;
-
 struct netgen_params{
   // Params from NETGENPlugin_Mesher
   // True if _hypParameters is not null
@@ -60,6 +55,8 @@ struct netgen_params{
   bool checkchartboundary;
   int closeedgefac;
 
+  // Number of threads for the mesher
+  int nbThreads;
 
   // True if we have a mesh size file or local size info
   bool has_local_size = false;
@@ -70,24 +67,14 @@ struct netgen_params{
   bool has_maxelementvolume_hyp=false;
   double maxElementVolume=0.0;
 
-  NETGENPlugin_Hypothesis *    _hypParameters=nullptr;
-  StdMeshers_MaxElementVolume* _hypMaxElementVolume=nullptr;
-  StdMeshers_ViscousLayers*    _viscousLayersHyp=nullptr;
-  double                       _progressByTic;
-  bool _quadraticMesh=false;
-  int _error=0;
-  std::string _comment;
-
   // Params from NETGEN2D
   bool has_LengthFromEdges_hyp=false;
 
-  // Number of threads for the mesher
-  int nbThreads;
 };
 
 void printNetgenParams(netgen_params& aParams);
 
-void importNetgenParams(const std::string param_file, netgen_params& aParams, SMESH_Gen * gen);
+void importNetgenParams(const std::string param_file, netgen_params& aParams);
 void exportNetgenParams(const std::string param_file, netgen_params& aParams);
 
 #endif

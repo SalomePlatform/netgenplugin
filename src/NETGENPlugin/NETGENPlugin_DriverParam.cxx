@@ -26,10 +26,6 @@
 //
 #include "NETGENPlugin_DriverParam.hxx"
 
-#include "NETGENPlugin_Hypothesis.hxx"
-
-#include <SMESH_Gen.hxx>
-#include <StdMeshers_MaxElementVolume.hxx>
 
 #include <iostream>
 #include <fstream>
@@ -76,7 +72,7 @@ void printNetgenParams(netgen_params& aParams){
  * @param param_file Name of the file
  * @param aParams Structure to fill
  */
-void importNetgenParams(const std::string param_file, netgen_params& aParams, SMESH_Gen *gen){
+void importNetgenParams(const std::string param_file, netgen_params& aParams){
   std::ifstream myfile(param_file);
   std::string line;
 
@@ -133,36 +129,6 @@ void importNetgenParams(const std::string param_file, netgen_params& aParams, SM
   std::getline(myfile, line);
   aParams.maxElementVolume = std::stoi(line);
 
-  if(aParams.has_netgen_param){
-    aParams._hypParameters = new NETGENPlugin_Hypothesis(0, gen);
-
-    aParams._hypParameters->SetMaxSize(aParams.maxh);
-    aParams._hypParameters->SetMinSize(aParams.minh);
-    aParams._hypParameters->SetNbSegPerEdge(aParams.segmentsperedge);
-    aParams._hypParameters->SetGrowthRate(aParams.grading);
-    aParams._hypParameters->SetNbSegPerRadius(aParams.curvaturesafety);
-    aParams._hypParameters->SetSecondOrder(aParams.secondorder);
-    aParams._hypParameters->SetQuadAllowed(aParams.quad);
-    aParams._hypParameters->SetOptimize(aParams.optimize);
-    aParams._hypParameters->SetFineness((NETGENPlugin_Hypothesis::Fineness)aParams.fineness);
-    aParams._hypParameters->SetSurfaceCurvature(aParams.uselocalh);
-    aParams._hypParameters->SetFuseEdges(aParams.merge_solids);
-    aParams._hypParameters->SetChordalErrorEnabled(aParams.chordalError);
-    if(aParams.optimize){
-      aParams._hypParameters->SetNbSurfOptSteps(aParams.optsteps2d);
-      aParams._hypParameters->SetNbVolOptSteps(aParams.optsteps3d);
-    }
-    aParams._hypParameters->SetElemSizeWeight(aParams.elsizeweight);
-    aParams._hypParameters->SetWorstElemMeasure(aParams.opterrpow);
-    aParams._hypParameters->SetUseDelauney(aParams.delaunay);
-    aParams._hypParameters->SetCheckOverlapping(aParams.checkoverlap);
-    aParams._hypParameters->SetCheckChartBoundary(aParams.checkchartboundary);
-    aParams._hypParameters->SetMeshSizeFile(aParams.meshsizefilename);
-  }
-  if(aParams.has_maxelementvolume_hyp){
-    aParams._hypMaxElementVolume = new StdMeshers_MaxElementVolume(1, gen);
-  }
-  // TODO: Handle viscous layer
 };
 
 /**

@@ -77,7 +77,6 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_NETGEN_3D: public SMESH_3D_Algo
     std::vector< const SMDS_MeshNode* > &nodeVec,
     NETGENPlugin_NetgenLibWrapper &ngLib,
     SMESH_MesherHelper &helper,
-    netgen_params &aParams,
     int &Netgen_NbOfNodes);
 
   bool computePrepareParam(
@@ -85,7 +84,6 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_NETGEN_3D: public SMESH_3D_Algo
     NETGENPlugin_NetgenLibWrapper &ngLib,
     netgen::OCCGeometry &occgeo,
     SMESH_MesherHelper &helper,
-    netgen_params &aParams,
     int &endWith);
 
   bool computeRunMesher(
@@ -93,7 +91,6 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_NETGEN_3D: public SMESH_3D_Algo
     std::vector< const SMDS_MeshNode* > &nodeVec,
     netgen::Mesh* ngMesh,
     NETGENPlugin_NetgenLibWrapper &ngLib,
-    netgen_params &aParams,
     int &startWith, int &endWith);
 
   bool computeFillMesh(
@@ -110,7 +107,6 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_NETGEN_3D: public SMESH_3D_Algo
     SMESH_ProxyMesh::Ptr proxyMesh,
     NETGENPlugin_Internals &internals,
     SMESH_MesherHelper &helper,
-    netgen_params &aParams,
     std::map<const SMDS_MeshElement*, std::tuple<bool, bool>>& listElements);
 
   bool compute(SMESH_Mesh&                          mesh,

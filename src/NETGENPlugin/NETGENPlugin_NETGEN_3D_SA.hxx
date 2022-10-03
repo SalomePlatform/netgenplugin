@@ -48,9 +48,9 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_NETGEN_3D_SA: public NETGENPlugin_NETGEN_
   NETGENPlugin_NETGEN_3D_SA();
   virtual ~NETGENPlugin_NETGEN_3D_SA();
 
+  void fillHyp(netgen_params aParams, SMESH_Gen* gen);
   bool Compute(TopoDS_Shape &aShape, SMESH_Mesh& aMesh, netgen_params& aParams,
-                       std::string new_element_file, std::string element_orientation_file,
-                       bool output_mesh);
+                       std::string new_element_file, bool output_mesh);
 
   int run(const std::string input_mesh_file,
           const std::string shape_file,
@@ -76,7 +76,6 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_NETGEN_3D_SA: public NETGENPlugin_NETGEN_
     SMESH_ProxyMesh::Ptr proxyMesh,
     NETGENPlugin_Internals &internals,
     SMESH_MesherHelper &helper,
-    netgen_params &aParams,
     std::map<const SMDS_MeshElement*, tuple<bool, bool>>& listElements
     ) override;
 

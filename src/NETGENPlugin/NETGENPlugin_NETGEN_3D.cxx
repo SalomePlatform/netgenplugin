@@ -212,7 +212,6 @@ bool NETGENPlugin_NETGEN_3D::getSurfaceElements(
     SMESH_ProxyMesh::Ptr proxyMesh,
     NETGENPlugin_Internals &internals,
     SMESH_MesherHelper &helper,
-    netgen_params &aParams,
     std::map<const SMDS_MeshElement*, tuple<bool, bool>>& listElements
 )
 {
@@ -236,7 +235,7 @@ bool NETGENPlugin_NETGEN_3D::getSurfaceElements(
     if ( !aSubMeshDSFace ) continue;
 
     SMDS_ElemIteratorPtr iteratorElem = aSubMeshDSFace->GetElements();
-    if ( aParams._quadraticMesh &&
+    if ( _quadraticMesh &&
           dynamic_cast< const SMESH_ProxyMesh::SubMesh*>( aSubMeshDSFace ))
     {
       // add medium nodes of proxy triangles to helper (#16843)
@@ -249,14 +248,10 @@ bool NETGENPlugin_NETGEN_3D::getSurfaceElements(
       const SMDS_MeshElement* elem = iteratorElem->next();
       // check mesh face
       if ( !elem ){
-        aParams._error = COMPERR_BAD_INPUT_MESH;
-        aParams._comment = "Null element encounters";
-        return true;
+        return error( COMPERR_BAD_INPUT_MESH, "Null element encounters");
       }
       if ( elem->NbCornerNodes() != 3 ){
-        aParams._error = COMPERR_BAD_INPUT_MESH;
-        aParams._comment = "Not triangle element encounters";
-        return true;
+        return error( COMPERR_BAD_INPUT_MESH, "Not triangle element encounters");
       }
       listElements[elem] = tuple(isRev, isInternalFace);
     }
@@ -272,16 +267,15 @@ bool NETGENPlugin_NETGEN_3D::computeFillNgMesh(
   vector< const SMDS_MeshNode* > &nodeVec,
   NETGENPlugin_NetgenLibWrapper &ngLib,
   SMESH_MesherHelper &helper,
-  netgen_params &aParams,
   int &Netgen_NbOfNodes)
 {
   netgen::multithread.terminate = 0;
   netgen::multithread.task = "Volume meshing";
-  aParams._progressByTic = -1.;
+  _progressByTic = -1.;
 
   SMESHDS_Mesh* meshDS = aMesh.GetMeshDS();
 
-  aParams._quadraticMesh = helper.IsQuadraticSubMesh(aShape);
+  _quadraticMesh = helper.IsQuadraticSubMesh(aShape);
   helper.SetElementsOnShape( true );
 
   Netgen_NbOfNodes = 0;
@@ -311,10 +305,10 @@ bool NETGENPlugin_NETGEN_3D::computeFillNgMesh(
     bool isInternalFace=false;
 
     SMESH_ProxyMesh::Ptr proxyMesh( new SMESH_ProxyMesh( aMesh ));
-    if ( aParams._viscousLayersHyp )
+    if ( _viscousLayersHyp )
     {
       netgen::multithread.percent = 3;
-      proxyMesh = aParams._viscousLayersHyp->Compute( aMesh, aShape );
+      proxyMesh = _viscousLayersHyp->Compute( aMesh, aShape );
       if ( !proxyMesh )
         return false;
     }
@@ -327,7 +321,7 @@ bool NETGENPlugin_NETGEN_3D::computeFillNgMesh(
     }
 
     std::map<const SMDS_MeshElement*, tuple<bool, bool>> listElements;
-    bool ret = getSurfaceElements(aMesh, aShape, proxyMesh, internals, helper, aParams, listElements);
+    bool ret = getSurfaceElements(aMesh, aShape, proxyMesh, internals, helper, listElements);
     if(ret)
       return ret;
 
@@ -402,7 +396,6 @@ bool NETGENPlugin_NETGEN_3D::computePrepareParam(
   NETGENPlugin_NetgenLibWrapper &ngLib,
   netgen::OCCGeometry &occgeo,
   SMESH_MesherHelper &helper,
-  netgen_params &aParams,
   int &endWith)
 
 {
@@ -413,35 +406,33 @@ bool NETGENPlugin_NETGEN_3D::computePrepareParam(
   NETGENPlugin_Mesher aMesher( &aMesh, helper.GetSubShape(), /*isVolume=*/true );
 
 
-  if ( aParams._hypParameters )
+  if ( _hypParameters )
   {
-    aMesher.SetParameters( aParams._hypParameters );
+    aMesher.SetParameters( _hypParameters );
 
-    if ( !aParams._hypParameters->GetLocalSizesAndEntries().empty() ||
-         !aParams._hypParameters->GetMeshSizeFile().empty() )
+    if ( !_hypParameters->GetLocalSizesAndEntries().empty() ||
+         !_hypParameters->GetMeshSizeFile().empty() )
     {
       if ( ! &ngMesh->LocalHFunction() )
       {
         netgen::Point3d pmin, pmax;
         ngMesh->GetBox( pmin, pmax, 0 );
-        ngMesh->SetLocalH( pmin, pmax, aParams._hypParameters->GetGrowthRate() );
+        ngMesh->SetLocalH( pmin, pmax, _hypParameters->GetGrowthRate() );
       }
       aMesher.SetLocalSize( occgeo, *ngMesh );
 
       try {
         ngMesh->LoadLocalMeshSize( netgen::mparam.meshsizefilename );
       } catch (netgen::NgException & ex) {
-        aParams._error = COMPERR_BAD_PARMETERS;
-        aParams._comment = ex.What();
-        return false;
+        return error( COMPERR_BAD_PARMETERS, ex.What() );
       }
     }
-    if ( !aParams._hypParameters->GetOptimize() )
+    if ( !_hypParameters->GetOptimize() )
       endWith = netgen::MESHCONST_MESHVOLUME;
   }
-  else if ( aParams._hypMaxElementVolume )
+  else if ( _hypMaxElementVolume )
   {
-    netgen::mparam.maxh = pow( 72, 1/6. ) * pow( aParams.maxElementVolume, 1/3. );
+    netgen::mparam.maxh = pow( 72, 1/6. ) * pow( _maxElementVolume, 1/3. );
     // limitVolumeSize( ngMesh, mparam.maxh ); // result is unpredictable
   }
   else if ( aMesh.HasShapeToMesh() )
@@ -456,7 +447,7 @@ bool NETGENPlugin_NETGEN_3D::computePrepareParam(
     netgen::mparam.maxh = Dist(pmin, pmax)/2;
   }
 
-  if ( !aParams._hypParameters && aMesh.HasShapeToMesh() )
+  if ( !_hypParameters && aMesh.HasShapeToMesh() )
   {
     netgen::mparam.minh = aMesher.GetDefaultMinSize( helper.GetSubShape(), netgen::mparam.maxh );
   }
@@ -468,7 +459,6 @@ bool NETGENPlugin_NETGEN_3D::computeRunMesher(
   vector< const SMDS_MeshNode* > &nodeVec,
   netgen::Mesh* ngMesh,
   NETGENPlugin_NetgenLibWrapper &ngLib,
-  netgen_params &aParams,
   int &startWith, int &endWith)
 {
   int err = 1;
@@ -483,8 +473,7 @@ bool NETGENPlugin_NETGEN_3D::computeRunMesher(
     if(netgen::multithread.terminate)
       return false;
     if ( err ){
-      aParams._comment = SMESH_Comment("Error in netgen::OCCGenerateMesh() at ") << netgen::multithread.task;
-      return true;
+      error(SMESH_Comment("Error in netgen::OCCGenerateMesh() at ") << netgen::multithread.task);
     }
   }
   catch (Standard_Failure& ex)
@@ -494,8 +483,7 @@ bool NETGENPlugin_NETGEN_3D::computeRunMesher(
         << ": " << ex.DynamicType()->Name();
     if ( ex.GetMessageString() && strlen( ex.GetMessageString() ))
       str << ": " << ex.GetMessageString();
-    aParams._comment = str;
-    return true;
+    error(str);
   }
   catch (netgen::NgException& exc)
   {
@@ -503,25 +491,21 @@ bool NETGENPlugin_NETGEN_3D::computeRunMesher(
     if ( strlen( netgen::multithread.task ) > 0 )
       str << " at " << netgen::multithread.task;
     str << ": " << exc.What();
-    aParams._comment = str;
-    return true;
+    error(str);
   }
   catch (...)
   {
     SMESH_Comment str("Exception in  netgen::OCCGenerateMesh()");
     if ( strlen( netgen::multithread.task ) > 0 )
       str << " at " << netgen::multithread.task;
-    aParams._comment = str;
-    return true;
+    error(str);
   }
 
   if ( err )
   {
     SMESH_ComputeErrorPtr ce = NETGENPlugin_Mesher::ReadErrors(nodeVec);
     if ( ce && ce->HasBadElems() ){
-      aParams._error = ce->myName;
-      aParams._comment = ce->myComment;
-      return true;
+      error( ce );
     }
   }
 
@@ -586,30 +570,12 @@ bool NETGENPlugin_NETGEN_3D::Compute(
   int endWith   = netgen::MESHCONST_OPTVOLUME;
   int Netgen_NbOfNodes;
 
-  netgen_params aParams;
-
-  aParams._hypParameters = const_cast<NETGENPlugin_Hypothesis*>(_hypParameters);
-  aParams._hypMaxElementVolume = const_cast<StdMeshers_MaxElementVolume*>(_hypMaxElementVolume);
-  aParams.maxElementVolume = _maxElementVolume;
-  aParams._progressByTic = _progressByTic;
-  aParams._quadraticMesh = _quadraticMesh;
-  aParams._viscousLayersHyp = const_cast<StdMeshers_ViscousLayers*>(_viscousLayersHyp);
-
-  bool ret;
-  ret = computeFillNgMesh(aMesh, aShape, nodeVec, ngLib, helper, aParams, Netgen_NbOfNodes);
-  if(ret)
-    return error( aParams._error, aParams._comment);
+  computeFillNgMesh(aMesh, aShape, nodeVec, ngLib, helper, Netgen_NbOfNodes);
 
   netgen::OCCGeometry occgeo;
-  computePrepareParam(aMesh, ngLib, occgeo, helper, aParams, endWith);
-  ret = computeRunMesher(occgeo, nodeVec, ngLib._ngMesh, ngLib, aParams, startWith, endWith);
-  if(ret){
-    if(aParams._error)
-      return error(aParams._error, aParams._comment);
+  computePrepareParam(aMesh, ngLib, occgeo, helper, endWith);
+  computeRunMesher(occgeo, nodeVec, ngLib._ngMesh, ngLib, startWith, endWith);
 
-    error(aParams._comment);
-    return true;
-  }
   computeFillMesh(nodeVec, ngLib, helper, Netgen_NbOfNodes);
 
   return false;

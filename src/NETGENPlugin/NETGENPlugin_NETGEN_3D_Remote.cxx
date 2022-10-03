@@ -141,7 +141,6 @@ void NETGENPlugin_NETGEN_3D_Remote::fillParameters(const NETGENPlugin_Hypothesis
 // write in a binary file the orientation for each 2D element of the mesh
 void NETGENPlugin_NETGEN_3D_Remote::exportElementOrientation(SMESH_Mesh& aMesh,
                                                       const TopoDS_Shape& aShape,
-                                                      netgen_params& aParams,
                                                       const std::string output_file)
 {
   SMESH_MesherHelper helper(aMesh);
@@ -165,7 +164,7 @@ void NETGENPlugin_NETGEN_3D_Remote::exportElementOrientation(SMESH_Mesh& aMesh,
     if ( !aSubMeshDSFace ) continue;
 
     SMDS_ElemIteratorPtr iteratorElem = aSubMeshDSFace->GetElements();
-    if ( aParams._quadraticMesh &&
+    if ( _quadraticMesh &&
           dynamic_cast< const SMESH_ProxyMesh::SubMesh*>( aSubMeshDSFace ))
     {
       // add medium nodes of proxy triangles to helper (#16843)
@@ -238,7 +237,7 @@ bool NETGENPlugin_NETGEN_3D_Remote::Compute(SMESH_Mesh&         aMesh,
     exportNetgenParams(param_file.string(), aParams);
 
     // Exporting element orientation
-    exportElementOrientation(aMesh, aShape, aParams, element_orientation_file.string());
+    exportElementOrientation(aMesh, aShape, element_orientation_file.string());
   }
 
   // Calling run_mesher

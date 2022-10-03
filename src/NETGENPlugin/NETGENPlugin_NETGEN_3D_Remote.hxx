@@ -64,7 +64,6 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_NETGEN_3D_Remote: public NETGENPlugin_NET
  protected:
   void exportElementOrientation(SMESH_Mesh& aMesh,
                                 const TopoDS_Shape& aShape,
-                                netgen_params& aParams,
                                 const std::string output_file);
 
   void fillParameters(const NETGENPlugin_Hypothesis* hyp,

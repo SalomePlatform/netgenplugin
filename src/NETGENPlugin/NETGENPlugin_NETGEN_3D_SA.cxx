@@ -32,6 +32,7 @@
 
 #include "NETGENPlugin_DriverParam.hxx"
 #include "NETGENPlugin_Hypothesis.hxx"
+#include "StdMeshers_MaxElementVolume.hxx"
 
 #include <SMESH_Gen.hxx>
 #include <SMESH_Mesh.hxx>
@@ -98,6 +99,47 @@ NETGENPlugin_NETGEN_3D_SA::~NETGENPlugin_NETGEN_3D_SA()
 }
 
 
+/*
+ *
+ */
+
+void NETGENPlugin_NETGEN_3D_SA::fillHyp(netgen_params aParams, SMESH_Gen* gen)
+{
+  if(aParams.has_netgen_param){
+    NETGENPlugin_Hypothesis * hypParameters = new NETGENPlugin_Hypothesis(0, gen);
+
+    hypParameters->SetMaxSize(aParams.maxh);
+    hypParameters->SetMinSize(aParams.minh);
+    hypParameters->SetNbSegPerEdge(aParams.segmentsperedge);
+    hypParameters->SetGrowthRate(aParams.grading);
+    hypParameters->SetNbSegPerRadius(aParams.curvaturesafety);
+    hypParameters->SetSecondOrder(aParams.secondorder);
+    hypParameters->SetQuadAllowed(aParams.quad);
+    hypParameters->SetOptimize(aParams.optimize);
+    hypParameters->SetFineness((NETGENPlugin_Hypothesis::Fineness)aParams.fineness);
+    hypParameters->SetSurfaceCurvature(aParams.uselocalh);
+    hypParameters->SetFuseEdges(aParams.merge_solids);
+    hypParameters->SetChordalErrorEnabled(aParams.chordalError);
+    if(aParams.optimize){
+      hypParameters->SetNbSurfOptSteps(aParams.optsteps2d);
+      hypParameters->SetNbVolOptSteps(aParams.optsteps3d);
+    }
+    hypParameters->SetElemSizeWeight(aParams.elsizeweight);
+    hypParameters->SetWorstElemMeasure(aParams.opterrpow);
+    hypParameters->SetUseDelauney(aParams.delaunay);
+    hypParameters->SetCheckOverlapping(aParams.checkoverlap);
+    hypParameters->SetCheckChartBoundary(aParams.checkchartboundary);
+    hypParameters->SetMeshSizeFile(aParams.meshsizefilename);
+
+    _hypParameters = dynamic_cast< const NETGENPlugin_Hypothesis *> (hypParameters);
+  }
+  if(aParams.has_maxelementvolume_hyp){
+    _hypMaxElementVolume = new StdMeshers_MaxElementVolume(1, gen);
+    _maxElementVolume = aParams.maxElementVolume;
+  }
+  // TODO: Handle viscous layer
+}
+
 bool NETGENPlugin_NETGEN_3D_SA::computeFillNewElementFile(
     std::vector< const SMDS_MeshNode* > &nodeVec,
     NETGENPlugin_NetgenLibWrapper &ngLib,
@@ -150,8 +192,7 @@ bool NETGENPlugin_NETGEN_3D_SA::computeFillNewElementFile(
 
 
 bool NETGENPlugin_NETGEN_3D_SA::Compute(TopoDS_Shape &aShape, SMESH_Mesh& aMesh, netgen_params& aParams,
-                     std::string new_element_file, std::string element_orientation_file,
-                     bool output_mesh)
+                     std::string new_element_file, bool output_mesh)
 {
   // vector of nodes in which node index == netgen ID
   vector< const SMDS_MeshNode* > nodeVec;
@@ -161,22 +202,12 @@ bool NETGENPlugin_NETGEN_3D_SA::Compute(TopoDS_Shape &aShape, SMESH_Mesh& aMesh,
   int endWith   = netgen::MESHCONST_OPTVOLUME;
   int Netgen_NbOfNodes=0;
 
-  bool ret;
-  ret = NETGENPlugin_NETGEN_3D::computeFillNgMesh(aMesh, aShape, nodeVec, ngLib, helper, aParams, Netgen_NbOfNodes);
-  if(ret)
-    return error( aParams._error, aParams._comment);
+  NETGENPlugin_NETGEN_3D::computeFillNgMesh(aMesh, aShape, nodeVec, ngLib, helper, Netgen_NbOfNodes);
 
   netgen::OCCGeometry occgeo;
-  NETGENPlugin_NETGEN_3D::computePrepareParam(aMesh, ngLib, occgeo, helper, aParams, endWith);
+  NETGENPlugin_NETGEN_3D::computePrepareParam(aMesh, ngLib, occgeo, helper, endWith);
 
-  ret = NETGENPlugin_NETGEN_3D::computeRunMesher(occgeo, nodeVec, ngLib._ngMesh, ngLib, aParams, startWith, endWith);
-  if(ret){
-    if(aParams._error)
-      return error(aParams._error, aParams._comment);
-
-    error(aParams._comment);
-    return true;
-  }
+  NETGENPlugin_NETGEN_3D::computeRunMesher(occgeo, nodeVec, ngLib._ngMesh, ngLib, startWith, endWith);
 
   computeFillNewElementFile(nodeVec, ngLib, new_element_file, Netgen_NbOfNodes);
 
@@ -210,13 +241,14 @@ int NETGENPlugin_NETGEN_3D_SA::run(const std::string input_mesh_file,
   // Importing hypothesis
   netgen_params myParams;
 
-  importNetgenParams(hypo_file, myParams, &gen);
+  importNetgenParams(hypo_file, myParams);
+  fillHyp(myParams, &gen);
   // Setting number of threads for netgen
   myParams.nbThreads = nbThreads;
 
   MESSAGE("Meshing with netgen3d");
   int ret = Compute(myShape, *myMesh, myParams,
-                      new_element_file, element_orientation_file,
+                      new_element_file,
                       !output_mesh_file.empty());
 
 
@@ -240,10 +272,14 @@ bool NETGENPlugin_NETGEN_3D_SA::getSurfaceElements(
     SMESH_ProxyMesh::Ptr proxyMesh,
     NETGENPlugin_Internals &internals,
     SMESH_MesherHelper &helper,
-    netgen_params &aParams,
     std::map<const SMDS_MeshElement*, tuple<bool, bool>>& listElements
     )
 {
+  // To remove compilation warnings
+  (void) aShape;
+  (void) proxyMesh;
+  (void) internals;
+  (void) helper;
   SMESHDS_Mesh* meshDS = aMesh.GetMeshDS();
 
   // Get list of elements + their orientation from element_orientation file
@@ -283,7 +319,6 @@ bool NETGENPlugin_NETGEN_3D_SA::getSurfaceElements(
   // Adding elements from Mesh
   SMDS_ElemIteratorPtr iteratorElem = meshDS->elementsIterator(SMDSAbs_Face);
   bool isRev;
-  bool isInternalFace = false;
 
   bool isIn;
 
@@ -292,14 +327,10 @@ bool NETGENPlugin_NETGEN_3D_SA::getSurfaceElements(
     // check mesh face
     const SMDS_MeshElement* elem = iteratorElem->next();
     if ( !elem ){
-      aParams._error = COMPERR_BAD_INPUT_MESH;
-      aParams._comment = "Null element encounters";
-      return true;
+      return error( COMPERR_BAD_INPUT_MESH, "Null element encounters");
     }
     if ( elem->NbCornerNodes() != 3 ){
-      aParams._error = COMPERR_BAD_INPUT_MESH;
-      aParams._comment = "Not triangle element encounters";
-      return true;
+      return error( COMPERR_BAD_INPUT_MESH, "Not triangle element encounters");
     }
     // Keeping only element that are in the element orientation file
     isIn = elemOrientation.count(elem->GetID())==1;
