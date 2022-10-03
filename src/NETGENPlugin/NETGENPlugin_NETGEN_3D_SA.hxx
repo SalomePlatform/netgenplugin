@@ -78,7 +78,7 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_NETGEN_3D_SA: public NETGENPlugin_NETGEN_
     SMESH_MesherHelper &helper,
     netgen_params &aParams,
     std::map<const SMDS_MeshElement*, tuple<bool, bool>>& listElements
-    );
+    ) override;
 
    std::string _element_orientation_file="";
    SMESH_Gen *_gen=nullptr;

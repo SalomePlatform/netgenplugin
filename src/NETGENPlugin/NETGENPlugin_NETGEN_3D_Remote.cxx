@@ -35,12 +35,15 @@
 #include "NETGENPlugin_DriverParam.hxx"
 #include "NETGENPlugin_Hypothesis.hxx"
 
+#include "Utils_SALOME_Exception.hxx"
+
 #include <SMESH_Gen.hxx>
 #include <SMESH_Mesh.hxx>
 #include <SMESH_MesherHelper.hxx>
 #include <SMESH_DriverShape.hxx>
 #include <SMESH_DriverMesh.hxx>
 #include <SMESHDS_Mesh.hxx>
+#include <SMESH_MeshLocker.hxx>
 
 #include <QString>
 #include <QProcess>
@@ -199,9 +202,11 @@ void NETGENPlugin_NETGEN_3D_Remote::exportElementOrientation(SMESH_Mesh& aMesh,
 bool NETGENPlugin_NETGEN_3D_Remote::Compute(SMESH_Mesh&         aMesh,
                                            const TopoDS_Shape& aShape)
 {
-  aMesh.Lock();
-  SMESH_Hypothesis::Hypothesis_Status hypStatus;
-  NETGENPlugin_NETGEN_3D::CheckHypothesis(aMesh, aShape, hypStatus);
+  {
+    SMESH_MeshLocker myLocker(&aMesh);
+    SMESH_Hypothesis::Hypothesis_Status hypStatus;
+    NETGENPlugin_NETGEN_3D::CheckHypothesis(aMesh, aShape, hypStatus);
+  }
 
 
   // Temporary folder for run
@@ -221,19 +226,21 @@ bool NETGENPlugin_NETGEN_3D_Remote::Compute(SMESH_Mesh&         aMesh,
   //TODO: Handle variable mesh_name
   std::string mesh_name = "MESH";
 
-  //Writing Shape
-  exportShape(shape_file.string(), aShape);
+  {
+    SMESH_MeshLocker myLocker(&aMesh);
+    //Writing Shape
+    exportShape(shape_file.string(), aShape);
 
-  //Writing hypo
-  netgen_params aParams;
-  fillParameters(_hypParameters, aParams);
+    //Writing hypo
+    netgen_params aParams;
+    fillParameters(_hypParameters, aParams);
 
-  exportNetgenParams(param_file.string(), aParams);
+    exportNetgenParams(param_file.string(), aParams);
 
-  // Exporting element orientation
-  exportElementOrientation(aMesh, aShape, aParams, element_orientation_file.string());
+    // Exporting element orientation
+    exportElementOrientation(aMesh, aShape, aParams, element_orientation_file.string());
+  }
 
-  aMesh.Unlock();
   // Calling run_mesher
   // TODO: check if we need to handle the .exe for windows
   std::string cmd;
@@ -282,14 +289,14 @@ bool NETGENPlugin_NETGEN_3D_Remote::Compute(SMESH_Mesh&         aMesh,
 
   if(ret != 0){
     // Run crahed
-    std::cerr << "Issue with command: " << std::endl;
-    std::cerr << "See log for more details: " << log_file.string() << std::endl;
-    std::cerr << cmd << std::endl;
-    return false;
+    std::string msg = "Issue with command: \n";
+    msg += "See log for more details: " + log_file.string() + "\n";
+    msg += cmd + "\n";
+    throw SALOME_Exception(msg);
   }
 
-  aMesh.Lock();
   {
+    SMESH_MeshLocker myLocker(&aMesh);
     std::ifstream df(new_element_file.string(), ios::binary);
 
     int Netgen_NbOfNodes;
@@ -344,7 +351,12 @@ bool NETGENPlugin_NETGEN_3D_Remote::Compute(SMESH_Mesh&         aMesh,
     }
   }
 
-  aMesh.Unlock();
-
   return true;
+}
+
+
+void NETGENPlugin_NETGEN_3D_Remote::setSubMeshesToCompute(SMESH_subMesh * aSubMesh)
+{
+  SMESH_MeshLocker myLocker(aSubMesh->GetFather());
+  SMESH_Algo::setSubMeshesToCompute(aSubMesh);
 }

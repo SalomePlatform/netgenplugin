@@ -53,10 +53,12 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_NETGEN_3D_Remote: public NETGENPlugin_NET
   // Function whould not be used with remote Computing
   bool CheckHypothesis (SMESH_Mesh&         aMesh,
                         const TopoDS_Shape& aShape,
-                        Hypothesis_Status&  aStatus){aStatus = HYP_OK;return true;};
+                        Hypothesis_Status&  aStatus) override {(void)aMesh;(void)aShape;aStatus = HYP_OK;return true;};
 
   bool Compute(SMESH_Mesh&         aMesh,
-              const TopoDS_Shape& aShape);
+              const TopoDS_Shape& aShape) override;
+
+  void setSubMeshesToCompute(SMESH_subMesh * aSubMesh) override;
 
 
  protected:
