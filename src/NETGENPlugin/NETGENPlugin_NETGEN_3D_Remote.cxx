@@ -82,7 +82,7 @@ using namespace nglib;
 
 //=============================================================================
 /*!
- *
+ * Constructor
  */
 //=============================================================================
 
@@ -94,7 +94,7 @@ NETGENPlugin_NETGEN_3D_Remote::NETGENPlugin_NETGEN_3D_Remote(int hypId, SMESH_Ge
 
 //=============================================================================
 /*!
- *
+ * Destructor
  */
 //=============================================================================
 
@@ -102,7 +102,12 @@ NETGENPlugin_NETGEN_3D_Remote::~NETGENPlugin_NETGEN_3D_Remote()
 {
 }
 
-
+/**
+ * @brief Fill the structure netgen_param with the information from the hypothesis
+ *
+ * @param hyp the hypothesis
+ * @param aParams the netgen_param structure
+ */
 void NETGENPlugin_NETGEN_3D_Remote::fillParameters(const NETGENPlugin_Hypothesis* hyp, netgen_params &aParams)
 {
   aParams.maxh               = hyp->GetMaxSize();
@@ -136,7 +141,15 @@ void NETGENPlugin_NETGEN_3D_Remote::fillParameters(const NETGENPlugin_Hypothesis
 #endif
 }
 
-// write in a binary file the orientation for each 2D element of the mesh
+//
+
+/**
+ * @brief write in a binary file the orientation for each surface element of the mesh
+ *
+ * @param aMesh The mesh
+ * @param aShape the shape associated to the mesh
+ * @param output_file name of the binary file
+ */
 void NETGENPlugin_NETGEN_3D_Remote::exportElementOrientation(SMESH_Mesh& aMesh,
                                                       const TopoDS_Shape& aShape,
                                                       const std::string output_file)
@@ -195,7 +208,13 @@ void NETGENPlugin_NETGEN_3D_Remote::exportElementOrientation(SMESH_Mesh& aMesh,
   }
 }
 
-
+/**
+ * @brief Compute mesh associate to shape
+ *
+ * @param aMesh The mesh
+ * @param aShape The shape
+ * @return true fi there are some error
+ */
 bool NETGENPlugin_NETGEN_3D_Remote::Compute(SMESH_Mesh&         aMesh,
                                            const TopoDS_Shape& aShape)
 {
@@ -351,7 +370,11 @@ bool NETGENPlugin_NETGEN_3D_Remote::Compute(SMESH_Mesh&         aMesh,
   return true;
 }
 
-
+/**
+ * @brief Assign submeshes to compute
+ *
+ * @param aSubMesh submesh to add
+ */
 void NETGENPlugin_NETGEN_3D_Remote::setSubMeshesToCompute(SMESH_subMesh * aSubMesh)
 {
   SMESH_MeshLocker myLocker(aSubMesh->GetFather());

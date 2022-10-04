@@ -198,11 +198,20 @@ bool NETGENPlugin_NETGEN_3D::CheckHypothesis (SMESH_Mesh&         aMesh,
  */
 //=============================================================================
 
-/**
- * @brief Get an iterator on the Surface element with their orientation
- *
- */
 
+/**
+ * @brief Compute the list of already meshed Surface elements and info
+ *        on their orientation and if they are internal
+ *
+ * @param aMesh Global Mesh
+ * @param aShape Shape associated to the mesh
+ * @param proxyMesh pointer to mesh used fo find the elements
+ * @param internals information on internal sub shapes
+ * @param helper helper associated to the mesh
+ * @param listElements map of surface element associated with
+ *                     their orientation and internal status
+ * @return true if their was some error
+ */
 bool NETGENPlugin_NETGEN_3D::getSurfaceElements(
     SMESH_Mesh&         aMesh,
     const TopoDS_Shape& aShape,
@@ -257,6 +266,18 @@ bool NETGENPlugin_NETGEN_3D::getSurfaceElements(
   return false;
 }
 
+/**
+ * @brief Part of Compute: adding already meshed elements
+ *        into netgen structure
+ *
+ * @param aMesh Global mesh
+ * @param aShape Shape associated with the mesh
+ * @param nodeVec Mapping between nodes mesh id and netgen structure id
+ * @param ngLib Wrapper on netgen lib
+ * @param helper helper assocaited to the mesh
+ * @param Netgen_NbOfNodes Number of nodes in netge structure
+ * @return true if there was some error
+ */
 
 bool NETGENPlugin_NETGEN_3D::computeFillNgMesh(
   SMESH_Mesh&         aMesh,
@@ -388,6 +409,16 @@ bool NETGENPlugin_NETGEN_3D::computeFillNgMesh(
   return false;
 }
 
+/**
+ * @brief Part of Compute: Setting the netgen parameters from the Hypothesis
+ *
+ * @param aMesh Global mesh
+ * @param ngLib Wrapper on netgen lib
+ * @param occgeo Mapping between nodes mesh id and netgen structure id
+ * @param helper helper assocaited to the mesh
+ * @param endWith end step of netgen
+ * @return true if there was some error
+ */
 bool NETGENPlugin_NETGEN_3D::computePrepareParam(
   SMESH_Mesh&         aMesh,
   NETGENPlugin_NetgenLibWrapper &ngLib,
@@ -451,6 +482,17 @@ bool NETGENPlugin_NETGEN_3D::computePrepareParam(
   return false;
 }
 
+/**
+ * @brief Part of Compute: call to the netgen mesher
+ *
+ * @param occgeo netgen geometry structure
+ * @param nodeVec Mapping between nodes mesh id and netgen structure id
+ * @param ngMesh netgen mesh structure
+ * @param ngLib Wrapper on netgen lib
+ * @param startWith starting step of netgen
+ * @param endWith end step of netgen
+ * @return true if there was some error
+ */
 bool NETGENPlugin_NETGEN_3D::computeRunMesher(
   netgen::OCCGeometry &occgeo,
   vector< const SMDS_MeshNode* > &nodeVec,
@@ -509,6 +551,15 @@ bool NETGENPlugin_NETGEN_3D::computeRunMesher(
   return false;
 }
 
+/**
+ * @brief Part of Compute: Adding new element created by mesher to SMESH_Mesh
+ *
+ * @param nodeVec Mapping between nodes mesh id and netgen structure id
+ * @param ngLib Wrapper on netgen lib
+ * @param helper tool associated to the mesh to add element
+ * @param Netgen_NbOfNodes Number of nodes in netgen structure
+ * @return true if there was some error
+ */
 bool NETGENPlugin_NETGEN_3D::computeFillMesh(
   vector< const SMDS_MeshNode* > &nodeVec,
   NETGENPlugin_NetgenLibWrapper &ngLib,
@@ -555,6 +606,14 @@ bool NETGENPlugin_NETGEN_3D::computeFillMesh(
   return false;
 }
 
+
+/**
+ * @brief Compute mesh associate to shape
+ *
+ * @param aMesh The mesh
+ * @param aShape The shape
+ * @return true fi there are some error
+ */
 bool NETGENPlugin_NETGEN_3D::Compute(
   SMESH_Mesh&         aMesh,
   const TopoDS_Shape& aShape)

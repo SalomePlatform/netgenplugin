@@ -76,19 +76,19 @@ using namespace nglib;
 
 //=============================================================================
 /*!
- *
+ * Constructor
  */
 //=============================================================================
 
 NETGENPlugin_NETGEN_3D_SA::NETGENPlugin_NETGEN_3D_SA()
-  : NETGENPlugin_NETGEN_3D(0, _gen=new SMESH_Gen())
+  :  NETGENPlugin_NETGEN_3D(0, new SMESH_Gen())
 {
   _name = "NETGEN_3D_SA";
 }
 
 //=============================================================================
 /*!
- *
+ * Destructor
  */
 //=============================================================================
 
@@ -98,15 +98,18 @@ NETGENPlugin_NETGEN_3D_SA::~NETGENPlugin_NETGEN_3D_SA()
     delete _gen;
 }
 
-
-/*
+/**
+ * @brief fill plugin hypothesis from the netgen_params structure
  *
+ * @param aParams the structure
+ * @param gen SMESH_Gen associate with the SA
  */
-
-void NETGENPlugin_NETGEN_3D_SA::fillHyp(netgen_params aParams, SMESH_Gen* gen)
+void NETGENPlugin_NETGEN_3D_SA::fillHyp(netgen_params aParams)
 {
+  if(_gen)
+    std::cout << "_gen is set"  << std::endl;
   if(aParams.has_netgen_param){
-    NETGENPlugin_Hypothesis * hypParameters = new NETGENPlugin_Hypothesis(0, gen);
+    NETGENPlugin_Hypothesis * hypParameters = new NETGENPlugin_Hypothesis(0, GetGen());
 
     hypParameters->SetMaxSize(aParams.maxh);
     hypParameters->SetMinSize(aParams.minh);
@@ -134,12 +137,22 @@ void NETGENPlugin_NETGEN_3D_SA::fillHyp(netgen_params aParams, SMESH_Gen* gen)
     _hypParameters = dynamic_cast< const NETGENPlugin_Hypothesis *> (hypParameters);
   }
   if(aParams.has_maxelementvolume_hyp){
-    _hypMaxElementVolume = new StdMeshers_MaxElementVolume(1, gen);
+    _hypMaxElementVolume = new StdMeshers_MaxElementVolume(1, GetGen());
     _maxElementVolume = aParams.maxElementVolume;
   }
   // TODO: Handle viscous layer
 }
 
+/**
+ * @brief Write a binary file containing information on the elements/nodes
+ *        created by the mesher
+ *
+ * @param nodeVec mapping between the mesh id and the netgen structure id
+ * @param ngLib Wrapper on netgen library
+ * @param new_element_file Name of the output file
+ * @param Netgen_NbOfNodes Number of nodes in the netgen structure
+ * @return true if there are some error
+ */
 bool NETGENPlugin_NETGEN_3D_SA::computeFillNewElementFile(
     std::vector< const SMDS_MeshNode* > &nodeVec,
     NETGENPlugin_NetgenLibWrapper &ngLib,
@@ -190,9 +203,22 @@ bool NETGENPlugin_NETGEN_3D_SA::computeFillNewElementFile(
   return false;
 }
 
-
-bool NETGENPlugin_NETGEN_3D_SA::Compute(TopoDS_Shape &aShape, SMESH_Mesh& aMesh, netgen_params& aParams,
-                     std::string new_element_file, bool output_mesh)
+/**
+ * @brief Compute mesh associated to shape
+ *
+ * @param aShape the shape
+ * @param aMesh the mesh
+ * @param aParams netgen_params structure
+ * @param new_element_file Name of the file containing new element
+ * @param output_mesh Name of the output mesh (if empty it will not be written)
+ * @return true if there are some error
+ */
+bool NETGENPlugin_NETGEN_3D_SA::Compute(
+        TopoDS_Shape &aShape,
+        SMESH_Mesh& aMesh,
+        netgen_params& aParams,
+        std::string new_element_file,
+        bool output_mesh)
 {
   // vector of nodes in which node index == netgen ID
   vector< const SMDS_MeshNode* > nodeVec;
@@ -222,6 +248,18 @@ bool NETGENPlugin_NETGEN_3D_SA::Compute(TopoDS_Shape &aShape, SMESH_Mesh& aMesh,
   return false;
 }
 
+
+/**
+ * @brief Running the mesher on the given files
+ *
+ * @param input_mesh_file Mesh file (containing 2D elements)
+ * @param shape_file Shape file (BREP or STEP format)
+ * @param hypo_file Ascii file containing the netgen parameters
+ * @param element_orientation_file Binary file containing the orientation of surface elemnts
+ * @param new_element_file output file containing info the elements created by the mesher
+ * @param output_mesh_file output mesh file (if empty it will not be created)
+ * @return int
+ */
 int NETGENPlugin_NETGEN_3D_SA::run(const std::string input_mesh_file,
           const std::string shape_file,
           const std::string hypo_file,
@@ -231,10 +269,8 @@ int NETGENPlugin_NETGEN_3D_SA::run(const std::string input_mesh_file,
 {
 
   _element_orientation_file = element_orientation_file;
-  // Importing mesh
-  SMESH_Gen gen;
 
-  std::unique_ptr<SMESH_Mesh> myMesh(gen.CreateMesh(false));
+  std::unique_ptr<SMESH_Mesh> myMesh(_gen->CreateMesh(false));
 
   importMesh(input_mesh_file, *myMesh);
 
@@ -246,7 +282,7 @@ int NETGENPlugin_NETGEN_3D_SA::run(const std::string input_mesh_file,
   netgen_params myParams;
 
   importNetgenParams(hypo_file, myParams);
-  fillHyp(myParams, &gen);
+  fillHyp(myParams);
 
   MESSAGE("Meshing with netgen3d");
   int ret = Compute(myShape, *myMesh, myParams,
@@ -267,7 +303,19 @@ int NETGENPlugin_NETGEN_3D_SA::run(const std::string input_mesh_file,
   return ret;
 }
 
-
+/**
+ * @brief Compute the list of already meshed Surface elements and info
+ *        on their orientation and if they are internal
+ *
+ * @param aMesh Global Mesh
+ * @param aShape Shape associated to the mesh
+ * @param proxyMesh pointer to mesh used fo find the elements
+ * @param internals information on internal sub shapes
+ * @param helper helper associated to the mesh
+ * @param listElements map of surface element associated with
+ *                     their orientation and internal status
+ * @return true if their was some error
+ */
 bool NETGENPlugin_NETGEN_3D_SA::getSurfaceElements(
     SMESH_Mesh&         aMesh,
     const TopoDS_Shape& aShape,

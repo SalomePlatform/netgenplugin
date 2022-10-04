@@ -38,7 +38,6 @@
 class NETGENPlugin_NetgenLibWrapper;
 class netgen_params;
 class SMDS_MeshNode;
-class SMESH_Gen;
 
 using namespace std;
 
@@ -48,7 +47,7 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_NETGEN_3D_SA: public NETGENPlugin_NETGEN_
   NETGENPlugin_NETGEN_3D_SA();
   virtual ~NETGENPlugin_NETGEN_3D_SA();
 
-  void fillHyp(netgen_params aParams, SMESH_Gen* gen);
+  void fillHyp(netgen_params aParams);
   bool Compute(TopoDS_Shape &aShape, SMESH_Mesh& aMesh, netgen_params& aParams,
                        std::string new_element_file, bool output_mesh);
 
@@ -77,8 +76,6 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_NETGEN_3D_SA: public NETGENPlugin_NETGEN_
     ) override;
 
    std::string _element_orientation_file="";
-   SMESH_Gen *_gen=nullptr;
-
 };
 
 #endif
