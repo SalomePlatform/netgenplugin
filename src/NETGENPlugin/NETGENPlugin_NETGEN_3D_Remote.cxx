@@ -300,7 +300,9 @@ bool NETGENPlugin_NETGEN_3D_Remote::Compute(SMESH_Mesh&         aMesh,
   myProcess.setStandardOutputFile(out_file);
 
   myProcess.start(program, arguments);
-  myProcess.waitForFinished();
+  // Waiting for process to finish (argument -1 make it wait until the end of
+  // the process otherwise it just waits 30 seconds)
+  myProcess.waitForFinished(-1);
   int ret = myProcess.exitStatus();
 
   if(ret != 0){
