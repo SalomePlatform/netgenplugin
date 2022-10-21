@@ -76,7 +76,7 @@ using namespace nglib;
 
 //=============================================================================
 /*!
- *  
+ *
  */
 //=============================================================================
 
@@ -85,7 +85,7 @@ NETGENPlugin_NETGEN_2D_ONLY::NETGENPlugin_NETGEN_2D_ONLY(int        hypId,
   : SMESH_2D_Algo(hypId, gen)
 {
   _name = "NETGEN_2D_ONLY";
-  
+
   _shapeType = (1 << TopAbs_FACE);// 1 bit /shape type
   _onlyUnaryInput = false; // treat all FACEs at once
 
@@ -103,7 +103,7 @@ NETGENPlugin_NETGEN_2D_ONLY::NETGENPlugin_NETGEN_2D_ONLY(int        hypId,
 
 //=============================================================================
 /*!
- *  
+ *
  */
 //=============================================================================
 
@@ -114,7 +114,7 @@ NETGENPlugin_NETGEN_2D_ONLY::~NETGENPlugin_NETGEN_2D_ONLY()
 
 //=============================================================================
 /*!
- *  
+ *
  */
 //=============================================================================
 

@@ -380,7 +380,7 @@ namespace
 
   //================================================================================
   /*!
-   * \brief Restrict size of elements on the given edge 
+   * \brief Restrict size of elements on the given edge
    */
   //================================================================================
 
@@ -599,19 +599,21 @@ void NETGENPlugin_Mesher::SetDefaultParameters()
   _fineness               = NETGENPlugin_Hypothesis::GetDefaultFineness();
   mparams.uselocalh       = NETGENPlugin_Hypothesis::GetDefaultSurfaceCurvature();
   netgen::merge_solids    = NETGENPlugin_Hypothesis::GetDefaultFuseEdges();
+  // Unused argument but set 0 to initialise it
+  mparams.elementorder = 0;
 
 #ifdef NETGEN_V6
 
-  mparams.nthreads = std::thread::hardware_concurrency();
+  mparams.nthreads = NETGENPlugin_Hypothesis::GetDefaultNbThreads();
 
   if ( getenv( "SALOME_NETGEN_DISABLE_MULTITHREADING" ))
   {
     mparams.nthreads = 1;
     mparams.parallel_meshing = false;
   }
-
 #endif
 }
+
 
 //=============================================================================
 /*!
@@ -655,6 +657,7 @@ void NETGENPlugin_Mesher::SetParameters(const NETGENPlugin_Hypothesis* hyp)
 #ifdef NETGEN_V6
     // std::string
     mparams.meshsizefilename = hyp->GetMeshSizeFile();
+    mparams.nthreads = hyp->GetNbThreads();
 #else
     // const char*
     mparams.meshsizefilename= hyp->GetMeshSizeFile().empty() ? 0 : hyp->GetMeshSizeFile().c_str();
@@ -1575,7 +1578,7 @@ void NETGENPlugin_Mesher::FixIntFaces(const netgen::OCCGeometry& occgeom,
                                       NETGENPlugin_Internals&    internalShapes)
 {
   SMESHDS_Mesh* meshDS = internalShapes.getMesh().GetMeshDS();
-  
+
   // find ng indices of internal faces
   set<int> ngFaceIds;
   for ( int ngFaceID = 1; ngFaceID <= occgeom.fmap.Extent(); ++ngFaceID )
@@ -1735,7 +1738,7 @@ namespace
     double dist3D = surf->Value( uv1.X(), uv1.Y() ).Distance( surf->Value( uv2.X(), uv2.Y() ));
     if ( stopHandler == 0 ) // stop recursion
       return dist3D;
-    
+
     // start recursion if necessary
     double dist2D = SMESH_MesherHelper::ApplyIn2D(surf, uv1, uv2, gp_XY_Subtracted, 0).Modulus();
     if ( fabs( dist3D - dist2D ) < dist2D * 1e-10 )
@@ -2205,7 +2208,7 @@ void NETGENPlugin_Mesher::AddIntVerticesInSolids(const netgen::OCCGeometry&     
  *  \param wires - data of nodes on FACE boundary
  *  \param helper - mesher helper holding the FACE
  *  \param nodeVec - vector of nodes in which node index == netgen ID
- *  \retval SMESH_ComputeErrorPtr - error description 
+ *  \retval SMESH_ComputeErrorPtr - error description
  */
 //================================================================================
 
@@ -2712,7 +2715,7 @@ int NETGENPlugin_Mesher::FillSMesh(const netgen::OCCGeometry&          occgeo,
 
   for ( int i = 1; i <= nbVol; ++i )
   {
-    const netgen::Element& elem = ngMesh.VolumeElement(i);      
+    const netgen::Element& elem = ngMesh.VolumeElement(i);
     int aSolidInd = elem.GetIndex();
     TopoDS_Solid aSolid;
     if ( aSolidInd > 0 && aSolidInd <= occgeo.somap.Extent() )
@@ -2905,7 +2908,7 @@ bool NETGENPlugin_Mesher::Compute()
 
   // vector of nodes in which node index == netgen ID
   vector< const SMDS_MeshNode* > nodeVec;
-  
+
   {
     // ----------------
     // compute 1D mesh
@@ -3511,7 +3514,7 @@ bool NETGENPlugin_Mesher::Evaluate(MapShapeNbElems& aResMap)
   const int hugeNb = std::numeric_limits<int>::max() / 100;
 
   // ----------------
-  // evaluate 1D 
+  // evaluate 1D
   // ----------------
   // pass 1D simple parameters to NETGEN
   if ( _simpleHyp )
@@ -3618,7 +3621,7 @@ bool NETGENPlugin_Mesher::Evaluate(MapShapeNbElems& aResMap)
     return false;
 
   // ----------------
-  // evaluate 2D 
+  // evaluate 2D
   // ----------------
   if ( _simpleHyp ) {
     if ( double area = _simpleHyp->GetMaxElementArea() ) {
@@ -3820,9 +3823,9 @@ NETGENPlugin_Mesher::ReadErrors(const vector<const SMDS_MeshNode* >& nodeVec)
     }
     else if ( strncmp( file, "Intersecting: ", 14 ) == 0 )
     {
-// Intersecting: 
+// Intersecting:
 // openelement 18 with open element 126
-// 41  36  38  
+// 41  36  38
 // 69  70  72
       file.getLine();
       const char* pos = file;
@@ -3939,7 +3942,7 @@ void NETGENPlugin_Mesher::toPython( const netgen::Mesh* ngMesh )
 #else  //////// V 5
 
   PointIndex pi;
-  for (pi = PointIndex::BASE; 
+  for (pi = PointIndex::BASE;
        pi < ngMesh->GetNP()+PointIndex::BASE; pi++)
   {
     outfile << "mesh.AddNode( ";
@@ -4437,18 +4440,7 @@ NETGENPlugin_NetgenLibWrapper::NETGENPlugin_NetgenLibWrapper():
   _ngcerr           = NULL;
   if ( !getenv( "KEEP_NETGEN_OUTPUT" ))
   {
-    // redirect all netgen output (mycout,myerr,cout) to _outputFileName
-    _outputFileName = getOutputFileName();
-    _ngcout         = netgen::mycout;
-    _ngcerr         = netgen::myerr;
-    netgen::mycout  = new ofstream ( _outputFileName.c_str() );
-    netgen::myerr   = netgen::mycout;
-    _coutBuffer     = std::cout.rdbuf();
-#ifdef _DEBUG_
-    std::cout << "NOTE: netgen output is redirected to file " << _outputFileName << std::endl;
-#else
-    std::cout.rdbuf( netgen::mycout->rdbuf() );
-#endif
+    setOutputFile(getOutputFileName());
   }
 
   setMesh( Ng_NewMesh() );
@@ -4506,6 +4498,9 @@ int NETGENPlugin_NetgenLibWrapper::GenerateMesh( netgen::OCCGeometry& occgeo,
   int err = 0;
   if ( !ngMesh )
     ngMesh = new netgen::Mesh;
+
+  // To dump mparam
+  // netgen::mparam.Print(std::cerr);
 
 #ifdef NETGEN_V6
 
@@ -4568,6 +4563,27 @@ std::string NETGENPlugin_NetgenLibWrapper::getOutputFileName()
   aGenericName += ".out";
 
   return aGenericName.ToCString();
+}
+//================================================================================
+/*!
+ * \brief Set output file name for netgen log
+ */
+//================================================================================
+
+void NETGENPlugin_NetgenLibWrapper::setOutputFile(std::string outputfile)
+{
+  // redirect all netgen output (mycout,myerr,cout) to _outputFileName
+  _outputFileName = outputfile;
+  _ngcout         = netgen::mycout;
+  _ngcerr         = netgen::myerr;
+  netgen::mycout  = new ofstream ( _outputFileName.c_str() );
+  netgen::myerr   = netgen::mycout;
+  _coutBuffer     = std::cout.rdbuf();
+#ifdef _DEBUG_
+  std::cout << "NOTE: netgen output is redirected to file " << _outputFileName << std::endl;
+#else
+  std::cout.rdbuf( netgen::mycout->rdbuf() );
+#endif
 }
 
 //================================================================================

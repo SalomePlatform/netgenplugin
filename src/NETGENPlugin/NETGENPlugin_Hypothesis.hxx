@@ -35,6 +35,7 @@
 #include "Utils_SALOME_Exception.hxx"
 
 #include <map>
+#include <thread>
 
 //  Parameters for work of NETGEN
 //
@@ -125,6 +126,9 @@ public:
   void   SetCheckChartBoundary( bool toCheck );
   bool   GetCheckChartBoundary() const { return _checkChartBoundary; }
 
+  void   SetNbThreads( int val );
+  int    GetNbThreads() const { return _nbThreads; }
+
   // the default values (taken from NETGEN 4.5 sources)
 
   static Fineness GetDefaultFineness()          { return Moderate; }
@@ -145,6 +149,7 @@ public:
   static bool     GetDefaultCheckOverlapping()  { return true; }
   static bool     GetDefaultCheckChartBoundary(){ return true; }
   static bool     GetDefaultFuseEdges()         { return true; }
+  static int      GetDefaultNbThreads()         { return std::thread::hardware_concurrency(); }
 
   // Persistence
   virtual std::ostream & SaveTo  (std::ostream & save);
@@ -197,6 +202,9 @@ private:
   //bool          _blockFilling; -- not used by netgen
   // (SALOME additions)
   bool          _fuseEdges;
+
+  // Parallelism parameters
+  int _nbThreads;
 };
 
 #endif
