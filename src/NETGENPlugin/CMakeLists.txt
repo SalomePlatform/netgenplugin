@@ -17,9 +17,12 @@
 # See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
 #
 
+INCLUDE(UseQtExt)
+
 # --- options ---
 # additional include directories
 INCLUDE_DIRECTORIES(
+  ${QT_INCLUDES}
   ${KERNEL_INCLUDE_DIRS}
   ${GUI_INCLUDE_DIRS}
   ${GEOM_INCLUDE_DIRS}
@@ -34,7 +37,8 @@ INCLUDE_DIRECTORIES(
 )
 
 # additional preprocessor / compiler flags
-ADD_DEFINITIONS(  
+ADD_DEFINITIONS(
+  ${QT_DEFINITIONS}
   ${OMNIORB_DEFINITIONS}
   ${OpenCASCADE_DEFINITIONS}
   ${BOOST_DEFINITIONS}
@@ -63,34 +67,41 @@ SET(_link_LIBRARIES
   ${KERNEL_SalomeNS}
   ${KERNEL_SALOMELocalTrace}
   ${KERNEL_OpUtil}
+  VTK::CommonCore
+  VTK::CommonDataModel
   SalomeIDLNETGENPLUGIN
+  Qt5::Core
 )
 
 # --- headers ---
 
 # header files
 SET(NETGENEngine_HEADERS
-  NETGENPlugin_NETGEN_3D.hxx 
-  NETGENPlugin_NETGEN_3D_i.hxx 
-  NETGENPlugin_NETGEN_2D.hxx 
-  NETGENPlugin_NETGEN_2D_i.hxx 
-  NETGENPlugin_NETGEN_2D3D.hxx 
-  NETGENPlugin_NETGEN_2D3D_i.hxx 
-  NETGENPlugin_NETGEN_2D_ONLY.hxx 
-  NETGENPlugin_NETGEN_2D_ONLY_i.hxx 
-  NETGENPlugin_Hypothesis.hxx 
-  NETGENPlugin_Hypothesis_i.hxx 
-  NETGENPlugin_Hypothesis_2D.hxx 
-  NETGENPlugin_Hypothesis_2D_i.hxx 
-  NETGENPlugin_Hypothesis_3D_i.hxx 
-  NETGENPlugin_Hypothesis_2D_ONLY_i.hxx 
-  NETGENPlugin_SimpleHypothesis_2D.hxx 
-  NETGENPlugin_SimpleHypothesis_3D.hxx 
-  NETGENPlugin_SimpleHypothesis_2D_i.hxx 
-  NETGENPlugin_SimpleHypothesis_3D_i.hxx 
-  NETGENPlugin_Mesher.hxx 
+  NETGENPlugin_NETGEN_3D.hxx
+  NETGENPlugin_NETGEN_3D_i.hxx
+  NETGENPlugin_NETGEN_2D.hxx
+  NETGENPlugin_NETGEN_2D_i.hxx
+  NETGENPlugin_NETGEN_2D3D.hxx
+  NETGENPlugin_NETGEN_2D3D_i.hxx
+  NETGENPlugin_NETGEN_2D_ONLY.hxx
+  NETGENPlugin_NETGEN_2D_ONLY_i.hxx
+  NETGENPlugin_Hypothesis.hxx
+  NETGENPlugin_Hypothesis_i.hxx
+  NETGENPlugin_Hypothesis_2D.hxx
+  NETGENPlugin_Hypothesis_2D_i.hxx
+  NETGENPlugin_Hypothesis_3D_i.hxx
+  NETGENPlugin_Hypothesis_2D_ONLY_i.hxx
+  NETGENPlugin_SimpleHypothesis_2D.hxx
+  NETGENPlugin_SimpleHypothesis_3D.hxx
+  NETGENPlugin_SimpleHypothesis_2D_i.hxx
+  NETGENPlugin_SimpleHypothesis_3D_i.hxx
+  NETGENPlugin_Mesher.hxx
   NETGENPlugin_Remesher_2D.hxx
   NETGENPlugin_Defs.hxx
+  NETGENPlugin_DriverParam.hxx
+  NETGENPlugin_NETGEN_3D_SA.hxx
+  NETGENPlugin_NETGEN_3D_Remote.hxx
+  NETGENPlugin_NETGEN_3D_Remote_i.hxx
 )
 
 # --- sources ---
@@ -118,6 +129,14 @@ SET(NETGENEngine_SOURCES
   NETGENPlugin_SimpleHypothesis_3D_i.cxx
   NETGENPlugin_Remesher_2D.cxx
   NETGENPlugin_i.cxx
+  NETGENPlugin_DriverParam.cxx
+  NETGENPlugin_NETGEN_3D_SA.cxx
+  NETGENPlugin_NETGEN_3D_Remote.cxx
+  NETGENPlugin_NETGEN_3D_Remote_i.cxx
+)
+
+SET(NetgenRunner_SOURCES
+  NETGENPlugin_Runner_main.cxx
 )
 
 # --- scripts ---
@@ -133,6 +152,10 @@ SET(_bin_SCRIPTS
 ADD_LIBRARY(NETGENEngine ${NETGENEngine_SOURCES})
 TARGET_LINK_LIBRARIES(NETGENEngine ${_link_LIBRARIES} )
 INSTALL(TARGETS NETGENEngine EXPORT ${PROJECT_NAME}TargetGroup DESTINATION ${SALOME_INSTALL_LIBS})
+
+ADD_EXECUTABLE(NETGENPlugin_Runner ${NetgenRunner_SOURCES})
+TARGET_LINK_LIBRARIES(NETGENPlugin_Runner ${_link_LIBRARIES} NETGENEngine )
+INSTALL(TARGETS NETGENPlugin_Runner EXPORT ${PROJECT_NAME}TargetGroup DESTINATION ${SALOME_INSTALL_BINS})
 
 INSTALL(FILES ${NETGENEngine_HEADERS} DESTINATION ${SALOME_INSTALL_HEADERS})
 

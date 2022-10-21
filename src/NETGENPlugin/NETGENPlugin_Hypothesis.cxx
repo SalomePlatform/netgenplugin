@@ -58,6 +58,7 @@ NETGENPlugin_Hypothesis::NETGENPlugin_Hypothesis (int hypId, SMESH_Gen * gen)
     _nbVolOptSteps      (GetDefaultNbVolOptSteps()),
     _elemSizeWeight     (GetDefaultElemSizeWeight()),
     _worstElemMeasure   (GetDefaultWorstElemMeasure()),
+    _nbThreads          (GetDefaultNbThreads()),
     _surfaceCurvature   (GetDefaultSurfaceCurvature()),
     _useDelauney        (GetDefaultUseDelauney()),
     _checkOverlapping   (GetDefaultCheckOverlapping()),
@@ -84,7 +85,7 @@ void NETGENPlugin_Hypothesis::SetMaxSize(double theSize)
 
 //=============================================================================
 /*!
- *  
+ *
  */
 //=============================================================================
 void NETGENPlugin_Hypothesis::SetMinSize(double theSize)
@@ -98,7 +99,7 @@ void NETGENPlugin_Hypothesis::SetMinSize(double theSize)
 
 //=============================================================================
 /*!
- *  
+ *
  */
 //=============================================================================
 void NETGENPlugin_Hypothesis::SetSecondOrder(bool theVal)
@@ -112,7 +113,7 @@ void NETGENPlugin_Hypothesis::SetSecondOrder(bool theVal)
 
 //=============================================================================
 /*!
- *  
+ *
  */
 //=============================================================================
 void NETGENPlugin_Hypothesis::SetOptimize(bool theVal)
@@ -126,7 +127,7 @@ void NETGENPlugin_Hypothesis::SetOptimize(bool theVal)
 
 //=============================================================================
 /*!
- *  
+ *
  */
 //=============================================================================
 void NETGENPlugin_Hypothesis::SetFineness(Fineness theFineness)
@@ -172,7 +173,7 @@ void NETGENPlugin_Hypothesis::SetFineness(Fineness theFineness)
 
 //=============================================================================
 /*!
- *  
+ *
  */
 //=============================================================================
 void NETGENPlugin_Hypothesis::SetGrowthRate(double theRate)
@@ -187,7 +188,7 @@ void NETGENPlugin_Hypothesis::SetGrowthRate(double theRate)
 
 //=============================================================================
 /*!
- *  
+ *
  */
 //=============================================================================
 void NETGENPlugin_Hypothesis::SetNbSegPerEdge(double theVal)
@@ -202,7 +203,7 @@ void NETGENPlugin_Hypothesis::SetNbSegPerEdge(double theVal)
 
 //=============================================================================
 /*!
- *  
+ *
  */
 //=============================================================================
 void NETGENPlugin_Hypothesis::SetNbSegPerRadius(double theVal)
@@ -217,7 +218,7 @@ void NETGENPlugin_Hypothesis::SetNbSegPerRadius(double theVal)
 
 //=============================================================================
 /*!
- *  
+ *
  */
 //=============================================================================
 void NETGENPlugin_Hypothesis::SetChordalErrorEnabled(bool theVal)
@@ -231,7 +232,7 @@ void NETGENPlugin_Hypothesis::SetChordalErrorEnabled(bool theVal)
 
 //=============================================================================
 /*!
- *  
+ *
  */
 //=============================================================================
 void NETGENPlugin_Hypothesis::SetChordalError(double theVal)
@@ -245,7 +246,7 @@ void NETGENPlugin_Hypothesis::SetChordalError(double theVal)
 
 //=============================================================================
 /*!
- *  
+ *
  */
 //=============================================================================
 void NETGENPlugin_Hypothesis::SetLocalSizeOnEntry(const std::string& entry, double localSize)
@@ -273,7 +274,7 @@ double NETGENPlugin_Hypothesis::GetLocalSizeOnEntry(const std::string& entry)
 
 //=============================================================================
 /*!
- *  
+ *
  */
 //=============================================================================
 void NETGENPlugin_Hypothesis::UnsetLocalSizeOnEntry(const std::string& entry)
@@ -284,7 +285,7 @@ void NETGENPlugin_Hypothesis::UnsetLocalSizeOnEntry(const std::string& entry)
 
 //=============================================================================
 /*!
- *  
+ *
  */
 //=============================================================================
 void NETGENPlugin_Hypothesis::SetMeshSizeFile(const std::string& fileName)
@@ -298,7 +299,7 @@ void NETGENPlugin_Hypothesis::SetMeshSizeFile(const std::string& fileName)
 
 //=============================================================================
 /*!
- *  
+ *
  */
 //=============================================================================
 void NETGENPlugin_Hypothesis::SetQuadAllowed(bool theVal)
@@ -312,7 +313,7 @@ void NETGENPlugin_Hypothesis::SetQuadAllowed(bool theVal)
 
 //=============================================================================
 /*!
- *  
+ *
  */
 //=============================================================================
 void NETGENPlugin_Hypothesis::SetSurfaceCurvature(bool theVal)
@@ -340,7 +341,7 @@ void NETGENPlugin_Hypothesis::SetFuseEdges(bool theVal)
 
 //=======================================================================
 //function : SetNbSurfOptSteps
-//purpose  : 
+//purpose  :
 //=======================================================================
 
 void NETGENPlugin_Hypothesis::SetNbSurfOptSteps( int theVal )
@@ -354,7 +355,7 @@ void NETGENPlugin_Hypothesis::SetNbSurfOptSteps( int theVal )
 
 //=======================================================================
 //function : SetNbVolOptSteps
-//purpose  : 
+//purpose  :
 //=======================================================================
 
 void NETGENPlugin_Hypothesis::SetNbVolOptSteps( int theVal )
@@ -368,7 +369,7 @@ void NETGENPlugin_Hypothesis::SetNbVolOptSteps( int theVal )
 
 //=======================================================================
 //function : SetElemSizeWeight
-//purpose  : 
+//purpose  :
 //=======================================================================
 
 void NETGENPlugin_Hypothesis::SetElemSizeWeight( double theVal )
@@ -382,7 +383,7 @@ void NETGENPlugin_Hypothesis::SetElemSizeWeight( double theVal )
 
 //=======================================================================
 //function : SetWorstElemMeasure
-//purpose  : 
+//purpose  :
 //=======================================================================
 
 void NETGENPlugin_Hypothesis::SetWorstElemMeasure( int theVal )
@@ -396,7 +397,7 @@ void NETGENPlugin_Hypothesis::SetWorstElemMeasure( int theVal )
 
 //=======================================================================
 //function : SetUseDelauney
-//purpose  : 
+//purpose  :
 //=======================================================================
 
 void NETGENPlugin_Hypothesis::SetUseDelauney( bool theVal )
@@ -410,7 +411,7 @@ void NETGENPlugin_Hypothesis::SetUseDelauney( bool theVal )
 
 //=======================================================================
 //function : SetCheckOverlapping
-//purpose  : 
+//purpose  :
 //=======================================================================
 
 void NETGENPlugin_Hypothesis::SetCheckOverlapping( bool theVal )
@@ -424,7 +425,7 @@ void NETGENPlugin_Hypothesis::SetCheckOverlapping( bool theVal )
 
 //=======================================================================
 //function : SetCheckChartBoundary
-//purpose  : 
+//purpose  :
 //=======================================================================
 
 void NETGENPlugin_Hypothesis::SetCheckChartBoundary( bool theVal )
@@ -432,6 +433,20 @@ void NETGENPlugin_Hypothesis::SetCheckChartBoundary( bool theVal )
   if (theVal != _checkChartBoundary)
   {
     _checkChartBoundary = theVal;
+    NotifySubMeshesHypothesisModification();
+  }
+}
+
+//=======================================================================
+//function : SetNbThreads
+//purpose  :
+//=======================================================================
+
+void NETGENPlugin_Hypothesis::SetNbThreads( int theVal )
+{
+  if (theVal != _nbThreads)
+  {
+    _nbThreads = theVal;
     NotifySubMeshesHypothesisModification();
   }
 }
@@ -485,7 +500,7 @@ ostream & NETGENPlugin_Hypothesis::SaveTo(ostream & save)
 
 //=============================================================================
 /*!
- *  
+ *
  */
 //=============================================================================
 istream & NETGENPlugin_Hypothesis::LoadFrom(istream & load)
