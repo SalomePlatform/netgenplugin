@@ -72,7 +72,7 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_NETGEN_3D_SA: public NETGENPlugin_NETGEN_
     SMESH_ProxyMesh::Ptr proxyMesh,
     NETGENPlugin_Internals &internals,
     SMESH_MesherHelper &helper,
-    std::map<const SMDS_MeshElement*, tuple<bool, bool>>& listElements
+    std::map<const SMDS_MeshElement*, tuple<bool, bool>, TIDCompare>& listElements
     ) override;
 
    std::string _element_orientation_file="";
