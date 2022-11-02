@@ -218,7 +218,7 @@ bool NETGENPlugin_NETGEN_3D::getSurfaceElements(
     SMESH_ProxyMesh::Ptr proxyMesh,
     NETGENPlugin_Internals &internals,
     SMESH_MesherHelper &helper,
-    std::map<const SMDS_MeshElement*, tuple<bool, bool>, TIDCompare>& listElements
+    std::map<const SMDS_MeshElement*, tuple<bool, bool>>& listElements
 )
 {
   SMESHDS_Mesh* meshDS = aMesh.GetMeshDS();
@@ -309,8 +309,6 @@ bool NETGENPlugin_NETGEN_3D::computeFillNgMesh(
     SMESH::Controls::TSequenceOfXYZ nodesCoords;
 
     // maps nodes to ng ID
-    // map must be sorted by ID to ensure that we will have the same number of
-    // 3D element if we recompute
     typedef map< const SMDS_MeshNode*, int, TIDCompare > TNodeToIDMap;
     typedef TNodeToIDMap::value_type                     TN2ID;
     TNodeToIDMap nodeToNetgenID;
@@ -340,9 +338,7 @@ bool NETGENPlugin_NETGEN_3D::computeFillNgMesh(
       proxyMesh.reset( Adaptor );
     }
 
-    // map must be sorted by ID to ensure that we will have the same number of
-    // 3D element if we recompute
-    std::map<const SMDS_MeshElement*, tuple<bool, bool>, TIDCompare> listElements;
+    std::map<const SMDS_MeshElement*, tuple<bool, bool>> listElements;
     bool ret = getSurfaceElements(aMesh, aShape, proxyMesh, internals, helper, listElements);
     if(ret)
       return ret;

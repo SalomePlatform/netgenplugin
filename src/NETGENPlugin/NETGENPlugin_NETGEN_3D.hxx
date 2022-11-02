@@ -107,7 +107,7 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_NETGEN_3D: public SMESH_3D_Algo
     SMESH_ProxyMesh::Ptr proxyMesh,
     NETGENPlugin_Internals &internals,
     SMESH_MesherHelper &helper,
-    std::map<const SMDS_MeshElement*, std::tuple<bool, bool>, TIDCompare>& listElements);
+    std::map<const SMDS_MeshElement*, std::tuple<bool, bool>>& listElements);
 
   bool compute(SMESH_Mesh&                          mesh,
                SMESH_MesherHelper&                  helper,

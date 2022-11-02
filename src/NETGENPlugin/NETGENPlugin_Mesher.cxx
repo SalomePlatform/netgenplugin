@@ -599,8 +599,6 @@ void NETGENPlugin_Mesher::SetDefaultParameters()
   _fineness               = NETGENPlugin_Hypothesis::GetDefaultFineness();
   mparams.uselocalh       = NETGENPlugin_Hypothesis::GetDefaultSurfaceCurvature();
   netgen::merge_solids    = NETGENPlugin_Hypothesis::GetDefaultFuseEdges();
-  // Unused argument but set 0 to initialise it
-  mparams.elementorder = 0;
 
 #ifdef NETGEN_V6
 
@@ -613,7 +611,6 @@ void NETGENPlugin_Mesher::SetDefaultParameters()
   }
 #endif
 }
-
 
 //=============================================================================
 /*!
@@ -4498,9 +4495,6 @@ int NETGENPlugin_NetgenLibWrapper::GenerateMesh( netgen::OCCGeometry& occgeo,
   int err = 0;
   if ( !ngMesh )
     ngMesh = new netgen::Mesh;
-
-  // To dump mparam
-  // netgen::mparam.Print(std::cerr);
 
 #ifdef NETGEN_V6
 

@@ -322,7 +322,7 @@ bool NETGENPlugin_NETGEN_3D_SA::getSurfaceElements(
     SMESH_ProxyMesh::Ptr proxyMesh,
     NETGENPlugin_Internals &internals,
     SMESH_MesherHelper &helper,
-    std::map<const SMDS_MeshElement*, tuple<bool, bool>, TIDCompare>& listElements
+    std::map<const SMDS_MeshElement*, tuple<bool, bool>>& listElements
     )
 {
   // To remove compilation warnings
