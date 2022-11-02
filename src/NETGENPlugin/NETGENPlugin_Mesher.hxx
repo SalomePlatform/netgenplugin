@@ -92,20 +92,16 @@ struct NETGENPLUGIN_EXPORT NETGENPlugin_NetgenLibWrapper
   void setMesh( nglib::Ng_Mesh* mesh );
   nglib::Ng_Mesh* ngMesh() { return (nglib::Ng_Mesh*)(void*)_ngMesh; }
 
-
-
   static int GenerateMesh(netgen::OCCGeometry& occgeo, int startWith, int endWith,
                           netgen::Mesh* & ngMesh);
   int GenerateMesh(netgen::OCCGeometry& occgeo, int startWith, int endWith )
   {
     return GenerateMesh( occgeo, startWith, endWith, _ngMesh );
   }
-
   static void CalcLocalH( netgen::Mesh * ngMesh );
 
   static void RemoveTmpFiles();
   static int& instanceCounter();
-  void setOutputFile(std::string);
 
  private:
   std::string getOutputFileName();
@@ -123,7 +119,7 @@ struct NETGENPLUGIN_EXPORT NETGENPlugin_NetgenLibWrapper
  */
 //=============================================================================
 
-class NETGENPLUGIN_EXPORT NETGENPlugin_Mesher
+class NETGENPLUGIN_EXPORT NETGENPlugin_Mesher 
 {
  public:
   // ---------- PUBLIC METHODS ----------
@@ -276,7 +272,7 @@ public:
   bool isShapeToPrecompute(const TopoDS_Shape& s);
 
   // 2D meshing
-  // edges
+  // edges 
   bool hasInternalEdges() const { return !_e2face.empty(); }
   bool isInternalEdge( int id ) const { return _e2face.count( id ); }
   const std::map<int,int>& getEdgesAndVerticesWithFaces() const { return _e2face; }

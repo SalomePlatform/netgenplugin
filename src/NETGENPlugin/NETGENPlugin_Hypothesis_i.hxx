@@ -113,9 +113,6 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_Hypothesis_i:
   void    SetWorstElemMeasure(CORBA::Short val );
   CORBA::Short GetWorstElemMeasure();
 
-  void    SetNbThreads(CORBA::Short val );
-  CORBA::Short GetNbThreads();
-
   void    SetUseDelauney(CORBA::Boolean toUse);
   CORBA::Boolean GetUseDelauney();
 
@@ -128,7 +125,7 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_Hypothesis_i:
   // Get implementation
   ::NETGENPlugin_Hypothesis* GetImpl();
 
-  // Verify whether hypothesis supports given entity type
+  // Verify whether hypothesis supports given entity type 
   CORBA::Boolean IsDimSupported( SMESH::Dimension type );
 
 

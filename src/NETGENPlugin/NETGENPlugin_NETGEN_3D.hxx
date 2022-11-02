@@ -37,15 +37,10 @@
 #include "SMESH_Algo.hxx"
 #include "Utils_SALOME_Exception.hxx"
 
-#include <vector>
-#include <tuple>
-
 class StdMeshers_ViscousLayers;
 class StdMeshers_MaxElementVolume;
 class NETGENPlugin_Hypothesis;
 class NETGENPlugin_NetgenLibWrapper;
-class netgen_params;
-class SMDS_MeshNode;
 
 class NETGENPLUGIN_EXPORT NETGENPlugin_NETGEN_3D: public SMESH_3D_Algo
 {
@@ -71,43 +66,7 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_NETGEN_3D: public SMESH_3D_Algo
                         const TopoDS_Shape& aShape,
                         MapShapeNbElems& aResMap);
 
-  bool computeFillNgMesh(
-    SMESH_Mesh&         aMesh,
-    const TopoDS_Shape& aShape,
-    std::vector< const SMDS_MeshNode* > &nodeVec,
-    NETGENPlugin_NetgenLibWrapper &ngLib,
-    SMESH_MesherHelper &helper,
-    int &Netgen_NbOfNodes);
-
-  bool computePrepareParam(
-    SMESH_Mesh&         aMesh,
-    NETGENPlugin_NetgenLibWrapper &ngLib,
-    netgen::OCCGeometry &occgeo,
-    SMESH_MesherHelper &helper,
-    int &endWith);
-
-  bool computeRunMesher(
-    netgen::OCCGeometry &occgeo,
-    std::vector< const SMDS_MeshNode* > &nodeVec,
-    netgen::Mesh* ngMesh,
-    NETGENPlugin_NetgenLibWrapper &ngLib,
-    int &startWith, int &endWith);
-
-  bool computeFillMesh(
-    std::vector< const SMDS_MeshNode* > &nodeVec,
-    NETGENPlugin_NetgenLibWrapper &ngLib,
-    SMESH_MesherHelper &helper,
-    int &Netgen_NbOfNodes);
-
  protected:
-
-  virtual bool getSurfaceElements(
-    SMESH_Mesh&         aMesh,
-    const TopoDS_Shape& aShape,
-    SMESH_ProxyMesh::Ptr proxyMesh,
-    NETGENPlugin_Internals &internals,
-    SMESH_MesherHelper &helper,
-    std::map<const SMDS_MeshElement*, std::tuple<bool, bool>>& listElements);
 
   bool compute(SMESH_Mesh&                          mesh,
                SMESH_MesherHelper&                  helper,
