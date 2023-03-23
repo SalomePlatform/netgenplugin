@@ -39,6 +39,7 @@
 
 #include <SMESH_Gen.hxx>
 #include <SMESH_Mesh.hxx>
+#include <SMESH_ParallelMesh.hxx>
 #include <SMESH_MesherHelper.hxx>
 #include <SMESH_DriverShape.hxx>
 #include <SMESH_DriverMesh.hxx>
@@ -229,22 +230,17 @@ bool NETGENPlugin_NETGEN_3D_Remote::Compute(SMESH_Mesh&         aMesh,
     SMESH_Hypothesis::Hypothesis_Status hypStatus;
     NETGENPlugin_NETGEN_3D::CheckHypothesis(aMesh, aShape, hypStatus);
   }
-
+  SMESH_ParallelMesh& aParMesh = dynamic_cast<SMESH_ParallelMesh&>(aMesh);
 
   // Temporary folder for run
 #ifdef WIN32
-  // On windows mesh does not have GetTmpFolder
-  fs::path tmp_folder = fs::path("Volume-%%%%-%%%%");
+  fs::path tmp_folder = aParMesh.GetTmpFolder() / fs::path("Volume-%%%%-%%%%");
 #else
-  fs::path tmp_folder = aMesh.GetTmpFolder() / fs::unique_path(fs::path("Volume-%%%%-%%%%"));
+  fs::path tmp_folder = aParMesh.GetTmpFolder() / fs::unique_path(fs::path("Volume-%%%%-%%%%"));
 #endif
   fs::create_directories(tmp_folder);
   // Using MESH2D generated after all triangles where created.
-#ifdef WIN32
-  fs::path mesh_file=fs::path("Mesh2D.med");
-#else
-  fs::path mesh_file=aMesh.GetTmpFolder() / fs::path("Mesh2D.med");
-#endif
+  fs::path mesh_file=aParMesh.GetTmpFolder() / fs::path("Mesh2D.med");
   fs::path element_orientation_file=tmp_folder / fs::path("element_orientation.dat");
   fs::path new_element_file=tmp_folder / fs::path("new_elements.dat");
   fs::path tmp_mesh_file=tmp_folder / fs::path("tmp_mesh.med");
@@ -253,7 +249,8 @@ bool NETGENPlugin_NETGEN_3D_Remote::Compute(SMESH_Mesh&         aMesh,
   fs::path shape_file=tmp_folder / fs::path("shape.brep");
   fs::path param_file=tmp_folder / fs::path("netgen3d_param.txt");
   fs::path log_file=tmp_folder / fs::path("run.log");
-  fs::path cmd_file=tmp_folder / fs::path("cmd.log");
+  fs::path cmd_file=tmp_folder / fs::path("cmd.txt");
+  // TODO: See if we can retreived name from aMesh ?
   std::string mesh_name = "MESH";
 
   {
@@ -272,57 +269,72 @@ bool NETGENPlugin_NETGEN_3D_Remote::Compute(SMESH_Mesh&         aMesh,
   }
 
   // Calling run_mesher
-  std::string cmd;
-  fs::path run_mesher_exe =
-    fs::path(std::getenv("NETGENPLUGIN_ROOT_DIR"))/
-    fs::path("bin")/
-    fs::path("salome")/
-#ifdef WIN32
-    fs::path("NETGENPlugin_Runner.exe");
-#else
-    fs::path("NETGENPlugin_Runner");
-#endif
+  // Path to mesher script
+  fs::path mesher_launcher = fs::path(std::getenv("SMESH_ROOT_DIR"))/
+       fs::path("bin")/
+       fs::path("salome")/
+       fs::path("mesher_launcher.py");
 
-  cmd = run_mesher_exe.string() +
-                  " NETGEN3D " + mesh_file.string() + " "
-                               + shape_file.string() + " "
-                               + param_file.string() + " "
-                               + element_orientation_file.string() + " "
-                               + new_element_file.string() + " "
-                               + "NONE";
-  // Writing command in log
-  {
-    std::ofstream flog(cmd_file.string());
-    flog << cmd << endl;
-    flog << endl;
+
+  std::string s_program="python3";
+  std::list<std::string> params;
+  params.push_back(mesher_launcher.string());
+  params.push_back("NETGEN3D");
+  params.push_back(mesh_file.string());
+  params.push_back(shape_file.string());
+  params.push_back(param_file.string());
+  params.push_back("--elem-orient-file=" + element_orientation_file.string());
+  params.push_back("--new-element-file=" + new_element_file.string());
+
+  // Parallelism method parameters
+  int method = aParMesh.GetParallelismMethod();
+  if(method == ParallelismMethod::MultiThread){
+    params.push_back("--method=local");
+  } else if (method == ParallelismMethod::MultiNode){
+    // TODO :See what parameters to handle in the end
+    params.push_back("--method=cluster");
+    params.push_back("--resource="+aParMesh.GetResource());
+    params.push_back("--wc-key="+aParMesh.GetWcKey());
+    params.push_back("--nb-proc=1");
+    params.push_back("--nb-proc-per-node="+to_string(aParMesh.GetNbProcPerNode()));
+    params.push_back("--nb-node="+to_string(aParMesh.GetNbNode()));
+  } else {
+    throw SALOME_Exception("Unknown parallelism method "+method);
+  }
+  std::string cmd = "";
+  cmd += s_program;
+  for(auto arg: params){
+    cmd += " " + arg;
   }
   MESSAGE("Running command: ");
   MESSAGE(cmd);
-
+  // Writing command in cmd.log
+  {
+    std::ofstream flog(cmd_file.string());
+    flog << cmd << endl;
+  }
 
   // Building arguments for QProcess
-  QString program = run_mesher_exe.string().c_str();
+  QString program = QString::fromStdString(s_program);
   QStringList arguments;
-  arguments << "NETGEN3D";
-  arguments << mesh_file.string().c_str();
-  arguments << shape_file.string().c_str();
-  arguments << param_file.string().c_str();
-  arguments << element_orientation_file.string().c_str();
-  arguments << new_element_file.string().c_str();
-  arguments << "NONE";
+  for(auto arg : params){
+    arguments << arg.c_str();
+  }
+
   QString out_file = log_file.string().c_str();
   QProcess myProcess;
+  myProcess.setProcessChannelMode(QProcess::MergedChannels);
   myProcess.setStandardOutputFile(out_file);
 
   myProcess.start(program, arguments);
   // Waiting for process to finish (argument -1 make it wait until the end of
   // the process otherwise it just waits 30 seconds)
-  myProcess.waitForFinished(-1);
-  int ret = myProcess.exitStatus();
+  bool finished = myProcess.waitForFinished(-1);
+  int ret = myProcess.exitCode();
 
-  if(ret != 0){
+  if(ret != 0 || !finished){
     // Run crahed
-    std::string msg = "Issue with command: \n";
+    std::string msg = "Issue with mesh_launcher: \n";
     msg += "See log for more details: " + log_file.string() + "\n";
     msg += cmd + "\n";
     throw SALOME_Exception(msg);
