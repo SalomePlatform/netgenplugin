@@ -143,6 +143,7 @@ void NETGENPlugin_NETGEN_3D_Remote::fillParameters(const NETGENPlugin_Hypothesis
   // const char*
   aParams.meshsizefilename = hyp->GetMeshSizeFile();
   aParams.closeedgefac = 0;
+  aParams.nbThreads = 0;
 #endif
 }
 
@@ -232,13 +233,13 @@ bool NETGENPlugin_NETGEN_3D_Remote::Compute(SMESH_Mesh&         aMesh,
 
   // Temporary folder for run
 #ifdef WIN32
-  fs::path tmp_folder = aMesh.tmp_folder / fs::path("Volume-%%%%-%%%%");
+  fs::path tmp_folder = aMesh.GetTmpFolder() / fs::path("Volume-%%%%-%%%%");
 #else
-  fs::path tmp_folder = aMesh.tmp_folder / fs::unique_path(fs::path("Volume-%%%%-%%%%"));
+  fs::path tmp_folder = aMesh.GetTmpFolder() / fs::unique_path(fs::path("Volume-%%%%-%%%%"));
 #endif
   fs::create_directories(tmp_folder);
   // Using MESH2D generated after all triangles where created.
-  fs::path mesh_file=aMesh.tmp_folder / fs::path("Mesh2D.med");
+  fs::path mesh_file=aMesh.GetTmpFolder() / fs::path("Mesh2D.med");
   fs::path element_orientation_file=tmp_folder / fs::path("element_orientation.dat");
   fs::path new_element_file=tmp_folder / fs::path("new_elements.dat");
   fs::path tmp_mesh_file=tmp_folder / fs::path("tmp_mesh.med");
