@@ -884,7 +884,7 @@ void NETGENPlugin_Mesher::SetLocalSizeForChordalError( netgen::OCCGeometry& occg
         uv[0] = triangulation->UVNodes()(n1).XY();
         uv[1] = triangulation->UVNodes()(n2).XY();
         uv[2] = triangulation->UVNodes()(n3).XY();
-#elif
+#else
         p[0] = triangulation->Node(n1).Transformed(loc).XYZ();
         p[1] = triangulation->Node(n2).Transformed(loc).XYZ();
         p[2] = triangulation->Node(n3).Transformed(loc).XYZ();
