@@ -3056,7 +3056,7 @@ bool NETGENPlugin_Mesher::Compute()
 
       // fill SMESH by netgen mesh
       vector< const SMDS_MeshNode* > tmpNodeVec;
-      FillSMesh( intOccgeo, *tmpNgMesh, initState, *_mesh, tmpNodeVec, comment );
+      FillSMesh( intOccgeo, *tmpNgMesh, initState, *_mesh, tmpNodeVec, comment, &quadHelper );
       err = ( err || !comment.empty() );
 
       nglib::Ng_DeleteMesh((nglib::Ng_Mesh*)tmpNgMesh);
