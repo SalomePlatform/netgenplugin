@@ -504,6 +504,8 @@ namespace
 
 } // namespace
 
+
+
 //=============================================================================
 /*!
  *
@@ -4440,7 +4442,7 @@ int& NETGENPlugin_NetgenLibWrapper::instanceCounter()
 //================================================================================
 
 NETGENPlugin_NetgenLibWrapper::NETGENPlugin_NetgenLibWrapper():
-  _ngMesh(0)
+  _ngMesh(0),_tmpDir(SALOMEDS_Tool::GetTmpDir())
 {
   if ( instanceCounter() == 0 )
   {

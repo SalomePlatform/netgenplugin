@@ -35,6 +35,7 @@
 #include <SMDS_MeshElement.hxx>
 #include <SMESH_Algo.hxx>
 #include <SMESH_ProxyMesh.hxx>
+#include <SALOMEDS_Tool.hxx>
 
 #include <TopTools_IndexedMapOfShape.hxx>
 
@@ -59,6 +60,32 @@ namespace netgen {
   class OCCGeometry;
   class Mesh;
 }
+
+// Class for temporary folder switching
+class ChdirRAII
+{
+  public:
+#ifndef WIN32
+    ChdirRAII(const std::string& wd):_wd(wd) { if(_wd.empty()) return ; char *pwd(get_current_dir_name()); _od = pwd; free(pwd); chdir(_wd.c_str()); }
+    ~ChdirRAII() { if(_od.empty()) return ; chdir(_od.c_str()); }
+#else
+    ChdirRAII(const std::string& wd) : _wd(wd) {
+      if (_wd.empty())
+        return;
+      TCHAR pwd[MAX_PATH];
+      GetCurrentDirectory(sizeof(pwd), pwd);
+      _od = Kernel_Utils::utf8_encode_s(pwd);
+      SetCurrentDirectory(Kernel_Utils::utf8_decode_s(_wd).c_str());
+    }
+    ~ChdirRAII() {
+      if (_od.empty()) return;
+      SetCurrentDirectory(Kernel_Utils::utf8_decode_s(_od).c_str());
+    }
+#endif
+  private:
+    std::string _wd;
+    std::string _od;
+};
 //=============================================================================
 /*!
  * \brief Struct storing nb of entities in netgen mesh
@@ -111,6 +138,9 @@ struct NETGENPLUGIN_EXPORT NETGENPlugin_NetgenLibWrapper
   std::string getOutputFileName();
   void        removeOutputFile();
   std::string _outputFileName;
+  // This will change current directory when the class is instanciated and switch
+  ChdirRAII _tmpDir;
+
 
   ostream *       _ngcout;
   ostream *       _ngcerr;
