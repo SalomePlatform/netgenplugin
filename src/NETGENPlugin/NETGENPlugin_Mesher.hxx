@@ -36,7 +36,8 @@
 #include <SMESH_Algo.hxx>
 #include <SMESH_ProxyMesh.hxx>
 #include <SALOMEDS_Tool.hxx>
-
+#include "Basics_Utils.hxx"
+#include "SALOME_Basics.hxx"
 #include <TopTools_IndexedMapOfShape.hxx>
 
 namespace nglib {
