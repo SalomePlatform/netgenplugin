@@ -163,7 +163,6 @@ bool NETGENPlugin_NETGEN_3D_SA::computeFillNewElementFile(
     int &Netgen_NbOfNodes
 )
 {
-  MESSAGE("Writting new elements")
   Ng_Mesh* Netgen_mesh = ngLib.ngMesh();
 
   int Netgen_NbOfNodesNew = Ng_GetNP(Netgen_mesh);
@@ -224,7 +223,6 @@ bool NETGENPlugin_NETGEN_3D_SA::Compute(
         std::string new_element_file,
         bool output_mesh)
 {
-  MESSAGE("Compute");
   // vector of nodes in which node index == netgen ID
   vector< const SMDS_MeshNode* > nodeVec;
   NETGENPlugin_NetgenLibWrapper ngLib;
@@ -235,7 +233,6 @@ bool NETGENPlugin_NETGEN_3D_SA::Compute(
 
   // Changing netgen log_file putting it next to new_element_file
   fs::path netgen_log_file = fs::path(new_element_file).remove_filename() / fs::path("NETGEN.out");
-  MESSAGE("netgen ouput"<<netgen_log_file.string());
 
   ngLib.setOutputFile(netgen_log_file.string());
 

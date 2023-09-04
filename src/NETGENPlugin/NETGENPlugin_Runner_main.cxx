@@ -59,7 +59,7 @@ int main(int argc, char *argv[]){
     std::cout << "  (optional) ELEM_ORIENT_FILE: binary file containing the list of element from INPUT_MESH_FILE associated to the shape and their orientation" << std::endl;
     std::cout << "  (optional) NEW_ELEMENT_FILE: (out) contains elements and nodes added by the meshing" << std::endl;
     std::cout << "  (optional) OUTPUT_MESH_FILE: (out) MED File containing the mesh after the run of the mesher" << std::endl;
-    return 1;
+    return 0;
   }
   std::string mesher=argv[1];
   std::string input_mesh_file=argv[2];
@@ -89,7 +89,6 @@ int main(int argc, char *argv[]){
              output_mesh_file);
   } else {
     std::cerr << "Unknown mesher:" << mesher << std::endl;
-    return 1;
   }
   return 0;
 }
