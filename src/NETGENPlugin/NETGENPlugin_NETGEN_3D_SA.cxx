@@ -395,7 +395,7 @@ bool NETGENPlugin_NETGEN_3D_SA::getSurfaceElements(
     // Get orientation
     // Netgen requires that all the triangle point outside
     isRev = elemOrientation[elem->GetID()];
-    listElements[elem] = tuple(isRev, false);
+    listElements[elem] = tuple<bool, bool>(isRev, false);
   }
 
   return false;

@@ -259,7 +259,7 @@ bool NETGENPlugin_NETGEN_3D::getSurfaceElements(
       if ( elem->NbCornerNodes() != 3 ){
         return error( COMPERR_BAD_INPUT_MESH, "Not triangle element encounters");
       }
-      listElements[elem] = tuple(isRev, isInternalFace);
+      listElements[elem] = tuple<bool, bool>(isRev, isInternalFace);
     }
   }
 
