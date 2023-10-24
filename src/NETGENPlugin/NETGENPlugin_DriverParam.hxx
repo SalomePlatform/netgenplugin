@@ -30,10 +30,17 @@
 
 #include <string>
 
+enum hypoType{
+  Hypo = 1, /*the default hypo common for 1D2D,1D2D3D && 3D*/
+  Simple2D,
+  Simple3D
+};
+
 struct netgen_params{
   // Params from NETGENPlugin_Mesher
   // True if _hypParameters is not null
   bool has_netgen_param=true;
+  hypoType myType;
   double maxh;
   double minh;
   double segmentsperedge;
@@ -70,11 +77,23 @@ struct netgen_params{
   // Params from NETGEN2D
   bool has_LengthFromEdges_hyp=false;
 
+  /////////////////////////////////////
+  // Quantities proper of Simple2D
+  int numberOfSegments; // maybe reuse segmentsperedge (?)
+  double localLength;
+  double maxElementArea;
+  bool allowQuadrangles;
+  //// Quantities proper of Simple3D
+  double maxElementVol;
 };
 
 void printNetgenParams(netgen_params& aParams);
 
 void importNetgenParams(const std::string param_file, netgen_params& aParams);
+void importDefaultNetgenParams(const std::string param_file, netgen_params& aParams);
+void importSimple2D3DNetgenParams(const std::string param_file, netgen_params& aParams, bool is3D );
 void exportNetgenParams(const std::string param_file, netgen_params& aParams);
+// TODO symple param to be used with netgen1d2d
+
 
 #endif

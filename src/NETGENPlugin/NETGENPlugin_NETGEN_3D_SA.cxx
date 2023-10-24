@@ -168,7 +168,6 @@ bool NETGENPlugin_NETGEN_3D_SA::computeFillNewElementFile(
 
   int Netgen_NbOfNodesNew = Ng_GetNP(Netgen_mesh);
   int Netgen_NbOfTetra    = Ng_GetNE(Netgen_mesh);
-
   bool isOK = ( Netgen_NbOfTetra > 0 );
   if ( isOK && !new_element_file.empty() )
   {
@@ -289,7 +288,6 @@ int NETGENPlugin_NETGEN_3D_SA::run(const std::string input_mesh_file,
 
   importNetgenParams(hypo_file, myParams);
   fillHyp(myParams);
-
   MESSAGE("Meshing with netgen3d");
   int ret = Compute(myShape, *myMesh, myParams,
                       new_element_file,

@@ -37,6 +37,7 @@
 #include "NETGENPlugin_NETGEN_2D_i.hxx"
 #include "NETGENPlugin_NETGEN_3D_i.hxx"
 #include "NETGENPlugin_NETGEN_3D_Remote_i.hxx"
+#include "NETGENPlugin_NETGEN_2D_Remote_i.hxx"
 #include "NETGENPlugin_SimpleHypothesis_2D_i.hxx"
 #include "NETGENPlugin_SimpleHypothesis_3D_i.hxx"
 
@@ -66,6 +67,8 @@ extern "C"
       aCreator = new NETGENPlugin_Creator_i<NETGENPlugin_NETGEN_3D_i>;
     else if (strcmp(aHypName, "NETGEN_3D_Remote") == 0)
       aCreator = new NETGENPlugin_Creator_i<NETGENPlugin_NETGEN_3D_Remote_i>;
+    else if (strcmp(aHypName, "NETGEN_2D_Remote") == 0)
+      aCreator = new NETGENPlugin_Creator_i<NETGENPlugin_NETGEN_2D_Remote_i>;      
     else if (strcmp(aHypName, "NETGEN_2D") == 0)
       aCreator = new NETGENPlugin_Creator_i<NETGENPlugin_NETGEN_2D_i>;
     else if (strcmp(aHypName, "NETGEN_2D_ONLY") == 0)

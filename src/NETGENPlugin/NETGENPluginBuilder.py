@@ -49,6 +49,7 @@ NETGEN_1D2D3D = "NETGEN_2D3D"
 NETGEN_1D2D   = "NETGEN_2D"
 ## Algorithm type: Netgen triangle 2D algorithm, see NETGEN_2D_Only_Algorithm
 NETGEN_2D     = "NETGEN_2D_ONLY"
+NETGEN_2D_Remote = "NETGEN_2D_Remote"
 ## Algorithm type: Synonim of NETGEN_1D2D3D, see NETGEN_1D2D3D_Algorithm
 NETGEN_FULL   = NETGEN_1D2D3D
 ## Algorithm type: Synonim of NETGEN_3D, see NETGEN_3D_Algorithm
@@ -510,6 +511,33 @@ class NETGEN_3D_Remote_Algorithm(NETGEN_3D_Algorithm):
 
     pass # end of NETGEN_3D_Remote_Algorithm class
 
+## Tetrahedron 2D algorithm
+#
+#  It can be created by calling smeshBuilder.Mesh.Triangle() or smeshBuilder.Mesh.Triangle( smeshBuilder.NETGEN, geom=0 )
+#
+class NETGEN_2D_Remote_Algorithm(NETGEN_2D_Only_Algorithm):
+
+    ## type of algorithm used with helper function in smeshBuilder.Mesh class
+    #  @internal
+    algoType   = NETGEN_2D_Remote
+    ## flag pointing either this algorithm should be used by default in dynamic method
+    #  of smeshBuilder.Mesh class
+    #  @internal
+    isDefault  = False
+    ## doc string of the method
+    #  @internal
+    docHelper  = "Remotely Creates triangles in face of solids"
+
+    ## Private constructor.
+    #  @param mesh parent mesh object algorithm is assigned to
+    #  @param geom geometry (shape/sub-shape) algorithm is assigned to;
+    #              if it is @c 0 (default), the algorithm is assigned to the main shape
+    def __init__(self, mesh, geom=0):
+        self.algoType = NETGEN_2D_Remote
+        NETGEN_2D_Only_Algorithm.__init__(self, mesh, geom)
+        pass
+
+    pass # end of NETGEN_2D_Remote_Algorithm class
 
 
 ## Triangle (helper) 1D-2D algorithm

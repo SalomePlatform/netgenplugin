@@ -26,6 +26,10 @@
 
 #include <SMESH_Algo.hxx>
 #include <SMESH_Mesh.hxx>
+#include <SMESH_Group.hxx>
+#include <SMESHDS_GroupBase.hxx>
+
+#include "NETGENPlugin_Mesher.hxx"
 
 class StdMeshers_MaxElementArea;
 class StdMeshers_LengthFromEdges;
@@ -50,7 +54,7 @@ public:
                                Hypothesis_Status&  aStatus);
 
   virtual bool Compute(SMESH_Mesh&         aMesh,
-                       const TopoDS_Shape& aShape);
+                       const TopoDS_Shape& aShape);  
 
   virtual void CancelCompute();
 
@@ -58,6 +62,29 @@ public:
 
   virtual bool Evaluate(SMESH_Mesh& aMesh, const TopoDS_Shape& aShape,
                         MapShapeNbElems& aResMap);
+
+  bool MapSegmentsToEdges(SMESH_Mesh&         aMesh,
+                          const TopoDS_Shape& aShape, 
+                          NETGENPlugin_NetgenLibWrapper &ngLib, 
+                          vector< const SMDS_MeshNode* >& nodeVec, 
+                          std::map<int,const SMDS_MeshNode*>& premeshedNodes, 
+                          std::map<int,std::vector<double>>& newNetgenCoordinates,
+                          std::map<int,std::vector<smIdType>>& newNetgenElements );  
+
+  std::tuple<bool,bool> SetParameteres( SMESH_Mesh& aMesh, const TopoDS_Shape& aShape, 
+                                        NETGENPlugin_Mesher& aMesher,  netgen::Mesh * ngMeshes,
+                                        netgen::OCCGeometry& occgeoComm, bool isSubMeshSupported = true );     
+
+  bool ComputeMaxhOfFace( TopoDS_Face& Face, NETGENPlugin_Mesher& aMesher, TSideVector& wires, 
+                          netgen::OCCGeometry& occgeoComm, bool isDefaultHyp, bool isCommonLocalSize );
+  
+  void FillNodesAndElements( SMESH_Mesh& aMesh, SMESH_MesherHelper& helper, netgen::Mesh * ngMesh, vector< const SMDS_MeshNode* >& nodeVec, int faceId );
+
+ /*!
+ * \brief FillNodesAndElements, fill created triangular elements by netgen to the smesh data structure
+ */
+  void FillNodesAndElements( SMESH_Mesh& aMesh, SMESH_MesherHelper& helper, netgen::Mesh * ngMesh, vector< const SMDS_MeshNode* >& nodeVec, map<int, const SMDS_MeshNode* >& ng2smesh,
+                              std::map<int,std::vector<double>>& newNetgenCoordinates, std::map<int,std::vector<smIdType>>& newNetgenElements, const int numberOfPremeshedNodes );
 
 protected:
   const StdMeshers_MaxElementArea*       _hypMaxElementArea;

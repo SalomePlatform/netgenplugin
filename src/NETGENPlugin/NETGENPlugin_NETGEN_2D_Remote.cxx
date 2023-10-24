@@ -21,16 +21,14 @@
 //
 
 //=============================================================================
-// File      : NETGENPlugin_NETGEN_3D_Remote.cxx
-// Created   : lundi 19 Septembre 2022
-// Author    : Yoann AUDOUIN (CEA)
+// File      : NETGENPlugin_NETGEN_2D_Remote.cxx
+// Created   : mardi 12 Decembre 2023
+// Author    : Cesar Conopoima (OCC)
 // Project   : SALOME
 //=============================================================================
 //
 //
-#include "NETGENPlugin_NETGEN_3D_Remote.hxx"
-
-#include "NETGENPlugin_NETGEN_3D.hxx"
+#include "NETGENPlugin_NETGEN_2D_Remote.hxx"
 
 #include "NETGENPlugin_DriverParam.hxx"
 #include "NETGENPlugin_Hypothesis.hxx"
@@ -86,10 +84,10 @@ using namespace nglib;
  */
 //=============================================================================
 
-NETGENPlugin_NETGEN_3D_Remote::NETGENPlugin_NETGEN_3D_Remote(int hypId, SMESH_Gen * gen)
-  : NETGENPlugin_NETGEN_3D(hypId, gen)
+NETGENPlugin_NETGEN_2D_Remote::NETGENPlugin_NETGEN_2D_Remote(int hypId, SMESH_Gen * gen)
+  : NETGENPlugin_NETGEN_2D_ONLY(hypId, gen)
 {
-  _name = "NETGEN_3D_Remote";
+  _name = "NETGEN_2D_Remote";
 }
 
 //=============================================================================
@@ -98,7 +96,7 @@ NETGENPlugin_NETGEN_3D_Remote::NETGENPlugin_NETGEN_3D_Remote(int hypId, SMESH_Ge
  */
 //=============================================================================
 
-NETGENPlugin_NETGEN_3D_Remote::~NETGENPlugin_NETGEN_3D_Remote()
+NETGENPlugin_NETGEN_2D_Remote::~NETGENPlugin_NETGEN_2D_Remote()
 {
 }
 
@@ -108,7 +106,7 @@ NETGENPlugin_NETGEN_3D_Remote::~NETGENPlugin_NETGEN_3D_Remote()
  * @param hyp the hypothesis
  * @param aParams the netgen_param structure
  */
-void NETGENPlugin_NETGEN_3D_Remote::fillParameters(const NETGENPlugin_Hypothesis* hyp, netgen_params &aParams)
+void NETGENPlugin_NETGEN_2D_Remote::fillParameters(const NETGENPlugin_Hypothesis* hyp, netgen_params &aParams)
 {
   aParams.myType             = hypoType::Hypo;
   aParams.maxh               = hyp->GetMaxSize();
@@ -143,8 +141,6 @@ void NETGENPlugin_NETGEN_3D_Remote::fillParameters(const NETGENPlugin_Hypothesis
 #endif
 }
 
-//
-
 /**
  * @brief write in a binary file the orientation for each surface element of the mesh
  *
@@ -152,62 +148,14 @@ void NETGENPlugin_NETGEN_3D_Remote::fillParameters(const NETGENPlugin_Hypothesis
  * @param aShape the shape associated to the mesh
  * @param output_file name of the binary file
  */
-void NETGENPlugin_NETGEN_3D_Remote::exportElementOrientation(SMESH_Mesh& aMesh,
+void NETGENPlugin_NETGEN_2D_Remote::exportElementOrientation(SMESH_Mesh& aMesh,
                                                       const TopoDS_Shape& aShape,
                                                       const std::string output_file)
 {
-  SMESH_MesherHelper helper(aMesh);
-  NETGENPlugin_Internals internals( aMesh, aShape, /*is3D=*/true );
-  SMESH_ProxyMesh::Ptr proxyMesh( new SMESH_ProxyMesh( aMesh ));
-  std::map<vtkIdType, bool> elemOrientation;
-
-  for ( TopExp_Explorer exFa( aShape, TopAbs_FACE ); exFa.More(); exFa.Next())
-  {
-    const TopoDS_Shape& aShapeFace = exFa.Current();
-    int faceID = aMesh.GetMeshDS()->ShapeToIndex( aShapeFace );
-    bool isInternalFace = internals.isInternalShape( faceID );
-    bool isRev = false;
-    if ( !isInternalFace &&
-          helper.NbAncestors(aShapeFace, aMesh, aShape.ShapeType()) > 1 )
-      // IsReversedSubMesh() can work wrong on strongly curved faces,
-      // so we use it as less as possible
-      isRev = helper.IsReversedSubMesh( TopoDS::Face( aShapeFace ));
-
-    const SMESHDS_SubMesh * aSubMeshDSFace = proxyMesh->GetSubMesh( aShapeFace );
-    if ( !aSubMeshDSFace ) continue;
-
-    SMDS_ElemIteratorPtr iteratorElem = aSubMeshDSFace->GetElements();
-    if ( _quadraticMesh &&
-          dynamic_cast< const SMESH_ProxyMesh::SubMesh*>( aSubMeshDSFace ))
-    {
-      // add medium nodes of proxy triangles to helper (#16843)
-      while ( iteratorElem->more() )
-        helper.AddTLinks( static_cast< const SMDS_MeshFace* >( iteratorElem->next() ));
-
-      iteratorElem = aSubMeshDSFace->GetElements();
-    }
-    while ( iteratorElem->more() ) // loop on elements on a geom face
-    {
-      // check mesh face
-      const SMDS_MeshElement* elem = iteratorElem->next();
-      if ( !elem )
-        error( COMPERR_BAD_INPUT_MESH, "Null element encounters");
-      if ( elem->NbCornerNodes() != 3 )
-        error( COMPERR_BAD_INPUT_MESH, "Not triangle element encounters");
-      elemOrientation[elem->GetID()] = isRev;
-    } // loop on elements on a face
-  } // loop on faces of a SOLID or SHELL
-
-  {
-    std::ofstream df(output_file, ios::out|ios::binary);
-    int size=elemOrientation.size();
-
-    df.write((char*)&size, sizeof(int));
-    for(auto const& [id, orient]:elemOrientation){
-      df.write((char*)&id, sizeof(vtkIdType));
-      df.write((char*)&orient, sizeof(bool));
-    }
-  }
+  std::ofstream df(output_file, ios::out|ios::binary);
+  int size=0;
+  df.write((char*)&size, sizeof(int));
+  df.close();
 }
 
 /**
@@ -217,13 +165,13 @@ void NETGENPlugin_NETGEN_3D_Remote::exportElementOrientation(SMESH_Mesh& aMesh,
  * @param aShape The shape
  * @return true fi there are some error
  */
-bool NETGENPlugin_NETGEN_3D_Remote::Compute(SMESH_Mesh&         aMesh,
+bool NETGENPlugin_NETGEN_2D_Remote::Compute(SMESH_Mesh&         aMesh,
                                            const TopoDS_Shape& aShape)
 {
   {
     SMESH_MeshLocker myLocker(&aMesh);
     SMESH_Hypothesis::Hypothesis_Status hypStatus;
-    NETGENPlugin_NETGEN_3D::CheckHypothesis(aMesh, aShape, hypStatus);
+    NETGENPlugin_NETGEN_2D_ONLY::CheckHypothesis(aMesh, aShape, hypStatus);
   }
   SMESH_ParallelMesh& aParMesh = dynamic_cast<SMESH_ParallelMesh&>(aMesh);
 
@@ -235,17 +183,15 @@ bool NETGENPlugin_NETGEN_3D_Remote::Compute(SMESH_Mesh&         aMesh,
 #endif
   fs::create_directories(tmp_folder);
   // Using MESH2D generated after all triangles where created.
-  fs::path mesh_file=aParMesh.GetTmpFolder() / fs::path("Mesh2D.med");
+  fs::path mesh_file=aParMesh.GetTmpFolder() / fs::path("Mesh1D.med"); // read the premeshed elements from 2D version
   fs::path element_orientation_file=tmp_folder / fs::path("element_orientation.dat");
   fs::path new_element_file=tmp_folder / fs::path("new_elements.dat");
-  fs::path tmp_mesh_file=tmp_folder / fs::path("tmp_mesh.med");
   // Not used kept for debug
   //fs::path output_mesh_file=tmp_folder / fs::path("output_mesh.med");
   fs::path shape_file=tmp_folder / fs::path("shape.brep");
-  fs::path param_file=tmp_folder / fs::path("netgen3d_param.txt");
+  fs::path param_file=tmp_folder / fs::path("netgen_lenghtfromedge.txt"); /*becuase name contain 'lenghtfromedge' set length of 2D from premeshed 1D elements*/
   fs::path log_file=tmp_folder / fs::path("run.log");
   fs::path cmd_file=tmp_folder / fs::path("cmd.txt");
-  // TODO: See if we can retreived name from aMesh ?
   std::string mesh_name = "MESH";
 
   {
@@ -254,11 +200,16 @@ bool NETGENPlugin_NETGEN_3D_Remote::Compute(SMESH_Mesh&         aMesh,
     SMESH_DriverShape::exportShape(shape_file.string(), aShape);
 
     //Writing hypo
-    netgen_params aParams;
-    fillParameters(_hypParameters, aParams);
-
-    exportNetgenParams(param_file.string(), aParams);
-
+    // netgen_params aParams;
+    // fillParameters(_hypParameters, aParams);
+    // exportNetgenParams(param_file.string(), aParams);
+    {
+      // Simply write the file with the proper name
+      std::ofstream myfile(param_file);
+      myfile << 1 << std::endl;
+      myfile.close();
+    }
+      
     // Exporting element orientation
     exportElementOrientation(aMesh, aShape, element_orientation_file.string());
   }
@@ -274,12 +225,13 @@ bool NETGENPlugin_NETGEN_3D_Remote::Compute(SMESH_Mesh&         aMesh,
   std::string s_program="python3";
   std::list<std::string> params;
   params.push_back(mesher_launcher.string());
-  params.push_back("NETGEN3D");
+  params.push_back("NETGEN2D");
   params.push_back(mesh_file.string());
   params.push_back(shape_file.string());
   params.push_back(param_file.string());
   params.push_back("--elem-orient-file=" + element_orientation_file.string());
   params.push_back("--new-element-file=" + new_element_file.string());
+  // params.push_back("--output-mesh-file=" + output_mesh_file.string());
 
   // Parallelism method parameters
   int method = aParMesh.GetParallelismMethod();
@@ -318,7 +270,8 @@ bool NETGENPlugin_NETGEN_3D_Remote::Compute(SMESH_Mesh&         aMesh,
 
   QString out_file = log_file.string().c_str();
   QProcess myProcess;
-  myProcess.setProcessChannelMode(QProcess::MergedChannels);
+  // myProcess.setProcessChannelMode(QProcess::MergedChannels);
+  myProcess.setProcessChannelMode(QProcess::ForwardedChannels);
   myProcess.setStandardOutputFile(out_file);
 
   myProcess.start(program, arguments);
@@ -326,7 +279,6 @@ bool NETGENPlugin_NETGEN_3D_Remote::Compute(SMESH_Mesh&         aMesh,
   // the process otherwise it just waits 30 seconds)
   bool finished = myProcess.waitForFinished(-1);
   int ret = myProcess.exitCode();
-
   if(ret != 0 || !finished){
     // Run crahed
     std::string msg = "Issue with mesh_launcher: \n";
@@ -339,11 +291,12 @@ bool NETGENPlugin_NETGEN_3D_Remote::Compute(SMESH_Mesh&         aMesh,
     SMESH_MeshLocker myLocker(&aMesh);
     std::ifstream df(new_element_file.string(), ios::binary);
 
-    int Netgen_NbOfNodes;
-    int Netgen_NbOfNodesNew;
-    int Netgen_NbOfTetra;
-    double Netgen_point[3];
-    int    Netgen_tetrahedron[4];
+    int totalPremeshedNodes;
+    int NetgenNbOfNodes;
+    int NetgenNbOfNodesNew;
+    int NetgenNbOfTriangles;
+    double NetgenPoint[3];
+    int    NetgenTriangle[3];
     int nodeID;
 
     SMESH_MesherHelper helper(aMesh);
@@ -351,43 +304,36 @@ bool NETGENPlugin_NETGEN_3D_Remote::Compute(SMESH_Mesh&         aMesh,
     helper.IsQuadraticSubMesh(aShape);
     helper.SetElementsOnShape( true );
 
+    df.read((char*) &totalPremeshedNodes, sizeof(int));
     // Number of nodes in intial mesh
-    df.read((char*) &Netgen_NbOfNodes, sizeof(int));
+    df.read((char*) &NetgenNbOfNodes, sizeof(int));
     // Number of nodes added by netgen
-    df.read((char*) &Netgen_NbOfNodesNew, sizeof(int));
+    df.read((char*) &NetgenNbOfNodesNew, sizeof(int));
 
     // Filling nodevec (correspondence netgen numbering mesh numbering)
-    vector< const SMDS_MeshNode* > nodeVec ( Netgen_NbOfNodesNew + 1 );
-    //vector<int> nodeTmpVec ( Netgen_NbOfNodesNew + 1 );
+    vector< const SMDS_MeshNode* > nodeVec ( NetgenNbOfNodesNew + 2 );
     SMESHDS_Mesh * meshDS = helper.GetMeshDS();
-    for (int nodeIndex = 1 ; nodeIndex <= Netgen_NbOfNodes; ++nodeIndex )
+    for (int nodeIndex = 1; nodeIndex <= NetgenNbOfNodes; ++nodeIndex )
     {
       //Id of the point
       df.read((char*) &nodeID, sizeof(int));
-      nodeVec.at(nodeIndex) = meshDS->FindNode(nodeID);
+      nodeVec.at(nodeID) = meshDS->FindNode(nodeID);
     }
 
     // Add new points and update nodeVec
-    for (int nodeIndex = Netgen_NbOfNodes +1 ; nodeIndex <= Netgen_NbOfNodesNew; ++nodeIndex )
+    for (int nodeIndex = totalPremeshedNodes + 1; nodeIndex <= NetgenNbOfNodesNew; ++nodeIndex )
     {
-      df.read((char *) &Netgen_point, sizeof(double)*3);
-
-      nodeVec.at(nodeIndex) = helper.AddNode(Netgen_point[0],
-                                 Netgen_point[1],
-                                 Netgen_point[2]);
+      df.read((char *) &NetgenPoint, sizeof(double)*3);
+      nodeVec.at(nodeIndex) = helper.AddNode(NetgenPoint[0], NetgenPoint[1], NetgenPoint[2]);
     }
 
-    // Add tetrahedrons
-    df.read((char*) &Netgen_NbOfTetra, sizeof(int));
-
-    for ( int elemIndex = 1; elemIndex <= Netgen_NbOfTetra; ++elemIndex )
+    // Add triangles
+    df.read((char*) &NetgenNbOfTriangles, sizeof(int));
+    for ( int elemIndex = 1; elemIndex <= NetgenNbOfTriangles; ++elemIndex )
     {
-      df.read((char*) &Netgen_tetrahedron, sizeof(int)*4);
-      helper.AddVolume(
-                    nodeVec.at( Netgen_tetrahedron[0] ),
-                    nodeVec.at( Netgen_tetrahedron[1] ),
-                    nodeVec.at( Netgen_tetrahedron[2] ),
-                    nodeVec.at( Netgen_tetrahedron[3] ));
+      df.read((char*) &NetgenTriangle, sizeof(int)*3);
+      if ( nodeVec.at( NetgenTriangle[0] ) && nodeVec.at( NetgenTriangle[1] ) && nodeVec.at( NetgenTriangle[2] ) )
+        helper.AddFace(nodeVec.at( NetgenTriangle[0] ), nodeVec.at( NetgenTriangle[1] ), nodeVec.at( NetgenTriangle[2] ) );            
     }
   }
 
@@ -399,7 +345,7 @@ bool NETGENPlugin_NETGEN_3D_Remote::Compute(SMESH_Mesh&         aMesh,
  *
  * @param aSubMesh submesh to add
  */
-void NETGENPlugin_NETGEN_3D_Remote::setSubMeshesToCompute(SMESH_subMesh * aSubMesh)
+void NETGENPlugin_NETGEN_2D_Remote::setSubMeshesToCompute(SMESH_subMesh * aSubMesh)
 {
   SMESH_MeshLocker myLocker(aSubMesh->GetFather());
   SMESH_Algo::setSubMeshesToCompute(aSubMesh);

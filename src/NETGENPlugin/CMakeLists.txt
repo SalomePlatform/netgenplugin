@@ -27,14 +27,15 @@ INCLUDE_DIRECTORIES(
   ${GUI_INCLUDE_DIRS}
   ${GEOM_INCLUDE_DIRS}
   ${OpenCASCADE_INCLUDE_DIR}
-  ${NETGEN_INCLUDE_DIRS}
   ${SMESH_INCLUDE_DIRS}
   ${MEDCOUPLING_INCLUDE_DIRS}
   ${Boost_INCLUDE_DIRS}
   ${OMNIORB_INCLUDE_DIR}
   ${PROJECT_BINARY_DIR}/idl
-  ${NETGEN_ZLIB_INCLUDE_DIRS}
 )
+
+#Avoid compilation warnings from netgen headers
+INCLUDE_DIRECTORIES( SYSTEM  ${NETGEN_INCLUDE_DIRS} ${NETGEN_ZLIB_INCLUDE_DIRS} )
 
 # additional preprocessor / compiler flags
 ADD_DEFINITIONS(
@@ -100,8 +101,12 @@ SET(NETGENEngine_HEADERS
   NETGENPlugin_Defs.hxx
   NETGENPlugin_DriverParam.hxx
   NETGENPlugin_NETGEN_3D_SA.hxx
+  NETGENPlugin_NETGEN_2D_SA.hxx
+  NETGENPlugin_NETGEN_1D2D3D_SA.hxx
   NETGENPlugin_NETGEN_3D_Remote.hxx
   NETGENPlugin_NETGEN_3D_Remote_i.hxx
+  NETGENPlugin_NETGEN_2D_Remote.hxx
+  NETGENPlugin_NETGEN_2D_Remote_i.hxx
 )
 
 # --- sources ---
@@ -131,8 +136,12 @@ SET(NETGENEngine_SOURCES
   NETGENPlugin_i.cxx
   NETGENPlugin_DriverParam.cxx
   NETGENPlugin_NETGEN_3D_SA.cxx
+  NETGENPlugin_NETGEN_2D_SA.cxx
+  NETGENPlugin_NETGEN_1D2D3D_SA.cxx
   NETGENPlugin_NETGEN_3D_Remote.cxx
   NETGENPlugin_NETGEN_3D_Remote_i.cxx
+  NETGENPlugin_NETGEN_2D_Remote.cxx
+  NETGENPlugin_NETGEN_2D_Remote_i.cxx
 )
 
 SET(NetgenRunner_SOURCES

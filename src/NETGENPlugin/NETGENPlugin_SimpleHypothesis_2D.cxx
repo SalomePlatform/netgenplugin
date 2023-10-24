@@ -61,7 +61,7 @@ NETGENPlugin_SimpleHypothesis_2D::NETGENPlugin_SimpleHypothesis_2D (int         
 //=============================================================================
 void NETGENPlugin_SimpleHypothesis_2D::SetNumberOfSegments(int nb)
 {
-  if ( nb < 1 )
+  if ( nb < 0 )
     throw SALOME_Exception("Number of segments must be positive");
   if (nb != _nbSegments)
   {

@@ -25,7 +25,9 @@
 //  Module : NETGEN
 //
 
+#include "NETGENPlugin_NETGEN_2D_SA.hxx"
 #include "NETGENPlugin_NETGEN_3D_SA.hxx"
+#include "NETGENPlugin_NETGEN_1D2D3D_SA.hxx"
 
 #include <stdio.h>
 #include <string.h>
@@ -78,18 +80,46 @@ int main(int argc, char *argv[]){
     element_orientation_file = "";
   if (new_element_file == "NONE")
     new_element_file = "";
-
+  int ret = 0;
   if (mesher=="NETGEN3D"){
     NETGENPlugin_NETGEN_3D_SA myplugin;
-    myplugin.run(input_mesh_file,
+    ret = myplugin.run(input_mesh_file,
              shape_file,
              hypo_file,
              element_orientation_file,
              new_element_file,
-             output_mesh_file);
-  } else {
+             output_mesh_file );
+  }
+  else if ( mesher=="NETGEN1D" || 
+            mesher=="NETGEN1D2D" || 
+            mesher=="NETGEN1D2D3D" ) 
+  {
+    NETGENPlugin_NETGEN_1D2D3D_SA myplugin;    
+    NETGENPlugin_Mesher::DIM DIM = mesher=="NETGEN1D" ? NETGENPlugin_Mesher::D1 
+                                    : ( mesher=="NETGEN1D2D" ? NETGENPlugin_Mesher::D2 
+                                    : NETGENPlugin_Mesher::D3 );
+
+    ret = myplugin.run(input_mesh_file,
+                  shape_file,
+                  hypo_file,
+                  element_orientation_file,
+                  new_element_file,
+                  output_mesh_file, 
+                  DIM );
+  } 
+  else if ( mesher=="NETGEN2D" ) 
+  {
+    NETGENPlugin_NETGEN_2D_SA myplugin;    
+    ret = myplugin.run(input_mesh_file,
+                  shape_file,
+                  hypo_file,
+                  element_orientation_file,
+                  new_element_file,
+                  output_mesh_file );
+  }  
+  else {
     std::cerr << "Unknown mesher:" << mesher << std::endl;
     return 1;
   }
-  return 0;
+  return ret;
 }

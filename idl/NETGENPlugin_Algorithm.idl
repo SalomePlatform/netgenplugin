@@ -75,6 +75,13 @@ module NETGENPlugin
   };
 
   /*!
+   * NETGENPlugin_NETGEN_2D: interface of "Remote Triangle (Netgen)" algorithm
+   */
+  interface NETGENPlugin_NETGEN_2D_Remote : NETGENPlugin::NETGENPlugin_NETGEN_2D_ONLY
+  {
+  };
+
+  /*!
    * NETGENPlugin_Remesher_2D: interface of "NETGEN Remesher" algorithm,
    * generating 2D elements basing on an existing 2D mesh
    */

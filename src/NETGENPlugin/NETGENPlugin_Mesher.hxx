@@ -40,6 +40,13 @@
 #include "SALOME_Basics.hxx"
 #include <TopTools_IndexedMapOfShape.hxx>
 
+// Netgen include files
+#ifndef OCCGEOMETRY
+#define OCCGEOMETRY
+#endif
+#include <occgeom.hpp>
+#include <meshing.hpp>
+
 namespace nglib {
 #include <nglib.h>
 }
@@ -60,6 +67,8 @@ class TopoDS_Shape;
 namespace netgen {
   class OCCGeometry;
   class Mesh;
+  NETGENPLUGIN_DLL_HEADER
+  extern MeshingParameters mparam;
 }
 
 // Class for temporary folder switching
@@ -172,7 +181,56 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_Mesher
   void SetLocalSizeForChordalError( netgen::OCCGeometry& occgeo, netgen::Mesh& ngMesh );
   static void SetLocalSize( netgen::OCCGeometry& occgeo, netgen::Mesh& ngMesh );
 
+  
+/**
+ * @brief InitialSetup. Fill occgeo map with geometrical objects not meshed. Fill meshdSM with the already computed
+ *        submeshes, and mesh the internal edges so faces with internal are eventurally properly meshed.
+ *        Define the class members _ngMesh and _occgeom
+ */
+  void InitialSetup( NETGENPlugin_NetgenLibWrapper& ngLib, netgen::OCCGeometry& occgeo, 
+                      list< SMESH_subMesh* >* meshedSM, NETGENPlugin_Internals* internals, 
+                      SMESH_MesherHelper &quadHelper, NETGENPlugin_ngMeshInfo& initState, netgen::MeshingParameters &mparams );
+
+  void InitialSetupSA( NETGENPlugin_NetgenLibWrapper& ngLib, netgen::OCCGeometry& occgeo, 
+                      list< SMESH_subMesh* >* meshedSM, NETGENPlugin_Internals* internals, 
+                      SMESH_MesherHelper &quadHelper, NETGENPlugin_ngMeshInfo& initState, 
+                      netgen::MeshingParameters &mparams, bool useFMapFunction = false );
+
+  void SetBasicMeshParameters( NETGENPlugin_NetgenLibWrapper& ngLib, netgen::MeshingParameters &mparams, netgen::OCCGeometry& occgeo );
+  void SetBasicMeshParametersFor2D( netgen::OCCGeometry& occgeo, vector< const SMDS_MeshNode* >& nodeVec, 
+                                      netgen::MeshingParameters &mparams, NETGENPlugin_Internals* internals, 
+                                        NETGENPlugin_ngMeshInfo& initState );
+  void SetBasicMeshParametersFor3D( NETGENPlugin_NetgenLibWrapper& ngLib, netgen::OCCGeometry& occgeo, 
+                                      vector< const SMDS_MeshNode* >& nodeVec, netgen::MeshingParameters &mparams, 
+                                        NETGENPlugin_Internals* internals, NETGENPlugin_ngMeshInfo& initState, SMESH_MesherHelper &quadHelper, 
+                                          SMESH_Comment& comment );
+  void CallNetgenConstAnalysis( NETGENPlugin_NetgenLibWrapper& ngLib, netgen::MeshingParameters &mparams, netgen::OCCGeometry& occgeo );
+  int CallNetgenMeshEdges( NETGENPlugin_NetgenLibWrapper& ngLib, netgen::OCCGeometry& occgeo );
+  int CallNetgenMeshFaces( NETGENPlugin_NetgenLibWrapper& ngLib, netgen::OCCGeometry& occgeo, SMESH_Comment& comment );
+  int CallNetgenMeshVolumens( NETGENPlugin_NetgenLibWrapper& ngLib, netgen::OCCGeometry& occgeo, SMESH_Comment& comment );
+  void MakeSecondOrder( NETGENPlugin_NetgenLibWrapper& ngLib, netgen::MeshingParameters &mparams, netgen::OCCGeometry& occgeo, 
+                          list< SMESH_subMesh* >* meshedSM, NETGENPlugin_ngMeshInfo& initState, SMESH_Comment& comment );
+  int FillInternalElements( NETGENPlugin_NetgenLibWrapper& ngLib, NETGENPlugin_Internals& internals, netgen::OCCGeometry& occgeo,
+                              NETGENPlugin_ngMeshInfo& initState, SMESH_MesherHelper &quadHelper, list< SMESH_subMesh* >* meshedSM );
+  bool Fill2DViscousLayer( netgen::OCCGeometry& occgeo, vector< const SMDS_MeshNode* >& nodeVec, 
+                            NETGENPlugin_Internals* internals, NETGENPlugin_ngMeshInfo& initState );
+
+  bool Fill3DViscousLayerAndQuadAdaptor( netgen::OCCGeometry& occgeo, vector< const SMDS_MeshNode* >& nodeVec, 
+                                          netgen::MeshingParameters &mparams, NETGENPlugin_ngMeshInfo& initState,
+                                          list< SMESH_subMesh* >* meshedSM, SMESH_MesherHelper &quadHelper, int & err );
+
+  int Fill0D1DElements( netgen::OCCGeometry& occgeo, vector< const SMDS_MeshNode* >& nodeVec, list< SMESH_subMesh* >* meshedSM, SMESH_MesherHelper &quadHelper );
+  void FillSMESH( netgen::OCCGeometry& occgeo, NETGENPlugin_ngMeshInfo& initState, vector< const SMDS_MeshNode* >& nodeVec, SMESH_MesherHelper &quadHelper, SMESH_Comment& comment );
+  ///// End definition methods to rewrite function
+  
+  enum DIM {
+    D1 = 1,
+    D2,
+    D3
+  };       
+  
   bool Compute();
+  bool Compute( NETGENPlugin_NetgenLibWrapper& ngLib, vector< const SMDS_MeshNode* >& nodeVec, bool write2SMESH, DIM dim );
 
   bool Evaluate(MapShapeNbElems& aResMap);
 
@@ -243,6 +301,19 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_Mesher
   static void toPython( const netgen::Mesh* ngMesh ); // debug
 
  private:
+
+  bool Compute1D( NETGENPlugin_NetgenLibWrapper& ngLib, netgen::OCCGeometry& occgeo );
+
+  bool Compute2D( NETGENPlugin_NetgenLibWrapper& ngLib, netgen::OCCGeometry& occgeo,
+                  netgen::MeshingParameters &mparams, list< SMESH_subMesh* >* meshedSM, 
+                  NETGENPlugin_ngMeshInfo& initState, NETGENPlugin_Internals* internals, 
+                  vector< const SMDS_MeshNode* >& nodeVec, SMESH_Comment& comment, DIM dim );
+                  
+  bool Compute3D( NETGENPlugin_NetgenLibWrapper& ngLib, netgen::OCCGeometry& occgeo,
+                  netgen::MeshingParameters &mparams, list< SMESH_subMesh* >* meshedSM, 
+                  NETGENPlugin_ngMeshInfo& initState, NETGENPlugin_Internals* internals, 
+                  vector< const SMDS_MeshNode* >& nodeVec, SMESH_MesherHelper &quadHelper, 
+                  SMESH_Comment& comment);
 
   SMESH_Mesh*          _mesh;
   const TopoDS_Shape&  _shape;

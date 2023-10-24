@@ -437,7 +437,6 @@ bool NETGENPlugin_NETGEN_3D::computePrepareParam(
 
   NETGENPlugin_Mesher aMesher( &aMesh, helper.GetSubShape(), /*isVolume=*/true );
 
-
   if ( _hypParameters )
   {
     aMesher.SetParameters( _hypParameters );
@@ -637,7 +636,6 @@ bool NETGENPlugin_NETGEN_3D::Compute(
   computeRunMesher(occgeo, nodeVec, ngLib._ngMesh, ngLib, startWith, endWith);
 
   computeFillMesh(nodeVec, ngLib, helper, Netgen_NbOfNodes);
-
   return false;
 
 }
