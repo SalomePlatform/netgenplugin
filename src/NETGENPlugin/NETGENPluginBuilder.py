@@ -170,7 +170,7 @@ class NETGEN_Algorithm(Mesh_Algorithm):
                 hypType = "NETGEN_SimpleParameters_3D"
             else:
                 hypType = "NETGEN_Parameters"
-        elif self.algoType == NETGEN_2D:
+        elif self.algoType in [NETGEN_2D, NETGEN_2D_Remote]:
             hypType = "NETGEN_Parameters_2D_ONLY"
         else:
             hypType = "NETGEN_Parameters_3D"
