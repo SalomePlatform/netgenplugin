@@ -51,8 +51,9 @@ public:
           const std::string output_mesh_file,
           const NETGENPlugin_Mesher::DIM dim );
 
-protected:
+private:
   
+  bool checkOrientationFile( const std::string element_orientation_file );
   void fillHyp(netgen_params aParams);
   bool FillNewElementFile( std::vector< const SMDS_MeshNode* > &nodeVec, NETGENPlugin_NetgenLibWrapper &ngLib,
                             std::string new_element_file, const NETGENPlugin_Mesher::DIM dim );

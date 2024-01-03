@@ -148,9 +148,7 @@ void NETGENPlugin_NETGEN_2D_Remote::fillParameters(const NETGENPlugin_Hypothesis
  * @param aShape the shape associated to the mesh
  * @param output_file name of the binary file
  */
-void NETGENPlugin_NETGEN_2D_Remote::exportElementOrientation(SMESH_Mesh& aMesh,
-                                                      const TopoDS_Shape& aShape,
-                                                      const std::string output_file)
+void NETGENPlugin_NETGEN_2D_Remote::exportElementOrientation(const std::string output_file)
 {
   std::ofstream df(output_file, ios::out|ios::binary);
   int size=0;
@@ -205,13 +203,13 @@ bool NETGENPlugin_NETGEN_2D_Remote::Compute(SMESH_Mesh&         aMesh,
     // exportNetgenParams(param_file.string(), aParams);
     {
       // Simply write the file with the proper name
-      std::ofstream myfile(param_file);
+      std::ofstream myfile(param_file.string());
       myfile << 1 << std::endl;
       myfile.close();
     }
       
     // Exporting element orientation
-    exportElementOrientation(aMesh, aShape, element_orientation_file.string());
+    exportElementOrientation(element_orientation_file.string());
   }
 
   // Calling run_mesher

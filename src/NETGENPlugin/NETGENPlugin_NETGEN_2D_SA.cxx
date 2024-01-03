@@ -78,6 +78,28 @@ NETGENPlugin_NETGEN_2D_SA::~NETGENPlugin_NETGEN_2D_SA()
 }
 
 /**
+ * @brief Check presence and content of orientation file. Implemented for completness and future reference.
+ *
+ * @param element_orientation_file Binary file containing the orientation of surface elemnts
+ * @return true, false
+ */
+bool NETGENPlugin_NETGEN_2D_SA::checkOrientationFile( const std::string element_orientation_file )
+{
+  if(element_orientation_file.empty()){
+      MESSAGE("No element orientation file");
+      return true;
+    } else {
+      MESSAGE("Reading from elements from file: " << element_orientation_file);
+      // By construction the orientation file written by Remote version has a zero written to mark no need of orientation in 2D meshing
+      int nbElement;
+      std::ifstream df(element_orientation_file, ios::binary|ios::in);
+      df.read((char*)&nbElement, sizeof(int));
+      df.close();
+      return (nbElement == 0);
+    }
+}
+
+/**
  * @brief fill plugin hypothesis from the netgen_params structure
  *
  * @param aParams the structure
@@ -244,7 +266,7 @@ int NETGENPlugin_NETGEN_2D_SA::run(const std::string input_mesh_file,
 {
 
   std::unique_ptr<SMESH_Mesh> myMesh(_gen->CreateMesh(false));
-
+  
   SMESH_DriverMesh::importMesh(input_mesh_file, *myMesh);
   // Importing shape
   TopoDS_Shape myShape;
@@ -254,17 +276,23 @@ int NETGENPlugin_NETGEN_2D_SA::run(const std::string input_mesh_file,
   importNetgenParams(hypo_file, myParams);
   fillHyp(hypo_file,myParams);  
   MESSAGE("Meshing with netgen2d");
-  int ret = (int) Compute( *myMesh, myShape, new_element_file );
+  int ret = 1;
+  if ( checkOrientationFile(element_orientation_file) )
+  {
+    ret = (int) Compute( *myMesh, myShape, new_element_file );
 
-  if(ret){
-    std::cerr << "Meshing failed" << std::endl;
-    return ret;
-  }
+    if(ret){
+      std::cerr << "Meshing failed" << std::endl;
+      return ret;
+    }
 
-  if(!output_mesh_file.empty()){
-    std::string meshName = "MESH";
-    SMESH_DriverMesh::exportMesh(output_mesh_file, *myMesh, meshName);
+    if(!output_mesh_file.empty()){
+      std::string meshName = "MESH";
+      SMESH_DriverMesh::exportMesh(output_mesh_file, *myMesh, meshName);
+    }
   }
+  else
+    std::cerr << "For NETGENPlugin_NETGEN_2D_SA orientation file should be market with 0 or be empty!" << std::endl;
 
   return ret;
 }

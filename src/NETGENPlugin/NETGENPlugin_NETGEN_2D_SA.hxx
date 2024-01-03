@@ -55,8 +55,9 @@ public:
                            std::map<int,const SMDS_MeshNode*>& premeshedNodes, 
                            std::map<int,std::vector<double>>& newNetgenCoordinates,
                            std::map<int,std::vector<smIdType>>& newNetgenElements );
-protected:
+private:
   
+  bool checkOrientationFile( const std::string element_orientation_file );
   void fillHyp(const std::string param_file, netgen_params aParams);
 };
 

@@ -208,7 +208,7 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_Mesher
   int CallNetgenMeshEdges( NETGENPlugin_NetgenLibWrapper& ngLib, netgen::OCCGeometry& occgeo );
   int CallNetgenMeshFaces( NETGENPlugin_NetgenLibWrapper& ngLib, netgen::OCCGeometry& occgeo, SMESH_Comment& comment );
   int CallNetgenMeshVolumens( NETGENPlugin_NetgenLibWrapper& ngLib, netgen::OCCGeometry& occgeo, SMESH_Comment& comment );
-  void MakeSecondOrder( NETGENPlugin_NetgenLibWrapper& ngLib, netgen::MeshingParameters &mparams, netgen::OCCGeometry& occgeo, 
+  void MakeSecondOrder( netgen::MeshingParameters &mparams, netgen::OCCGeometry& occgeo, 
                           list< SMESH_subMesh* >* meshedSM, NETGENPlugin_ngMeshInfo& initState, SMESH_Comment& comment );
   int FillInternalElements( NETGENPlugin_NetgenLibWrapper& ngLib, NETGENPlugin_Internals& internals, netgen::OCCGeometry& occgeo,
                               NETGENPlugin_ngMeshInfo& initState, SMESH_MesherHelper &quadHelper, list< SMESH_subMesh* >* meshedSM );

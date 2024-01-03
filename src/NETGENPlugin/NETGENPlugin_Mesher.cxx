@@ -3185,7 +3185,7 @@ int NETGENPlugin_Mesher::CallNetgenMeshVolumens( NETGENPlugin_NetgenLibWrapper& 
   return err;
 }
 
-void NETGENPlugin_Mesher::MakeSecondOrder( NETGENPlugin_NetgenLibWrapper& ngLib, netgen::MeshingParameters &mparams, netgen::OCCGeometry& occgeo, 
+void NETGENPlugin_Mesher::MakeSecondOrder( netgen::MeshingParameters &mparams, netgen::OCCGeometry& occgeo, 
                                            list< SMESH_subMesh* >* meshedSM, NETGENPlugin_ngMeshInfo& initState, SMESH_Comment& comment )
 {
   if ( mparams.secondorder > 0 )
@@ -3386,7 +3386,6 @@ void NETGENPlugin_Mesher::InitialSetup( NETGENPlugin_NetgenLibWrapper& ngLib, ne
                                         SMESH_MesherHelper &quadHelper, NETGENPlugin_ngMeshInfo& initState, 
                                         netgen::MeshingParameters &mparams )
 {
-  int err = 0;
   // Init occ geometry maps for non meshed object and fill meshedSM with premeshed objects
   PrepareOCCgeometry( occgeo, _shape, *_mesh, meshedSM, internals );
   _occgeom = &occgeo;
@@ -3557,7 +3556,7 @@ bool NETGENPlugin_Mesher::Compute2D( NETGENPlugin_NetgenLibWrapper& ngLib, netge
   int err = CallNetgenMeshFaces( ngLib, occgeo, comment );
   
   if ( !err && dim == DIM::D2 /* if mesh is 3D then second order is defined after volumens are computed*/ )
-    MakeSecondOrder( ngLib, mparams, occgeo, meshedSM, initState, comment );
+    MakeSecondOrder( mparams, occgeo, meshedSM, initState, comment );
 
   return err;
 }
@@ -3579,7 +3578,7 @@ bool NETGENPlugin_Mesher::Compute3D( NETGENPlugin_NetgenLibWrapper& ngLib, netge
   }
 
   if ( !err )
-    MakeSecondOrder( ngLib, mparams, occgeo, meshedSM, initState, comment );
+    MakeSecondOrder( mparams, occgeo, meshedSM, initState, comment );
 
   return err;
 }
@@ -3657,7 +3656,7 @@ bool NETGENPlugin_Mesher::Compute()
     }
 
     if (!err )
-      MakeSecondOrder( ngLib, mparams, occgeo, meshedSM, initState, comment );
+      MakeSecondOrder( mparams, occgeo, meshedSM, initState, comment );
   }
 
   _ticTime = 0.98 / _progressTic;

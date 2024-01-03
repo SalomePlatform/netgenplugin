@@ -149,7 +149,7 @@ namespace // copied class from StdMesher_Importe_1D
                                  div.Parameter( i ), div.Parameter( i+1 ),
                                  enlarge, curve );
       }
-      catch ( Standard_Failure ) {
+      catch ( Standard_Failure& ) {
         _segments.resize( _segments.size() - 1 );
         --i;
       }
@@ -523,7 +523,7 @@ bool NETGENPlugin_NETGEN_2D_ONLY::MapSegmentsToEdges(SMESH_Mesh& aMesh, const To
   const int numberOfPremeshedNodes = aMesh.NbNodes();
   TopTools_IndexedMapOfShape faces;
   TopExp::MapShapes( aShape, TopAbs_FACE, faces );
-
+  int err = 0;
   for ( int i = 1; i <= faces.Size(); ++i )
   {
     int numOfEdges = 0;
@@ -676,7 +676,7 @@ bool NETGENPlugin_NETGEN_2D_ONLY::MapSegmentsToEdges(SMESH_Mesh& aMesh, const To
     ngMesh->CalcSurfacesOfNode();
     const int startWith = MESHCONST_MESHSURFACE;
     const int endWith   = MESHCONST_OPTSURFACE;
-    int err = ngLib.GenerateMesh(occgeom, startWith, endWith, ngMesh);
+    err = ngLib.GenerateMesh(occgeom, startWith, endWith, ngMesh);
 
     // Ng_Mesh * ngMeshptr = (Ng_Mesh*) ngLib._ngMesh;
     // int NetgenNodes = Ng_GetNP(ngMeshptr);
@@ -693,7 +693,7 @@ bool NETGENPlugin_NETGEN_2D_ONLY::MapSegmentsToEdges(SMESH_Mesh& aMesh, const To
     FillNodesAndElements( aMesh, helper, ngMesh, nodeVec, ng2smesh, newNetgenCoordinates, newNetgenElements, numberOfPremeshedNodes );
   } // Face iteration
 
-  return false;
+  return (bool) err;
 }
 
 std::tuple<bool,bool> NETGENPlugin_NETGEN_2D_ONLY::SetParameteres( SMESH_Mesh& aMesh, const TopoDS_Shape& aShape, 
@@ -703,7 +703,6 @@ std::tuple<bool,bool> NETGENPlugin_NETGEN_2D_ONLY::SetParameteres( SMESH_Mesh& a
   SMESHDS_Mesh* meshDS = aMesh.GetMeshDS();
     
   aMesher.SetParameters( _hypParameters ); // _hypParameters -> netgen::mparam
-  const bool toOptimize = _hypParameters ? _hypParameters->GetOptimize() : true;
   if ( _hypMaxElementArea )
   {
     netgen::mparam.maxh = sqrt( 2. * _hypMaxElementArea->GetMaxArea() / sqrt(3.0) );

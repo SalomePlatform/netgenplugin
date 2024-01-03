@@ -61,10 +61,8 @@ class NETGENPLUGIN_EXPORT NETGENPlugin_NETGEN_2D_Remote: public NETGENPlugin_NET
   void setSubMeshesToCompute(SMESH_subMesh * aSubMesh) override;
 
 
- protected:
- void exportElementOrientation(SMESH_Mesh& aMesh,
-                                const TopoDS_Shape& aShape,
-                                const std::string output_file);
+ private:
+ void exportElementOrientation(const std::string output_file);
                                 
   void fillParameters(const NETGENPlugin_Hypothesis* hyp,
                       netgen_params &aParams);
