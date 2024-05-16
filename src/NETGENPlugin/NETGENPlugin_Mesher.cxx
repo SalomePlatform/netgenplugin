@@ -154,16 +154,27 @@ namespace
     {
       return (( Contains( other.n1 ) || Contains( other.n2 )) && ( this != &other ));
     }
+#if OCC_VERSION_LARGE < 0x07080000
     static int HashCode(const Link& aLink, int aLimit)
     {
       return ::HashCode(aLink.n1 + aLink.n2, aLimit);
     }
-
     static Standard_Boolean IsEqual(const Link& aLink1, const Link& aLink2)
     {
       return (( aLink1.n1 == aLink2.n1 && aLink1.n2 == aLink2.n2 ) ||
               ( aLink1.n1 == aLink2.n2 && aLink1.n2 == aLink2.n1 ));
     }
+#else
+    size_t operator()(const Link& aLink) const
+    {
+      return static_cast<size_t>(aLink.n1 + aLink.n2);
+    }
+    bool operator()(const Link& aLink1, const Link& aLink2) const
+    {
+      return (( aLink1.n1 == aLink2.n1 && aLink1.n2 == aLink2.n2 ) ||
+              ( aLink1.n1 == aLink2.n2 && aLink1.n2 == aLink2.n1 ));
+    }
+#endif
   };
 
   typedef NCollection_Map<Link,Link> TLinkMap;
