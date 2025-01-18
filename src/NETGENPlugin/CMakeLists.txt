@@ -23,6 +23,7 @@ INCLUDE(UseQtExt)
 # additional include directories
 INCLUDE_DIRECTORIES(
   ${QT_INCLUDES}
+  ${SALOMEBOOTSTRAP_INCLUDE_DIRS}
   ${KERNEL_INCLUDE_DIRS}
   ${GUI_INCLUDE_DIRS}
   ${GEOM_INCLUDE_DIRS}
@@ -66,7 +67,7 @@ SET(_link_LIBRARIES
   ${SMESH_SMESHControls}
   ${KERNEL_SalomeGenericObj}
   ${KERNEL_SalomeNS}
-  ${KERNEL_SALOMELocalTrace}
+  ${SALOMEBOOTSTRAP_SALOMELocalTrace}
   ${KERNEL_OpUtil}
   VTK::CommonCore
   VTK::CommonDataModel
