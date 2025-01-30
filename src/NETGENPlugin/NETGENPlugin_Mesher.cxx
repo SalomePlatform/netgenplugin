@@ -60,6 +60,7 @@
 #include <BRep_Tool.hxx>
 #include <Bnd_B3d.hxx>
 #include <GeomLib_IsPlanarSurface.hxx>
+#include <GeomAdaptor_Surface.hxx>
 #include <NCollection_Map.hxx>
 #include <Poly_Triangulation.hxx>
 #include <Standard_ErrorHandler.hxx>
@@ -883,6 +884,12 @@ void NETGENPlugin_Mesher::SetLocalSizeForChordalError( netgen::OCCGeometry& occg
       BRepAdaptor_Surface surf( face, false );
       surfProp.SetSurface( surf );
 
+      gp_Lin anRotAxis;
+      bool isSurfaceOfRotation(surf.GetType() == GeomAbs_SurfaceOfRevolution);
+      if(isSurfaceOfRotation){
+        anRotAxis = surf.Surface().AxeOfRevolution();
+      }
+
       gp_XY    uv[3];
       gp_XYZ    p[3];
       double size[3];
@@ -909,11 +916,24 @@ void NETGENPlugin_Mesher::SetLocalSizeForChordalError( netgen::OCCGeometry& occg
         if ( !surfProp.IsCurvatureDefined() )
           break;
 
+        double prevMaxCurv = 0.;
         for ( int n = 0; n < 3; ++n ) // get size at triangle nodes
         {
-          surfProp.SetParameters( uv[n].X(), uv[n].Y() );
-          double maxCurv = Max( Abs( surfProp.MaxCurvature()), Abs( surfProp.MinCurvature() ));
-          size[n] = elemSizeForChordalError( _chordalError, 1 / maxCurv );
+          double maxCurv;
+          const gp_Pnt aPnt = surf.Value(uv[n].X(), uv[n].Y());
+          if (isSurfaceOfRotation && anRotAxis.Contains(aPnt, Precision::Confusion())) 
+          {
+            // This check is needed because, on surfaces of rotation, points located on the axis of
+            // rotation cannot be calculated, so we skip them.
+            maxCurv = prevMaxCurv;
+          }
+          else 
+          {
+            surfProp.SetParameters(uv[n].X(), uv[n].Y());
+            maxCurv = Max(Abs(surfProp.MaxCurvature()), Abs(surfProp.MinCurvature()));
+            prevMaxCurv = maxCurv;
+          }
+          size[n] = elemSizeForChordalError(_chordalError, 1 / maxCurv);
         }
         for ( int n1 = 0; n1 < 3; ++n1 ) // limit size along each triangle edge
         {
