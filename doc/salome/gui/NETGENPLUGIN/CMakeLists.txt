@@ -34,7 +34,7 @@ SALOME_GENERATE_ENVIRONMENT_SCRIPT(_cmd env_script "${PYTHON_EXECUTABLE}" "${_cm
 
 ADD_CUSTOM_TARGET(usr_docs ${CMAKE_COMMAND} -E make_directory tmp
   COMMAND ${PYTHON_EXECUTABLE} ${kernel_file} -o tmp/NETGENPluginBuilder.py ${CMAKE_SOURCE_DIR}/src/NETGENPlugin/NETGENPluginBuilder.py
-  COMMAND ${PYTHON_EXECUTABLE} ${kernel_file} -o tmp/smesh_algorithm.py ${SMESH_ROOT_DIR}/${SALOME_INSTALL_PYTHON}/salome/smesh/smesh_algorithm.py
+  COMMAND ${PYTHON_EXECUTABLE} ${kernel_file} -o tmp/smesh_algorithm.py ${SMESH_ROOT_DIR}/${SALOME_SMESH_NETGEN_INSTALL_PYTHON}/salome/smesh/smesh_algorithm.py
   COMMAND ${_cmd}
   COMMAND ${DOXYGEN_EXECUTABLE} doxyfile_py
   COMMAND ${DOXYGEN_EXECUTABLE} doxyfile
