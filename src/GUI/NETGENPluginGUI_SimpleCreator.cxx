@@ -368,7 +368,7 @@ QString NETGENPluginGUI_SimpleCreator::storeParams() const
       }
     }
   }
-  catch(const SALOME::SALOME_Exception& ex)
+  catch(const SALOME_CMOD::SALOME_Exception& ex)
   {
     SalomeApp_Tools::QtCatchCorbaException(ex);
   }

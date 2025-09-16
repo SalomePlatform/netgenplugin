@@ -133,7 +133,7 @@ module NETGENPlugin
     boolean GetFuseEdges();
 
     void    SetLocalSizeOnShape(in GEOM::GEOM_Object GeomObj, in double localSize)
-      raises (SALOME::SALOME_Exception);
+      raises (SALOME_CMOD::SALOME_Exception);
     void    SetLocalSizeOnEntry(in string entry, in double localSize);
     double  GetLocalSizeOnEntry(in string entry);
     string_array GetLocalSizeEntries();
@@ -265,7 +265,7 @@ module NETGENPlugin
     /*!
      * Sets <number of segments> value
      */
-    void SetNumberOfSegments(in long nb) raises (SALOME::SALOME_Exception);
+    void SetNumberOfSegments(in long nb) raises (SALOME_CMOD::SALOME_Exception);
     /*!
      * Returns <number of segments> value.
      * Can be zero in case if LocalLength() has been set

@@ -78,7 +78,7 @@ void NETGENPlugin_SimpleHypothesis_2D_i::SetNumberOfSegments(CORBA::Long nb)
     this->GetImpl()->SetNumberOfSegments(nb);
   }
   catch (SALOME_Exception& S_ex) {
-    THROW_SALOME_CORBA_EXCEPTION( S_ex.what(), SALOME::BAD_PARAM );
+    THROW_SALOME_CORBA_EXCEPTION( S_ex.what(), SALOME_CMOD::BAD_PARAM );
   }
   SMESH::TPythonDump() << _this() << ".SetNumberOfSegments( " << SMESH::TVar(nb) << " )";
 }
@@ -107,7 +107,7 @@ void NETGENPlugin_SimpleHypothesis_2D_i::SetLocalLength(CORBA::Double segmentLen
     this->GetImpl()->SetLocalLength(segmentLength);
   }
   catch (SALOME_Exception& S_ex) {
-    THROW_SALOME_CORBA_EXCEPTION( S_ex.what(), SALOME::BAD_PARAM );
+    THROW_SALOME_CORBA_EXCEPTION( S_ex.what(), SALOME_CMOD::BAD_PARAM );
   }
   SMESH::TPythonDump() << _this() << ".SetLocalLength( " << SMESH::TVar(segmentLength) << " )";
 }

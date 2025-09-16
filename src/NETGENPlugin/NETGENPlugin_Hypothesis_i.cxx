@@ -342,7 +342,7 @@ void NETGENPlugin_Hypothesis_i::SetLocalSizeOnShape(GEOM::GEOM_Object_ptr GeomOb
   entry = GeomObj->GetStudyEntry();
   if ( entry.empty() )
     THROW_SALOME_CORBA_EXCEPTION( "SetLocalSizeOnShape(), shape is not published in study!",
-                                  SALOME::BAD_PARAM );
+                                  SALOME_CMOD::BAD_PARAM );
   SetLocalSizeOnEntry(entry.c_str(), localSize);
 }
 

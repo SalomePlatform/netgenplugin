@@ -906,7 +906,7 @@ bool NETGENPluginGUI_HypothesisCreator::storeParamsToHypo( const NetgenHypothesi
       }
     }
   }
-  catch(const SALOME::SALOME_Exception& ex)
+  catch(const SALOME_CMOD::SALOME_Exception& ex)
   {
     SalomeApp_Tools::QtCatchCorbaException(ex);
     ok = false;
