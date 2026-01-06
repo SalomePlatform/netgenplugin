@@ -2,7 +2,7 @@ diff -Naur netgen-5.3.1_SRC_orig/CMakeLists.txt netgen-5.3.1_SRC_modif/CMakeList
 --- netgen-5.3.1_SRC_orig/CMakeLists.txt	1970-01-01 03:00:00.000000000 +0300
 +++ netgen-5.3.1_SRC_modif/CMakeLists.txt	2016-11-25 11:04:22.150776900 +0300
 @@ -0,0 +1,75 @@
-+# Copyright (C) 2016-2025 OPEN CASCADE
++# Copyright (C) 2016-2026 OPEN CASCADE
 +#
 +# This library is free software; you can redistribute it and/or
 +# modify it under the terms of the GNU Lesser General Public
@@ -81,7 +81,7 @@ diff -Naur netgen-5.3.1_SRC_orig/cmake/CMakeLists.txt netgen-5.3.1_SRC_modif/cma
 --- netgen-5.3.1_SRC_orig/cmake/CMakeLists.txt	1970-01-01 03:00:00.000000000 +0300
 +++ netgen-5.3.1_SRC_modif/cmake/CMakeLists.txt	2016-11-25 11:06:44.049656800 +0300
 @@ -0,0 +1,22 @@
-+# Copyright (C) 2016-2025 OPEN CASCADE
++# Copyright (C) 2016-2026 OPEN CASCADE
 +#
 +# This library is free software; you can redistribute it and/or
 +# modify it under the terms of the GNU Lesser General Public
@@ -108,7 +108,7 @@ diff -Naur netgen-5.3.1_SRC_orig/cmake/FindCAS.cmake netgen-5.3.1_SRC_modif/cmak
 --- netgen-5.3.1_SRC_orig/cmake/FindCAS.cmake	1970-01-01 03:00:00.000000000 +0300
 +++ netgen-5.3.1_SRC_modif/cmake/FindCAS.cmake	2016-11-23 16:14:01.050542400 +0300
 @@ -0,0 +1,152 @@
-+#  Copyright (C) 2007-2025  CEA/DEN, EDF R&D, OPEN CASCADE
++#  Copyright (C) 2007-2026  CEA/DEN, EDF R&D, OPEN CASCADE
 +#
 +#  This library is free software; you can redistribute it and/or
 +#  modify it under the terms of the GNU Lesser General Public
@@ -265,7 +265,7 @@ diff -Naur netgen-5.3.1_SRC_orig/cmake/FindPLATFORM.cmake netgen-5.3.1_SRC_modif
 --- netgen-5.3.1_SRC_orig/cmake/FindPLATFORM.cmake	1970-01-01 03:00:00.000000000 +0300
 +++ netgen-5.3.1_SRC_modif/cmake/FindPLATFORM.cmake	2016-11-22 19:05:57.195348500 +0300
 @@ -0,0 +1,96 @@
-+#  Copyright (C) 2007-2025  CEA/DEN, EDF R&D, OPEN CASCADE
++#  Copyright (C) 2007-2026  CEA/DEN, EDF R&D, OPEN CASCADE
 +#
 +#  This library is free software; you can redistribute it and/or
 +#  modify it under the terms of the GNU Lesser General Public
@@ -366,7 +366,7 @@ diff -Naur netgen-5.3.1_SRC_orig/cmake/FindZLIB.cmake netgen-5.3.1_SRC_modif/cma
 --- netgen-5.3.1_SRC_orig/cmake/FindZLIB.cmake	1970-01-01 03:00:00.000000000 +0300
 +++ netgen-5.3.1_SRC_modif/cmake/FindZLIB.cmake	2016-11-25 10:50:13.990626900 +0300
 @@ -0,0 +1,45 @@
-+#  Copyright (C) 2007-2025  CEA/DEN, EDF R&D, OPEN CASCADE
++#  Copyright (C) 2007-2026  CEA/DEN, EDF R&D, OPEN CASCADE
 +#
 +#  This library is free software; you can redistribute it and/or
 +#  modify it under the terms of the GNU Lesser General Public
@@ -888,7 +888,7 @@ diff -Naur netgen-5.3.1_SRC_orig/nglib/CMakeLists.txt netgen-5.3.1_SRC_modif/ngl
 --- netgen-5.3.1_SRC_orig/nglib/CMakeLists.txt	1970-01-01 03:00:00.000000000 +0300
 +++ netgen-5.3.1_SRC_modif/nglib/CMakeLists.txt	2016-11-23 16:28:18.630104800 +0300
 @@ -0,0 +1,252 @@
-+# Copyright (C) 2016-2025 OPEN CASCADE
++# Copyright (C) 2016-2026 OPEN CASCADE
 +#
 +# This library is free software; you can redistribute it and/or
 +# modify it under the terms of the GNU Lesser General Public
