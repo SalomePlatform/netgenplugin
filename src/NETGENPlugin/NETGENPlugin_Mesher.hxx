@@ -75,7 +75,10 @@ namespace netgen {
 class ChdirRAII
 {
   public:
-#ifndef WIN32
+#ifdef __APPLE__
+    ChdirRAII(const std::string& wd):_wd(wd) { if(_wd.empty()) return ; char *pwd = getcwd(NULL, 0); _od = pwd; free(pwd); chdir(_wd.c_str()); }
+    ~ChdirRAII() { if(_od.empty()) return ; chdir(_od.c_str()); }
+#elif !defined(WIN32)
     ChdirRAII(const std::string& wd):_wd(wd) { if(_wd.empty()) return ; char *pwd(get_current_dir_name()); _od = pwd; free(pwd); chdir(_wd.c_str()); }
     ~ChdirRAII() { if(_od.empty()) return ; chdir(_od.c_str()); }
 #else

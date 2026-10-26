@@ -26,6 +26,11 @@
 // Date      : 28/03/2006
 // Project   : SALOME
 //
+
+#if defined(__APPLE__) && defined(__arm64__)
+#include <mach/arm/thread_status.h>
+#endif
+
 #include "NETGENPlugin_Hypothesis.hxx"
 
 #include "NETGENPlugin_Mesher.hxx"

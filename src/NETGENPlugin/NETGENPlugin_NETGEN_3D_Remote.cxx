@@ -28,6 +28,10 @@
 //=============================================================================
 //
 //
+#if defined(__APPLE__) && defined(__arm64__)
+#include <mach/arm/thread_status.h>
+#endif
+
 #include "NETGENPlugin_NETGEN_3D_Remote.hxx"
 
 #include "NETGENPlugin_NETGEN_3D.hxx"

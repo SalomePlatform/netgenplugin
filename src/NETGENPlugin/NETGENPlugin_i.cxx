@@ -26,6 +26,11 @@
 //  Module : SMESH
 //  $Header$
 //
+
+#if defined(__APPLE__) && defined(__arm64__)
+#include <mach/arm/thread_status.h>
+#endif
+
 #include "utilities.h"
 
 #include "NETGENPlugin_Hypothesis_2D_ONLY_i.hxx"
