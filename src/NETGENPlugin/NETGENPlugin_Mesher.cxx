@@ -27,6 +27,10 @@
 // Project   : SALOME
 //=============================================================================
 
+#if defined(__APPLE__) && defined(__arm64__)
+#include <mach/arm/thread_status.h>
+#endif
+
 #include "NETGENPlugin_Mesher.hxx"
 #include "NETGENPlugin_Hypothesis_2D.hxx"
 #include "NETGENPlugin_SimpleHypothesis_3D.hxx"
